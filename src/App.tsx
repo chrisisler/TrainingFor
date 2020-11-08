@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import { Welcome } from './pages/Welcome';
-import { CreateEntry } from './pages/CreateEntry';
+import { StartTraining } from './pages/StartTraining';
 import { SignUp } from './pages/SignUp';
 import { LogIn } from './pages/LogIn';
 import { useUser } from './useUser';
@@ -21,11 +21,15 @@ export const App: FC = () => {
     <AppContainer>
       <Router>
         <Switch>
-          <Route exact path="/">
-            {user === null ? <Welcome /> : <CreateEntry />}
+          <Route path="/">
+            {user === null ? <Welcome /> : <StartTraining />}
           </Route>
-          <Route exact path="/signup" component={SignUp} />
-          <Route exact path="/login" component={LogIn} />
+          <Route exact path="/signup">
+            <SignUp />
+          </Route>
+          <Route exact path="/login">
+            <LogIn />
+          </Route>
         </Switch>
       </Router>
     </AppContainer>

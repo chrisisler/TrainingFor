@@ -51,11 +51,12 @@ export const LogIn: FC = () => {
         setEmail('');
         setPassword('');
         setUser(userCredential.user);
+        history.push('/');
       } catch (error) {
         alert(error.message);
       }
     },
-    [email, password, setUser]
+    [email, password, setUser, history]
   );
 
   return (

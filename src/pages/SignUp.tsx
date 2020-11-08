@@ -4,9 +4,10 @@ import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 
-import { auth } from '../firebase';
+import { auth, db, DbPath } from '../firebase';
 import { Columns, Pad } from '../style';
 import { useUser } from '../useUser';
+import { User } from '../interfaces';
 
 const SignUpContainer = styled.div`
   height: 100vh;
@@ -52,13 +53,20 @@ export const SignUp: FC = () => {
         setDisplayName('');
         setEmail('');
         setPassword('');
-        await userCredential.user?.updateProfile({ displayName });
+        if (!userCredential.user) throw Error('Unreachable');
+        userCredential.user.updateProfile({ displayName });
         setUser(userCredential.user);
+        history.push('/');
+        db.collection(DbPath.Users).add({
+          id: userCredential.user.uid,
+          logs: [],
+          displayName,
+        } as User);
       } catch (error) {
         alert(error.message);
       }
     },
-    [displayName, email, password, setUser]
+    [displayName, email, password, setUser, history]
   );
 
   return (
