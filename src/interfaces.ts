@@ -28,6 +28,14 @@ export interface ActivitySet {
   repCount: null | number;
   notes: null | string;
   status: ActivityStatus;
+  /**
+   * Rate of Perceived Exertion.
+   * 10: Absolute maximum
+   * 9.5: Only one rep possible, but weight could be increased.
+   * 9: One more rep could be performed.
+   * 8.5: One or two more reps possible.
+   */
+  // rpe: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 7.5 | 8 | 8.5 | 9 | 9.5 | 10;
 }
 
 export enum ActivityStatus {

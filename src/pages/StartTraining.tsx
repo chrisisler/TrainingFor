@@ -2,7 +2,7 @@ import React, { FC, useCallback, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import firebase from 'firebase/app';
 import { Button, Typography, IconButton, Box } from '@material-ui/core';
-import { Close } from '@material-ui/icons';
+import { Close, MoreHoriz, Save } from '@material-ui/icons';
 
 import { Columns, Pad, Rows } from '../style';
 import { useUser } from '../useUser';
@@ -24,7 +24,7 @@ const StartTrainingContainer = styled.div`
 `;
 
 const AddTrainingContainer = styled(Columns)`
-  padding: 0 ${Pad.Large} ${Pad.Medium};
+  padding: 0 ${Pad.Large};
 `;
 
 const AddActivityContainer = styled(Rows)`
@@ -111,7 +111,7 @@ export const StartTraining: FC = () => {
           <StartTrainingContainer>
             <Columns pad={Pad.Large}>
               <Typography variant="h4" color="textPrimary">
-                Start Training Log #1
+                Start Training
               </Typography>
               <Button variant="contained" color="primary" onClick={addLog}>
                 Go
@@ -133,6 +133,15 @@ export const StartTraining: FC = () => {
         {logDoc => (
           <Columns>
             <AddTrainingHeader>
+              <IconButton
+                aria-label="Finish Training"
+                onClick={() => {
+                  // Set the training log we're working on to nothing.
+                  setLogDoc(DataState.Empty);
+                }}
+              >
+                <Save />
+              </IconButton>
               <IconButton
                 aria-label="Cancel Training"
                 onClick={() => {
@@ -186,7 +195,18 @@ export const StartTraining: FC = () => {
 const ActivityViewContainer = styled(Columns)`
   width: 100%;
   border-bottom: 1px solid lightgray;
-  padding: ${Pad.Small} ${Pad.Large};
+  padding: ${Pad.Medium} ${Pad.Small} ${Pad.Medium} ${Pad.Large};
+`;
+
+const ActivityStatusButton = styled.button`
+  font-size: 0.7em;
+  color: lightgray;
+  align-self: flex-end;
+  border: 0;
+  font-weight: 800;
+  background-color: transparent;
+  text-transform: uppercase;
+  outline: none;
 `;
 
 const ActivitiesView: FC<{
@@ -223,64 +243,81 @@ const ActivitiesView: FC<{
         <>
           {activities.map(activity => (
             <ActivityViewContainer key={activity.id}>
-              <Rows maxWidth center pad={Pad.Medium} padding={Pad.Small}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    const newSet: Omit<ActivitySet, 'id'> = {
-                      name: `Set ${activity.sets.length + 1}`,
-                      repCount: null,
-                      notes: null,
-                      status: ActivityStatus.Unattempted,
-                    };
-                    db.collection(DbPath.Users)
-                      .doc(user?.uid)
-                      .collection(DbPath.UserLogs)
-                      .doc(logId)
-                      .collection(DbPath.UserLogActivities)
-                      .doc(activity.id)
-                      .update({
-                        sets: firebase.firestore.FieldValue.arrayUnion(newSet),
-                      })
-                      .catch(error => {
-                        alert(error.message);
-                      });
-                  }}
-                >
-                  +
-                </Button>
+              <Rows maxWidth center between padding={`${Pad.Small} 0`}>
                 <Typography variant="subtitle1" color="textPrimary">
                   {activity.name}
                 </Typography>
+                <Box minHeight="min-content">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      const newSet: Omit<ActivitySet, 'id'> = {
+                        name: `Set ${activity.sets.length + 1}`,
+                        repCount: null,
+                        notes: null,
+                        status: ActivityStatus.Unattempted,
+                      };
+                      db.collection(DbPath.Users)
+                        .doc(user?.uid)
+                        .collection(DbPath.UserLogs)
+                        .doc(logId)
+                        .collection(DbPath.UserLogActivities)
+                        .doc(activity.id)
+                        .update({
+                          sets: firebase.firestore.FieldValue.arrayUnion(
+                            newSet
+                          ),
+                        })
+                        .catch(error => {
+                          alert(error.message);
+                        });
+                    }}
+                  >
+                    +
+                  </Button>
+                  <IconButton
+                    aria-label="Remove activity"
+                    onClick={() => {
+                      db.collection(DbPath.Users)
+                        .doc(user?.uid)
+                        .collection(DbPath.UserLogs)
+                        .doc(logId)
+                        .collection(DbPath.UserLogActivities)
+                        .doc(activity.id)
+                        .delete()
+                        .catch(error => {
+                          alert(error.message);
+                        });
+                    }}
+                  >
+                    <MoreHoriz />
+                  </IconButton>
+                </Box>
               </Rows>
               {activity.sets.map(({ name, repCount, status }, index, sets) => (
-                <Rows key={index} maxWidth between>
-                  <Typography variant="subtitle2" color="textPrimary">
+                <Rows key={index} maxWidth between padding={`0 ${Pad.Medium}`}>
+                  <Typography variant="subtitle2" color="textSecondary">
                     {name}
                   </Typography>
                   <p>{repCount}</p>
-                  <Box alignSelf="right">
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={() => {
-                        sets[index].status = Activity.cycleStatus(status);
-                        db.collection(DbPath.Users)
-                          .doc(user?.uid)
-                          .collection(DbPath.UserLogs)
-                          .doc(logId)
-                          .collection(DbPath.UserLogActivities)
-                          .doc(activity.id)
-                          .set({ sets }, { merge: true })
-                          .catch(error => {
-                            alert(error.message);
-                          });
-                      }}
-                    >
-                      {status}
-                    </Button>
-                  </Box>
+                  <ActivityStatusButton
+                    onClick={() => {
+                      sets[index].status = Activity.cycleStatus(status);
+                      db.collection(DbPath.Users)
+                        .doc(user?.uid)
+                        .collection(DbPath.UserLogs)
+                        .doc(logId)
+                        .collection(DbPath.UserLogActivities)
+                        .doc(activity.id)
+                        .set({ sets }, { merge: true })
+                        .catch(error => {
+                          alert(error.message);
+                        });
+                    }}
+                  >
+                    {status}
+                  </ActivityStatusButton>
                 </Rows>
               ))}
             </ActivityViewContainer>
