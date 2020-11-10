@@ -7,7 +7,8 @@ import { IconButton } from '@material-ui/core';
 
 const NavBarContainer = styled(Rows)`
   justify-content: space-between;
-  position: absolute;
+  position: fixed;
+  background-color: #fff;
   bottom: 0;
   padding: ${Pad.Small} ${Pad.Large};
   width: 100%;

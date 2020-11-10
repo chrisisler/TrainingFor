@@ -198,15 +198,22 @@ const ActivityViewContainer = styled(Columns)`
   padding: ${Pad.Medium} ${Pad.Small} ${Pad.Medium} ${Pad.Large};
 `;
 
+// TODO flex end
 const ActivityStatusButton = styled.button`
   font-size: 0.7em;
   color: lightgray;
-  align-self: flex-end;
   border: 0;
   font-weight: 800;
   background-color: transparent;
   text-transform: uppercase;
   outline: none;
+`;
+
+const ActivitiesListContainer = styled.div`
+  /** TODO height */
+  height: 65vh;
+  width: 100%;
+  overflow-y: scroll;
 `;
 
 const ActivitiesView: FC<{
@@ -240,7 +247,7 @@ const ActivitiesView: FC<{
   return (
     <DataStateView data={activities} error={() => null} loading={() => null}>
       {activities => (
-        <>
+        <ActivitiesListContainer>
           {activities.map(activity => (
             <ActivityViewContainer key={activity.id}>
               <Rows maxWidth center between padding={`${Pad.Small} 0`}>
@@ -296,7 +303,13 @@ const ActivitiesView: FC<{
                 </Box>
               </Rows>
               {activity.sets.map(({ name, repCount, status }, index, sets) => (
-                <Rows key={index} maxWidth between padding={`0 ${Pad.Medium}`}>
+                <Rows
+                  key={index}
+                  maxWidth
+                  center
+                  padding={`0 ${Pad.Medium}`}
+                  between
+                >
                   <Typography variant="subtitle2" color="textSecondary">
                     {name}
                   </Typography>
@@ -322,7 +335,7 @@ const ActivitiesView: FC<{
               ))}
             </ActivityViewContainer>
           ))}
-        </>
+        </ActivitiesListContainer>
       )}
     </DataStateView>
   );
