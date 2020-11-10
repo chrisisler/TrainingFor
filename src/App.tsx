@@ -21,14 +21,14 @@ export const App: FC = () => {
     <AppContainer>
       <Router>
         <Switch>
-          <Route path="/">
-            {user === null ? <Welcome /> : <StartTraining />}
-          </Route>
           <Route exact path="/signup">
             <SignUp />
           </Route>
           <Route exact path="/login">
             <LogIn />
+          </Route>
+          <Route path="/">
+            {user === null ? <Welcome /> : <StartTraining />}
           </Route>
         </Switch>
       </Router>

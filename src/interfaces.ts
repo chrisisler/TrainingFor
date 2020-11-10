@@ -6,6 +6,7 @@ interface FirestoreDocument {
 
 export interface User extends FirestoreDocument {
   displayName: string;
+  /** A Firebase collection. */
   logs: TrainingLog[];
 }
 
@@ -17,21 +18,30 @@ export interface TrainingLog extends FirestoreDocument {
 
 export interface Activity extends FirestoreDocument {
   name: string;
-  sets: ActivitySet[];
   notes: null | string;
   timestamp: null | firebase.firestore.FieldValue;
+  sets: ActivitySet[];
 }
 
-interface ActivitySet {
-  name: null | string;
+export interface ActivitySet {
+  name: string;
   repCount: null | number;
   notes: null | string;
   status: ActivityStatus;
-  // mediaUrl: null | string;
 }
 
-enum ActivityStatus {
+export enum ActivityStatus {
   Unattempted = 'unattempted',
   Completed = 'completed',
   Injured = 'injured',
 }
+
+// eslint-disable-next-line
+export const Activity = {
+  cycleStatus: (s: ActivityStatus): ActivityStatus => {
+    if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
+    if (s === ActivityStatus.Completed) return ActivityStatus.Injured;
+    if (s === ActivityStatus.Injured) return ActivityStatus.Unattempted;
+    throw Error('Unreachable');
+  },
+};

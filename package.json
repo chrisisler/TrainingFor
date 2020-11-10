@@ -41,7 +41,6 @@
   },
   "eslintConfig": {
     "extends": [
-      "eslint:recommended",
       "plugin:react-hooks/recommended",
       "prettier",
       "react-app",

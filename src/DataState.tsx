@@ -29,7 +29,7 @@ export const DataState = {
   isError: <T extends unknown>(ds: DataState<T>): ds is Error => {
     return ds instanceof Error;
   },
-  exists: <T extends unknown>(ds: DataState<T>): ds is T => {
+  isReady: <T extends unknown>(ds: DataState<T>): ds is T => {
     return (
       !DataState.isError(ds) &&
       !DataState.isLoading(ds) &&
@@ -65,8 +65,9 @@ export const DataStateView = <T extends unknown>(props: {
   children: (data: T) => JSX.Element | null;
   loading: () => JSX.Element | null;
   error: () => JSX.Element | null;
+  empty?: () => JSX.Element | null;
 }): JSX.Element | null => {
-  if (DataStateEmpty === props.data) return null;
+  if (DataStateEmpty === props.data) return props.empty?.() ?? null;
   if (DataState.isLoading(props.data)) return props.loading();
   if (DataState.isError(props.data)) return props.error();
   return props.children(props.data);

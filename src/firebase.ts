@@ -28,7 +28,6 @@ export enum DbPath {
   Users = 'users',
   UserLogs = 'logs',
   UserLogActivities = 'activities',
-  UserLogActivitySets = 'sets',
 }
 
 export { db, auth, storage };

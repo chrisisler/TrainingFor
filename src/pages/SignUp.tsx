@@ -57,11 +57,10 @@ export const SignUp: FC = () => {
         userCredential.user.updateProfile({ displayName });
         setUser(userCredential.user);
         history.push('/');
-        db.collection(DbPath.Users).add({
-          id: userCredential.user.uid,
-          logs: [],
+        const newUser: Omit<User, 'id' | 'logs'> = {
           displayName,
-        } as User);
+        };
+        db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
       } catch (error) {
         alert(error.message);
       }
