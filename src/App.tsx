@@ -43,6 +43,9 @@ export const App: FC = () => {
           <Route exact path="/login">
             <LogIn />
           </Route>
+          <Route exact path="/:logId">
+            <StartTraining />
+          </Route>
           <Route path="/">
             {user === null ? <Welcome /> : <StartTraining />}
           </Route>

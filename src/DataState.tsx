@@ -39,7 +39,7 @@ export const DataState = {
 };
 
 export const useDataState = <T extends unknown>(
-  getData: () => Promise<T>,
+  getData: () => Promise<DataState<T>>,
   deps: readonly unknown[]
 ): [DataState<T>, React.Dispatch<React.SetStateAction<DataState<T>>>] => {
   const [dataState, setDataState] = useState<DataState<T>>(DataState.Loading);
@@ -50,7 +50,7 @@ export const useDataState = <T extends unknown>(
         if (!stale) setDataState(data);
       })
       .catch(error => {
-        if (!stale) setDataState(Error(error.message));
+        if (!stale) setDataState(DataState.error(error.message));
       });
     return () => {
       stale = true;

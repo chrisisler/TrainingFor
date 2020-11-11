@@ -14,7 +14,8 @@ import {
   ActivityStatus,
 } from '../interfaces';
 import { db, DbPath } from '../firebase';
-import { DataState, DataStateView } from '../DataState';
+import { DataState, DataStateView, useDataState } from '../DataState';
+import { useParams, useHistory } from 'react-router-dom';
 
 const StartTrainingContainer = styled.div`
   height: 100vh;
@@ -50,15 +51,23 @@ const AddTrainingHeader = styled.nav`
 `;
 
 export const StartTraining: FC = () => {
-  /** The data and status of the Firebase document holding the training data. */
-  const [logDoc, setLogDoc] = useState<
-    DataState<firebase.firestore.DocumentReference<TrainingLog>>
-  >(DataState.Empty);
-
-  /** Controls the state of the activity name input. */
   const [activityName, setActivityName] = useState<string>('');
 
+  const history = useHistory();
   const [user] = useUser();
+  const { logId } = useParams<{ logId?: string }>();
+
+  const [logDoc, setLogDoc] = useDataState(
+    async () =>
+      logId
+        ? (db
+            .collection(DbPath.Users)
+            .doc(user?.uid)
+            .collection(DbPath.UserLogs)
+            .doc(logId) as firebase.firestore.DocumentReference<TrainingLog>)
+        : DataState.Empty,
+    [logId, user?.uid]
+  );
 
   const addLog = useCallback(() => {
     const newLog: Omit<TrainingLog, 'id'> = {
@@ -77,7 +86,7 @@ export const StartTraining: FC = () => {
         setLogDoc(DataState.error(error.message));
         alert(error.message);
       });
-  }, [user?.uid]);
+  }, [user?.uid, setLogDoc]);
 
   const addActivity = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
@@ -102,6 +111,21 @@ export const StartTraining: FC = () => {
     },
     [activityName, user?.uid, logDoc]
   );
+
+  const deleteLogDoc = useCallback(() => {
+    if (!window.confirm('Cancel training?')) return;
+    if (!DataState.isReady(logDoc)) return;
+    setLogDoc(DataState.Loading);
+    logDoc
+      .delete()
+      .then(() => {
+        setLogDoc(DataState.Empty);
+      })
+      .catch(error => {
+        setLogDoc(DataState.error(error.message));
+        alert(error.message);
+      });
+  }, [logDoc, setLogDoc]);
 
   return (
     <>
@@ -136,24 +160,20 @@ export const StartTraining: FC = () => {
               <IconButton
                 aria-label="Finish Training"
                 onClick={() => {
+                  if (logId) history.push('/');
                   setLogDoc(DataState.Empty);
                 }}
               >
                 <Save />
               </IconButton>
-              <IconButton
-                aria-label="Cancel Training"
-                onClick={() => {
-                  if (!window.confirm('Cancel training?')) return;
-                  logDoc.delete().catch(error => {
-                    setLogDoc(DataState.error(error.message));
-                    alert(error.message);
-                  });
-                  setLogDoc(DataState.Empty);
-                }}
-              >
-                <Close />
-              </IconButton>
+              {!logId && (
+                <IconButton
+                  aria-label="Delete Training Log"
+                  onClick={deleteLogDoc}
+                >
+                  <Close />
+                </IconButton>
+              )}
             </AddTrainingHeader>
             <Columns>
               <AddTrainingContainer pad={Pad.Medium}>

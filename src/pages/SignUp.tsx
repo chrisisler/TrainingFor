@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import firebase from 'firebase/app';
 
 import { auth, db, DbPath } from '../firebase';
 import { Columns, Pad } from '../style';
@@ -54,11 +55,12 @@ export const SignUp: FC = () => {
         setEmail('');
         setPassword('');
         if (!userCredential.user) throw Error('Unreachable');
-        userCredential.user.updateProfile({ displayName });
+        userCredential.user.updateProfile({ displayName }).catch(() => {});
         setUser(userCredential.user);
         history.push('/');
         const newUser: Omit<User, 'id' | 'logs'> = {
           displayName,
+          creationTime: firebase.firestore.FieldValue.serverTimestamp(),
         };
         db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
       } catch (error) {

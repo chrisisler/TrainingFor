@@ -4,22 +4,32 @@ interface FirestoreDocument {
   id: string;
 }
 
+/**
+ * The _actual_ return value of
+ * `firebase.firestore.FieldValue.serverTimestamp()`.
+ *
+ * Sometimes Firestore timestamps are null before they exist.
+ */
+type FirestoreTimestamp = null | firebase.firestore.FieldValue;
+
 export interface User extends FirestoreDocument {
+  creationTime: FirestoreTimestamp;
   displayName: string;
   /** A Firebase collection. */
   logs: TrainingLog[];
 }
 
 export interface TrainingLog extends FirestoreDocument {
-  timestamp: null | firebase.firestore.FieldValue;
+  timestamp: FirestoreTimestamp;
   notes: null | string;
+  /** A Firebase collection. */
   activities: Activity[];
 }
 
 export interface Activity extends FirestoreDocument {
   name: string;
   notes: null | string;
-  timestamp: null | firebase.firestore.FieldValue;
+  timestamp: FirestoreTimestamp;
   sets: ActivitySet[];
 }
 
