@@ -1,16 +1,19 @@
 import React, { FC } from 'react';
 import styled from 'styled-components';
 import { Add, Person, List } from '@material-ui/icons';
+import { IconButton } from '@material-ui/core';
 
 import { Rows, Pad } from '../style';
-import { IconButton } from '@material-ui/core';
+
+export const navBarHeight: number = 50;
 
 const NavBarContainer = styled(Rows)`
   justify-content: space-between;
   position: fixed;
   background-color: #fff;
   bottom: 0;
-  padding: ${Pad.Small} ${Pad.Large};
+  padding: 0 ${Pad.Large};
+  height: ${navBarHeight}px;
   width: 100%;
   border-top: 1px solid lightgray;
 `;
@@ -18,13 +21,13 @@ const NavBarContainer = styled(Rows)`
 export const NavBar: FC = () => {
   return (
     <NavBarContainer as="nav">
-      <IconButton aria-label="Navigate to timeline">
+      <IconButton aria-label="Navigate to timeline" href="timeline">
         <List />
       </IconButton>
-      <IconButton aria-label="Start Training">
+      <IconButton aria-label="Start Training" href="/">
         <Add />
       </IconButton>
-      <IconButton aria-label="Navigate to account">
+      <IconButton aria-label="Navigate to account" href="account">
         <Person />
       </IconButton>
     </NavBarContainer>

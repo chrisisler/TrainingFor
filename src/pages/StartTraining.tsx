@@ -136,7 +136,6 @@ export const StartTraining: FC = () => {
               <IconButton
                 aria-label="Finish Training"
                 onClick={() => {
-                  // Set the training log we're working on to nothing.
                   setLogDoc(DataState.Empty);
                 }}
               >
