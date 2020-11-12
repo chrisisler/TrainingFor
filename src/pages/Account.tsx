@@ -41,7 +41,7 @@ export const Account: FC = () => {
           ),
         error => setLogs(DataState.error(error.message))
       );
-  }, [user?.uid]);
+  }, [user, user?.uid]);
 
   if (!user) return null;
 

@@ -1,12 +1,19 @@
 import React, { FC, useCallback, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import firebase from 'firebase/app';
-import { Button, Typography, IconButton, Box } from '@material-ui/core';
-import { Close, MoreHoriz, Save } from '@material-ui/icons';
+import {
+  Button,
+  Typography,
+  IconButton,
+  Box,
+  CircularProgress,
+} from '@material-ui/core';
+import { Close, MoreHoriz, MoreVert, Save } from '@material-ui/icons';
+import { useParams, useHistory } from 'react-router-dom';
+import format from 'date-fns/format';
 
 import { Columns, Pad, Rows } from '../style';
 import { useUser } from '../useUser';
-import { NavBar } from '../components/NavBar';
 import {
   TrainingLog,
   Activity,
@@ -15,7 +22,6 @@ import {
 } from '../interfaces';
 import { db, DbPath } from '../firebase';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { useParams, useHistory } from 'react-router-dom';
 
 const StartTrainingContainer = styled.div`
   height: 100vh;
@@ -69,6 +75,14 @@ export const StartTraining: FC = () => {
     [logId, user?.uid]
   );
 
+  const [logDate] = useDataState<undefined | Date>(
+    async () =>
+      !DataState.isReady(logDoc)
+        ? DataState.Empty
+        : logDoc.get().then(doc => doc.get('timestamp')?.toDate()),
+    [logDoc]
+  );
+
   const addLog = useCallback(() => {
     const newLog: Omit<TrainingLog, 'id'> = {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -91,6 +105,7 @@ export const StartTraining: FC = () => {
   const addActivity = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
+      if (!activityName.length) return;
       const newActivity: Omit<Activity, 'id'> = {
         name: activityName,
         notes: null,
@@ -113,7 +128,7 @@ export const StartTraining: FC = () => {
   );
 
   const deleteLogDoc = useCallback(() => {
-    if (!window.confirm('Cancel training?')) return;
+    if (!window.confirm('Delete this training log forever?')) return;
     if (!DataState.isReady(logDoc)) return;
     setLogDoc(DataState.Loading);
     logDoc
@@ -128,93 +143,98 @@ export const StartTraining: FC = () => {
   }, [logDoc, setLogDoc]);
 
   return (
-    <>
-      <DataStateView
-        data={logDoc}
-        empty={() => (
-          <StartTrainingContainer>
-            <Columns pad={Pad.Large}>
-              <Typography variant="h4" color="textPrimary">
-                Start Training
-              </Typography>
-              <Button variant="contained" color="primary" onClick={addLog}>
-                Go
-              </Button>
-            </Columns>
-          </StartTrainingContainer>
-        )}
-        error={() => (
-          <Typography variant="h4" color="textPrimary">
-            Error
-          </Typography>
-        )}
-        loading={() => (
-          <Typography variant="h4" color="textPrimary">
-            Loading
-          </Typography>
-        )}
-      >
-        {logDoc => (
-          <Columns>
-            <AddTrainingHeader>
-              <IconButton
-                aria-label="Finish Training"
-                onClick={() => {
-                  if (logId) history.push('/');
-                  setLogDoc(DataState.Empty);
-                }}
-              >
-                <Save />
-              </IconButton>
-              {!logId && (
-                <IconButton
-                  aria-label="Delete Training Log"
-                  onClick={deleteLogDoc}
-                >
-                  <Close />
-                </IconButton>
-              )}
-            </AddTrainingHeader>
-            <Columns>
-              <AddTrainingContainer pad={Pad.Medium}>
-                <Typography variant="body1" color="textPrimary">
-                  {/** Date */}
-                  Thu, Sep 17
-                  <br />
-                  2:20 PM
-                </Typography>
-                <AddActivityContainer as="form" onSubmit={addActivity}>
-                  <AddActivityInput
-                    placeholder="Enter activity"
-                    value={activityName}
-                    onChange={event => setActivityName(event.target.value)}
-                  />
-                  {activityName.length > 0 && (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      style={{ margin: `0 0 0 ${Pad.Medium}` }}
-                      onClick={addActivity}
-                    >
-                      Add
-                    </Button>
-                  )}
-                </AddActivityContainer>
-              </AddTrainingContainer>
-              <ActivitiesView logId={logDoc.id} />
-            </Columns>
+    <DataStateView
+      data={logDoc}
+      empty={() => (
+        <StartTrainingContainer>
+          <Columns pad={Pad.Large}>
+            <Typography variant="h4" color="textPrimary">
+              Start Training
+            </Typography>
+            <Button variant="contained" color="primary" onClick={addLog}>
+              Go
+            </Button>
           </Columns>
-        )}
-      </DataStateView>
-      <NavBar />
-    </>
+        </StartTrainingContainer>
+      )}
+      error={() => (
+        <Typography variant="h4" color="textPrimary">
+          Error
+        </Typography>
+      )}
+      loading={() => (
+        <Typography variant="h4" color="textPrimary">
+          Loading
+        </Typography>
+      )}
+    >
+      {logDoc => (
+        <>
+          <AddTrainingHeader>
+            <IconButton
+              aria-label="Finish Training"
+              onClick={() => {
+                setLogDoc(DataState.Empty);
+                if (logId) history.push('/');
+              }}
+            >
+              <Save />
+            </IconButton>
+            <IconButton aria-label="Delete Training Log" onClick={deleteLogDoc}>
+              <Close />
+            </IconButton>
+          </AddTrainingHeader>
+          <Columns style={{ height: '100%' }}>
+            <AddTrainingContainer pad={Pad.Medium}>
+              <DataStateView
+                data={logDate}
+                error={() => null}
+                loading={() => (
+                  <Columns maxWidth between>
+                    <CircularProgress />
+                  </Columns>
+                )}
+              >
+                {logDate =>
+                  !logDate ? null : (
+                    <Typography variant="body1" color="textPrimary">
+                      {format(logDate, 'EEE, M-d')}
+                      <br />
+                      {format(logDate, 'h:mm b')}
+                    </Typography>
+                  )
+                }
+              </DataStateView>
+              <AddActivityContainer as="form" onSubmit={addActivity}>
+                <AddActivityInput
+                  placeholder="Enter activity"
+                  value={activityName}
+                  onChange={event => setActivityName(event.target.value)}
+                />
+                {activityName.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    style={{ margin: `0 0 0 ${Pad.Medium}` }}
+                    onClick={addActivity}
+                  >
+                    Add
+                  </Button>
+                )}
+              </AddActivityContainer>
+            </AddTrainingContainer>
+            <ActivitiesView logId={logDoc.id} />
+          </Columns>
+        </>
+      )}
+    </DataStateView>
   );
 };
 
 const ActivityViewContainer = styled(Columns)`
   width: 100%;
-  border-bottom: 1px solid lightgray;
-  padding: ${Pad.Medium} ${Pad.Small} ${Pad.Medium} ${Pad.Large};
+  /* border-top: 1px solid lightgray; */
+  padding: ${Pad.Medium} ${Pad.Small} ${Pad.Small} ${Pad.Large};
 `;
 
 // TODO flex end
@@ -229,15 +249,12 @@ const ActivityStatusButton = styled.button`
 `;
 
 const ActivitiesListContainer = styled.div`
-  /** TODO height */
-  height: 65vh;
+  height: 100%;
   width: 100%;
   overflow-y: scroll;
 `;
 
-const ActivitiesView: FC<{
-  logId: string;
-}> = ({ logId }) => {
+const ActivitiesView: FC<{ logId: string }> = ({ logId }) => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Empty
   );
@@ -326,30 +343,62 @@ const ActivitiesView: FC<{
                   key={index}
                   maxWidth
                   center
-                  padding={`0 ${Pad.Medium}`}
+                  padding={`0 ${Pad.Small}`}
                   between
                 >
-                  <Typography variant="subtitle2" color="textSecondary">
-                    {name}
-                  </Typography>
+                  <Rows center pad={Pad.Small}>
+                    <Typography
+                      variant="subtitle1"
+                      style={{ color: 'lightgray' }}
+                    >
+                      #{index + 1}
+                    </Typography>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      {name}
+                    </Typography>
+                  </Rows>
                   <p>{repCount}</p>
-                  <ActivityStatusButton
-                    onClick={() => {
-                      sets[index].status = Activity.cycleStatus(status);
-                      db.collection(DbPath.Users)
-                        .doc(user?.uid)
-                        .collection(DbPath.UserLogs)
-                        .doc(logId)
-                        .collection(DbPath.UserLogActivities)
-                        .doc(activity.id)
-                        .set({ sets }, { merge: true })
-                        .catch(error => {
-                          alert(error.message);
-                        });
-                    }}
-                  >
-                    {status}
-                  </ActivityStatusButton>
+                  <Rows center>
+                    <ActivityStatusButton
+                      onClick={() => {
+                        sets[index].status = Activity.cycleStatus(status);
+                        db.collection(DbPath.Users)
+                          .doc(user?.uid)
+                          .collection(DbPath.UserLogs)
+                          .doc(logId)
+                          .collection(DbPath.UserLogActivities)
+                          .doc(activity.id)
+                          .set({ sets }, { merge: true })
+                          .catch(error => {
+                            alert(error.message);
+                          });
+                      }}
+                    >
+                      {status}
+                    </ActivityStatusButton>
+                    <IconButton
+                      size="small"
+                      aria-label="Edit set"
+                      onClick={() => {
+                        const newName = window.prompt('Enter set name', name);
+                        if (!newName) return;
+                        sets[index].name = newName;
+                        // Update this activity's sets
+                        db.collection(DbPath.Users)
+                          .doc(user?.uid)
+                          .collection(DbPath.UserLogs)
+                          .doc(logId)
+                          .collection(DbPath.UserLogActivities)
+                          .doc(activity.id)
+                          .set({ sets }, { merge: true })
+                          .catch(error => {
+                            alert(error.message);
+                          });
+                      }}
+                    >
+                      <MoreVert fontSize="small" />
+                    </IconButton>
+                  </Rows>
                 </Rows>
               ))}
             </ActivityViewContainer>

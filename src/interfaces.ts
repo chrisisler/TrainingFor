@@ -52,13 +52,15 @@ export enum ActivityStatus {
   Unattempted = 'unattempted',
   Completed = 'completed',
   Injured = 'injured',
+  Skipped = 'skipped,',
 }
 
 // eslint-disable-next-line
 export const Activity = {
   cycleStatus: (s: ActivityStatus): ActivityStatus => {
     if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
-    if (s === ActivityStatus.Completed) return ActivityStatus.Injured;
+    if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;
+    if (s === ActivityStatus.Skipped) return ActivityStatus.Injured;
     if (s === ActivityStatus.Injured) return ActivityStatus.Unattempted;
     throw Error('Unreachable');
   },

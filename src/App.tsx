@@ -44,10 +44,20 @@ export const App: FC = () => {
             <LogIn />
           </Route>
           <Route exact path="/:logId">
-            <StartTraining />
+            <ViewWithNavBar>
+              <StartTraining />
+              <NavBar />
+            </ViewWithNavBar>
           </Route>
           <Route path="/">
-            {user === null ? <Welcome /> : <StartTraining />}
+            {user === null ? (
+              <Welcome />
+            ) : (
+              <ViewWithNavBar>
+                <StartTraining />
+                <NavBar />
+              </ViewWithNavBar>
+            )}
           </Route>
         </Switch>
       </Router>
