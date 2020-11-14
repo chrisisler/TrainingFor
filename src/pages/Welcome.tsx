@@ -28,7 +28,7 @@ export const Welcome: FC = () => {
         <Button variant="outlined" color="primary" href="signup">
           Sign Up
         </Button>
-        <Button variant="outlined" color="default" href="login">
+        <Button variant="outlined" href="login">
           Log In
         </Button>
       </WelcomeCard>

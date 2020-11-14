@@ -34,6 +34,8 @@ export interface Activity extends FirestoreDocument {
 }
 
 export interface ActivitySet {
+  /** ID generated from uuid.v4() */
+  uuid: string;
   name: string;
   repCount: null | number;
   notes: null | string;
