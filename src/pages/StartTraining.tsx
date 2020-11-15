@@ -5,7 +5,6 @@ import {
   Button,
   Typography,
   IconButton,
-  Box,
   CircularProgress,
   MenuItem,
   Menu,
@@ -28,7 +27,7 @@ import { db, DbPath } from '../firebase';
 import { DataState, DataStateView, useDataState } from '../DataState';
 
 const StartTrainingContainer = styled.div`
-  height: 100vh;
+  height: 100%;
   width: 100%;
   display: grid;
   place-items: center;
@@ -59,6 +58,8 @@ export const StartTraining: FC = () => {
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
+  // TODO Causes errors sometimes due to `logId` being void or `logDoc` being
+  // void
   const [logDoc, setLogDoc] = useDataState(
     async () =>
       !!logId
@@ -196,9 +197,9 @@ export const StartTraining: FC = () => {
                 {logDate =>
                   !logDate ? null : (
                     <Typography variant="body1" color="textPrimary">
-                      {format(logDate, 'EEE, M-d')}
+                      {format(logDate, 'EEE MMM d')}
                       <br />
-                      {format(logDate, 'h:mm b')}
+                      {format(logDate, 'h:mm a')}
                     </Typography>
                   )
                 }
@@ -341,7 +342,7 @@ const ActivityView: FC<{
 
   const renameActivity = () => {
     closeActivityMenu();
-    const newName = window.prompt('Update activity name', activity.name);
+    const newName = window.prompt('Update activity name');
     if (!newName) return;
     db.collection(DbPath.Users)
       .doc(user?.uid)
@@ -389,6 +390,7 @@ const ActivityView: FC<{
                 anchorEl={anchorEl}
                 open={!!anchorEl}
                 onClose={closeActivityMenu}
+                MenuListProps={{ dense: true }}
               >
                 <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                 <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
@@ -440,6 +442,28 @@ const ActivitySetView: FC<{
       });
   };
 
+  const duplicateSet = () => {
+    closeSetMenu();
+    const duplicateSet = {
+      ...sets[index],
+      uuid: uuid(),
+      notes: null,
+      status: ActivityStatus.Unattempted,
+    };
+    db.collection(DbPath.Users)
+      .doc(user?.uid)
+      .collection(DbPath.UserLogs)
+      .doc(logId)
+      .collection(DbPath.UserLogActivities)
+      .doc(activityId)
+      .update({
+        sets: firebase.firestore.FieldValue.arrayUnion(duplicateSet),
+      })
+      .catch(error => {
+        alert(error.message);
+      });
+  };
+
   const deleteSet = () => {
     closeSetMenu();
     db.collection(DbPath.Users)
@@ -458,7 +482,7 @@ const ActivitySetView: FC<{
 
   const renameSet = () => {
     closeSetMenu();
-    const newName = window.prompt('Update set name', set.name);
+    const newName = window.prompt('Update set name');
     if (!newName) return;
     sets[index].name = newName;
     db.collection(DbPath.Users)
@@ -505,9 +529,13 @@ const ActivitySetView: FC<{
               anchorEl={anchorEl}
               open={!!anchorEl}
               onClose={closeSetMenu}
+              MenuListProps={{ dense: true }}
             >
+              <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
               <MenuItem onClick={renameSet}>Rename set</MenuItem>
-              <MenuItem onClick={deleteSet}>Delete set</MenuItem>
+              <MenuItem onClick={deleteSet}>
+                <strong>Delete set</strong>
+              </MenuItem>
             </Menu>
           </div>
         </ClickAwayListener>
