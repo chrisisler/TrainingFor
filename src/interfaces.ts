@@ -20,6 +20,7 @@ export interface User extends FirestoreDocument {
 }
 
 export interface TrainingLog extends FirestoreDocument {
+  title: string;
   timestamp: FirestoreTimestamp;
   notes: null | string;
   /** A Firebase collection. */
@@ -54,7 +55,7 @@ export enum ActivityStatus {
   Unattempted = 'unattempted',
   Completed = 'completed',
   Injured = 'injured',
-  Skipped = 'skipped,',
+  Skipped = 'skipped',
 }
 
 // eslint-disable-next-line

@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Typography, CircularProgress, Button } from '@material-ui/core';
+import styled from '@emotion/styled';
+import { Typography, CircularProgress, IconButton } from '@material-ui/core';
 import firebase from 'firebase/app';
 import format from 'date-fns/format';
 
@@ -69,13 +69,20 @@ export const Account: FC = () => {
       >
         {logs => (
           <Columns padding={`0 0 0 ${Pad.Small}`}>
-            {logs.map(({ timestamp, id }) => {
+            {logs.map(({ id, title, timestamp }) => {
               const logDate = (timestamp as firebase.firestore.Timestamp)?.toDate();
               return (
                 <Rows key={id}>
-                  <Button href={`/${id}`}>
-                    {format(logDate, 'MMM d EEE h:mm a')}
-                  </Button>
+                  <IconButton href={`/${id}`}>
+                    <Columns>
+                      {title && (
+                        <Typography variant="subtitle2">{title}</Typography>
+                      )}
+                      <Typography variant="body1">
+                        {format(logDate, 'MMM d EEE h:mm a')}
+                      </Typography>
+                    </Columns>
+                  </IconButton>
                 </Rows>
               );
             })}

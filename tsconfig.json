@@ -17,6 +17,7 @@
     "noErrorTruncation": true,
     "noImplicitAny": false,
     "module": "esnext",
+    "noUnusedLocals": true,
     "noUnusedParameters": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,

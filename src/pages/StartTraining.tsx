@@ -1,5 +1,6 @@
 import React, { FC, useCallback, useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled from '@emotion/styled';
+import { css } from '@emotion/css';
 import firebase from 'firebase/app';
 import {
   Button,
@@ -10,7 +11,12 @@ import {
   Menu,
   ClickAwayListener,
 } from '@material-ui/core';
-import { Close, MoreHoriz, Save, FiberManualRecord } from '@material-ui/icons';
+import {
+  DeleteOutline,
+  MoreHoriz,
+  Done,
+  FiberManualRecord,
+} from '@material-ui/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import format from 'date-fns/format';
 import { v4 as uuid } from 'uuid';
@@ -33,9 +39,7 @@ const StartTrainingContainer = styled.div`
   place-items: center;
 `;
 
-const AddActivityInput = styled.input.attrs(() => ({
-  type: 'text',
-}))`
+const AddActivityInput = styled.input`
   box-sizing: content-box;
   width: 100%;
   padding: ${Pad.Medium};
@@ -44,25 +48,17 @@ const AddActivityInput = styled.input.attrs(() => ({
   font-size: 1em;
 `;
 
-const AddTrainingHeader = styled.nav`
-  display: flex;
-  width: 100%;
-  padding: ${Pad.XSmall} ${Pad.Medium};
-  justify-content: flex-end;
-`;
-
 export const StartTraining: FC = () => {
+  const [logTitle, setLogTitle] = useState<string>('');
   const [activityName, setActivityName] = useState<string>('');
 
   const history = useHistory();
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
-  // TODO Causes errors sometimes due to `logId` being void or `logDoc` being
-  // void
   const [logDoc, setLogDoc] = useDataState(
     async () =>
-      !!logId
+      !!logId && !!user
         ? (db
             .collection(DbPath.Users)
             .doc(user?.uid)
@@ -80,8 +76,32 @@ export const StartTraining: FC = () => {
     [logDoc]
   );
 
+  const exitTraining = useCallback(() => {
+    setLogDoc(DataState.Empty);
+    if (logId) history.push('/');
+  }, [logId, setLogDoc, history]);
+
+  const renameLog = useCallback(() => {
+    const title = window.prompt('Update training log title');
+    if (!title) return;
+    db.collection(DbPath.Users)
+      .doc(user?.uid)
+      .collection(DbPath.UserLogs)
+      .doc(logId)
+      .set(
+        {
+          title,
+        } as Partial<TrainingLog>,
+        { merge: true }
+      )
+      .catch(error => {
+        alert(error.message);
+      });
+  }, [user?.uid, logId]);
+
   const addLog = useCallback(() => {
     const newLog: Omit<TrainingLog, 'id'> = {
+      title: logTitle,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       activities: [],
       notes: null,
@@ -94,11 +114,10 @@ export const StartTraining: FC = () => {
         setLogDoc(docRef as firebase.firestore.DocumentReference<TrainingLog>);
       })
       .catch(error => {
-        console.log('error is:', error);
         alert(error.message);
         setLogDoc(DataState.error(error.message));
       });
-  }, [user?.uid, setLogDoc]);
+  }, [logTitle, user?.uid, setLogDoc]);
 
   const addActivity = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
@@ -122,7 +141,6 @@ export const StartTraining: FC = () => {
         });
       setActivityName('');
     },
-
     [activityName, user?.uid, logDoc]
   );
 
@@ -146,10 +164,25 @@ export const StartTraining: FC = () => {
       data={logDoc}
       empty={() => (
         <StartTrainingContainer>
-          <Columns pad={Pad.Large}>
-            <Typography variant="h4" color="textPrimary">
+          <Columns pad={Pad.Medium}>
+            <Typography variant="h4" color="textPrimary" gutterBottom>
               Start Training
             </Typography>
+            <input
+              className={css`
+                width: 100%;
+                padding: ${Pad.XSmall} ${Pad.Medium};
+                border-radius: 3px;
+                outline: 0;
+                text-align: center;
+                border: 1px solid lightgray;
+                font-size: 1em;
+              `}
+              type="text"
+              placeholder="Title"
+              value={logTitle}
+              onChange={event => setLogTitle(event.target.value)}
+            />
             <Button variant="contained" color="primary" onClick={addLog}>
               Go
             </Button>
@@ -163,27 +196,26 @@ export const StartTraining: FC = () => {
       )}
       loading={() => (
         <Typography variant="h4" color="textPrimary">
-          Loading
+          <CircularProgress />
         </Typography>
       )}
     >
       {logDoc => (
         <Columns style={{ height: '100%' }}>
-          <AddTrainingHeader>
-            <IconButton
-              aria-label="Finish Training"
-              onClick={() => {
-                setLogDoc(DataState.Empty);
-                if (logId) history.push('/');
-              }}
-            >
-              <Save />
+          <Rows between center maxWidth padding={`${Pad.XSmall} ${Pad.Medium}`}>
+            <IconButton aria-label="Exit training" onClick={exitTraining}>
+              <Done color="primary" />
             </IconButton>
-            <IconButton aria-label="Delete Training Log" onClick={deleteLogDoc}>
-              <Close />
+            <IconButton aria-label="Edit log name" onClick={renameLog}>
+              <Typography variant="subtitle1" color="textSecondary">
+                {logTitle}
+              </Typography>
             </IconButton>
-          </AddTrainingHeader>
-          <Columns pad={Pad.Medium} padding={`0 ${Pad.Large}`}>
+            <IconButton aria-label="Delete training log" onClick={deleteLogDoc}>
+              <DeleteOutline color="action" />
+            </IconButton>
+          </Rows>
+          <Columns pad={Pad.Small} padding={`0 ${Pad.Large}`}>
             <DataStateView
               data={logDate}
               error={() => null}
@@ -205,7 +237,8 @@ export const StartTraining: FC = () => {
             </DataStateView>
             <Rows maxWidth as="form" onSubmit={addActivity}>
               <AddActivityInput
-                placeholder="Enter activity"
+                type="text"
+                placeholder="Activity Name"
                 value={activityName}
                 onChange={event => setActivityName(event.target.value)}
               />
@@ -348,7 +381,7 @@ const ActivityView: FC<{
       .doc(logId)
       .collection(DbPath.UserLogActivities)
       .doc(activity.id)
-      .set({ name: newName }, { merge: true })
+      .set({ name: newName } as Partial<Activity>, { merge: true })
       .catch(error => {
         alert(error.message);
       });

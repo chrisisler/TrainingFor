@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import styled from 'styled-components';
+import styled from '@emotion/styled';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import { Welcome } from './pages/Welcome';
