@@ -168,7 +168,7 @@ export const StartTraining: FC = () => {
       )}
     >
       {logDoc => (
-        <>
+        <Columns style={{ height: '100%' }}>
           <AddTrainingHeader>
             <IconButton
               aria-label="Finish Training"
@@ -183,48 +183,46 @@ export const StartTraining: FC = () => {
               <Close />
             </IconButton>
           </AddTrainingHeader>
-          <Columns style={{ height: '100%' }}>
-            <Columns pad={Pad.Medium} padding={`0 ${Pad.Large}`}>
-              <DataStateView
-                data={logDate}
-                error={() => null}
-                loading={() => (
-                  <Columns maxWidth between>
-                    <CircularProgress />
-                  </Columns>
-                )}
-              >
-                {logDate =>
-                  !logDate ? null : (
-                    <Typography variant="body1" color="textPrimary">
-                      {format(logDate, 'EEE MMM d')}
-                      <br />
-                      {format(logDate, 'h:mm a')}
-                    </Typography>
-                  )
-                }
-              </DataStateView>
-              <Rows maxWidth as="form" onSubmit={addActivity}>
-                <AddActivityInput
-                  placeholder="Enter activity"
-                  value={activityName}
-                  onChange={event => setActivityName(event.target.value)}
-                />
-                {activityName.length > 0 && (
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    style={{ margin: `0 0 0 ${Pad.Medium}` }}
-                    onClick={addActivity}
-                  >
-                    Add
-                  </Button>
-                )}
-              </Rows>
-            </Columns>
-            <ActivitiesView logId={logDoc.id} />
+          <Columns pad={Pad.Medium} padding={`0 ${Pad.Large}`}>
+            <DataStateView
+              data={logDate}
+              error={() => null}
+              loading={() => (
+                <Columns maxWidth between>
+                  <CircularProgress />
+                </Columns>
+              )}
+            >
+              {logDate =>
+                !logDate ? null : (
+                  <Typography variant="body1" color="textPrimary">
+                    {format(logDate, 'EEE MMM d')}
+                    <br />
+                    {format(logDate, 'h:mm a')}
+                  </Typography>
+                )
+              }
+            </DataStateView>
+            <Rows maxWidth as="form" onSubmit={addActivity}>
+              <AddActivityInput
+                placeholder="Enter activity"
+                value={activityName}
+                onChange={event => setActivityName(event.target.value)}
+              />
+              {activityName.length > 0 && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  style={{ margin: `0 0 0 ${Pad.Medium}` }}
+                  onClick={addActivity}
+                >
+                  Add
+                </Button>
+              )}
+            </Rows>
           </Columns>
-        </>
+          <ActivitiesView logId={logDoc.id} />
+        </Columns>
       )}
     </DataStateView>
   );
