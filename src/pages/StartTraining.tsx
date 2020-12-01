@@ -11,12 +11,7 @@ import {
   Menu,
   ClickAwayListener,
 } from '@material-ui/core';
-import {
-  DeleteOutline,
-  MoreHoriz,
-  Done,
-  FiberManualRecord,
-} from '@material-ui/icons';
+import { DeleteOutline, MoreHoriz, Done } from '@material-ui/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import format from 'date-fns/format';
 import { v4 as uuid } from 'uuid';
@@ -82,7 +77,7 @@ export const StartTraining: FC = () => {
   }, [logId, setLogDoc, history]);
 
   const renameLog = useCallback(() => {
-    const title = window.prompt('Update training log title');
+    const title = window.prompt('Update training log title', logTitle);
     if (!title) return;
     db.collection(DbPath.Users)
       .doc(user?.uid)
@@ -97,7 +92,7 @@ export const StartTraining: FC = () => {
       .catch(error => {
         alert(error.message);
       });
-  }, [user?.uid, logId]);
+  }, [user?.uid, logId, logTitle]);
 
   const addLog = useCallback(() => {
     const newLog: Omit<TrainingLog, 'id'> = {
@@ -201,7 +196,11 @@ export const StartTraining: FC = () => {
       )}
     >
       {logDoc => (
-        <Columns style={{ height: '100%' }}>
+        <Columns
+          className={css`
+            height: 100%;
+          `}
+        >
           <Rows between center maxWidth padding={`${Pad.XSmall} ${Pad.Medium}`}>
             <IconButton aria-label="Exit training" onClick={exitTraining}>
               <Done color="primary" />
@@ -218,7 +217,7 @@ export const StartTraining: FC = () => {
           <Columns pad={Pad.Small} padding={`0 ${Pad.Large}`}>
             <DataStateView
               data={logDate}
-              error={() => null}
+              error={() => <>Error</>}
               loading={() => (
                 <Columns maxWidth between>
                   <CircularProgress />
@@ -246,7 +245,9 @@ export const StartTraining: FC = () => {
                 <Button
                   variant="outlined"
                   color="primary"
-                  style={{ margin: `0 0 0 ${Pad.Medium}` }}
+                  className={css`
+                    margin: 0 0 0 ${Pad.Medium};
+                  `}
                   onClick={addActivity}
                 >
                   Add
@@ -263,15 +264,21 @@ export const StartTraining: FC = () => {
 
 const ActivityViewContainer = styled(Columns)`
   width: 100%;
-  /* border-top: 1px solid lightgray; */
   padding: ${Pad.Medium} ${Pad.Small} ${Pad.Small} ${Pad.Large};
 `;
 
-// TODO flex end
 const ActivityStatusButton = styled.button`
-  font-size: 0.7em;
   color: lightgray;
+  font-size: 0.72em;
   border: 0;
+  border-right: 1px solid
+    ${(props: { status: ActivityStatus }) => {
+      if (props.status === ActivityStatus.Unattempted) return 'lightgray';
+      if (props.status === ActivityStatus.Completed) return 'green';
+      if (props.status === ActivityStatus.Skipped) return 'orange';
+      if (props.status === ActivityStatus.Injured) return 'red';
+      throw Error('Unreachable');
+    }};
   font-weight: 800;
   background-color: transparent;
   text-transform: uppercase;
@@ -373,7 +380,7 @@ const ActivityView: FC<{
 
   const renameActivity = () => {
     closeActivityMenu();
-    const newName = window.prompt('Update activity name');
+    const newName = window.prompt('Update activity name', activity.name);
     if (!newName) return;
     db.collection(DbPath.Users)
       .doc(user?.uid)
@@ -395,8 +402,11 @@ const ActivityView: FC<{
         </Typography>
         <Rows center>
           <Button
-            style={{ height: 'min-content' }}
-            variant="outlined"
+            className={css`
+              height: min-content;
+            `}
+            variant="contained"
+            color="primary"
             size="small"
             onClick={addSet}
           >
@@ -410,9 +420,10 @@ const ActivityView: FC<{
                 aria-haspopup="true"
                 onClick={openActivityMenu}
               >
-                <FiberManualRecord
-                  fontSize="small"
-                  style={{ color: 'lightgray' }}
+                <MoreHoriz
+                  className={css`
+                    color: lightgray;
+                  `}
                 />
               </IconButton>
               <Menu
@@ -457,8 +468,10 @@ const ActivitySetView: FC<{
 
   const [user] = useUser();
 
+  /** The ActivitySet this ActivitySetView is rendering. */
   const set = sets[index];
 
+  /** Cycle the ActivityStatus value of this set. */
   const cycleSetStatus = () => {
     sets[index].status = Activity.cycleStatus(set.status);
     db.collection(DbPath.Users)
@@ -473,6 +486,7 @@ const ActivitySetView: FC<{
       });
   };
 
+  /** Duplicate this set, except for its ActivityStatus. */
   const duplicateSet = () => {
     closeSetMenu();
     const duplicateSet = {
@@ -513,7 +527,7 @@ const ActivitySetView: FC<{
 
   const renameSet = () => {
     closeSetMenu();
-    const newName = window.prompt('Update set name');
+    const newName = window.prompt('Update set name', set.name);
     if (!newName) return;
     sets[index].name = newName;
     db.collection(DbPath.Users)
@@ -531,7 +545,12 @@ const ActivitySetView: FC<{
   return (
     <Rows maxWidth center padding={`0 ${Pad.Small}`} between>
       <Rows center pad={Pad.Small}>
-        <Typography variant="subtitle1" style={{ color: 'lightgray' }}>
+        <Typography
+          variant="subtitle1"
+          className={css`
+            color: lightgray;
+          `}
+        >
           #{index + 1}
         </Typography>
         <Typography variant="subtitle2" color="textSecondary">
@@ -539,8 +558,8 @@ const ActivitySetView: FC<{
         </Typography>
       </Rows>
       <p>{set.repCount}</p>
-      <Rows center>
-        <ActivityStatusButton onClick={cycleSetStatus}>
+      <Rows center pad={Pad.XSmall}>
+        <ActivityStatusButton status={set.status} onClick={cycleSetStatus}>
           {set.status}
         </ActivityStatusButton>
         <ClickAwayListener onClickAway={closeSetMenu}>
@@ -552,7 +571,11 @@ const ActivitySetView: FC<{
               aria-haspopup="true"
               onClick={openSetMenu}
             >
-              <MoreHoriz fontSize="small" style={{ color: 'lightgray' }} />
+              <MoreHoriz
+                className={css`
+                  color: lightgray;
+                `}
+              />
             </IconButton>
             <Menu
               id="set-menu"

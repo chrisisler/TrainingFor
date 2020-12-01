@@ -29,7 +29,10 @@ export const App: FC = () => {
       <Router>
         <Switch>
           <Route exact path="/timeline">
+            <ViewWithNavBar>
             <div>Unimplemented</div>
+              <NavBar />
+            </ViewWithNavBar>
           </Route>
           <Route exact path="/account">
             <ViewWithNavBar>

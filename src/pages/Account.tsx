@@ -1,5 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
 import styled from '@emotion/styled';
+import { css } from '@emotion/css';
 import { Typography, CircularProgress, IconButton } from '@material-ui/core';
 import firebase from 'firebase/app';
 import format from 'date-fns/format';
@@ -44,7 +45,10 @@ export const Account: FC = () => {
     <Columns
       pad={Pad.Small}
       padding={Pad.Large}
-      style={{ height: '100%', overflowY: 'scroll' }}
+      className={css`
+        height: 100%;
+        overflow-y: scroll;
+      `}
     >
       <Typography variant="h4" color="textSecondary" gutterBottom>
         {user.displayName}
