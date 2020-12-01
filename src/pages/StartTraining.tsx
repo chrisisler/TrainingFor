@@ -77,18 +77,16 @@ export const StartTraining: FC = () => {
   }, [logId, setLogDoc, history]);
 
   const renameLog = useCallback(() => {
-    const title = window.prompt('Update training log title', logTitle);
-    if (!title) return;
+    const newTitle = window.prompt('Update training log title', logTitle);
+    if (!newTitle) return;
     db.collection(DbPath.Users)
       .doc(user?.uid)
       .collection(DbPath.UserLogs)
       .doc(logId)
-      .set(
-        {
-          title,
-        } as Partial<TrainingLog>,
-        { merge: true }
-      )
+      .set({ title: newTitle } as Partial<TrainingLog>, { merge: true })
+      .then(() => {
+        setLogTitle(newTitle);
+      })
       .catch(error => {
         alert(error.message);
       });
@@ -471,7 +469,6 @@ const ActivitySetView: FC<{
   /** The ActivitySet this ActivitySetView is rendering. */
   const set = sets[index];
 
-  /** Cycle the ActivityStatus value of this set. */
   const cycleSetStatus = () => {
     sets[index].status = Activity.cycleStatus(set.status);
     db.collection(DbPath.Users)
