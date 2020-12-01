@@ -205,7 +205,7 @@ export const StartTraining: FC = () => {
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>
               <Typography variant="subtitle1" color="textSecondary">
-                {logTitle}
+                {logTitle === '' ? 'Title' : logTitle}
               </Typography>
             </IconButton>
             <IconButton aria-label="Delete training log" onClick={deleteLogDoc}>
