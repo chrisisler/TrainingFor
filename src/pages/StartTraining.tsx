@@ -25,7 +25,7 @@ import {
   ActivityStatus,
 } from '../interfaces';
 import { db, DbPath } from '../firebase';
-import { DataState, DataStateView, useDataState } from '../DataState';
+import { DataState, DataStateView } from '../DataState';
 
 const StartTrainingContainer = styled.div`
   height: 100%;
@@ -44,57 +44,42 @@ const AddActivityInput = styled.input`
 `;
 
 export const StartTraining: FC = () => {
-  const [logTitle, setLogTitle] = useState<string>('');
   const [activityName, setActivityName] = useState<string>('');
 
   const history = useHistory();
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
-  const [logDoc, setLogDoc] = useDataState(
-    async () =>
-      !!logId && !!user
-        ? (db
-            .collection(DbPath.Users)
-            .doc(user?.uid)
-            .collection(DbPath.UserLogs)
-            .doc(logId) as firebase.firestore.DocumentReference<TrainingLog>)
-        : DataState.Empty,
-    [logId, user?.uid]
+  const [logDoc, setLogDoc] = useState<
+    DataState<firebase.firestore.DocumentReference<TrainingLog>>
+  >(DataState.Empty);
+  const [logData, setLogData] = useState<DataState<TrainingLog>>(
+    DataState.Empty
   );
 
-  const [logDate] = useDataState<undefined | Date>(
-    async () =>
-      !DataState.isReady(logDoc)
-        ? DataState.Empty
-        : logDoc.get().then(doc => doc.get('timestamp')?.toDate()),
-    [logDoc]
+  const logDate = DataState.map(logData, _ =>
+    (_.timestamp as firebase.firestore.Timestamp)?.toDate()
   );
 
-  const exitTraining = useCallback(() => {
-    setLogDoc(DataState.Empty);
-    if (logId) history.push('/');
-  }, [logId, setLogDoc, history]);
-
-  const renameLog = useCallback(() => {
-    const newTitle = window.prompt('Update training log title', logTitle);
-    if (!newTitle) return;
-    db.collection(DbPath.Users)
+  useEffect(() => {
+    if (!logId || !user) return;
+    return db
+      .collection(DbPath.Users)
       .doc(user?.uid)
       .collection(DbPath.UserLogs)
       .doc(logId)
-      .set({ title: newTitle } as Partial<TrainingLog>, { merge: true })
-      .then(() => {
-        setLogTitle(newTitle);
-      })
-      .catch(error => {
-        alert(error.message);
-      });
-  }, [user?.uid, logId, logTitle]);
+      .onSnapshot(
+        s => {
+          setLogDoc(s.ref as firebase.firestore.DocumentReference<TrainingLog>);
+          setLogData(s.data() as TrainingLog);
+        },
+        err => setLogDoc(DataState.error(err.message))
+      );
+  }, [logId, user]);
 
   const addLog = useCallback(() => {
     const newLog: Omit<TrainingLog, 'id'> = {
-      title: logTitle,
+      title: '',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       activities: [],
       notes: null,
@@ -103,14 +88,35 @@ export const StartTraining: FC = () => {
       .doc(user?.uid)
       .collection(DbPath.UserLogs)
       .add(newLog)
-      .then(docRef => {
-        setLogDoc(docRef as firebase.firestore.DocumentReference<TrainingLog>);
+      .then(ref => {
+        setLogDoc(ref as firebase.firestore.DocumentReference<TrainingLog>);
+        return ref.get();
+      })
+      .then(snapshot => {
+        setLogData({ ...snapshot.data(), id: snapshot.id } as TrainingLog);
       })
       .catch(error => {
         alert(error.message);
-        setLogDoc(DataState.error(error.message));
       });
-  }, [logTitle, user?.uid, setLogDoc]);
+  }, [user?.uid]);
+
+  const exitTraining = useCallback(() => {
+    setLogDoc(DataState.Empty);
+    if (logId) history.push('/');
+  }, [logId, setLogDoc, history]);
+
+  const renameLog = useCallback(() => {
+    const newTitle = window.prompt('Update training log title');
+    if (!newTitle) return;
+    db.collection(DbPath.Users)
+      .doc(user?.uid)
+      .collection(DbPath.UserLogs)
+      .doc(logId)
+      .set({ title: newTitle } as Partial<TrainingLog>, { merge: true })
+      .catch(error => {
+        alert(error.message);
+      });
+  }, [user?.uid, logId]);
 
   const addActivity = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
@@ -138,8 +144,8 @@ export const StartTraining: FC = () => {
   );
 
   const deleteLogDoc = useCallback(() => {
-    if (!window.confirm('Delete this training log forever?')) return;
     if (!DataState.isReady(logDoc)) return;
+    if (!window.confirm('Delete this training log forever?')) return;
     setLogDoc(DataState.Loading);
     logDoc
       .delete()
@@ -161,21 +167,6 @@ export const StartTraining: FC = () => {
             <Typography variant="h4" color="textPrimary" gutterBottom>
               Start Training
             </Typography>
-            <input
-              className={css`
-                width: 100%;
-                padding: ${Pad.XSmall} ${Pad.Medium};
-                border-radius: 3px;
-                outline: 0;
-                text-align: center;
-                border: 1px solid lightgray;
-                font-size: 1em;
-              `}
-              type="text"
-              placeholder="Title"
-              value={logTitle}
-              onChange={event => setLogTitle(event.target.value)}
-            />
             <Button variant="contained" color="primary" onClick={addLog}>
               Go
             </Button>
@@ -199,39 +190,34 @@ export const StartTraining: FC = () => {
             height: 100%;
           `}
         >
-          <Rows between center maxWidth padding={`${Pad.XSmall} ${Pad.Medium}`}>
+          <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
             <IconButton aria-label="Exit training" onClick={exitTraining}>
               <Done color="primary" />
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>
               <Typography variant="subtitle1" color="textSecondary">
-                {logTitle === '' ? 'Title' : logTitle}
+                {DataState.isReady(logData) && logData.title}
               </Typography>
             </IconButton>
             <IconButton aria-label="Delete training log" onClick={deleteLogDoc}>
               <DeleteOutline color="action" />
             </IconButton>
           </Rows>
-          <Columns pad={Pad.Small} padding={`0 ${Pad.Large}`}>
-            <DataStateView
-              data={logDate}
-              error={() => <>Error</>}
-              loading={() => (
-                <Columns maxWidth between>
-                  <CircularProgress />
-                </Columns>
-              )}
-            >
-              {logDate =>
-                !logDate ? null : (
-                  <Typography variant="body1" color="textPrimary">
-                    {format(logDate, 'EEE MMM d')}
-                    <br />
-                    {format(logDate, 'h:mm a')}
-                  </Typography>
-                )
-              }
-            </DataStateView>
+          <Columns
+            pad={Pad.Small}
+            padding={`0 ${Pad.Large} ${Pad.Medium}`}
+            className={css`
+              border-bottom: 1px solid lightgray;
+            `}
+          >
+            {DataState.isReady(logDate) &&
+              (!logDate ? null : (
+                <Typography variant="body1" color="textPrimary">
+                  {format(logDate, 'EEE MMM d')}
+                  <br />
+                  {format(logDate, 'h:mm a')}
+                </Typography>
+              ))}
             <Rows maxWidth as="form" onSubmit={addActivity}>
               <AddActivityInput
                 type="text"
@@ -269,7 +255,7 @@ const ActivityStatusButton = styled.button`
   color: lightgray;
   font-size: 0.72em;
   border: 0;
-  border-right: 1px solid
+  border-left: 1px solid
     ${(props: { status: ActivityStatus }) => {
       if (props.status === ActivityStatus.Unattempted) return 'lightgray';
       if (props.status === ActivityStatus.Completed) return 'green';
@@ -316,7 +302,15 @@ const ActivitiesView: FC<{ logId: string }> = ({ logId }) => {
   }, [user?.uid, logId]);
 
   return (
-    <DataStateView data={activities} error={() => null} loading={() => null}>
+    <DataStateView
+      data={activities}
+      error={() => null}
+      loading={() => (
+        <Columns maxWidth between>
+          <CircularProgress />
+        </Columns>
+      )}
+    >
       {activities => (
         <ActivitiesListContainer>
           {activities.map(a => (

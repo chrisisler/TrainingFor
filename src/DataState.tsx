@@ -36,6 +36,13 @@ export const DataState = {
       ds !== DataStateEmpty
     );
   },
+  map: <T extends unknown, U extends unknown>(
+    ds: DataState<T>,
+    fn: (arg: T) => U
+  ): DataState<U> => {
+    if (!DataState.isReady(ds)) return ds;
+    return fn(ds);
+  },
 };
 
 export const useDataState = <T extends unknown>(
