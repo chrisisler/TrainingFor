@@ -21,13 +21,13 @@ const NavBarContainer = styled(Rows)`
 export const NavBar: FC = () => {
   return (
     <NavBarContainer as="nav">
-      <IconButton aria-label="Navigate to timeline" href="timeline">
+      <IconButton aria-label="Navigate to timeline" href="/timeline">
         <List />
       </IconButton>
       <IconButton aria-label="Start Training" href="/">
         <Add />
       </IconButton>
-      <IconButton aria-label="Navigate to account" href="account">
+      <IconButton aria-label="Navigate to account" href="/account">
         <Person />
       </IconButton>
     </NavBarContainer>

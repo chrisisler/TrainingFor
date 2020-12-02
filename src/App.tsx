@@ -30,7 +30,7 @@ export const App: FC = () => {
         <Switch>
           <Route exact path="/timeline">
             <ViewWithNavBar>
-            <div>Unimplemented</div>
+              <div>Unimplemented</div>
               <NavBar />
             </ViewWithNavBar>
           </Route>
@@ -46,7 +46,7 @@ export const App: FC = () => {
           <Route exact path="/login">
             <LogIn />
           </Route>
-          <Route exact path="/:logId">
+          <Route exact path="/log/:logId">
             <ViewWithNavBar>
               <StartTraining />
               <NavBar />

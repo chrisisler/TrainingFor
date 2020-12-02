@@ -50,6 +50,7 @@ export const StartTraining: FC = () => {
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
+  // TODO Fuse these two states into a DocumentSnapshot
   const [logDoc, setLogDoc] = useState<
     DataState<firebase.firestore.DocumentReference<TrainingLog>>
   >(DataState.Empty);
@@ -58,9 +59,10 @@ export const StartTraining: FC = () => {
   );
 
   const logDate = DataState.map(logData, _ =>
-    (_.timestamp as firebase.firestore.Timestamp)?.toDate()
+    _ ? (_.timestamp as firebase.firestore.Timestamp)?.toDate() : null
   );
 
+  // Subscribe to updates to the TrainingLog ID from the URL
   useEffect(() => {
     if (!logId || !user) return;
     return db
@@ -79,7 +81,7 @@ export const StartTraining: FC = () => {
 
   const addLog = useCallback(() => {
     const newLog: Omit<TrainingLog, 'id'> = {
-      title: '',
+      title: 'Title',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       activities: [],
       notes: null,
@@ -102,10 +104,11 @@ export const StartTraining: FC = () => {
 
   const exitTraining = useCallback(() => {
     setLogDoc(DataState.Empty);
-    if (logId) history.push('/');
-  }, [logId, setLogDoc, history]);
+    if (window.location.pathname !== '/') history.push('/');
+  }, [setLogDoc, history]);
 
   const renameLog = useCallback(() => {
+    // TODO logTitle default
     const newTitle = window.prompt('Update training log title');
     if (!newTitle) return;
     db.collection(DbPath.Users)

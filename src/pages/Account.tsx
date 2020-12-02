@@ -6,7 +6,7 @@ import firebase from 'firebase/app';
 import { useHistory } from 'react-router-dom';
 import format from 'date-fns/format';
 
-import { Rows, Pad, Columns } from '../style';
+import { Pad, Columns } from '../style';
 import { useUser } from '../useUser';
 import { db, DbPath } from '../firebase';
 import { TrainingLog } from '../interfaces';
@@ -74,13 +74,13 @@ export const Account: FC = () => {
         )}
       >
         {logs => (
-          <Columns padding={`0 0 0 0`} pad={Pad.Large}>
+          <Columns pad={Pad.Large}>
             {logs.map(({ id, title, timestamp }) => {
               const logDate = (timestamp as firebase.firestore.Timestamp)?.toDate();
               return (
                 <Columns
                   key={id}
-                  onClick={() => history.push(`/${id}`)}
+                  onClick={() => history.push(`/log/${id}`)}
                   className={css`
                     border-radius: 5px;
                     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
