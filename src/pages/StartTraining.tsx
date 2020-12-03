@@ -15,6 +15,7 @@ import { DeleteOutline, MoreHoriz, Done } from '@material-ui/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import format from 'date-fns/format';
 import { v4 as uuid } from 'uuid';
+import FlipMove from 'react-flip-move';
 
 import { Columns, Pad, Rows } from '../style';
 import { useUser } from '../useUser';
@@ -317,14 +318,23 @@ const ActivitiesView: FC<{ logId: string }> = ({ logId }) => {
     >
       {activities => (
         <ActivitiesListContainer>
-          {activities.map(a => (
-            <ActivityView key={a.id} logId={logId} activity={a} />
-          ))}
+          <FlipMove enterAnimation="fade" leaveAnimation="fade">
+            {activities.map(activity => (
+              <FlipMoveChild key={activity.id}>
+                <ActivityView logId={logId} activity={activity} />
+              </FlipMoveChild>
+            ))}
+          </FlipMove>
         </ActivitiesListContainer>
       )}
     </DataStateView>
   );
 };
+
+const FlipMoveChild = React.forwardRef<
+  HTMLDivElement,
+  { children: React.ReactNode }
+>((props, ref) => <div ref={ref}>{props.children}</div>);
 
 const ActivityView: FC<{
   logId: string;
@@ -437,15 +447,18 @@ const ActivityView: FC<{
           </ClickAwayListener>
         </Rows>
       </Rows>
-      {activity.sets.map(({ uuid }, index, sets) => (
-        <ActivitySetView
-          key={uuid}
-          index={index}
-          sets={sets}
-          logId={logId}
-          activityId={activity.id}
-        />
-      ))}
+      <FlipMove enterAnimation="fade" leaveAnimation="fade">
+        {activity.sets.map(({ uuid }, index, sets) => (
+          <FlipMoveChild key={uuid}>
+            <ActivitySetView
+              index={index}
+              sets={sets}
+              logId={logId}
+              activityId={activity.id}
+            />
+          </FlipMoveChild>
+        ))}
+      </FlipMove>
     </ActivityViewContainer>
   );
 };
