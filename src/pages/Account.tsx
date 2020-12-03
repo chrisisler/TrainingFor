@@ -1,14 +1,14 @@
 import React, { FC, useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { css } from '@emotion/css';
-import { Typography, CircularProgress } from '@material-ui/core';
+import { Typography, CircularProgress, Button } from '@material-ui/core';
 import firebase from 'firebase/app';
 import { useHistory } from 'react-router-dom';
 import format from 'date-fns/format';
 
-import { Pad, Columns } from '../style';
+import { Pad, Columns, Rows } from '../style';
 import { useUser } from '../useUser';
-import { db, DbPath } from '../firebase';
+import { auth, db, DbPath } from '../firebase';
 import { TrainingLog } from '../interfaces';
 import { DataState, DataStateView } from '../DataState';
 import { Format } from '../constants';
@@ -47,12 +47,21 @@ export const Account: FC = () => {
   return (
     <Columns
       pad={Pad.Small}
-      padding={Pad.Large}
       className={css`
         height: 100%;
         overflow-y: scroll;
+        padding: 0 ${Pad.Large} ${Pad.Large};
       `}
     >
+      <Rows center maxWidth>
+        <Button
+          variant="text"
+          onClick={() => auth.signOut()}
+          className={css({ marginLeft: 'auto' })}
+        >
+          Sign Out
+        </Button>
+      </Rows>
       <Typography variant="h4" color="textSecondary" gutterBottom>
         {user.displayName}
       </Typography>
