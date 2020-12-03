@@ -4,11 +4,11 @@ export enum Color {}
 
 export enum Pad {
   None = '0',
-  XSmall = '0.25rem',
-  Small = '0.5rem',
-  Medium = '1rem',
-  Large = '2rem',
-  XLarge = '3rem',
+  XSmall = '4px',
+  Small = '8px',
+  Medium = '16px',
+  Large = '32px',
+  XLarge = '48px',
 }
 
 interface Props {
