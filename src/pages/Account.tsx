@@ -11,6 +11,7 @@ import { useUser } from '../useUser';
 import { db, DbPath } from '../firebase';
 import { TrainingLog } from '../interfaces';
 import { DataState, DataStateView } from '../DataState';
+import { Format } from '../constants';
 
 const CenteredContainer = styled.div`
   width: 100%;
@@ -91,7 +92,7 @@ export const Account: FC = () => {
                     {title}
                   </Typography>
                   <Typography variant="body1" color="textPrimary">
-                    {format(logDate, 'MMM d EEE h:mm a')}
+                    {format(logDate, `${Format.date} - ${Format.time}`)}
                   </Typography>
                 </Columns>
               );

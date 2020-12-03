@@ -26,6 +26,7 @@ import {
 } from '../interfaces';
 import { db, DbPath } from '../firebase';
 import { DataState, DataStateView } from '../DataState';
+import { Format } from '../constants';
 
 const StartTrainingContainer = styled.div`
   height: 100%;
@@ -216,9 +217,9 @@ export const StartTraining: FC = () => {
             {DataState.isReady(logDate) &&
               (!logDate ? null : (
                 <Typography variant="body1" color="textPrimary">
-                  {format(logDate, 'EEE MMM d')}
+                  {format(logDate, Format.date)}
                   <br />
-                  {format(logDate, 'h:mm a')}
+                  {format(logDate, Format.time)}
                 </Typography>
               ))}
             <Rows maxWidth as="form" onSubmit={addActivity}>
