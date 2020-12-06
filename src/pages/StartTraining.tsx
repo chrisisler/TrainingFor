@@ -29,13 +29,6 @@ import { db, DbPath } from '../firebase';
 import { DataState, DataStateView } from '../DataState';
 import { Format } from '../constants';
 
-const StartTrainingContainer = styled.div`
-  height: 100%;
-  width: 100%;
-  display: grid;
-  place-items: center;
-`;
-
 const AddActivityInput = styled.input`
   box-sizing: content-box;
   width: 100%;
@@ -52,16 +45,12 @@ export const StartTraining: FC = () => {
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
-  // TODO Fuse these two states into a DocumentSnapshot
   const [logDoc, setLogDoc] = useState<
-    DataState<firebase.firestore.DocumentReference<TrainingLog>>
+    DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
   >(DataState.Empty);
-  const [logData, setLogData] = useState<DataState<TrainingLog>>(
-    DataState.Empty
-  );
 
-  const logDate = DataState.map(logData, _ =>
-    _ ? (_.timestamp as firebase.firestore.Timestamp)?.toDate() : null
+  const logDate = DataState.map(logDoc, _ =>
+    _ ? (_.data()?.timestamp as firebase.firestore.Timestamp)?.toDate() : null
   );
 
   // Subscribe to updates to the TrainingLog ID from the URL
@@ -74,35 +63,11 @@ export const StartTraining: FC = () => {
       .doc(logId)
       .onSnapshot(
         s => {
-          setLogDoc(s.ref as firebase.firestore.DocumentReference<TrainingLog>);
-          setLogData(s.data() as TrainingLog);
+          setLogDoc(s as firebase.firestore.DocumentSnapshot<TrainingLog>);
         },
         err => setLogDoc(DataState.error(err.message))
       );
   }, [logId, user]);
-
-  const addLog = useCallback(() => {
-    const newLog: Omit<TrainingLog, 'id'> = {
-      title: 'Title',
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      activities: [],
-      notes: null,
-    };
-    db.collection(DbPath.Users)
-      .doc(user?.uid)
-      .collection(DbPath.UserLogs)
-      .add(newLog)
-      .then(ref => {
-        setLogDoc(ref as firebase.firestore.DocumentReference<TrainingLog>);
-        return ref.get();
-      })
-      .then(snapshot => {
-        setLogData({ ...snapshot.data(), id: snapshot.id } as TrainingLog);
-      })
-      .catch(error => {
-        alert(error.message);
-      });
-  }, [user?.uid]);
 
   const exitTraining = useCallback(() => {
     setLogDoc(DataState.Empty);
@@ -152,7 +117,7 @@ export const StartTraining: FC = () => {
     if (!DataState.isReady(logDoc)) return;
     if (!window.confirm('Delete this training log forever?')) return;
     setLogDoc(DataState.Loading);
-    logDoc
+    logDoc.ref
       .delete()
       .then(() => {
         setLogDoc(DataState.Empty);
@@ -163,21 +128,11 @@ export const StartTraining: FC = () => {
       });
   }, [logDoc, setLogDoc]);
 
+  if (!logId) return null;
+
   return (
     <DataStateView
       data={logDoc}
-      empty={() => (
-        <StartTrainingContainer>
-          <Columns pad={Pad.Medium}>
-            <Typography variant="h4" color="textPrimary" gutterBottom>
-              Start Training
-            </Typography>
-            <Button variant="contained" color="primary" onClick={addLog}>
-              Go
-            </Button>
-          </Columns>
-        </StartTrainingContainer>
-      )}
       error={() => (
         <Typography variant="h4" color="textPrimary">
           Error
@@ -201,7 +156,7 @@ export const StartTraining: FC = () => {
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>
               <Typography variant="subtitle1" color="textSecondary">
-                {DataState.isReady(logData) && logData.title}
+                {DataState.isReady(logDoc) && logDoc.data()?.title}
               </Typography>
             </IconButton>
             <IconButton aria-label="Delete training log" onClick={deleteLogDoc}>

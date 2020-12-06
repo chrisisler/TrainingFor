@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import { Welcome } from './pages/Welcome';
 import { StartTraining } from './pages/StartTraining';
+import { NewTraining } from './pages/NewTraining';
 import { SignUp } from './pages/SignUp';
 import { LogIn } from './pages/LogIn';
 import { Account } from './pages/Account';
@@ -57,7 +58,7 @@ export const App: FC = () => {
               <Welcome />
             ) : (
               <ViewWithNavBar>
-                <StartTraining />
+                <NewTraining />
                 <NavBar />
               </ViewWithNavBar>
             )}
