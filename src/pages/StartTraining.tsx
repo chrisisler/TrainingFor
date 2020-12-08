@@ -152,6 +152,10 @@ export const StartTraining: FC = () => {
         >
           <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
             <IconButton aria-label="Exit training" onClick={exitTraining}>
+              {/**
+               * TODO if previous url was /account page then make the icon the
+               * back arrow, otherwise make the icon Done.
+               */}
               <Done color="primary" />
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>

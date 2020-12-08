@@ -19,6 +19,14 @@ export interface User extends FirestoreDocument {
   logs: TrainingLog[];
 }
 
+// TODO
+// export interface TrainingTemplate extends FirestoreDocument {
+//   title: string;
+//   notes: null | string;
+//   /** ID of the original TrainingLog that this is template for.  */
+//   logId: string;
+// }
+
 export interface TrainingLog extends FirestoreDocument {
   title: string;
   timestamp: FirestoreTimestamp;

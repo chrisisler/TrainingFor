@@ -97,6 +97,7 @@ export const SignUp: FC = () => {
         <TextField
           label="Email"
           value={email}
+          helperText="If your password is forgotten, the password reset link is sent to this email address."
           onChange={event => setEmail(event.target.value)}
         />
         <TextField
