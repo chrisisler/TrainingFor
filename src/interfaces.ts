@@ -17,11 +17,6 @@ export interface User extends FirestoreDocument {
   displayName: string;
 }
 
-export interface TrainingTemplate extends FirestoreDocument {
-  title: string;
-  activities: Activity[];
-}
-
 export interface TrainingLog extends FirestoreDocument {
   title: string;
   timestamp: FirestoreTimestamp;

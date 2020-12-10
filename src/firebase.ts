@@ -26,7 +26,6 @@ const storage = firebase.storage();
 
 export enum DbPath {
   Users = 'users',
-  UserTemplates = 'templates',
   UserLogs = 'logs',
   UserLogActivities = 'activities',
 }
