@@ -15,24 +15,17 @@ type FirestoreTimestamp = null | firebase.firestore.FieldValue;
 export interface User extends FirestoreDocument {
   creationTime: FirestoreTimestamp;
   displayName: string;
-  /** A Firebase collection. */
-  logs: TrainingLog[];
 }
 
-// TODO
-// export interface TrainingTemplate extends FirestoreDocument {
-//   title: string;
-//   notes: null | string;
-//   /** ID of the original TrainingLog that this is template for.  */
-//   logId: string;
-// }
+export interface TrainingTemplate extends FirestoreDocument {
+  title: string;
+  activities: Activity[];
+}
 
 export interface TrainingLog extends FirestoreDocument {
   title: string;
   timestamp: FirestoreTimestamp;
   notes: null | string;
-  /** A Firebase collection. */
-  activities: Activity[];
 }
 
 export interface Activity extends FirestoreDocument {
@@ -56,7 +49,7 @@ export interface ActivitySet {
    * 9: One more rep could be performed.
    * 8.5: One or two more reps possible.
    */
-  // rpe: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 7.5 | 8 | 8.5 | 9 | 9.5 | 10;
+  // rpe: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 8.5 | 9 | 9.5 | 10;
 }
 
 export enum ActivityStatus {

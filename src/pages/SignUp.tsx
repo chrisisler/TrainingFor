@@ -55,14 +55,14 @@ export const SignUp: FC = () => {
         setEmail('');
         setPassword('');
         if (!userCredential.user) throw Error('Unreachable');
-        userCredential.user.updateProfile({ displayName }).catch(() => {});
-        setUser(userCredential.user);
-        history.push('/');
-        const newUser: Omit<User, 'id' | 'logs'> = {
+        await userCredential.user.updateProfile({ displayName });
+        const newUser: Omit<User, 'id'> = {
           displayName,
           creationTime: firebase.firestore.FieldValue.serverTimestamp(),
         };
         db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
+        setUser(userCredential.user);
+        history.push('/');
       } catch (error) {
         alert(error.message);
       }

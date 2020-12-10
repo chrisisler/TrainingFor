@@ -15,7 +15,7 @@ import { Layers, LayersClear } from '@material-ui/icons';
 import { Pad, Columns, Rows } from '../style';
 import { useUser } from '../useUser';
 import { auth, db, DbPath } from '../firebase';
-import { TrainingLog, Activity, ActivityStatus } from '../interfaces';
+import { TrainingTemplate, TrainingLog, Activity } from '../interfaces';
 import { DataState, DataStateView } from '../DataState';
 import { Format } from '../constants';
 
@@ -28,7 +28,7 @@ const CenteredContainer = styled.div`
 
 export const Account: FC = () => {
   const [logs, setLogs] = useState<DataState<TrainingLog[]>>(DataState.Loading);
-  const [templateLogs, setTemplateLogs] = useState<DataState<TrainingLog[]>>(
+  const [templates, setTemplates] = useState<DataState<TrainingTemplate[]>>(
     DataState.Empty
   );
 
@@ -37,43 +37,29 @@ export const Account: FC = () => {
 
   const addTemplate = useCallback(
     async (log: TrainingLog) => {
-      if (!user) return;
-      if (!window.confirm('Create a training template from this log?')) return;
       try {
-        // Get the logs activities with all sets Unattempted.
-        const activities = (
-          await db
-            .collection(DbPath.Users)
-            .doc(user?.uid)
-            .collection(DbPath.UserLogs)
-            .doc(log.id)
-            .collection(DbPath.UserLogActivities)
-            .get()
-        ).docs.map(doc => {
-          const activity = { ...doc.data(), id: doc.id } as Activity;
-          activity.sets = activity.sets.map(set => {
-            set.status = ActivityStatus.Unattempted;
-            return set;
-          });
-          return activity;
-        });
-        // Create the template and add it to the users templates
-        const templateRef = await db
+        if (!user) return;
+        if (!window.confirm('Create training template from this log?')) return;
+        const snapshot = await db
           .collection(DbPath.Users)
-          .doc(user?.uid)
-          .collection(DbPath.UserTemplateLogs)
-          .add(log);
-        // TODO Set window scroll Y to zero here, scroll to the top
-        // Add each Activity to the template from the training log
-        const activitiesCollection = templateRef.collection(
-          DbPath.UserLogActivities
+          .doc(user.uid)
+          .collection(DbPath.UserLogs)
+          .doc(log.id)
+          .collection(DbPath.UserLogActivities)
+          .get();
+        const activities = snapshot.docs.map(
+          doc => ({ ...doc.data(), id: doc.id } as Activity)
         );
-        const batchAdd = db.batch();
-        activities.forEach(activity => {
-          const ref = activitiesCollection.doc(activity.id);
-          batchAdd.set(ref, activity);
-        });
-        await batchAdd.commit();
+        const newTemplate: Omit<TrainingTemplate, 'id'> = {
+          title: log.title,
+          activities,
+        };
+        await db
+          .collection(DbPath.Users)
+          .doc(user.uid)
+          .collection(DbPath.UserTemplates)
+          .add(newTemplate);
+        window.scrollTo(window.scrollX, 0);
       } catch (error) {
         alert(error.message);
       }
@@ -82,53 +68,41 @@ export const Account: FC = () => {
   );
 
   const deleteTemplate = useCallback(
-    async (template: TrainingLog) => {
+    (template: TrainingTemplate) => {
       if (!window.confirm(`Remove template? ${template.title}`)) return;
-      try {
-        db.collection(DbPath.Users)
-          .doc(user?.uid)
-          .collection(DbPath.UserTemplateLogs)
-          .doc(template.id)
-          .delete();
-      } catch (error) {
-        alert(error.message);
-      }
+      db.collection(DbPath.Users)
+        .doc(user?.uid)
+        .collection(DbPath.UserTemplates)
+        .doc(template.id)
+        .delete()
+        .catch(error => {
+          alert(error.message);
+        });
     },
     [user]
   );
 
   const startTrainingTemplate = useCallback(
-    async (template: TrainingLog) => {
+    async (template: TrainingTemplate) => {
       try {
-        const ref = await db
+        const newLogFromTemplate: Omit<TrainingLog, 'id'> = {
+          title: template.title,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          notes: null,
+        };
+        const newLogRef = await db
           .collection(DbPath.Users)
           .doc(user?.uid)
           .collection(DbPath.UserLogs)
-          .add(template);
-        // Causes errors!!
-        // await ref.set(
-        //   {
-        //     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        //   } as Partial<TrainingLog>,
-        //   { merge: true }
-        // );
-        const activities = (
-          await ref.collection(DbPath.UserLogActivities).get()
-        ).docs.map(doc => {
-          const activity = { ...doc.data(), id: doc.id } as Activity;
-          activity.sets = activity.sets.map(set => {
-            set.status = ActivityStatus.Unattempted;
-            return set;
-          });
-          return activity;
-        });
-        console.log('activities is:', activities);
-        history.push(`/log/${ref.id}`);
+          .add(newLogFromTemplate);
+        const activitiesColl = newLogRef.collection(DbPath.UserLogActivities);
+        await Promise.all(template.activities.map(a => activitiesColl.add(a)));
+        history.push(`/log/${newLogRef.id}`);
       } catch (error) {
         alert(error.message);
       }
     },
-    [user]
+    [user, history]
   );
 
   // TODO Re-write in useDataState
@@ -136,7 +110,7 @@ export const Account: FC = () => {
     if (!user) return;
     return db
       .collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(user.uid)
       .collection(DbPath.UserLogs)
       .orderBy('timestamp', 'desc')
       .onSnapshot(
@@ -146,24 +120,27 @@ export const Account: FC = () => {
           ),
         error => setLogs(DataState.error(error.message))
       );
-  }, [user, history]);
-  
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     return db
       .collection(DbPath.Users)
-      .doc(user?.uid)
-      .collection(DbPath.UserTemplateLogs)
+      .doc(user.uid)
+      .collection(DbPath.UserTemplates)
       .orderBy('timestamp', 'desc')
       .onSnapshot(
         ({ docs }) => {
-          setTemplateLogs(
-            docs.map(doc => ({ ...doc.data(), id: doc.id } as TrainingLog))
+          const ts = docs.map(
+            doc => ({ ...doc.data(), id: doc.id } as TrainingTemplate)
           );
+          console.log('ts is:', ts);
+          console.log('user.uid is:', user.uid);
+          setTemplates(ts);
         },
-        error => setTemplateLogs(DataState.error(error.message))
+        error => setTemplates(DataState.error(error.message))
       );
-  }, [user, user?.uid]);
+  }, [user]);
 
   if (!user) return null;
 
@@ -190,13 +167,9 @@ export const Account: FC = () => {
       <Typography variant="h4" color="textSecondary" gutterBottom>
         {user.displayName}
       </Typography>
-      <DataStateView
-        data={templateLogs}
-        loading={() => null}
-        error={() => null}
-      >
-        {templateLogs =>
-          !templateLogs.length ? null : (
+      <DataStateView data={templates} loading={() => null} error={() => null}>
+        {templates =>
+          !templates.length ? null : (
             <Columns maxWidth>
               <Typography variant="body1" color="textSecondary" gutterBottom>
                 Templates
@@ -209,7 +182,7 @@ export const Account: FC = () => {
                   padding: ${Pad.Medium} ${Pad.XSmall};
                 `}
               >
-                {templateLogs.map(template => (
+                {templates.map(template => (
                   <Rows
                     key={template.id}
                     center
@@ -217,12 +190,12 @@ export const Account: FC = () => {
                     className={css`
                       border-radius: 5px;
                       box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
-                      padding: ${Pad.Small} ${Pad.Large};
+                      padding: ${Pad.Small} ${Pad.Medium};
                       min-width: min-content;
                     `}
                     onClick={() => startTrainingTemplate(template)}
                   >
-                    <Typography variant="body1" color="primary" noWrap>
+                    <Typography variant="body1" color="textPrimary" noWrap>
                       {template.title}
                     </Typography>
                     <IconButton
@@ -272,7 +245,7 @@ export const Account: FC = () => {
                   className={css`
                     border-radius: 5px;
                     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
-                    padding: ${Pad.Large};
+                    padding: ${Pad.Medium} ${Pad.Large};
                   `}
                 >
                   <Columns onClick={() => history.push(`/log/${log.id}`)}>
@@ -284,6 +257,7 @@ export const Account: FC = () => {
                     </Typography>
                   </Columns>
                   <IconButton
+                    size="medium"
                     aria-label="Add to templates"
                     onClick={() => addTemplate(log)}
                     className={css`

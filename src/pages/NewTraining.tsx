@@ -24,7 +24,6 @@ export const NewTraining: FC = () => {
     const newLog: Omit<TrainingLog, 'id'> = {
       title: '-',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      activities: [],
       notes: null,
     };
     db.collection(DbPath.Users)

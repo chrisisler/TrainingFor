@@ -125,8 +125,11 @@ export const StartTraining: FC = () => {
       .catch(error => {
         setLogDoc(DataState.error(error.message));
         alert(error.message);
+      })
+      .finally(() => {
+        history.push('/account');
       });
-  }, [logDoc, setLogDoc]);
+  }, [logDoc, setLogDoc, history]);
 
   if (!logId) return null;
 
