@@ -175,6 +175,7 @@ export const StartTraining: FC = () => {
             padding={`0 ${Pad.Large} ${Pad.Medium}`}
             className={css`
               border-bottom: 1px solid lightgray;
+              min-height: fit-content;
             `}
           >
             {DataState.isReady(logDate) &&
@@ -188,7 +189,7 @@ export const StartTraining: FC = () => {
             <Rows maxWidth as="form" onSubmit={addActivity}>
               <AddActivityInput
                 type="text"
-                placeholder="Activity Name"
+                placeholder="Enter Activity"
                 value={activityName}
                 onChange={event => setActivityName(event.target.value)}
               />
@@ -215,7 +216,7 @@ export const StartTraining: FC = () => {
 
 const ActivityViewContainer = styled(Columns)`
   width: 100%;
-  padding: ${Pad.Medium} ${Pad.Small} ${Pad.Small} ${Pad.Large};
+  padding: ${Pad.Small} ${Pad.Small} ${Pad.Small} ${Pad.Large};
 `;
 
 const ActivityStatusButton = styled.button`
@@ -364,15 +365,12 @@ const ActivityView: FC<{
 
   return (
     <ActivityViewContainer key={activity.id}>
-      <Rows maxWidth center between padding={`${Pad.Small} 0`}>
+      <Rows maxWidth center between>
         <Typography variant="subtitle1" color="textPrimary">
           {activity.name}
         </Typography>
         <Rows center>
           <Button
-            className={css`
-              height: min-content;
-            `}
             variant="contained"
             color="primary"
             size="small"
