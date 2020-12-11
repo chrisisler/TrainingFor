@@ -34,9 +34,11 @@ export interface ActivitySet {
   /** ID generated from uuid.v4() */
   uuid: string;
   name: string;
-  repCount: null | number;
   notes: null | string;
   status: ActivityStatus;
+  /** Currently unitless */
+  weight: number;
+  // repCount: null | number;
   /**
    * Rate of Perceived Exertion.
    * 10: Absolute maximum

@@ -284,7 +284,7 @@ const ActivitiesView: FC<{ logId: string }> = ({ logId }) => {
           <FlipMove enterAnimation="fade" leaveAnimation="fade">
             {activities.map(activity => (
               <FlipMoveChild key={activity.id}>
-                <ActivityView logId={logId} activity={activity} />
+                <ActivityView activity={activity} />
               </FlipMoveChild>
             ))}
           </FlipMove>
@@ -299,24 +299,21 @@ const FlipMoveChild = React.forwardRef<
   { children: React.ReactNode }
 >((props, ref) => <div ref={ref}>{props.children}</div>);
 
-const ActivityView: FC<{
-  logId: string;
-  activity: Activity;
-}> = ({ logId, activity }) => {
+const ActivityView: FC<{ activity: Activity }> = ({ activity }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
-  };
   const closeActivityMenu = () => setAnchorEl(null);
 
   const [user] = useUser();
+  const { logId } = useParams<{ logId?: string }>();
 
   const addSet = () => {
     const newSet: ActivitySet = {
       uuid: uuid(),
       name: `Set ${activity.sets.length + 1}`,
-      repCount: null,
       notes: null,
+      weight: activity.sets?.[0]?.weight ?? 0,
       status: ActivityStatus.Unattempted,
     };
     db.collection(DbPath.Users)
@@ -413,7 +410,6 @@ const ActivityView: FC<{
             <ActivitySetView
               index={index}
               sets={sets}
-              logId={logId}
               activityId={activity.id}
             />
           </FlipMoveChild>
@@ -426,16 +422,15 @@ const ActivityView: FC<{
 const ActivitySetView: FC<{
   index: number;
   sets: ActivitySet[];
-  logId: string;
   activityId: string;
-}> = ({ index, sets, logId, activityId }) => {
+}> = ({ index, sets, activityId }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const openSetMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const openSetMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
-  };
   const closeSetMenu = () => setAnchorEl(null);
 
   const [user] = useUser();
+  const { logId } = useParams<{ logId?: string }>();
 
   /** The ActivitySet this ActivitySetView is rendering. */
   const set = sets[index];
@@ -510,6 +505,20 @@ const ActivitySetView: FC<{
       });
   };
 
+  const updateSetWeight = (event: React.ChangeEvent<HTMLInputElement>) => {
+    sets[index].weight = Number(event.target.value);
+    db.collection(DbPath.Users)
+      .doc(user?.uid)
+      .collection(DbPath.UserLogs)
+      .doc(logId)
+      .collection(DbPath.UserLogActivities)
+      .doc(activityId)
+      .set({ sets }, { merge: true })
+      .catch(error => {
+        alert(error.message);
+      });
+  };
+
   return (
     <Rows maxWidth center padding={`0 ${Pad.Small}`} between>
       <Rows center pad={Pad.Small}>
@@ -525,8 +534,25 @@ const ActivitySetView: FC<{
           {set.name}
         </Typography>
       </Rows>
-      <p>{set.repCount}</p>
       <Rows center pad={Pad.XSmall}>
+        <input
+          type="number"
+          name="weight"
+          value={set.weight}
+          onInput={event => {
+            // Limit input length to 3
+            const input = event.currentTarget;
+            if (input.value.length > 3) input.value = input.value.slice(0, 3);
+          }}
+          onChange={updateSetWeight}
+          className={css`
+            width: 4ch;
+            color: gray;
+            border: 0;
+            font-family: monospace;
+            text-align: center;
+          `}
+        />
         <ActivityStatusButton status={set.status} onClick={cycleSetStatus}>
           {set.status}
         </ActivityStatusButton>
