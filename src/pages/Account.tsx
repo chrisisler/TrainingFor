@@ -162,7 +162,12 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         padding: ${Pad.Medium} ${Pad.Large};
       `}
     >
-      <Columns onClick={() => history.push(`/log/${log.id}`)}>
+      <Columns
+        onClick={() => history.push(`/log/${log.id}`)}
+        className={css`
+          height: fit-content;
+        `}
+      >
         <Typography variant="body1" color="textSecondary">
           {log.title}
         </Typography>
