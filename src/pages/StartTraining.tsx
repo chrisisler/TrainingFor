@@ -119,9 +119,6 @@ export const StartTraining: FC = () => {
     setLogDoc(DataState.Loading);
     logDoc.ref
       .delete()
-      .then(() => {
-        setLogDoc(DataState.Empty);
-      })
       .catch(error => {
         setLogDoc(DataState.error(error.message));
         alert(error.message);
@@ -141,11 +138,7 @@ export const StartTraining: FC = () => {
           Error
         </Typography>
       )}
-      loading={() => (
-        <Typography variant="h4" color="textPrimary">
-          <CircularProgress />
-        </Typography>
-      )}
+      loading={() => <CircularProgress />}
     >
       {logDoc => (
         <Columns
