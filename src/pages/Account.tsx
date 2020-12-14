@@ -28,6 +28,12 @@ const CenteredContainer = styled.div`
 
 export const Account: FC = () => {
   const [user] = useUser();
+  const history = useHistory();
+
+  const signOut = useCallback(() => {
+    auth.signOut();
+    history.push('/');
+  }, [history]);
 
   // Since logs do not update while we are viewing them, we do not need to
   // maintain a database subscription
@@ -61,7 +67,7 @@ export const Account: FC = () => {
       <Rows center maxWidth>
         <Button
           variant="text"
-          onClick={() => auth.signOut()}
+          onClick={signOut}
           className={css`
             margin-left: auto;
           `}

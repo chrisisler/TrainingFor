@@ -26,8 +26,6 @@ export interface TrainingLog extends FirestoreDocument {
 export interface Activity extends FirestoreDocument {
   name: string;
   notes: null | string;
-  // TODO Deprecate
-  timestamp: FirestoreTimestamp;
   /** The index of the Activity. */
   position: number;
   sets: ActivitySet[];

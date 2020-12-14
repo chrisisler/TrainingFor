@@ -114,7 +114,6 @@ export const StartTraining: FC = () => {
           name: activityName,
           notes: null,
           sets: [],
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           position: prevMaxPosition + 1,
         };
         db.collection(DbPath.Users)
