@@ -89,26 +89,43 @@ export const StartTraining: FC = () => {
   }, [user?.uid, logId]);
 
   const addActivity = useCallback(
-    <E extends React.SyntheticEvent>(event: E) => {
-      event.preventDefault();
-      if (!activityName.length) return;
-      const newActivity: Omit<Activity, 'id'> = {
-        name: activityName,
-        notes: null,
-        sets: [],
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      };
-      db.collection(DbPath.Users)
-        .doc(user?.uid)
-        .collection(DbPath.UserLogs)
-        .doc(DataState.isReady(logDoc) ? logDoc.id : undefined)
-        .collection(DbPath.UserLogActivities)
-        .doc()
-        .set(newActivity)
-        .catch(error => {
-          alert(error.message);
-        });
-      setActivityName('');
+    async <E extends React.SyntheticEvent>(event: E) => {
+      try {
+        event.preventDefault();
+        if (!activityName.length) return;
+        setActivityName('');
+        // Look to the previous activity to determine the position
+        // number of the activity being added
+        // TODO Combine ActivitiesListView into this so we can
+        // use `activities` array from use effect instead of hitting DB
+        const prevMaxPosition = await db
+          .collection(DbPath.Users)
+          .doc(user?.uid)
+          .collection(DbPath.UserLogs)
+          .doc(DataState.isReady(logDoc) ? logDoc.id : undefined)
+          .collection(DbPath.UserLogActivities)
+          .orderBy('position', 'desc')
+          .limit(1)
+          .get()
+          .then(({ empty, docs }) =>
+            empty ? 0 : (docs[0].get('position') as number)
+          );
+        const newActivity: Omit<Activity, 'id'> = {
+          name: activityName,
+          notes: null,
+          sets: [],
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          position: prevMaxPosition + 1,
+        };
+        db.collection(DbPath.Users)
+          .doc(user?.uid)
+          .collection(DbPath.UserLogs)
+          .doc(DataState.isReady(logDoc) ? logDoc.id : undefined)
+          .collection(DbPath.UserLogActivities)
+          .add(newActivity);
+      } catch (error) {
+        alert(error.message);
+      }
     },
     [activityName, user?.uid, logDoc]
   );
@@ -200,7 +217,7 @@ export const StartTraining: FC = () => {
               )}
             </Rows>
           </Columns>
-          <ActivitiesView />
+          <ActivitiesListView />
         </Columns>
       )}
     </DataStateView>
@@ -236,7 +253,7 @@ const ActivitiesListContainer = styled.div`
   overflow-y: scroll;
 `;
 
-const ActivitiesView: FC = () => {
+const ActivitiesListView: FC = () => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Empty
   );
@@ -251,7 +268,7 @@ const ActivitiesView: FC = () => {
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
-      .orderBy('timestamp', 'desc')
+      .orderBy('position', 'desc')
       .onSnapshot(
         snapshot =>
           setActivities(
@@ -276,9 +293,9 @@ const ActivitiesView: FC = () => {
       {activities => (
         <ActivitiesListContainer>
           <FlipMove enterAnimation="fade" leaveAnimation="fade">
-            {activities.map(activity => (
-              <FlipMoveChild key={activity.id}>
-                <ActivityView activity={activity} />
+            {activities.map(({ id }, index) => (
+              <FlipMoveChild key={id}>
+                <ActivityView activities={activities} index={index} />
               </FlipMoveChild>
             ))}
           </FlipMove>
@@ -293,7 +310,10 @@ const FlipMoveChild = React.forwardRef<
   { children: React.ReactNode }
 >((props, ref) => <div ref={ref}>{props.children}</div>);
 
-const ActivityView: FC<{ activity: Activity }> = ({ activity }) => {
+const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
+  activities,
+  index,
+}) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
@@ -301,6 +321,8 @@ const ActivityView: FC<{ activity: Activity }> = ({ activity }) => {
 
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
+
+  const activity = activities[index];
 
   const addSet = () => {
     const newSet: ActivitySet = {
@@ -354,6 +376,56 @@ const ActivityView: FC<{ activity: Activity }> = ({ activity }) => {
       });
   };
 
+  const moveActivityUp = async () => {
+    closeActivityMenu();
+    if (activities.length === 1 || index === 0) return;
+    try {
+      const batch = db.batch();
+      const activitiesColl = db
+        .collection(DbPath.Users)
+        .doc(user?.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities);
+      const otherDocRef = activitiesColl.doc(activities[index - 1].id);
+      const swapped = (await otherDocRef.get()).get('position') as number;
+      batch.update(activitiesColl.doc(activity.id), {
+        position: swapped,
+      } as Partial<Activity>);
+      batch.update(otherDocRef, {
+        position: activity.position,
+      } as Partial<Activity>);
+      await batch.commit();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const moveActivityDown = async () => {
+    closeActivityMenu();
+    if (activities.length === 1 || index + 1 === activities.length) return;
+    try {
+      const batch = db.batch();
+      const activitiesColl = db
+        .collection(DbPath.Users)
+        .doc(user?.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities);
+      const otherDocRef = activitiesColl.doc(activities[index + 1].id);
+      const swapped = (await otherDocRef.get()).get('position') as number;
+      batch.update(activitiesColl.doc(activity.id), {
+        position: swapped,
+      } as Partial<Activity>);
+      batch.update(otherDocRef, {
+        position: activity.position,
+      } as Partial<Activity>);
+      await batch.commit();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   return (
     <ActivityViewContainer key={activity.id}>
       <Rows maxWidth center between>
@@ -391,6 +463,20 @@ const ActivityView: FC<{ activity: Activity }> = ({ activity }) => {
                 onClose={closeActivityMenu}
                 MenuListProps={{ dense: true }}
               >
+                <MenuItem
+                  onClick={moveActivityUp}
+                  disabled={activities.length === 1 || index === 0}
+                >
+                  Move up
+                </MenuItem>
+                <MenuItem
+                  onClick={moveActivityDown}
+                  disabled={
+                    activities.length === 1 || index + 1 === activities.length
+                  }
+                >
+                  Move down
+                </MenuItem>
                 <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                 <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
               </Menu>
@@ -399,11 +485,11 @@ const ActivityView: FC<{ activity: Activity }> = ({ activity }) => {
         </Rows>
       </Rows>
       <FlipMove enterAnimation="fade" leaveAnimation="fade">
-        {activity.sets.map(({ uuid }, index, sets) => (
+        {activity.sets.map(({ uuid }, index) => (
           <FlipMoveChild key={uuid}>
             <ActivitySetView
               index={index}
-              sets={sets}
+              sets={activity.sets}
               activityId={activity.id}
             />
           </FlipMoveChild>
