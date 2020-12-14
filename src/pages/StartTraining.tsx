@@ -200,7 +200,7 @@ export const StartTraining: FC = () => {
               )}
             </Rows>
           </Columns>
-          <ActivitiesView logId={logDoc.id} />
+          <ActivitiesView />
         </Columns>
       )}
     </DataStateView>
@@ -236,12 +236,13 @@ const ActivitiesListContainer = styled.div`
   overflow-y: scroll;
 `;
 
-const ActivitiesView: FC<{ logId: string }> = ({ logId }) => {
+const ActivitiesView: FC = () => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Empty
   );
 
   const [user] = useUser();
+  const { logId } = useParams<{ logId?: string }>();
 
   useEffect(() => {
     return db
