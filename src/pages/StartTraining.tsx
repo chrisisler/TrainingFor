@@ -313,6 +313,9 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   activities,
   index,
 }) => {
+  const activity = activities[index];
+  const [notes, setNotes] = useState<string>(activity.notes ?? '');
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
@@ -320,8 +323,6 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
 
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
-
-  const activity = activities[index];
 
   const addSet = () => {
     const newSet: ActivitySet = {
@@ -425,6 +426,20 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
     }
   };
 
+  const updateActivityNotes = async () => {
+    try {
+      db.collection(DbPath.Users)
+        .doc(user?.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        .doc(activity.id)
+        .update({ notes: notes } as Partial<Activity>);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   return (
     <ActivityViewContainer key={activity.id}>
       <Rows maxWidth center between>
@@ -483,6 +498,20 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
           </ClickAwayListener>
         </Rows>
       </Rows>
+      <input
+        type="text"
+        name="notes"
+        placeholder="Notes..."
+        value={notes}
+        onChange={event => setNotes(event.target.value)}
+        onBlur={updateActivityNotes}
+        className={css`
+          width: 80%;
+          font-size: 0.85em;
+          border: 0;
+          padding: ${Pad.Small};
+        `}
+      />
       <FlipMove enterAnimation="fade" leaveAnimation="fade">
         {activity.sets.map(({ uuid }, index) => (
           <FlipMoveChild key={uuid}>

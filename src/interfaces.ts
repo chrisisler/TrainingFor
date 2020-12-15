@@ -26,27 +26,17 @@ export interface TrainingLog extends FirestoreDocument {
 export interface Activity extends FirestoreDocument {
   name: string;
   notes: null | string;
-  /** The index of the Activity. */
   position: number;
   sets: ActivitySet[];
 }
 
 export interface ActivitySet {
-  /** ID generated from uuid.v4() */
   uuid: string;
   name: string;
   notes: null | string;
   status: ActivityStatus;
   /** Currently unitless */
   weight: number;
-  // repCount: null | number;
-  /**
-   * Rate of Perceived Exertion.
-   * 10: Absolute maximum
-   * 9.5: Only one rep possible, but weight could be increased.
-   * 9: One more rep could be performed.
-   * 8.5: One or two more reps possible.
-   */
   // rpe: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 8.5 | 9 | 9.5 | 10;
 }
 

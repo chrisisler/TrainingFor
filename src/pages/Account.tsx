@@ -27,11 +27,12 @@ const CenteredContainer = styled.div`
 `;
 
 export const Account: FC = () => {
-  const [user] = useUser();
+  const [user, setUser] = useUser();
   const history = useHistory();
 
   const signOut = useCallback(() => {
     auth.signOut();
+    setUser(null);
     history.push('/');
   }, [history]);
 
