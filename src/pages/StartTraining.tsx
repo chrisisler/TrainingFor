@@ -740,29 +740,43 @@ const usePressHoldRef = (
 ): [React.MutableRefObject<HTMLButtonElement | null>] => {
   const ref = useRef<HTMLButtonElement | null>(null);
 
+  const timerId = useRef<number | null>(null);
+  const tickCounter = useRef(0);
+
+  // Count ticks at 60fps until duration is satisfied, then invoke.
+  const onTick = useCallback(() => {
+    if (tickCounter.current < 60) {
+      timerId.current = requestAnimationFrame(onTick);
+      tickCounter.current++;
+    } else {
+      if (tickCounter.current === -1) return;
+      onPressHold();
+    }
+  }, [timerId, onPressHold]);
+
+  const startHoldTimer = useCallback(
+    (event: Event) => {
+      requestAnimationFrame(onTick);
+      event.preventDefault();
+      tickCounter.current = 0;
+    },
+    [onTick]
+  );
+
+  // TODO Issue double clicking ignores this stop
+  const stopHoldTimer = useCallback(() => {
+    if (timerId.current) cancelAnimationFrame(timerId.current);
+    // If held for small amount of time, assume click and signal to stop
+    if (tickCounter.current < 20) {
+      ref.current?.click();
+    } else {
+      tickCounter.current = -1;
+    }
+  }, [timerId]);
+
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    let timerId: number | undefined;
-    let tickCounter = 0;
-    // Runs at 60fps while holding the press
-    const onTick = () => {
-      // Half second hold
-      if (tickCounter < 30) {
-        timerId = requestAnimationFrame(onTick);
-        tickCounter++;
-        return;
-      }
-      onPressHold();
-    };
-    const startHoldTimer = (event: Event) => {
-      requestAnimationFrame(onTick);
-      event.preventDefault();
-    };
-    const stopHoldTimer = () => {
-      if (timerId) cancelAnimationFrame(timerId);
-      tickCounter = 0;
-    };
     node.addEventListener('mousedown', startHoldTimer, false);
     node.addEventListener('mouseup', stopHoldTimer, false);
     node.addEventListener('mouseleave', stopHoldTimer, false);
@@ -775,7 +789,7 @@ const usePressHoldRef = (
       node.removeEventListener('touchstart', startHoldTimer);
       node.removeEventListener('touchend', stopHoldTimer);
     };
-  }, [onPressHold]);
+  }, [startHoldTimer, stopHoldTimer]);
 
   return [ref];
 };
