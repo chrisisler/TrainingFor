@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useState, useEffect } from 'react';
+import React, { FC, useCallback, useState, useEffect, useRef } from 'react';
 import styled from '@emotion/styled';
 import { css } from '@emotion/css';
 import firebase from 'firebase/app';
@@ -305,12 +305,18 @@ const FlipMoveChild = React.forwardRef<
   { children: React.ReactNode }
 >((props, ref) => <div ref={ref}>{props.children}</div>);
 
+const ActivityNotesTextarea = styled.textarea`
+  display: ${(props: { notes: Activity['notes'] }) =>
+    props.notes === null ? 'none' : 'block'};
+`;
+
 const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   activities,
   index,
 }) => {
   const activity = activities[index];
-  const [notes, setNotes] = useState<string>(activity.notes ?? '');
+  const [notes, setNotes] = useState<Activity['notes']>(activity.notes);
+  const notesRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
@@ -424,6 +430,9 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   };
 
   const updateActivityNotes = async () => {
+    // Hide notes if user set value to empty string
+    const nullIfEmpty = notes === '' ? null : notes;
+    setNotes(nullIfEmpty);
     try {
       db.collection(DbPath.Users)
         .doc(user?.uid)
@@ -431,10 +440,19 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
         .doc(logId)
         .collection(DbPath.UserLogActivities)
         .doc(activity.id)
-        .update({ notes: notes } as Partial<Activity>);
+        .update({ notes: nullIfEmpty } as Partial<Activity>);
     } catch (error) {
       alert(error.message);
     }
+  };
+
+  const addNotes = () => {
+    closeActivityMenu();
+    if (notes) return;
+    // Make the notes textarea visible. See <ActivityNotesTextarea />
+    setNotes('');
+    // Wait for the event loop to render the element so we can focus it
+    Promise.resolve().then(() => notesRef.current?.focus());
   };
 
   return (
@@ -488,6 +506,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
                 >
                   Move down
                 </MenuItem>
+                {!notes && <MenuItem onClick={addNotes}>Add notes</MenuItem>}
                 <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                 <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
               </Menu>
@@ -495,21 +514,26 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
           </ClickAwayListener>
         </Rows>
       </Rows>
-      <input
-        type="text"
+      <ActivityNotesTextarea
+        notes={notes}
         name="notes"
         placeholder="Notes"
-        value={notes}
+        ref={notesRef}
+        rows={2}
+        maxLength={140}
         onChange={event => setNotes(event.target.value)}
         onBlur={updateActivityNotes}
         className={css`
-          width: 100%;
+          width: 90%;
           color: gray;
-          font-size: 0.8em;
           border: 0;
           padding: 0 ${Pad.XSmall};
+          resize: none;
+          font-size: 0.8em;
           font-style: italic;
+          font-family: inherit;
         `}
+        value={notes ?? ''}
       />
       <FlipMove enterAnimation="fade" leaveAnimation="fade">
         {activity.sets.map(({ uuid }, index) => (
