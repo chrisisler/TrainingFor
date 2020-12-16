@@ -654,7 +654,7 @@ const ActivitySetView: FC<{
           }}
           onChange={updateSetWeight}
           className={css`
-            width: 4ch;
+            width: 5ch;
             color: gray;
             border: 0;
             font-family: monospace;

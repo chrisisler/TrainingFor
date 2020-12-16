@@ -34,7 +34,7 @@ export const Account: FC = () => {
     auth.signOut();
     setUser(null);
     history.push('/');
-  }, [history]);
+  }, [history, setUser]);
 
   // Since logs do not update while we are viewing them, we do not need to
   // maintain a database subscription
