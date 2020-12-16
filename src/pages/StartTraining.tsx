@@ -326,14 +326,18 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
-  const addSet = () => {
+  const [pressHoldButtonRef] = usePressHoldRef(() =>
+    addActivitySet(ActivityStatus.Completed)
+  );
+
+  const addActivitySet = (status?: ActivityStatus) => {
     const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
     const newSet: ActivitySet = {
       uuid: uuid(),
       name: `Set ${activity.sets.length + 1}`,
       notes: null,
       weight,
-      status: ActivityStatus.Unattempted,
+      status: status ?? ActivityStatus.Unattempted,
     };
     db.collection(DbPath.Users)
       .doc(user?.uid)
@@ -446,7 +450,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
     }
   };
 
-  const addNotes = () => {
+  const addActivityNotes = () => {
     closeActivityMenu();
     if (notes) return;
     // Make the notes textarea visible. See <ActivityNotesTextarea />
@@ -463,10 +467,11 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
         </Typography>
         <Rows center>
           <Button
+            ref={pressHoldButtonRef}
             variant="contained"
             color="primary"
             size="small"
-            onClick={addSet}
+            onClick={() => addActivitySet()}
           >
             +
           </Button>
@@ -506,7 +511,9 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
                 >
                   Move down
                 </MenuItem>
-                {!notes && <MenuItem onClick={addNotes}>Add notes</MenuItem>}
+                {!notes && (
+                  <MenuItem onClick={addActivityNotes}>Add notes</MenuItem>
+                )}
                 <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                 <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
               </Menu>
@@ -721,4 +728,54 @@ const ActivitySetView: FC<{
       </Rows>
     </Rows>
   );
+};
+
+/**
+ * From https://www.kirupa.com/html5/press_and_hold.htm
+ *
+ * Provides a ref enabling buttons to listen to press hold events.
+ */
+const usePressHoldRef = (
+  onPressHold: () => void
+): [React.MutableRefObject<HTMLButtonElement | null>] => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    let timerId: number | undefined;
+    let tickCounter = 0;
+    // Runs at 60fps while holding the press
+    const onTick = () => {
+      // Half second hold
+      if (tickCounter < 30) {
+        timerId = requestAnimationFrame(onTick);
+        tickCounter++;
+        return;
+      }
+      onPressHold();
+    };
+    const startHoldTimer = (event: Event) => {
+      requestAnimationFrame(onTick);
+      event.preventDefault();
+    };
+    const stopHoldTimer = () => {
+      if (timerId) cancelAnimationFrame(timerId);
+      tickCounter = 0;
+    };
+    node.addEventListener('mousedown', startHoldTimer, false);
+    node.addEventListener('mouseup', stopHoldTimer, false);
+    node.addEventListener('mouseleave', stopHoldTimer, false);
+    node.addEventListener('touchstart', startHoldTimer, false);
+    node.addEventListener('touchend', stopHoldTimer, false);
+    return () => {
+      node.removeEventListener('mousedown', startHoldTimer);
+      node.removeEventListener('mouseup', stopHoldTimer);
+      node.removeEventListener('mouseleave', stopHoldTimer);
+      node.removeEventListener('touchstart', startHoldTimer);
+      node.removeEventListener('touchend', stopHoldTimer);
+    };
+  }, [onPressHold]);
+
+  return [ref];
 };
