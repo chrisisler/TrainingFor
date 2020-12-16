@@ -158,6 +158,7 @@ export const StartTraining: FC = () => {
     >
       {logDoc => (
         <Columns
+          pad={Pad.Small}
           className={css`
             height: 100%;
           `}
@@ -222,11 +223,6 @@ export const StartTraining: FC = () => {
     </DataStateView>
   );
 };
-
-const ActivityViewContainer = styled(Columns)`
-  width: 100%;
-  padding: ${Pad.Small} ${Pad.Small} ${Pad.Small} ${Pad.Large};
-`;
 
 const ActivityStatusButton = styled.button`
   color: lightgray;
@@ -441,7 +437,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   };
 
   return (
-    <ActivityViewContainer key={activity.id}>
+    <Columns maxWidth padding={`0 ${Pad.Small} 0 ${Pad.Large}`}>
       <Rows maxWidth center between>
         <Typography variant="subtitle1" color="textPrimary">
           {activity.name}
@@ -501,15 +497,17 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
       <input
         type="text"
         name="notes"
-        placeholder="Notes..."
+        placeholder="Notes"
         value={notes}
         onChange={event => setNotes(event.target.value)}
         onBlur={updateActivityNotes}
         className={css`
-          width: 80%;
-          font-size: 0.85em;
+          width: 100%;
+          color: gray;
+          font-size: 0.8em;
           border: 0;
-          padding: ${Pad.Small};
+          padding: 0 ${Pad.XSmall};
+          font-style: italic;
         `}
       />
       <FlipMove enterAnimation="fade" leaveAnimation="fade">
@@ -523,7 +521,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
           </FlipMoveChild>
         ))}
       </FlipMove>
-    </ActivityViewContainer>
+    </Columns>
   );
 };
 
