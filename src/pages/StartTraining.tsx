@@ -321,11 +321,12 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   const { logId } = useParams<{ logId?: string }>();
 
   const addSet = () => {
+    const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
     const newSet: ActivitySet = {
       uuid: uuid(),
       name: `Set ${activity.sets.length + 1}`,
       notes: null,
-      weight: activity.sets?.[0]?.weight ?? 0,
+      weight,
       status: ActivityStatus.Unattempted,
     };
     db.collection(DbPath.Users)
