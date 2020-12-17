@@ -25,10 +25,10 @@ export const Welcome: FC = () => {
         <Typography variant="h4" color="textPrimary" align="center">
           TrainingFor
         </Typography>
-        <Button variant="outlined" color="primary" href="signup">
+        <Button variant="outlined" color="primary" href="/welcome/signup">
           Sign Up
         </Button>
-        <Button variant="outlined" href="login">
+        <Button variant="outlined" href="/welcome/login">
           Log In
         </Button>
       </WelcomeCard>

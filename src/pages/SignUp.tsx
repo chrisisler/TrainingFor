@@ -2,7 +2,7 @@ import React, { FC, useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { Redirect, useHistory } from 'react-router-dom';
 import firebase from 'firebase/app';
 
 import { auth, db, DbPath } from '../firebase';
@@ -41,7 +41,7 @@ export const SignUp: FC = () => {
   const [password, setPassword] = useState<string>('');
 
   const history = useHistory();
-  const [, setUser] = useUser();
+  const [user, setUser] = useUser();
 
   const signUp = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -62,13 +62,14 @@ export const SignUp: FC = () => {
         };
         db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
         setUser(userCredential.user);
-        history.push('/');
       } catch (error) {
         alert(error.message);
       }
     },
-    [displayName, email, password, setUser, history]
+    [displayName, email, password, setUser]
   );
+
+  if (!!user) return <Redirect to="/" />;
 
   return (
     <SignUpContainer>
@@ -77,7 +78,7 @@ export const SignUp: FC = () => {
           aria-label="Navigate back"
           size="small"
           onClick={() => {
-            history.push('/');
+            history.push('/welcome');
           }}
         >
           <ArrowBackIosRounded />

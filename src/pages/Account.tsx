@@ -33,8 +33,7 @@ export const Account: FC = () => {
   const signOut = useCallback(() => {
     auth.signOut();
     setUser(null);
-    history.push('/');
-  }, [history, setUser]);
+  }, [setUser]);
 
   // Since logs do not update while we are viewing them, we do not need to
   // maintain a database subscription

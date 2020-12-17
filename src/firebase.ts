@@ -22,7 +22,6 @@ const app =
 // Must be in this order
 const db = app.firestore();
 const auth = firebase.auth();
-const storage = firebase.storage();
 
 export enum DbPath {
   Users = 'users',
@@ -30,4 +29,4 @@ export enum DbPath {
   UserLogActivities = 'activities',
 }
 
-export { db, auth, storage };
+export { db, auth };

@@ -7,7 +7,7 @@ export const useUser = (): [
   firebase.User | null,
   React.Dispatch<React.SetStateAction<firebase.User | null>>
 ] => {
-  const [user, setUser] = useState<firebase.User | null>(auth.currentUser);
+  const [user, setUser] = useState<firebase.User | null>(null);
 
   useEffect(() => {
     return auth.onAuthStateChanged(user => {

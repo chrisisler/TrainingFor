@@ -2,7 +2,7 @@ import React, { FC, useCallback, useState } from 'react';
 import styled from '@emotion/styled';
 import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { Redirect, useHistory } from 'react-router-dom';
 
 import { Columns, Pad } from '../style';
 import { auth } from '../firebase';
@@ -29,7 +29,6 @@ const LogInNav = styled.nav`
   display: flex;
   justify-content: space-between;
   padding: ${Pad.Medium};
-  border-bottom: 1px solid gray;
   height: min-content;
 `;
 
@@ -38,7 +37,7 @@ export const LogIn: FC = () => {
   const [password, setPassword] = useState<string>('');
 
   const history = useHistory();
-  const [, setUser] = useUser();
+  const [user, setUser] = useUser();
 
   const logIn = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -51,13 +50,14 @@ export const LogIn: FC = () => {
         setEmail('');
         setPassword('');
         setUser(userCredential.user);
-        history.push('/');
       } catch (error) {
         alert(error.message);
       }
     },
-    [email, password, setUser, history]
+    [email, password, setUser]
   );
+
+  if (!!user) return <Redirect to="/" />;
 
   return (
     <LogInContainer>
@@ -66,7 +66,7 @@ export const LogIn: FC = () => {
           aria-label="Navigate back"
           size="small"
           onClick={() => {
-            history.push('/');
+            history.push('/welcome');
           }}
         >
           <ArrowBackIosRounded />

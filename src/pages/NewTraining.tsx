@@ -31,9 +31,6 @@ export const NewTraining: FC = () => {
       .collection(DbPath.UserLogs)
       .add(newLog)
       .then(ref => {
-        // setLogDoc(ref as firebase.firestore.DocumentReference<TrainingLog>);
-        // return ref.get();
-        // setLogData({ ...snapshot.data(), id: snapshot.id } as TrainingLog);
         history.push(`/log/${ref.id}`);
       })
       .catch(error => {

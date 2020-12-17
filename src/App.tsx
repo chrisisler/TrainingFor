@@ -1,6 +1,14 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import styled from '@emotion/styled';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch,
+  Redirect,
+  RouteProps,
+  useLocation,
+  useHistory,
+} from 'react-router-dom';
 
 import { Welcome } from './pages/Welcome';
 import { StartTraining } from './pages/StartTraining';
@@ -22,48 +30,69 @@ const ViewWithNavBar = styled.div`
   height: calc(100% - ${navBarHeight}px);
 `;
 
-export const App: FC = () => {
+const AuthenticatedRoute: FC<RouteProps> = ({ children, ...rest }) => {
+  const [user] = useUser();
+  return (
+    <Route
+      {...rest}
+      render={() => (!!user ? children : <Redirect to="/welcome" />)}
+    />
+  );
+};
+
+const Routes: FC = () => {
   const [user] = useUser();
 
+  console.log('user is:', user);
+
+  return (
+    <Switch>
+      <Route exact path="/welcome">
+        <Switch>
+          <Route exact path="signup">
+            <SignUp />
+          </Route>
+          <Route exact path="login">
+            <LogIn />
+          </Route>
+          <Route path="/">
+            <Welcome />
+          </Route>
+        </Switch>
+      </Route>
+      <AuthenticatedRoute exact path="/log/:logId">
+        <ViewWithNavBar>
+          <StartTraining />
+          <NavBar />
+        </ViewWithNavBar>
+      </AuthenticatedRoute>
+      <AuthenticatedRoute exact path="/timeline">
+        <ViewWithNavBar>
+          <div>Unimplemented</div>
+          <NavBar />
+        </ViewWithNavBar>
+      </AuthenticatedRoute>
+      <AuthenticatedRoute exact path="/account">
+        <ViewWithNavBar>
+          <Account />
+          <NavBar />
+        </ViewWithNavBar>
+      </AuthenticatedRoute>
+      <AuthenticatedRoute exact path="/">
+        <ViewWithNavBar>
+          <NewTraining />
+          <NavBar />
+        </ViewWithNavBar>
+      </AuthenticatedRoute>
+    </Switch>
+  );
+};
+
+export const App: FC = () => {
   return (
     <AppContainer>
       <Router>
-        <Switch>
-          <Route exact path="/timeline">
-            <ViewWithNavBar>
-              <div>Unimplemented</div>
-              <NavBar />
-            </ViewWithNavBar>
-          </Route>
-          <Route exact path="/account">
-            <ViewWithNavBar>
-              <Account />
-              <NavBar />
-            </ViewWithNavBar>
-          </Route>
-          <Route exact path="/signup">
-            <SignUp />
-          </Route>
-          <Route exact path="/login">
-            <LogIn />
-          </Route>
-          <Route exact path="/log/:logId">
-            <ViewWithNavBar>
-              <StartTraining />
-              <NavBar />
-            </ViewWithNavBar>
-          </Route>
-          <Route path="/">
-            {user === null ? (
-              <Welcome />
-            ) : (
-              <ViewWithNavBar>
-                <NewTraining />
-                <NavBar />
-              </ViewWithNavBar>
-            )}
-          </Route>
-        </Switch>
+        <Routes />
       </Router>
     </AppContainer>
   );
