@@ -1,7 +1,9 @@
 import React, { FC } from 'react';
 import styled from '@emotion/styled';
 import { Add, Person, List } from '@material-ui/icons';
-import { IconButton } from '@material-ui/core';
+import { IconButton, Link } from '@material-ui/core';
+import { NavLink } from 'react-router-dom';
+import { css } from '@emotion/css';
 
 import { Rows, Pad } from '../style';
 
@@ -18,17 +20,27 @@ const NavBarContainer = styled(Rows)`
   border-top: 1px solid lightgray;
 `;
 
+const linkStyle = css`
+  color: #555 !important;
+`;
+
 export const NavBar: FC = () => {
   return (
     <NavBarContainer as="nav">
-      <IconButton aria-label="Navigate to timeline" href="/timeline">
-        <List />
+      <IconButton aria-label="Navigate to timeline">
+        <Link component={NavLink} className={linkStyle} to="/timeline">
+          <List />
+        </Link>
       </IconButton>
-      <IconButton aria-label="Start Training" href="/">
-        <Add />
+      <IconButton aria-label="Start Training">
+        <Link component={NavLink} className={linkStyle} to="/">
+          <Add />
+        </Link>
       </IconButton>
-      <IconButton aria-label="Navigate to account" href="/account">
-        <Person />
+      <IconButton aria-label="Navigate to account">
+        <Link component={NavLink} className={linkStyle} to="/account">
+          <Person />
+        </Link>
       </IconButton>
     </NavBarContainer>
   );

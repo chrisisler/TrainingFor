@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import styled from '@emotion/styled';
 import { Button, Typography } from '@material-ui/core';
+import { NavLink } from 'react-router-dom';
 
 import { Pad, Columns } from '../style';
 
@@ -25,10 +26,20 @@ export const Welcome: FC = () => {
         <Typography variant="h4" color="textPrimary" align="center">
           TrainingFor
         </Typography>
-        <Button variant="outlined" color="primary" href="/welcome/signup">
+        <Button
+          variant="contained"
+          component={NavLink}
+          color="primary"
+          to="/welcome/signup"
+        >
           Sign Up
         </Button>
-        <Button variant="outlined" href="/welcome/login">
+        <Button
+          variant="contained"
+          color="primary"
+          component={NavLink}
+          to="/welcome/login"
+        >
           Log In
         </Button>
       </WelcomeCard>
