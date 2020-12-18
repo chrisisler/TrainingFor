@@ -75,8 +75,8 @@ export const StartTraining: FC = () => {
   }, [setLogDoc, history]);
 
   const renameLog = useCallback(() => {
-    // TODO logTitle default
-    const newTitle = window.prompt('Update training log title');
+    const title = DataState.isReady(logDoc) ? logDoc.data()?.title : '';
+    const newTitle = window.prompt('Update training log title', title);
     if (!newTitle) return;
     db.collection(DbPath.Users)
       .doc(user?.uid)
@@ -86,7 +86,7 @@ export const StartTraining: FC = () => {
       .catch(error => {
         alert(error.message);
       });
-  }, [user?.uid, logId]);
+  }, [user?.uid, logId, logDoc]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -165,10 +165,6 @@ export const StartTraining: FC = () => {
         >
           <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
             <IconButton aria-label="Exit training" onClick={exitTraining}>
-              {/**
-               * TODO if previous url was /account page then make the icon the
-               * back arrow, otherwise make the icon Done.
-               */}
               <Done color="primary" />
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>
@@ -763,7 +759,6 @@ const usePressHoldRef = (
     [onTick]
   );
 
-  // TODO Issue double clicking ignores this stop
   const stopHoldTimer = useCallback(() => {
     if (timerId.current) cancelAnimationFrame(timerId.current);
     // If held for small amount of time, assume click and signal to stop
