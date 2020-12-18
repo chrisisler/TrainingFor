@@ -28,7 +28,6 @@ const CenteredContainer = styled.div`
 
 export const Account: FC = () => {
   const [user, setUser] = useUser();
-  const history = useHistory();
 
   const signOut = useCallback(() => {
     auth.signOut();
@@ -69,7 +68,7 @@ export const Account: FC = () => {
           variant="text"
           onClick={signOut}
           className={css`
-            margin-left: auto;
+            margin-left: auto !important;
           `}
         >
           Sign Out
@@ -185,7 +184,7 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         aria-label="Repeat this training"
         onClick={repeatTraining}
         className={css`
-          margin-left: auto;
+          margin-left: auto !important;
         `}
       >
         <Replay />

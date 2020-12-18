@@ -7,7 +7,6 @@ import firebase from 'firebase/app';
 
 import { auth, db, DbPath } from '../firebase';
 import { Columns, Pad } from '../style';
-import { useUser } from '../useUser';
 import { User } from '../interfaces';
 
 const SignUpContainer = styled.div`

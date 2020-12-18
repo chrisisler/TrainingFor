@@ -208,7 +208,7 @@ export const StartTraining: FC = () => {
                   variant="outlined"
                   color="primary"
                   className={css`
-                    margin: 0 0 0 ${Pad.Medium};
+                    margin: 0 0 0 ${Pad.Medium} !important;
                   `}
                   onClick={addActivity}
                 >

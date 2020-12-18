@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@babel/core": "^7.12.9",
+    "@emotion/babel-plugin": "^11.1.2",
     "@emotion/css": "^11.0.0",
     "@emotion/react": "^11.1.1",
     "@emotion/styled": "^11.0.0",
@@ -59,5 +60,8 @@
     "semi": true,
     "bracketSpacing": true,
     "parser": "typescript"
+  },
+  "babel": {
+    "plugins": ["@emotion"]
   }
 }
