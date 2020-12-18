@@ -2,7 +2,7 @@ import React, { FC, useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
-import { Redirect, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import firebase from 'firebase/app';
 
 import { auth, db, DbPath } from '../firebase';
@@ -31,7 +31,6 @@ const SignUpNav = styled.nav`
   display: flex;
   justify-content: space-between;
   padding: ${Pad.Medium};
-  border-bottom: 1px solid gray;
   height: min-content;
 `;
 
@@ -41,19 +40,17 @@ export const SignUp: FC = () => {
   const [password, setPassword] = useState<string>('');
 
   const history = useHistory();
-  const [user, setUser] = useUser();
 
   const signUp = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       try {
-        const userCredential = await auth.createUserWithEmailAndPassword(
+        const userPromise = auth.createUserWithEmailAndPassword(
           email,
           password
         );
-        setDisplayName('');
-        setEmail('');
         setPassword('');
+        const userCredential = await userPromise;
         if (!userCredential.user) throw Error('Unreachable');
         await userCredential.user.updateProfile({ displayName });
         const newUser: Omit<User, 'id'> = {
@@ -61,15 +58,12 @@ export const SignUp: FC = () => {
           creationTime: firebase.firestore.FieldValue.serverTimestamp(),
         };
         db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
-        setUser(userCredential.user);
       } catch (error) {
         alert(error.message);
       }
     },
-    [displayName, email, password, setUser]
+    [displayName, email, password]
   );
-
-  if (!!user) return <Redirect to="/" />;
 
   return (
     <SignUpContainer>

@@ -2,11 +2,10 @@ import React, { FC, useCallback, useState } from 'react';
 import styled from '@emotion/styled';
 import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
-import { Redirect, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 import { Columns, Pad } from '../style';
 import { auth } from '../firebase';
-import { useUser } from '../useUser';
 
 const LogInContainer = styled.div`
   height: 100vh;
@@ -37,27 +36,19 @@ export const LogIn: FC = () => {
   const [password, setPassword] = useState<string>('');
 
   const history = useHistory();
-  const [user, setUser] = useUser();
 
   const logIn = useCallback(
-    async <E extends React.SyntheticEvent>(event: E) => {
+    <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       try {
-        const userCredential = await auth.signInWithEmailAndPassword(
-          email,
-          password
-        );
-        setEmail('');
+        auth.signInWithEmailAndPassword(email, password);
         setPassword('');
-        setUser(userCredential.user);
       } catch (error) {
         alert(error.message);
       }
     },
-    [email, password, setUser]
+    [email, password]
   );
-
-  if (!!user) return <Redirect to="/" />;
 
   return (
     <LogInContainer>
