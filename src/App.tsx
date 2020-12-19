@@ -10,7 +10,7 @@ import {
 import { CircularProgress, Typography } from '@material-ui/core';
 
 import { Welcome } from './pages/Welcome';
-import { StartTraining } from './pages/StartTraining';
+import { TrainingLogEditor } from './pages/TrainingLogEditor';
 import { NewTraining } from './pages/NewTraining';
 import { SignUp } from './pages/SignUp';
 import { LogIn } from './pages/LogIn';
@@ -89,7 +89,7 @@ export const App: FC = () => {
             <Switch>
               <Route exact path="/log/:logId">
                 <ViewWithNavBar>
-                  <StartTraining />
+                  <TrainingLogEditor />
                   <NavBar />
                 </ViewWithNavBar>
               </Route>

@@ -43,7 +43,7 @@ const AddActivityInput = styled.input`
   font-size: 1em;
 `;
 
-export const StartTraining: FC = () => {
+export const TrainingLogEditor: FC = () => {
   const [activityName, setActivityName] = useState<string>('');
 
   const location = useLocation<{ from?: Location }>();

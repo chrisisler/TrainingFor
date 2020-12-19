@@ -9,7 +9,7 @@ import { TrainingLog } from '../interfaces';
 import { Columns, Pad } from '../style';
 import { useUser } from '../useUser';
 
-const StartTrainingContainer = styled.div`
+const TrainingLogEditorContainer = styled.div`
   height: 100%;
   width: 100%;
   display: grid;
@@ -39,7 +39,7 @@ export const NewTraining: FC = () => {
   }, [user?.uid, history]);
 
   return (
-    <StartTrainingContainer>
+    <TrainingLogEditorContainer>
       <Columns pad={Pad.Medium}>
         <Typography variant="h4" color="textPrimary" gutterBottom>
           Start Training
@@ -48,6 +48,6 @@ export const NewTraining: FC = () => {
           Go
         </Button>
       </Columns>
-    </StartTrainingContainer>
+    </TrainingLogEditorContainer>
   );
 };
