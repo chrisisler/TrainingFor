@@ -8,7 +8,7 @@ import {
   IconButton,
 } from '@material-ui/core';
 import firebase from 'firebase/app';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import format from 'date-fns/format';
 import { Replay } from '@material-ui/icons';
 
@@ -110,10 +110,17 @@ export const Account: FC = () => {
 const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   const [user] = useUser();
   const history = useHistory();
+  const location = useLocation();
 
   const logDate = log.timestamp
     ? (log.timestamp as firebase.firestore.Timestamp)?.toDate()
     : null;
+
+  // TODO Switch to declarative Redirect
+  const navigateToTraining = useCallback(
+    () => history.push(`/log/${log.id}`, { from: location }),
+    [history, location, log.id]
+  );
 
   const repeatTraining = useCallback(async () => {
     if (!user) return;
@@ -153,11 +160,11 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         writeBatch.set(activitiesCollection.doc(a.id), a);
       });
       await writeBatch.commit();
-      history.push(`/log/${logRef.id}`);
+      navigateToTraining();
     } catch (error) {
       alert(error.message);
     }
-  }, [user, history, log.id, log.title]);
+  }, [user, log.id, log.title, navigateToTraining]);
 
   return (
     <Rows
@@ -168,7 +175,7 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         min-height: fit-content;
       `}
     >
-      <Columns onClick={() => history.push(`/log/${log.id}`)}>
+      <Columns onClick={navigateToTraining}>
         <Typography variant="body1" color="textSecondary">
           {log.title}
         </Typography>

@@ -11,8 +11,13 @@ import {
   Menu,
   ClickAwayListener,
 } from '@material-ui/core';
-import { DeleteOutline, MoreHoriz, Done } from '@material-ui/icons';
-import { useParams, useHistory } from 'react-router-dom';
+import {
+  DeleteOutline,
+  MoreHoriz,
+  Done,
+  ArrowBackIosRounded,
+} from '@material-ui/icons';
+import { useParams, useHistory, useLocation } from 'react-router-dom';
 import format from 'date-fns/format';
 import { v4 as uuid } from 'uuid';
 import FlipMove from 'react-flip-move';
@@ -41,6 +46,7 @@ const AddActivityInput = styled.input`
 export const StartTraining: FC = () => {
   const [activityName, setActivityName] = useState<string>('');
 
+  const location = useLocation<{ from?: Location }>();
   const history = useHistory();
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
@@ -69,9 +75,9 @@ export const StartTraining: FC = () => {
       );
   }, [logId, user]);
 
-  const exitTraining = useCallback(() => {
+  const navigateToAccount = useCallback(() => {
     setLogDoc(DataState.Empty);
-    if (window.location.pathname !== '/') history.push('/');
+    history.push('/account');
   }, [setLogDoc, history]);
 
   const renameLog = useCallback(() => {
@@ -164,8 +170,12 @@ export const StartTraining: FC = () => {
           `}
         >
           <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
-            <IconButton aria-label="Exit training" onClick={exitTraining}>
-              <Done color="primary" />
+            <IconButton aria-label="Done training" onClick={navigateToAccount}>
+              {location.state?.from?.pathname.includes('/account') ? (
+                <ArrowBackIosRounded color="primary" />
+              ) : (
+                <Done color="primary" />
+              )}
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>
               <Typography variant="subtitle1" color="textSecondary">
