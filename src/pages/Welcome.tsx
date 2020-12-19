@@ -4,6 +4,7 @@ import { Button, Typography } from '@material-ui/core';
 import { NavLink } from 'react-router-dom';
 
 import { Pad, Columns } from '../style';
+import { Paths } from '../constants';
 
 const WelcomeContainer = styled.div`
   height: 100vh;
@@ -30,7 +31,7 @@ export const Welcome: FC = () => {
           variant="contained"
           component={NavLink}
           color="primary"
-          to="/welcome/signup"
+          to={Paths.signUp}
         >
           Sign Up
         </Button>
@@ -38,7 +39,7 @@ export const Welcome: FC = () => {
           variant="contained"
           color="primary"
           component={NavLink}
-          to="/welcome/login"
+          to={Paths.logIn}
         >
           Log In
         </Button>

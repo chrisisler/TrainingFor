@@ -6,6 +6,7 @@ import { useHistory } from 'react-router-dom';
 
 import { Columns, Pad } from '../style';
 import { auth } from '../firebase';
+import { Paths } from '../constants';
 
 const LogInContainer = styled.div`
   height: 100vh;
@@ -57,7 +58,7 @@ export const LogIn: FC = () => {
           aria-label="Navigate back"
           size="small"
           onClick={() => {
-            history.push('/welcome');
+            history.push(Paths.welcome);
           }}
         >
           <ArrowBackIosRounded />

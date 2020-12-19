@@ -18,6 +18,7 @@ import { Account } from './pages/Account';
 import { NavBar, navBarHeight } from './components/NavBar';
 import { auth } from './firebase';
 import { DataState, DataStateView } from './DataState';
+import { Paths } from './constants';
 
 const AppContainer = styled.div`
   width: 100%;
@@ -70,49 +71,49 @@ export const App: FC = () => {
           )}
           empty={() => (
             <Switch>
-              <Route exact path="/welcome">
+              <Route exact path={Paths.welcome}>
                 <Welcome />
               </Route>
-              <Route exact path="/welcome/signup">
+              <Route exact path={Paths.signUp}>
                 <SignUp />
               </Route>
-              <Route exact path="/welcome/login">
+              <Route exact path={Paths.logIn}>
                 <LogIn />
               </Route>
               <Route path="/">
-                <Redirect to="/welcome" />
+                <Redirect to={Paths.welcome} />
               </Route>
             </Switch>
           )}
         >
           {() => (
             <Switch>
-              <Route exact path="/log/:logId">
+              <Route exact path={Paths.logEditor()}>
                 <ViewWithNavBar>
                   <TrainingLogEditor />
                   <NavBar />
                 </ViewWithNavBar>
               </Route>
-              <Route exact path="/timeline">
+              <Route exact path={Paths.timeline}>
                 <ViewWithNavBar>
                   <div>Unimplemented</div>
                   <NavBar />
                 </ViewWithNavBar>
               </Route>
-              <Route exact path="/account">
+              <Route exact path={Paths.account}>
                 <ViewWithNavBar>
                   <Account />
                   <NavBar />
                 </ViewWithNavBar>
               </Route>
-              <Route exact path="/">
+              <Route exact path={Paths.newTraining}>
                 <ViewWithNavBar>
                   <NewTraining />
                   <NavBar />
                 </ViewWithNavBar>
               </Route>
               <Route path="/">
-                <Redirect to="/" />
+                <Redirect to={Paths.newTraining} />
               </Route>
             </Switch>
           )}

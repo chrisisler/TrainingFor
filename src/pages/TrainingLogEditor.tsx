@@ -32,7 +32,7 @@ import {
 } from '../interfaces';
 import { db, DbPath } from '../firebase';
 import { DataState, DataStateView } from '../DataState';
-import { Format } from '../constants';
+import { Format, Paths } from '../constants';
 
 const AddActivityInput = styled.input`
   box-sizing: content-box;
@@ -77,7 +77,7 @@ export const TrainingLogEditor: FC = () => {
 
   const navigateToAccount = useCallback(() => {
     setLogDoc(DataState.Empty);
-    history.push('/account');
+    history.push(Paths.account);
   }, [setLogDoc, history]);
 
   const renameLog = useCallback(() => {
@@ -138,6 +138,7 @@ export const TrainingLogEditor: FC = () => {
   const deleteLogDoc = useCallback(() => {
     if (!DataState.isReady(logDoc)) return;
     if (!window.confirm('Delete this training log forever?')) return;
+    // TODO Remove this
     setLogDoc(DataState.Loading);
     logDoc.ref
       .delete()
@@ -146,7 +147,7 @@ export const TrainingLogEditor: FC = () => {
         alert(error.message);
       })
       .finally(() => {
-        history.push('/account');
+        history.push(Paths.account);
       });
   }, [logDoc, setLogDoc, history]);
 
@@ -171,7 +172,7 @@ export const TrainingLogEditor: FC = () => {
         >
           <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
             <IconButton aria-label="Done training" onClick={navigateToAccount}>
-              {location.state?.from?.pathname.includes('/account') ? (
+              {location.state?.from?.pathname.includes(Paths.account) ? (
                 <ArrowBackIosRounded color="primary" />
               ) : (
                 <Done color="primary" />

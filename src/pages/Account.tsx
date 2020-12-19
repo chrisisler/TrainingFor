@@ -17,7 +17,7 @@ import { useUser } from '../useUser';
 import { auth, db, DbPath } from '../firebase';
 import { TrainingLog, Activity, ActivityStatus } from '../interfaces';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { Format } from '../constants';
+import { Format, Paths } from '../constants';
 
 const CenteredContainer = styled.div`
   width: 100%;
@@ -118,7 +118,7 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
 
   // TODO Switch to declarative Redirect
   const navigateToTraining = useCallback(
-    () => history.push(`/log/${log.id}`, { from: location }),
+    () => history.push(Paths.logEditor(log.id), { from: location }),
     [history, location, log.id]
   );
 

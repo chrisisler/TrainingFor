@@ -8,6 +8,7 @@ import firebase from 'firebase/app';
 import { auth, db, DbPath } from '../firebase';
 import { Columns, Pad } from '../style';
 import { User } from '../interfaces';
+import { Paths } from '../constants';
 
 const SignUpContainer = styled.div`
   height: 100vh;
@@ -40,7 +41,7 @@ export const SignUp: FC = () => {
 
   const history = useHistory();
 
-  const signUp = useCallback(
+  const addUser = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       try {
@@ -71,7 +72,7 @@ export const SignUp: FC = () => {
           aria-label="Navigate back"
           size="small"
           onClick={() => {
-            history.push('/welcome');
+            history.push(Paths.welcome);
           }}
         >
           <ArrowBackIosRounded />
@@ -99,7 +100,7 @@ export const SignUp: FC = () => {
           value={password}
           onChange={event => setPassword(event.target.value)}
         />
-        <Button variant="contained" color="primary" onClick={signUp}>
+        <Button variant="contained" color="primary" onClick={addUser}>
           Start Training
         </Button>
       </SignUpCard>

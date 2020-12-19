@@ -6,8 +6,9 @@ import { NavLink } from 'react-router-dom';
 import { css } from '@emotion/css';
 
 import { Rows, Pad } from '../style';
+import { Paths } from '../constants';
 
-export const navBarHeight: number = 50;
+export const navBarHeight = 50;
 
 const NavBarContainer = styled(Rows)`
   justify-content: space-between;
@@ -28,17 +29,17 @@ export const NavBar: FC = () => {
   return (
     <NavBarContainer as="nav">
       <IconButton aria-label="Navigate to timeline">
-        <Link component={NavLink} className={linkStyle} to="/timeline">
+        <Link component={NavLink} className={linkStyle} to={Paths.timeline}>
           <List />
         </Link>
       </IconButton>
       <IconButton aria-label="Start Training">
-        <Link component={NavLink} className={linkStyle} to="/">
+        <Link component={NavLink} className={linkStyle} to={Paths.newTraining}>
           <Add />
         </Link>
       </IconButton>
       <IconButton aria-label="Navigate to account">
-        <Link component={NavLink} className={linkStyle} to="/account">
+        <Link component={NavLink} className={linkStyle} to={Paths.account}>
           <Person />
         </Link>
       </IconButton>
