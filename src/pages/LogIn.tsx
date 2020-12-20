@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { TextField, Typography, Button, IconButton } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import { css } from '@emotion/css';
 
 import { Columns, Pad } from '../style';
 import { auth } from '../firebase';
@@ -51,6 +52,17 @@ export const LogIn: FC = () => {
     [email, password]
   );
 
+  const resetPassword = useCallback(() => {
+    if (!email.length) return alert('Enter a valid email address.');
+    try {
+      auth.sendPasswordResetEmail(email);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      alert(`A password reset link has been sent to ${email}`);
+    }
+  }, [email]);
+
   return (
     <LogInContainer>
       <LogInNav>
@@ -72,13 +84,30 @@ export const LogIn: FC = () => {
           label="Email"
           value={email}
           onChange={event => setEmail(event.target.value)}
-        ></TextField>
-        <TextField
-          label="Password"
-          type="password"
-          value={password}
-          onChange={event => setPassword(event.target.value)}
         />
+        <Columns pad={Pad.XSmall}>
+          <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+          />
+          <button
+            disabled={!email.length}
+            className={css`
+              border: 0;
+              background-color: inherit;
+              max-width: fit-content;
+              margin: 0;
+              padding: 0;
+              color: ${!email.length ? 'lightgray' : 'gray'};
+              font-size: 0.8em;
+            `}
+            onClick={resetPassword}
+          >
+            Reset Password
+          </button>
+        </Columns>
         <Button variant="contained" color="primary" onClick={logIn}>
           Start Training
         </Button>
