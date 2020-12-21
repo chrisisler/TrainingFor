@@ -1,8 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { Add, Person, List } from '@material-ui/icons';
 import { IconButton, Link } from '@material-ui/core';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { css } from '@emotion/css';
 
 import { Rows, Pad } from '../style';
@@ -21,25 +21,44 @@ const NavBarContainer = styled(Rows)`
   border-top: 1px solid lightgray;
 `;
 
-const linkStyle = css`
-  color: #555 !important;
-`;
-
 export const NavBar: FC = () => {
+  const { pathname } = useLocation();
+
+  // This is to highlight the active navigation
+  const linkStyle = useCallback(
+    (path: string) =>
+      css`
+        color: ${pathname === path ? 'blue' : '#555'} !important;
+      `,
+    [pathname]
+  );
+
   return (
     <NavBarContainer as="nav">
       <IconButton aria-label="Navigate to timeline">
-        <Link component={NavLink} className={linkStyle} to={Paths.timeline}>
+        <Link
+          component={NavLink}
+          className={linkStyle(Paths.timeline)}
+          to={Paths.timeline}
+        >
           <List />
         </Link>
       </IconButton>
       <IconButton aria-label="Start Training">
-        <Link component={NavLink} className={linkStyle} to={Paths.newTraining}>
+        <Link
+          component={NavLink}
+          className={linkStyle(Paths.newTraining)}
+          to={Paths.newTraining}
+        >
           <Add />
         </Link>
       </IconButton>
       <IconButton aria-label="Navigate to account">
-        <Link component={NavLink} className={linkStyle} to={Paths.account}>
+        <Link
+          component={NavLink}
+          className={linkStyle(Paths.account)}
+          to={Paths.account}
+        >
           <Person />
         </Link>
       </IconButton>
