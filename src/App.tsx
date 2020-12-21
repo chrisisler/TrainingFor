@@ -31,13 +31,6 @@ const ViewWithNavBar = styled.div`
   height: calc(100% - ${navBarHeight}px);
 `;
 
-const CenteredContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-`;
-
 export const App: FC = () => {
   const [user, setUser] = useState<DataState<firebase.User>>(DataState.Loading);
 
@@ -57,17 +50,10 @@ export const App: FC = () => {
       <Router>
         <DataStateView
           data={user}
-          loading={() => (
-            <CenteredContainer>
-              <CircularProgress />
-            </CenteredContainer>
-          )}
           error={() => (
-            <CenteredContainer>
-              <Typography variant="body2" color="error">
-                Something went wrong.
-              </Typography>
-            </CenteredContainer>
+            <Typography variant="body2" color="error">
+              Something went wrong.
+            </Typography>
           )}
           empty={() => (
             <Switch>

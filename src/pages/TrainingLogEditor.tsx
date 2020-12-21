@@ -161,7 +161,6 @@ export const TrainingLogEditor: FC = () => {
           Error
         </Typography>
       )}
-      loading={() => <CircularProgress />}
     >
       {logDoc => (
         <Columns
@@ -283,15 +282,7 @@ const ActivitiesListView: FC = () => {
   }, [user?.uid, logId]);
 
   return (
-    <DataStateView
-      data={activities}
-      error={() => null}
-      loading={() => (
-        <Columns maxWidth between>
-          <CircularProgress />
-        </Columns>
-      )}
-    >
+    <DataStateView data={activities} error={() => null}>
       {activities => (
         <ActivitiesListContainer>
           <FlipMove enterAnimation="fade" leaveAnimation="fade">

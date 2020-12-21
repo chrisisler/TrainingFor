@@ -1,12 +1,6 @@
 import React, { FC, useCallback } from 'react';
-import styled from '@emotion/styled';
 import { css } from '@emotion/css';
-import {
-  Typography,
-  CircularProgress,
-  Button,
-  IconButton,
-} from '@material-ui/core';
+import { Typography, Button, IconButton } from '@material-ui/core';
 import firebase from 'firebase/app';
 import { useHistory, useLocation } from 'react-router-dom';
 import format from 'date-fns/format';
@@ -18,13 +12,7 @@ import { auth, db, DbPath } from '../firebase';
 import { TrainingLog, Activity, ActivityStatus } from '../interfaces';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { Format, Paths } from '../constants';
-
-const CenteredContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-`;
+import { Loading } from '../components/Loading';
 
 export const Account: FC = () => {
   const [user, setUser] = useUser();
@@ -82,17 +70,10 @@ export const Account: FC = () => {
       </Typography>
       <DataStateView
         data={logs}
-        loading={() => (
-          <CenteredContainer>
-            <CircularProgress />
-          </CenteredContainer>
-        )}
         error={() => (
-          <CenteredContainer>
-            <Typography variant="body2" color="error">
-              Something went wrong.
-            </Typography>
-          </CenteredContainer>
+          <Typography variant="body2" color="error">
+            Something went wrong.
+          </Typography>
         )}
       >
         {logs => (
