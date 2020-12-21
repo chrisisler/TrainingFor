@@ -233,14 +233,6 @@ const ActivityStatusButton = styled.button`
   color: lightgray;
   font-size: 0.72em;
   border: 0;
-  border-left: 1px solid
-    ${(props: { status: ActivityStatus }) => {
-      if (props.status === ActivityStatus.Unattempted) return 'lightgray';
-      if (props.status === ActivityStatus.Completed) return 'green';
-      if (props.status === ActivityStatus.Skipped) return 'orange';
-      if (props.status === ActivityStatus.Injured) return 'red';
-      throw Error('Unreachable');
-    }};
   font-weight: 800;
   background-color: transparent;
   text-transform: uppercase;
@@ -691,7 +683,7 @@ const ActivitySetView: FC<{
             text-align: center;
           `}
         />
-        <ActivityStatusButton status={set.status} onClick={cycleSetStatus}>
+        <ActivityStatusButton onClick={cycleSetStatus}>
           {set.status}
         </ActivityStatusButton>
         <ClickAwayListener onClickAway={closeSetMenu}>
