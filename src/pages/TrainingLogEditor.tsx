@@ -559,6 +559,9 @@ const ActivitySetView: FC<{
   sets: ActivitySet[];
   activityId: string;
 }> = ({ index, sets, activityId }) => {
+  const set = sets[index];
+  const [weight, setWeight] = useState(set.weight);
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openSetMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
@@ -566,9 +569,6 @@ const ActivitySetView: FC<{
 
   const [user] = useUser();
   const { logId } = useParams<{ logId?: string }>();
-
-  /** The ActivitySet this ActivitySetView is rendering. */
-  const set = sets[index];
 
   const cycleSetStatus = () => {
     sets[index].status = Activity.cycleStatus(set.status);
@@ -640,6 +640,7 @@ const ActivitySetView: FC<{
       });
   };
 
+  /** Modify `sets` in-place, updating the weight of the current set. */
   const updateSetWeight = (event: React.ChangeEvent<HTMLInputElement>) => {
     sets[index].weight = Number(event.target.value);
     db.collection(DbPath.Users)
@@ -671,15 +672,17 @@ const ActivitySetView: FC<{
       </Rows>
       <Rows center pad={Pad.XSmall}>
         <input
-          type="number"
+          type="tel"
+          min={0}
+          max={999}
+          maxLength={3}
           name="weight"
-          value={set.weight}
-          onInput={event => {
-            // Limit input length to 3
-            const input = event.currentTarget;
-            if (input.value.length > 3) input.value = input.value.slice(0, 3);
+          value={weight}
+          onChange={event => {
+            if (Number.isNaN(event.target.value)) return;
+            setWeight(Number(event.target.value));
           }}
-          onChange={updateSetWeight}
+          onBlur={updateSetWeight}
           className={css`
             width: 5ch;
             color: gray;
