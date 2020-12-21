@@ -59,8 +59,6 @@ export const useDataState = <T extends unknown>(
         if (!stale) setDataState(data);
       })
       .catch(error => {
-        console.log('[DTASTATE]:error is:', error);
-        console.log('getData is:', getData);
         if (!stale) setDataState(DataState.error(error.message));
       });
     return () => {
