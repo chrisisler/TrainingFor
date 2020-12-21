@@ -53,7 +53,10 @@ export const LogIn: FC = () => {
   );
 
   const resetPassword = useCallback(() => {
-    if (!email.length) return alert('Enter a valid email address.');
+    const email = window.prompt(
+      'Please provide the email address associated with the account.'
+    );
+    if (!email) return;
     try {
       auth.sendPasswordResetEmail(email);
     } catch (error) {
@@ -61,7 +64,7 @@ export const LogIn: FC = () => {
     } finally {
       alert(`A password reset link has been sent to ${email}`);
     }
-  }, [email]);
+  }, []);
 
   return (
     <LogInContainer>
@@ -93,14 +96,13 @@ export const LogIn: FC = () => {
             onChange={event => setPassword(event.target.value)}
           />
           <button
-            disabled={!email.length}
             className={css`
               border: 0;
               background-color: inherit;
               max-width: fit-content;
               margin: 0;
               padding: 0;
-              color: ${!email.length ? 'lightgray' : 'gray'};
+              color: gray;
               font-size: 0.8em;
             `}
             onClick={resetPassword}
