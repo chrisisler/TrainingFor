@@ -6,7 +6,6 @@ import {
   Button,
   Typography,
   IconButton,
-  CircularProgress,
   MenuItem,
   Menu,
   ClickAwayListener,

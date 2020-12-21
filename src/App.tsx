@@ -7,7 +7,7 @@ import {
   Redirect,
   Switch,
 } from 'react-router-dom';
-import { CircularProgress, Typography } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 
 import { Welcome } from './pages/Welcome';
 import { TrainingLogEditor } from './pages/TrainingLogEditor';

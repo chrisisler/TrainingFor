@@ -12,7 +12,6 @@ import { auth, db, DbPath } from '../firebase';
 import { TrainingLog, Activity, ActivityStatus } from '../interfaces';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { Format, Paths } from '../constants';
-import { Loading } from '../components/Loading';
 
 export const Account: FC = () => {
   const [user, setUser] = useUser();
