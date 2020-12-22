@@ -15,6 +15,12 @@ type FirestoreTimestamp = null | firebase.firestore.FieldValue;
 export interface User extends FirestoreDocument {
   creationTime: FirestoreTimestamp;
   displayName: string;
+
+  /** List of users (IDs) this user is following. */
+  following: string[];
+
+  /** List of users (IDs) following this user. */
+  followers: string[];
 }
 
 export interface TrainingLog extends FirestoreDocument {

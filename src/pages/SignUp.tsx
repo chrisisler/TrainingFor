@@ -56,6 +56,8 @@ export const SignUp: FC = () => {
         const newUser: Omit<User, 'id'> = {
           displayName,
           creationTime: firebase.firestore.FieldValue.serverTimestamp(),
+          followers: [],
+          following: [],
         };
         db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
       } catch (error) {

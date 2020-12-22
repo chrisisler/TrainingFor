@@ -15,6 +15,7 @@ import { NewTraining } from './pages/NewTraining';
 import { SignUp } from './pages/SignUp';
 import { LogIn } from './pages/LogIn';
 import { Account } from './pages/Account';
+import { Timeline } from './pages/Timeline';
 import { NavBar, navBarHeight } from './components/NavBar';
 import { auth } from './firebase';
 import { DataState, DataStateView } from './DataState';
@@ -57,6 +58,12 @@ export const App: FC = () => {
           )}
           empty={() => (
             <Switch>
+              <Route exact path={Paths.user()}>
+                <ViewWithNavBar>
+                  <h2>Unimplemented</h2>
+                  <NavBar />
+                </ViewWithNavBar>
+              </Route>
               <Route exact path={Paths.welcome}>
                 <Welcome />
               </Route>
@@ -82,7 +89,7 @@ export const App: FC = () => {
               </Route>
               <Route exact path={Paths.timeline}>
                 <ViewWithNavBar>
-                  <div>Unimplemented</div>
+                  <Timeline />
                   <NavBar />
                 </ViewWithNavBar>
               </Route>
