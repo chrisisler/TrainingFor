@@ -218,6 +218,16 @@ export const Timeline: FC = () => {
           </DataStateView>
         </div>
       )}
+      <DataStateView
+        data={followedUsersLogs}
+        error={() => (
+          <Typography color="error" variant="body1">
+            Something went wrong.
+          </Typography>
+        )}
+      >
+        {_logs => null /** TODO Implement readonly logview */}
+      </DataStateView>
     </Columns>
   );
 };

@@ -58,12 +58,6 @@ export const App: FC = () => {
           )}
           empty={() => (
             <Switch>
-              <Route exact path={Paths.user()}>
-                <ViewWithNavBar>
-                  <h2>Unimplemented</h2>
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
               <Route exact path={Paths.welcome}>
                 <Welcome />
               </Route>
@@ -81,6 +75,12 @@ export const App: FC = () => {
         >
           {() => (
             <Switch>
+              <Route exact path={Paths.user()}>
+                <ViewWithNavBar>
+                  <Account />
+                  <NavBar />
+                </ViewWithNavBar>
+              </Route>
               <Route exact path={Paths.logEditor()}>
                 <ViewWithNavBar>
                   <TrainingLogEditor />

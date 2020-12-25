@@ -1,43 +1,96 @@
-import React, { FC, useCallback } from 'react';
+import React, { FC, useCallback, useState, useEffect } from 'react';
 import { css } from '@emotion/css';
 import { Typography, Button, IconButton } from '@material-ui/core';
 import firebase from 'firebase/app';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import format from 'date-fns/format';
 import { Replay } from '@material-ui/icons';
 
 import { Pad, Columns, Rows } from '../style';
 import { useUser } from '../useUser';
 import { auth, db, DbPath } from '../firebase';
-import { TrainingLog, Activity, ActivityStatus } from '../interfaces';
+import { TrainingLog, Activity, ActivityStatus, User } from '../interfaces';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { Format, Paths } from '../constants';
 
+/**
+ * Presents the currently authenticated user and their logs OR presents another
+ * user's account and logs with a button to follow/unfollow.
+ */
 export const Account: FC = () => {
+  const [isFollowing, setIsFollowing] = useState<DataState<boolean>>(
+    DataState.Empty
+  );
+
+  // TODO Remove setUser calls - Is this needed still?
   const [user, setUser] = useUser();
+
+  /** The ID of the selected user. Is `undefined` if viewing our own page. */
+  const { userId } = useParams<{ userId?: string }>();
+
+  const [logs] = useDataState<TrainingLog[]>(
+    async () =>
+      db
+        .collection(DbPath.Users)
+        .doc(userId ?? user?.uid)
+        .collection(DbPath.UserLogs)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(({ docs }) =>
+          docs.map(doc => ({ ...doc.data(), id: doc.id } as TrainingLog))
+        ),
+    [userId, user?.uid]
+  );
+
+  const [selectedUser] = useDataState(
+    () =>
+      db
+        .collection(DbPath.Users)
+        .doc(userId)
+        .get()
+        .then(doc => ({ ...doc.data(), id: doc.id } as User)),
+    [userId]
+  );
+
+  const toggleFollow = useCallback(async () => {
+    if (!user || !userId || !DataState.isReady(isFollowing)) return;
+    try {
+      const batch = db.batch();
+      batch.update(db.collection(DbPath.Users).doc(userId), {
+        followers: isFollowing
+          ? firebase.firestore.FieldValue.arrayRemove(user.uid)
+          : firebase.firestore.FieldValue.arrayUnion(user.uid),
+      });
+      batch.update(db.collection(DbPath.Users).doc(user?.uid), {
+        following: isFollowing
+          ? firebase.firestore.FieldValue.arrayRemove(userId)
+          : firebase.firestore.FieldValue.arrayUnion(userId),
+      });
+      await batch.commit();
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [userId, user, isFollowing]);
 
   const signOut = useCallback(() => {
     auth.signOut();
     setUser(null);
   }, [setUser]);
 
-  // Since logs do not update while we are viewing them, we do not need to
-  // maintain a database subscription
-  const [logs] = useDataState<TrainingLog[]>(
-    async () =>
-      !user
-        ? DataState.Empty
-        : db
-            .collection(DbPath.Users)
-            .doc(user.uid)
-            .collection(DbPath.UserLogs)
-            .orderBy('timestamp', 'desc')
-            .get()
-            .then(({ docs }) =>
-              docs.map(doc => ({ ...doc.data(), id: doc.id } as TrainingLog))
-            ),
-    [user]
-  );
+  // Define `isFollowing`
+  useEffect(() => {
+    if (!userId || !DataState.isReady(selectedUser) || !user) return;
+    return db
+      .collection(DbPath.Users)
+      .doc(user.uid)
+      .onSnapshot(
+        doc => {
+          const following = doc.get('following') as string[];
+          setIsFollowing(following.includes(userId));
+        },
+        err => setIsFollowing(DataState.error(err.message))
+      );
+  }, [userId, selectedUser, user]);
 
   if (!user) return null;
 
@@ -51,18 +104,33 @@ export const Account: FC = () => {
       `}
     >
       <Rows center maxWidth>
-        <Button
-          variant="text"
-          onClick={signOut}
-          className={css`
-            margin-left: auto !important;
-          `}
-        >
-          Sign Out
-        </Button>
+        {!userId && (
+          <Button
+            variant="text"
+            onClick={signOut}
+            className={css`
+              margin-left: auto !important;
+            `}
+          >
+            Sign Out
+          </Button>
+        )}
+        {userId && DataState.isReady(isFollowing) && (
+          <Button
+            variant="text"
+            onClick={toggleFollow}
+            className={css`
+              margin-left: auto !important;
+            `}
+          >
+            {isFollowing ? 'Following' : 'Follow'}
+          </Button>
+        )}
       </Rows>
       <Typography variant="h4" color="textSecondary" gutterBottom>
-        {user.displayName}
+        {userId && DataState.isReady(selectedUser)
+          ? selectedUser.displayName
+          : user.displayName}
       </Typography>
       <Typography variant="body1" color="textSecondary" gutterBottom>
         Training Logs
@@ -91,6 +159,7 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   const [user] = useUser();
   const history = useHistory();
   const location = useLocation();
+  const { userId } = useParams<{ userId?: string }>();
 
   const logDate = log.timestamp
     ? (log.timestamp as firebase.firestore.Timestamp)?.toDate()
@@ -155,7 +224,7 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         min-height: fit-content;
       `}
     >
-      <Columns onClick={navigateToTraining}>
+      <Columns onClick={userId ? undefined : navigateToTraining}>
         <Typography variant="body1" color="textSecondary">
           {log.title}
         </Typography>
@@ -165,17 +234,19 @@ const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
           </Typography>
         )}
       </Columns>
-      <IconButton
-        size="medium"
-        edge="end"
-        aria-label="Repeat this training"
-        onClick={repeatTraining}
-        className={css`
-          margin-left: auto !important;
-        `}
-      >
-        <Replay />
-      </IconButton>
+      {!userId && (
+        <IconButton
+          size="medium"
+          edge="end"
+          aria-label="Repeat this training"
+          onClick={repeatTraining}
+          className={css`
+            margin-left: auto !important;
+          `}
+        >
+          <Replay />
+        </IconButton>
+      )}
     </Rows>
   );
 };
