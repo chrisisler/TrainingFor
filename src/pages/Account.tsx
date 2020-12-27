@@ -181,9 +181,9 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
     if (!window.confirm('Repeat this training?')) return;
     try {
       const repeatLog: Omit<TrainingLog, 'id'> = {
+        ...log,
         title: 'Repeat - ' + log.title,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        notes: null,
       };
       const [logRef, activities] = await Promise.all([
         db
@@ -218,7 +218,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
     } catch (error) {
       alert(error.message);
     }
-  }, [user, log.id, log.title, navigateToTraining]);
+  }, [user, log, navigateToTraining]);
 
   return (
     <Rows

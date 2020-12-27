@@ -27,6 +27,7 @@ export interface TrainingLog extends FirestoreDocument {
   title: string;
   timestamp: FirestoreTimestamp;
   notes: null | string;
+  authorId: string;
 }
 
 export interface Activity extends FirestoreDocument {

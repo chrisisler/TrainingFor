@@ -21,10 +21,12 @@ export const NewTraining: FC = () => {
   const [user] = useUser();
 
   const addLog = useCallback(() => {
+    if (!user) return;
     const newLog: Omit<TrainingLog, 'id'> = {
       title: '-',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       notes: null,
+      authorId: user.uid,
     };
     db.collection(DbPath.Users)
       .doc(user?.uid)
@@ -36,7 +38,7 @@ export const NewTraining: FC = () => {
       .catch(error => {
         alert(error.message);
       });
-  }, [user?.uid, history]);
+  }, [user, history]);
 
   return (
     <TrainingLogEditorContainer>
