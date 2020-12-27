@@ -144,10 +144,11 @@ export const Timeline: FC = () => {
         <div
           ref={suggestionsRef}
           className={css`
-            width: 80%;
+            width: 85%;
             background-color: #fff;
             border-radius: 5px;
-            box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
+            z-index: 100;
           `}
         >
           <DataStateView
@@ -233,7 +234,6 @@ const TimelineView: FC = () => {
         )
     );
     const logs = await Promise.all(promisesForLogs);
-    console.log('logs is:', logs);
     // TODO sort
     return logs.flatMap(log => log);
   }, [user?.uid]);

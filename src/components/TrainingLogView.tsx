@@ -142,7 +142,7 @@ export const TrainingLogView: FC<{
 
 const ActivityView: FC<{
   /**
-   * Caution! * Providing the wrong value can break the entire app at runtime.
+   * Caution! Providing the wrong value can break the entire app at runtime.
    */
   editable: boolean;
   activities: Activity[];
@@ -295,66 +295,68 @@ const ActivityView: FC<{
   return (
     <Columns maxWidth padding={`0 ${Pad.Small} 0 ${Pad.Large}`}>
       <Rows maxWidth center between>
-        <Typography variant="subtitle1" color="textPrimary">
+        <Typography variant="subtitle1" color="textPrimary" gutterBottom>
           {activity.name}
         </Typography>
-        <Rows center>
-          <Button
-            ref={editable ? pressHoldButtonRef : undefined}
-            disabled={!editable}
-            variant="contained"
-            color="primary"
-            size="small"
-            onClick={() => addActivitySet()}
-          >
-            +
-          </Button>
-          <ClickAwayListener onClickAway={closeActivityMenu}>
-            <div>
-              <IconButton
-                disabled={!editable}
-                aria-label="Open activity menu"
-                aria-controls="activity-menu"
-                aria-haspopup="true"
-                onClick={openActivityMenu}
-              >
-                <MoreHoriz
-                  className={css`
-                    color: lightgray;
-                  `}
-                />
-              </IconButton>
-              <Menu
-                id="activity-menu"
-                keepMounted
-                anchorEl={anchorEl}
-                open={!!anchorEl}
-                onClose={closeActivityMenu}
-                MenuListProps={{ dense: true }}
-              >
-                <MenuItem
-                  onClick={moveActivityUp}
-                  disabled={activities.length === 1 || index === 0}
+        {editable && (
+          <Rows center>
+            <Button
+              ref={editable ? pressHoldButtonRef : undefined}
+              disabled={!editable}
+              variant="contained"
+              color="primary"
+              size="small"
+              onClick={() => addActivitySet()}
+            >
+              +
+            </Button>
+            <ClickAwayListener onClickAway={closeActivityMenu}>
+              <div>
+                <IconButton
+                  disabled={!editable}
+                  aria-label="Open activity menu"
+                  aria-controls="activity-menu"
+                  aria-haspopup="true"
+                  onClick={openActivityMenu}
                 >
-                  Move up
-                </MenuItem>
-                <MenuItem
-                  onClick={moveActivityDown}
-                  disabled={
-                    activities.length === 1 || index + 1 === activities.length
-                  }
+                  <MoreHoriz
+                    className={css`
+                      color: lightgray;
+                    `}
+                  />
+                </IconButton>
+                <Menu
+                  id="activity-menu"
+                  keepMounted
+                  anchorEl={anchorEl}
+                  open={!!anchorEl}
+                  onClose={closeActivityMenu}
+                  MenuListProps={{ dense: true }}
                 >
-                  Move down
-                </MenuItem>
-                {!notes && (
-                  <MenuItem onClick={addActivityNotes}>Add notes</MenuItem>
-                )}
-                <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
-                <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
-        </Rows>
+                  <MenuItem
+                    onClick={moveActivityUp}
+                    disabled={activities.length === 1 || index === 0}
+                  >
+                    Move up
+                  </MenuItem>
+                  <MenuItem
+                    onClick={moveActivityDown}
+                    disabled={
+                      activities.length === 1 || index + 1 === activities.length
+                    }
+                  >
+                    Move down
+                  </MenuItem>
+                  {!notes && (
+                    <MenuItem onClick={addActivityNotes}>Add notes</MenuItem>
+                  )}
+                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
+                  <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
+                </Menu>
+              </div>
+            </ClickAwayListener>
+          </Rows>
+        )}
       </Rows>
       <ActivityNotesTextarea
         disabled={!editable}
@@ -527,6 +529,7 @@ const ActivitySetView: FC<{
           }}
           onBlur={updateSetWeight}
           className={css`
+            background-color: transparent;
             width: 5ch;
             color: gray;
             border: 0;
