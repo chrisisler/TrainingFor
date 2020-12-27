@@ -14,6 +14,7 @@ import { db, DbPath } from '../firebase';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { TrainingLog, User } from '../interfaces';
 import { TabIndex, Paths } from '../constants';
+import { TrainingLogView } from '../components/TrainingLogView';
 
 const listItemStyle = css`
   text-transform: none;
@@ -21,7 +22,11 @@ const listItemStyle = css`
   white-space: nowrap;
 `;
 
+// TODO Deprecate this by addding authorId to TrainingLog
+type TrainingLogWithUserId = TrainingLog & { authorId: string };
+
 export const Timeline: FC = () => {
+  /** #region Search input auto-completion  */
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const popperRef = useRef<PopperInstance | null>(null);
@@ -61,39 +66,14 @@ export const Timeline: FC = () => {
       node.removeEventListener('change', onChange);
     };
   }, [showSuggestions]);
+  /** #endregion */
 
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<
     DataState<Pick<User, 'id' | 'displayName'>[]>
   >(DataState.Empty);
 
-  const [user] = useUser();
   const history = useHistory();
-
-  const [followedUsersLogs] = useDataState<TrainingLog[]>(async () => {
-    const following = await db
-      .collection(DbPath.Users)
-      .doc(user?.uid)
-      .get()
-      .then(doc => doc.get('following') as string[]);
-    // console.log('following is:', following);
-    const promisesForLogs = following.map(userId =>
-      db
-        .collection(DbPath.Users)
-        .doc(userId)
-        .collection(DbPath.UserLogs)
-        .orderBy('timestamp', 'desc')
-        .limit(5)
-        .get()
-        .then(({ docs }) =>
-          docs.map(doc => ({ ...doc.data(), id: doc.id } as TrainingLog))
-        )
-    );
-    const logs = await Promise.all(promisesForLogs);
-    // console.log('logs is:', logs);
-    // TODO sort
-    return logs.flatMap(log => log);
-  }, [user?.uid]);
 
   useEffect(() => {
     const searchUsers = async () => {
@@ -123,6 +103,7 @@ export const Timeline: FC = () => {
       maxWidth
       className={css`
         height: 100%;
+        overflow-y: scroll;
       `}
     >
       <Rows
@@ -141,6 +122,7 @@ export const Timeline: FC = () => {
           type="text"
           placeholder="Search TrainingFor"
           value={search}
+          // TODO Move open & closeSuggestions out of this listener
           onChange={event => {
             // Do not flash previous results
             setResults(DataState.Empty);
@@ -218,16 +200,70 @@ export const Timeline: FC = () => {
           </DataStateView>
         </div>
       )}
-      <DataStateView
-        data={followedUsersLogs}
-        error={() => (
-          <Typography color="error" variant="body1">
-            Something went wrong.
-          </Typography>
-        )}
-      >
-        {_logs => null}
-      </DataStateView>
+      <TimelineView />
     </Columns>
+  );
+};
+
+const TimelineView: FC = () => {
+  const [user] = useUser();
+
+  const [followedUsersLogs] = useDataState<
+    TrainingLogWithUserId[]
+  >(async () => {
+    const following = await db
+      .collection(DbPath.Users)
+      .doc(user?.uid)
+      .get()
+      .then(doc => doc.get('following') as string[]);
+    /** The five latest logs of each followed user. */
+    const promisesForLogs = following.map(authorId =>
+      db
+        .collection(DbPath.Users)
+        .doc(authorId)
+        .collection(DbPath.UserLogs)
+        .orderBy('timestamp', 'desc')
+        .limit(5)
+        .get()
+        .then(({ docs }) =>
+          docs.map(
+            doc =>
+              ({ ...doc.data(), id: doc.id, authorId } as TrainingLogWithUserId)
+          )
+        )
+    );
+    const logs = await Promise.all(promisesForLogs);
+    console.log('logs is:', logs);
+    // TODO sort
+    return logs.flatMap(log => log);
+  }, [user?.uid]);
+
+  return (
+    <DataStateView
+      data={followedUsersLogs}
+      error={() => (
+        <Typography color="error" variant="body1">
+          Something went wrong.
+        </Typography>
+      )}
+    >
+      {logs => (
+        <Columns
+          pad={Pad.Large}
+          className={css`
+            height: 100%;
+            overflow-y: scroll;
+          `}
+        >
+          {logs.map(log => (
+            <TrainingLogView
+              key={log.id}
+              logId={log.id}
+              logAuthorId={log.authorId}
+            />
+          ))}
+        </Columns>
+      )}
+    </DataStateView>
   );
 };

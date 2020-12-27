@@ -13,7 +13,7 @@ import { TrainingLog, Activity } from '../interfaces';
 import { db, DbPath } from '../firebase';
 import { DataState, DataStateView } from '../DataState';
 import { Format, Paths } from '../constants';
-import { ActivitiesListView } from '../components/TrainingLogView';
+import { TrainingLogEditorView } from '../components/TrainingLogView';
 
 const AddActivityInput = styled.input`
   box-sizing: content-box;
@@ -83,7 +83,7 @@ export const TrainingLogEditor: FC = () => {
         setActivityName('');
         // Look to the previous activity to determine the position
         // number of the activity being added
-        // TODO Combine ActivitiesListView into this so we can
+        // TODO Combine TrainingLogView into this so we can
         // use `activities` array from use effect instead of hitting DB
         const prevMaxPosition = await db
           .collection(DbPath.Users)
@@ -132,7 +132,7 @@ export const TrainingLogEditor: FC = () => {
       });
   }, [logDoc, setLogDoc, history]);
 
-  if (!logId) return null;
+  if (!logId || !user) return null;
 
   return (
     <DataStateView
@@ -204,7 +204,7 @@ export const TrainingLogEditor: FC = () => {
               )}
             </Rows>
           </Columns>
-          <ActivitiesListView />
+          <TrainingLogEditorView logAuthorId={user.uid} logId={logId} />
         </Columns>
       )}
     </DataStateView>

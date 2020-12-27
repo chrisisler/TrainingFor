@@ -1,7 +1,6 @@
 import React, { FC, useState, useEffect, useRef, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { css } from '@emotion/css';
-import { useParams } from 'react-router-dom';
 import {
   Typography,
   Button,
@@ -15,11 +14,10 @@ import firebase from 'firebase/app';
 import FlipMove from 'react-flip-move';
 import { v4 as uuid } from 'uuid';
 
-import { DataState, DataStateView } from '../DataState';
+import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbPath } from '../firebase';
 import { Activity, ActivityStatus, ActivitySet } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
-import { useUser } from '../useUser';
 
 const ActivityStatusButton = styled.button`
   color: lightgray;
@@ -47,18 +45,18 @@ const ActivityNotesTextarea = styled.textarea`
     props.notes === null ? 'none' : 'block'};
 `;
 
-export const ActivitiesListView: FC = () => {
+export const TrainingLogEditorView: FC<{
+  logAuthorId: string;
+  logId: string;
+}> = ({ logAuthorId, logId }) => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Loading
   );
 
-  const [user] = useUser();
-  const { logId } = useParams<{ logId?: string }>();
-
   useEffect(() => {
     return db
       .collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -72,7 +70,7 @@ export const ActivitiesListView: FC = () => {
           ),
         error => setActivities(DataState.error(error.message))
       );
-  }, [user?.uid, logId]);
+  }, [logAuthorId, logId]);
 
   return (
     <DataStateView data={activities} error={() => null}>
@@ -81,7 +79,13 @@ export const ActivitiesListView: FC = () => {
           <FlipMove enterAnimation="fade" leaveAnimation="fade">
             {activities.map(({ id }, index) => (
               <FlipMoveChild key={id}>
-                <ActivityView activities={activities} index={index} />
+                <ActivityView
+                  editable
+                  activities={activities}
+                  index={index}
+                  logId={logId}
+                  logAuthorId={logAuthorId}
+                />
               </FlipMoveChild>
             ))}
           </FlipMove>
@@ -91,10 +95,61 @@ export const ActivitiesListView: FC = () => {
   );
 };
 
-const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
-  activities,
-  index,
-}) => {
+export const TrainingLogView: FC<{
+  logAuthorId: string;
+  logId: string;
+}> = ({ logAuthorId, logId }) => {
+  const [activities] = useDataState(
+    () =>
+      db
+        .collection(DbPath.Users)
+        .doc(logAuthorId)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        // .orderBy('position', 'desc')
+        .get()
+        .then(snapshot =>
+          snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Activity))
+        ),
+
+    [logAuthorId, logId]
+  );
+
+  return (
+    <DataStateView data={activities} error={() => null}>
+      {activities => (
+        <div
+          className={css`
+            border-bottom: 1px solid lightgray;
+          `}
+        >
+          {activities.map(({ id }, index) => (
+            <ActivityView
+              key={id}
+              activities={activities}
+              index={index}
+              editable={false}
+              logId={logId}
+              logAuthorId={logAuthorId}
+            />
+          ))}
+        </div>
+      )}
+    </DataStateView>
+  );
+};
+
+const ActivityView: FC<{
+  /**
+   * Caution! * Providing the wrong value can break the entire app at runtime.
+   */
+  editable: boolean;
+  activities: Activity[];
+  index: number;
+  logId: string;
+  logAuthorId: string;
+}> = ({ activities, index, editable, logId, logAuthorId }) => {
   const activity = activities[index];
   const [notes, setNotes] = useState<Activity['notes']>(activity.notes);
   const notesRef = useRef<HTMLTextAreaElement | null>(null);
@@ -103,9 +158,6 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
   const closeActivityMenu = () => setAnchorEl(null);
-
-  const [user] = useUser();
-  const { logId } = useParams<{ logId?: string }>();
 
   const [pressHoldButtonRef] = usePressHoldRef(() =>
     addActivitySet(ActivityStatus.Completed)
@@ -121,7 +173,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
       status: status ?? ActivityStatus.Unattempted,
     };
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -137,7 +189,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
   const deleteActivity = () => {
     closeActivityMenu();
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -153,7 +205,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
     const newName = window.prompt('Update activity name', activity.name);
     if (!newName) return;
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -171,7 +223,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
       const batch = db.batch();
       const activitiesColl = db
         .collection(DbPath.Users)
-        .doc(user?.uid)
+        .doc(logAuthorId)
         .collection(DbPath.UserLogs)
         .doc(logId)
         .collection(DbPath.UserLogActivities);
@@ -196,7 +248,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
       const batch = db.batch();
       const activitiesColl = db
         .collection(DbPath.Users)
-        .doc(user?.uid)
+        .doc(logAuthorId)
         .collection(DbPath.UserLogs)
         .doc(logId)
         .collection(DbPath.UserLogActivities);
@@ -220,7 +272,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
     setNotes(nullIfEmpty);
     try {
       db.collection(DbPath.Users)
-        .doc(user?.uid)
+        .doc(logAuthorId)
         .collection(DbPath.UserLogs)
         .doc(logId)
         .collection(DbPath.UserLogActivities)
@@ -248,7 +300,8 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
         </Typography>
         <Rows center>
           <Button
-            ref={pressHoldButtonRef}
+            ref={editable ? pressHoldButtonRef : undefined}
+            disabled={!editable}
             variant="contained"
             color="primary"
             size="small"
@@ -259,6 +312,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
           <ClickAwayListener onClickAway={closeActivityMenu}>
             <div>
               <IconButton
+                disabled={!editable}
                 aria-label="Open activity menu"
                 aria-controls="activity-menu"
                 aria-haspopup="true"
@@ -303,6 +357,7 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
         </Rows>
       </Rows>
       <ActivityNotesTextarea
+        disabled={!editable}
         notes={notes}
         name="notes"
         placeholder="Notes"
@@ -330,6 +385,9 @@ const ActivityView: FC<{ activities: Activity[]; index: number }> = ({
               index={index}
               sets={activity.sets}
               activityId={activity.id}
+              editable={editable}
+              logAuthorId={logAuthorId}
+              logId={logId}
             />
           </FlipMoveChild>
         ))}
@@ -342,7 +400,10 @@ const ActivitySetView: FC<{
   index: number;
   sets: ActivitySet[];
   activityId: string;
-}> = ({ index, sets, activityId }) => {
+  editable: boolean;
+  logAuthorId: string;
+  logId: string;
+}> = ({ index, sets, activityId, editable, logAuthorId, logId }) => {
   const set = sets[index];
   const [weight, setWeight] = useState(set.weight);
 
@@ -351,13 +412,10 @@ const ActivitySetView: FC<{
     setAnchorEl(event.currentTarget);
   const closeSetMenu = () => setAnchorEl(null);
 
-  const [user] = useUser();
-  const { logId } = useParams<{ logId?: string }>();
-
   const cycleSetStatus = () => {
     sets[index].status = Activity.cycleStatus(set.status);
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -378,7 +436,7 @@ const ActivitySetView: FC<{
       status: ActivityStatus.Unattempted,
     };
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -394,7 +452,7 @@ const ActivitySetView: FC<{
   const deleteSet = () => {
     closeSetMenu();
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -413,7 +471,7 @@ const ActivitySetView: FC<{
     if (!newName) return;
     sets[index].name = newName;
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -428,7 +486,7 @@ const ActivitySetView: FC<{
   const updateSetWeight = (event: React.ChangeEvent<HTMLInputElement>) => {
     sets[index].weight = Number(event.target.value);
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(logAuthorId)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
@@ -456,6 +514,7 @@ const ActivitySetView: FC<{
       </Rows>
       <Rows center pad={Pad.XSmall}>
         <input
+          disabled={!editable}
           type="tel"
           min={0}
           max={999}
@@ -475,12 +534,13 @@ const ActivitySetView: FC<{
             text-align: center;
           `}
         />
-        <ActivityStatusButton onClick={cycleSetStatus}>
+        <ActivityStatusButton disabled={!editable} onClick={cycleSetStatus}>
           {set.status}
         </ActivityStatusButton>
         <ClickAwayListener onClickAway={closeSetMenu}>
           <div>
             <IconButton
+              disabled={!editable}
               size="small"
               aria-label="Open set menu"
               aria-controls="set-menu"
