@@ -52,6 +52,10 @@ export const Account: FC = () => {
     [userId]
   );
 
+  /**
+   * If the current user is following the viewed user, unfollow them. Otherwise
+   * follow them. This is a no-op if viewing one's own account page.
+   */
   const toggleFollow = useCallback(async () => {
     if (!user || !userId || !DataState.isReady(isFollowing)) return;
     try {
@@ -77,7 +81,7 @@ export const Account: FC = () => {
     setUser(null);
   }, [setUser]);
 
-  // Define `isFollowing`
+  // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
     if (!userId || !DataState.isReady(selectedUser) || !user) return;
     return db
@@ -146,7 +150,7 @@ export const Account: FC = () => {
         {logs => (
           <Columns pad={Pad.Large}>
             {logs.map(log => (
-              <TrainingLogView log={log} key={log.id} />
+              <TrainingLogPreview log={log} key={log.id} />
             ))}
           </Columns>
         )}
@@ -155,10 +159,11 @@ export const Account: FC = () => {
   );
 };
 
-const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
+const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   const [user] = useUser();
   const history = useHistory();
   const location = useLocation();
+  /** If this userId exists, then we are viewing someone elses account.  */
   const { userId } = useParams<{ userId?: string }>();
 
   const logDate = log.timestamp

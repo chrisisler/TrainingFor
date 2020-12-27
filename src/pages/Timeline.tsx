@@ -226,7 +226,7 @@ export const Timeline: FC = () => {
           </Typography>
         )}
       >
-        {_logs => null /** TODO Implement readonly logview */}
+        {_logs => null}
       </DataStateView>
     </Columns>
   );
