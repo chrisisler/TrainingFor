@@ -23,7 +23,7 @@ export const NewTraining: FC = () => {
   const addLog = useCallback(() => {
     if (!user) return;
     const newLog: Omit<TrainingLog, 'id'> = {
-      title: '-',
+      title: 'Untitled',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       notes: null,
       authorId: user.uid,

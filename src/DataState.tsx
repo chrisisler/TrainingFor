@@ -40,10 +40,25 @@ export const DataState = {
   },
   map: <T extends unknown, U extends unknown>(
     ds: DataState<T>,
-    fn: (arg: T) => U
+    fn: (arg: T) => DataState<U>
   ): DataState<U> => {
     if (!DataState.isReady(ds)) return ds;
     return fn(ds);
+  },
+  unwrapOr: <T extends unknown, U extends T>(
+    ds: DataState<T>,
+    alt: U
+  ): T | U => {
+    if (DataState.isReady(ds)) return ds;
+    return alt;
+  },
+  /**
+   * Return the contained value or throw an Error if it is in any non-ready
+   * state.
+   */
+  unwrap: <T extends unknown>(ds: DataState<T>): T => {
+    if (DataState.isReady(ds)) return ds;
+    throw Error('Called `DataState.unwrap(x)` on not ready data');
   },
 };
 

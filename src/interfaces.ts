@@ -64,3 +64,14 @@ export const Activity = {
     throw Error('Unreachable');
   },
 };
+
+// eslint-disable-next-line
+export const TrainingLog = {
+  /**
+   * Attempts to convert the timestamp of a log to a date.
+   */
+  getDate: (log: TrainingLog): Date | null => {
+    if (!log.timestamp) return null;
+    return (log.timestamp as firebase.firestore.Timestamp)?.toDate();
+  },
+};

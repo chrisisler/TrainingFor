@@ -36,8 +36,15 @@ export const TrainingLogEditor: FC = () => {
     DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
   >(DataState.Empty);
 
-  const logDate = DataState.map(logDoc, _ =>
-    _ ? (_.data()?.timestamp as firebase.firestore.Timestamp)?.toDate() : null
+  const logState = DataState.map(logDoc, doc => {
+    const data = doc.data();
+    if (!data) return DataState.error('TrainingLog document does not exist.');
+    data.id = doc.id;
+    return data as TrainingLog;
+  });
+
+  const logDate = DataState.map(logState, log =>
+    (log.timestamp as firebase.firestore.Timestamp)?.toDate()
   );
 
   // Subscribe to updates to the TrainingLog ID from the URL
@@ -45,7 +52,7 @@ export const TrainingLogEditor: FC = () => {
     if (!logId || !user) return;
     return db
       .collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(user.uid)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .onSnapshot(
@@ -62,7 +69,7 @@ export const TrainingLogEditor: FC = () => {
   }, [setLogDoc, history]);
 
   const renameLog = useCallback(() => {
-    const title = DataState.isReady(logDoc) ? logDoc.data()?.title : '';
+    const title = DataState.unwrap(DataState.map(logState, log => log.title));
     const newTitle = window.prompt('Update training log title', title);
     if (!newTitle) return;
     db.collection(DbPath.Users)
@@ -73,7 +80,7 @@ export const TrainingLogEditor: FC = () => {
       .catch(error => {
         alert(error.message);
       });
-  }, [user?.uid, logId, logDoc]);
+  }, [user?.uid, logId, logState]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -136,14 +143,14 @@ export const TrainingLogEditor: FC = () => {
 
   return (
     <DataStateView
-      data={logDoc}
+      data={logState}
       error={() => (
         <Typography variant="h4" color="textPrimary">
           Error
         </Typography>
       )}
     >
-      {logDoc => (
+      {log => (
         <Columns
           pad={Pad.Small}
           className={css`
@@ -160,7 +167,7 @@ export const TrainingLogEditor: FC = () => {
             </IconButton>
             <IconButton aria-label="Edit log name" onClick={renameLog}>
               <Typography variant="subtitle1" color="textSecondary">
-                {DataState.isReady(logDoc) && logDoc.data()?.title}
+                {log.title}
               </Typography>
             </IconButton>
             <IconButton aria-label="Delete training log" onClick={deleteLogDoc}>

@@ -13,11 +13,18 @@ import { MoreHoriz } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import FlipMove from 'react-flip-move';
 import { v4 as uuid } from 'uuid';
+import format from 'date-fns/format';
 
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbPath } from '../firebase';
-import { Activity, ActivityStatus, ActivitySet } from '../interfaces';
+import {
+  Activity,
+  ActivityStatus,
+  ActivitySet,
+  TrainingLog,
+} from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
+import { Format } from '../constants';
 
 const ActivityStatusButton = styled.button`
   color: lightgray;
@@ -95,26 +102,28 @@ export const TrainingLogEditorView: FC<{
   );
 };
 
-export const TrainingLogView: FC<{
-  logAuthorId: string;
-  logId: string;
-}> = ({ logAuthorId, logId }) => {
+/**
+ * Read-only view of a TrainingLog.
+ */
+export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   const [activities] = useDataState(
     () =>
       db
         .collection(DbPath.Users)
-        .doc(logAuthorId)
+        .doc(log.authorId)
         .collection(DbPath.UserLogs)
-        .doc(logId)
+        .doc(log.id)
         .collection(DbPath.UserLogActivities)
+        // TODO Order these fools
         // .orderBy('position', 'desc')
         .get()
         .then(snapshot =>
           snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Activity))
         ),
-
-    [logAuthorId, logId]
+    [log.authorId, log.id]
   );
+
+  const logDate = TrainingLog.getDate(log);
 
   return (
     <DataStateView data={activities} error={() => null}>
@@ -124,14 +133,26 @@ export const TrainingLogView: FC<{
             border-bottom: 1px solid lightgray;
           `}
         >
+          <Rows maxWidth between padding={`${Pad.Medium} ${Pad.Large}`}>
+            {logDate && (
+              <Typography variant="body2" color="textSecondary">
+                {format(logDate, Format.date)}
+                <br />
+                {format(logDate, Format.time)}
+              </Typography>
+            )}
+            <Typography variant="body1" color="textSecondary">
+              {log.title}
+            </Typography>
+          </Rows>
           {activities.map(({ id }, index) => (
             <ActivityView
               key={id}
               activities={activities}
               index={index}
               editable={false}
-              logId={logId}
-              logAuthorId={logAuthorId}
+              logId={log.id}
+              logAuthorId={log.authorId}
             />
           ))}
         </div>
@@ -140,6 +161,8 @@ export const TrainingLogView: FC<{
   );
 };
 
+// TODO Move from logId and logAuthorId prop to collection prop that these props
+// are used for
 const ActivityView: FC<{
   /**
    * Caution! Providing the wrong value can break the entire app at runtime.
@@ -293,7 +316,7 @@ const ActivityView: FC<{
   };
 
   return (
-    <Columns maxWidth padding={`0 ${Pad.Small} 0 ${Pad.Large}`}>
+    <Columns maxWidth padding={`0 ${Pad.Small} ${Pad.Small} ${Pad.Large}`}>
       <Rows maxWidth center between>
         <Typography variant="subtitle1" color="textPrimary" gutterBottom>
           {activity.name}

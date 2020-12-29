@@ -166,9 +166,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   /** If this userId exists, then we are viewing someone elses account.  */
   const { userId } = useParams<{ userId?: string }>();
 
-  const logDate = log.timestamp
-    ? (log.timestamp as firebase.firestore.Timestamp)?.toDate()
-    : null;
+  const logDate = TrainingLog.getDate(log);
 
   // TODO Switch to declarative Redirect
   const navigateToTraining = useCallback(

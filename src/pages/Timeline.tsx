@@ -22,9 +22,6 @@ const listItemStyle = css`
   white-space: nowrap;
 `;
 
-// TODO Deprecate this by addding authorId to TrainingLog
-type TrainingLogWithUserId = TrainingLog & { authorId: string };
-
 export const Timeline: FC = () => {
   /** #region Search input auto-completion  */
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
@@ -209,9 +206,7 @@ export const Timeline: FC = () => {
 const TimelineView: FC = () => {
   const [user] = useUser();
 
-  const [followedUsersLogs] = useDataState<
-    TrainingLogWithUserId[]
-  >(async () => {
+  const [followedUsersLogs] = useDataState<TrainingLog[]>(async () => {
     const following = await db
       .collection(DbPath.Users)
       .doc(user?.uid)
@@ -229,7 +224,8 @@ const TimelineView: FC = () => {
         .then(({ docs }) =>
           docs.map(
             doc =>
-              ({ ...doc.data(), id: doc.id, authorId } as TrainingLogWithUserId)
+              // TODO Remove `authorId` as TrainingLog DB docs are updated
+              ({ ...doc.data(), id: doc.id, authorId } as TrainingLog)
           )
         )
     );
@@ -249,18 +245,14 @@ const TimelineView: FC = () => {
     >
       {logs => (
         <Columns
-          pad={Pad.Large}
+          pad={Pad.None}
           className={css`
             height: 100%;
             overflow-y: scroll;
           `}
         >
           {logs.map(log => (
-            <TrainingLogView
-              key={log.id}
-              logId={log.id}
-              logAuthorId={log.authorId}
-            />
+            <TrainingLogView key={log.id} log={log} />
           ))}
         </Columns>
       )}
