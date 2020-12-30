@@ -2,7 +2,7 @@ import React, { FC, useCallback, useState, useEffect } from 'react';
 import { css } from '@emotion/css';
 import { Typography, Button, IconButton } from '@material-ui/core';
 import firebase from 'firebase/app';
-import { Redirect, useHistory, useLocation, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import format from 'date-fns/format';
 import { Replay } from '@material-ui/icons';
 
@@ -160,8 +160,6 @@ export const Account: FC = () => {
 };
 
 const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
-  const [redirect, setRedirect] = useState('');
-
   const [user] = useUser();
   const history = useHistory();
   const location = useLocation();
@@ -171,15 +169,14 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
 
   const logDate = TrainingLog.getDate(log);
 
-  // TODO Switch to declarative Redirect
   const navigateToTraining = useCallback(
     () => history.push(Paths.logEditor(log.id), { from: location }),
     [history, location, log.id]
   );
 
   const navigateToViewedUserLog = useCallback(
-    () => setRedirect(Paths.logView(userId, log.id)),
-    [userId, log.id]
+    () => history.push(Paths.logView(userId, log.id)),
+    [history, userId, log.id]
   );
 
   const repeatTraining = useCallback(async () => {
@@ -225,8 +222,6 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
       alert(error.message);
     }
   }, [user, log, navigateToTraining]);
-
-  if (redirect) return <Redirect to={redirect} />;
 
   return (
     <Rows
