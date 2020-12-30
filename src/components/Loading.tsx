@@ -1,6 +1,6 @@
-import React, { FC } from 'react';
-import { CircularProgress } from '@material-ui/core';
 import { css } from '@emotion/css';
+import { CircularProgress } from '@material-ui/core';
+import React, { FC } from 'react';
 
 export const Loading: FC = () => {
   return (

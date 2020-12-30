@@ -1,26 +1,26 @@
-import React, { FC, useEffect, useState } from 'react';
 import styled from '@emotion/styled';
+import { Typography } from '@material-ui/core';
 import firebase from 'firebase/app';
+import React, { FC, useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
-  Route,
   Redirect,
+  Route,
   Switch,
 } from 'react-router-dom';
-import { Typography } from '@material-ui/core';
 
-import { Welcome } from './pages/Welcome';
-import { TrainingLogEditor } from './pages/TrainingLogEditor';
+import { NavBar, navBarHeight } from './components/NavBar';
+import { Paths } from './constants';
+import { DataState, DataStateView } from './DataState';
+import { auth } from './firebase';
+import { Account } from './pages/Account';
+import { LogIn } from './pages/LogIn';
 import { NewTraining } from './pages/NewTraining';
 import { SignUp } from './pages/SignUp';
-import { LogIn } from './pages/LogIn';
-import { Account } from './pages/Account';
 import { Timeline } from './pages/Timeline';
-import { NavBar, navBarHeight } from './components/NavBar';
-import { auth } from './firebase';
-import { DataState, DataStateView } from './DataState';
-import { Paths } from './constants';
+import { TrainingLogEditor } from './pages/TrainingLogEditor';
 import { TrainingLogViewPage } from './pages/TrainingLogViewPage';
+import { Welcome } from './pages/Welcome';
 
 const AppContainer = styled.div`
   width: 100%;

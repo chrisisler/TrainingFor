@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import firebase from 'firebase';
+import { useEffect, useState } from 'react';
 
 import { auth } from './firebase';
 

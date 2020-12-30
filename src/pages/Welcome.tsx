@@ -1,10 +1,10 @@
-import React, { FC } from 'react';
 import styled from '@emotion/styled';
 import { Button, Typography } from '@material-ui/core';
+import React, { FC } from 'react';
 import { NavLink } from 'react-router-dom';
 
-import { Pad, Columns } from '../style';
 import { Paths } from '../constants';
+import { Columns, Pad } from '../style';
 
 const WelcomeContainer = styled.div`
   height: 100vh;

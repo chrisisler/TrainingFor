@@ -1,3 +1,4 @@
+// eslint-disable-next-line simple-import-sort/imports
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';

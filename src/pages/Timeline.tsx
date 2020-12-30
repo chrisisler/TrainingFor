@@ -1,20 +1,20 @@
-import React, { FC, useState, useEffect, useRef } from 'react';
 import { css } from '@emotion/css';
-import { SearchOutlined } from '@material-ui/icons';
 import { Typography } from '@material-ui/core';
+import { SearchOutlined } from '@material-ui/icons';
 import {
   createPopper,
   Instance as PopperInstance,
 } from '@popperjs/core/lib/popper-lite';
+import React, { FC, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
+import { TrainingLogView } from '../components/TrainingLogView';
+import { Paths, TabIndex } from '../constants';
+import { DataState, DataStateView, useDataState } from '../DataState';
+import { db, DbPath } from '../firebase';
+import { TrainingLog, User } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 import { useUser } from '../useUser';
-import { db, DbPath } from '../firebase';
-import { DataState, DataStateView, useDataState } from '../DataState';
-import { TrainingLog, User } from '../interfaces';
-import { TabIndex, Paths } from '../constants';
-import { TrainingLogView } from '../components/TrainingLogView';
 
 const listItemStyle = css`
   text-transform: none;

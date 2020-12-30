@@ -1,14 +1,14 @@
-import React, { FC, useState, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { TextField, Typography, Button, IconButton } from '@material-ui/core';
+import { Button, IconButton, TextField, Typography } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
 import firebase from 'firebase/app';
+import React, { FC, useCallback, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
-import { auth, db, DbPath } from '../firebase';
-import { Columns, Pad } from '../style';
-import { User } from '../interfaces';
 import { Paths } from '../constants';
+import { auth, db, DbPath } from '../firebase';
+import { User } from '../interfaces';
+import { Columns, Pad } from '../style';
 
 const SignUpContainer = styled.div`
   height: 100vh;

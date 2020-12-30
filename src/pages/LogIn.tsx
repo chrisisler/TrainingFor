@@ -1,13 +1,13 @@
-import React, { FC, useCallback, useState } from 'react';
-import styled from '@emotion/styled';
-import { TextField, Typography, Button, IconButton } from '@material-ui/core';
-import { ArrowBackIosRounded } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
 import { css } from '@emotion/css';
+import styled from '@emotion/styled';
+import { Button, IconButton, TextField, Typography } from '@material-ui/core';
+import { ArrowBackIosRounded } from '@material-ui/icons';
+import React, { FC, useCallback, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
-import { Columns, Pad } from '../style';
-import { auth } from '../firebase';
 import { Paths } from '../constants';
+import { auth } from '../firebase';
+import { Columns, Pad } from '../style';
 
 const LogInContainer = styled.div`
   height: 100vh;

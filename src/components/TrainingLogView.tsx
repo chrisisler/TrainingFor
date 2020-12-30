@@ -1,30 +1,30 @@
-import React, { FC, useState, useEffect, useRef, useCallback } from 'react';
-import styled from '@emotion/styled';
 import { css } from '@emotion/css';
+import styled from '@emotion/styled';
 import {
-  Typography,
   Button,
   ClickAwayListener,
   IconButton,
   Menu,
   MenuItem,
+  Typography,
 } from '@material-ui/core';
 import { MoreHoriz } from '@material-ui/icons';
+import format from 'date-fns/format';
 import firebase from 'firebase/app';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
 import { v4 as uuid } from 'uuid';
-import format from 'date-fns/format';
 
+import { Format } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbPath } from '../firebase';
 import {
   Activity,
-  ActivityStatus,
   ActivitySet,
+  ActivityStatus,
   TrainingLog,
 } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
-import { Format } from '../constants';
 
 const ActivityStatusButton = styled.button`
   color: lightgray;

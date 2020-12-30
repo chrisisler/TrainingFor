@@ -1,12 +1,12 @@
-import React, { FC, useCallback } from 'react';
-import styled from '@emotion/styled';
-import { Add, Person, List } from '@material-ui/icons';
-import { IconButton, Link } from '@material-ui/core';
-import { NavLink, useLocation } from 'react-router-dom';
 import { css } from '@emotion/css';
+import styled from '@emotion/styled';
+import { IconButton, Link } from '@material-ui/core';
+import { Add, List, Person } from '@material-ui/icons';
+import React, { FC, useCallback } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
-import { Rows, Pad } from '../style';
 import { Paths } from '../constants';
+import { Pad, Rows } from '../style';
 
 export const navBarHeight = 50;
 

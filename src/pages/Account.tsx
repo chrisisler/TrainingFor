@@ -1,17 +1,17 @@
-import React, { FC, useCallback, useState, useEffect } from 'react';
 import { css } from '@emotion/css';
-import { Typography, Button, IconButton } from '@material-ui/core';
-import firebase from 'firebase/app';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
-import format from 'date-fns/format';
+import { Button, IconButton, Typography } from '@material-ui/core';
 import { Replay } from '@material-ui/icons';
+import format from 'date-fns/format';
+import firebase from 'firebase/app';
+import React, { FC, useCallback, useEffect, useState } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 
-import { Pad, Columns, Rows } from '../style';
-import { useUser } from '../useUser';
-import { auth, db, DbPath } from '../firebase';
-import { TrainingLog, Activity, ActivityStatus, User } from '../interfaces';
-import { DataState, DataStateView, useDataState } from '../DataState';
 import { Format, Paths } from '../constants';
+import { DataState, DataStateView, useDataState } from '../DataState';
+import { auth, db, DbPath } from '../firebase';
+import { Activity, ActivityStatus, TrainingLog, User } from '../interfaces';
+import { Columns, Pad, Rows } from '../style';
+import { useUser } from '../useUser';
 
 /**
  * Presents the currently authenticated user and their logs OR presents another

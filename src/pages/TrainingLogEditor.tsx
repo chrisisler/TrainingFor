@@ -1,19 +1,19 @@
-import React, { FC, useCallback, useState, useEffect } from 'react';
-import styled from '@emotion/styled';
 import { css } from '@emotion/css';
-import firebase from 'firebase/app';
-import { Button, Typography, IconButton } from '@material-ui/core';
-import { DeleteOutline, Done, ArrowBackIosRounded } from '@material-ui/icons';
-import { useParams, useHistory, useLocation } from 'react-router-dom';
+import styled from '@emotion/styled';
+import { Button, IconButton, Typography } from '@material-ui/core';
+import { ArrowBackIosRounded, DeleteOutline, Done } from '@material-ui/icons';
 import format from 'date-fns/format';
+import firebase from 'firebase/app';
+import React, { FC, useCallback, useEffect, useState } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 
+import { TrainingLogEditorView } from '../components/TrainingLogView';
+import { Format, Paths } from '../constants';
+import { DataState, DataStateView } from '../DataState';
+import { db, DbPath } from '../firebase';
+import { Activity, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 import { useUser } from '../useUser';
-import { TrainingLog, Activity } from '../interfaces';
-import { db, DbPath } from '../firebase';
-import { DataState, DataStateView } from '../DataState';
-import { Format, Paths } from '../constants';
-import { TrainingLogEditorView } from '../components/TrainingLogView';
 
 const AddActivityInput = styled.input`
   box-sizing: content-box;
