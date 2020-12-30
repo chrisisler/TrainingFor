@@ -49,7 +49,7 @@ export const TrainingLogEditor: FC = () => {
 
   // Subscribe to updates to the TrainingLog ID from the URL
   useEffect(() => {
-    if (!logId || !user) return;
+    if (!logId) return;
     return db
       .collection(DbPath.Users)
       .doc(user.uid)
@@ -61,7 +61,7 @@ export const TrainingLogEditor: FC = () => {
         },
         err => setLogDoc(DataState.error(err.message))
       );
-  }, [logId, user]);
+  }, [user.uid, logId]);
 
   const navigateToAccount = useCallback(() => {
     setLogDoc(DataState.Empty);
@@ -73,14 +73,14 @@ export const TrainingLogEditor: FC = () => {
     const newTitle = window.prompt('Update training log title', title);
     if (!newTitle) return;
     db.collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(user.uid)
       .collection(DbPath.UserLogs)
       .doc(logId)
       .set({ title: newTitle } as Partial<TrainingLog>, { merge: true })
       .catch(error => {
         alert(error.message);
       });
-  }, [user?.uid, logId, logState]);
+  }, [user.uid, logId, logState]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -94,7 +94,7 @@ export const TrainingLogEditor: FC = () => {
         // use `activities` array from use effect instead of hitting DB
         const prevMaxPosition = await db
           .collection(DbPath.Users)
-          .doc(user?.uid)
+          .doc(user.uid)
           .collection(DbPath.UserLogs)
           .doc(logDoc.id)
           .collection(DbPath.UserLogActivities)
@@ -111,7 +111,7 @@ export const TrainingLogEditor: FC = () => {
           position: prevMaxPosition + 1,
         };
         db.collection(DbPath.Users)
-          .doc(user?.uid)
+          .doc(user.uid)
           .collection(DbPath.UserLogs)
           .doc(logDoc.id)
           .collection(DbPath.UserLogActivities)
@@ -120,7 +120,7 @@ export const TrainingLogEditor: FC = () => {
         alert(error.message);
       }
     },
-    [activityName, user?.uid, logDoc]
+    [activityName, user.uid, logDoc]
   );
 
   const deleteLogDoc = useCallback(() => {
@@ -139,7 +139,7 @@ export const TrainingLogEditor: FC = () => {
       });
   }, [logDoc, setLogDoc, history]);
 
-  if (!logId || !user) return null;
+  if (!logId) return null;
 
   return (
     <DataStateView

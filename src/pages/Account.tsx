@@ -31,14 +31,14 @@ export const Account: FC = () => {
     async () =>
       db
         .collection(DbPath.Users)
-        .doc(userId ?? user?.uid)
+        .doc(userId ?? user.uid)
         .collection(DbPath.UserLogs)
         .orderBy('timestamp', 'desc')
         .get()
         .then(({ docs }) =>
           docs.map(doc => ({ ...doc.data(), id: doc.id } as TrainingLog))
         ),
-    [userId, user?.uid]
+    [userId, user.uid]
   );
 
   const [selectedUser] = useDataState(
@@ -56,7 +56,7 @@ export const Account: FC = () => {
    * follow them. This is a no-op if viewing one's own account page.
    */
   const toggleFollow = useCallback(async () => {
-    if (!user || !userId || !DataState.isReady(isFollowing)) return;
+    if (!userId || !DataState.isReady(isFollowing)) return;
     try {
       const batch = db.batch();
       batch.update(db.collection(DbPath.Users).doc(userId), {
@@ -64,7 +64,7 @@ export const Account: FC = () => {
           ? firebase.firestore.FieldValue.arrayRemove(user.uid)
           : firebase.firestore.FieldValue.arrayUnion(user.uid),
       });
-      batch.update(db.collection(DbPath.Users).doc(user?.uid), {
+      batch.update(db.collection(DbPath.Users).doc(user.uid), {
         following: isFollowing
           ? firebase.firestore.FieldValue.arrayRemove(userId)
           : firebase.firestore.FieldValue.arrayUnion(userId),
@@ -73,11 +73,11 @@ export const Account: FC = () => {
     } catch (error) {
       alert(error.message);
     }
-  }, [userId, user, isFollowing]);
+  }, [userId, user.uid, isFollowing]);
 
   // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
-    if (!userId || !DataState.isReady(selectedUser) || !user) return;
+    if (!userId || !DataState.isReady(selectedUser)) return;
     return db
       .collection(DbPath.Users)
       .doc(user.uid)
@@ -88,9 +88,7 @@ export const Account: FC = () => {
         },
         err => setIsFollowing(DataState.error(err.message))
       );
-  }, [userId, selectedUser, user]);
-
-  if (!user) return null;
+  }, [userId, selectedUser, user.uid]);
 
   return (
     <Columns
@@ -105,7 +103,7 @@ export const Account: FC = () => {
         {!userId && (
           <Button
             variant="text"
-            onClick={auth.signOut}
+            onClick={() => auth.signOut()}
             className={css`
               margin-left: auto !important;
             `}
@@ -174,7 +172,6 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   );
 
   const repeatTraining = useCallback(async () => {
-    if (!user) return;
     if (!window.confirm('Repeat this training?')) return;
     try {
       const repeatLog: Omit<TrainingLog, 'id'> = {
@@ -215,7 +212,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
     } catch (error) {
       alert(error.message);
     }
-  }, [user, log, navigateToTraining]);
+  }, [user.uid, log, navigateToTraining]);
 
   return (
     <Rows

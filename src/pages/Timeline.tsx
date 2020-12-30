@@ -210,7 +210,7 @@ const TimelineView: FC = () => {
   const [followedUsersLogs] = useDataState<TrainingLog[]>(async () => {
     const following = await db
       .collection(DbPath.Users)
-      .doc(user?.uid)
+      .doc(user.uid)
       .get()
       .then(doc => doc.get('following') as string[]);
     /** The five latest logs of each followed user. */
@@ -233,7 +233,7 @@ const TimelineView: FC = () => {
     const logs = await Promise.all(promisesForLogs);
     // TODO sort
     return logs.flatMap(log => log);
-  }, [user?.uid]);
+  }, [user.uid]);
 
   return (
     <DataStateView
