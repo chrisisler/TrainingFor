@@ -114,8 +114,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         .collection(DbPath.UserLogs)
         .doc(log.id)
         .collection(DbPath.UserLogActivities)
-        // TODO Order these fools
-        // .orderBy('position', 'desc')
+        .orderBy('position', 'desc')
         .get()
         .then(snapshot =>
           snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Activity))
