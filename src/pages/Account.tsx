@@ -9,9 +9,9 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbPath } from '../firebase';
+import { useUser } from '../hooks';
 import { Activity, ActivityStatus, TrainingLog, User } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
-import { useUser } from '../useUser';
 
 /**
  * Presents the currently authenticated user and their logs OR presents another

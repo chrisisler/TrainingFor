@@ -5,9 +5,9 @@ import React, { FC, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import { db, DbPath } from '../firebase';
+import { useUser } from '../hooks';
 import { TrainingLog } from '../interfaces';
 import { Columns, Pad } from '../style';
-import { useUser } from '../useUser';
 
 const TrainingLogEditorContainer = styled.div`
   height: 100%;

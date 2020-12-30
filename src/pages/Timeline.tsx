@@ -12,9 +12,9 @@ import { TrainingLogView } from '../components/TrainingLogView';
 import { Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbPath } from '../firebase';
+import { useUser } from '../hooks';
 import { TrainingLog, User } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
-import { useUser } from '../useUser';
 
 const listItemStyle = css`
   text-transform: none;

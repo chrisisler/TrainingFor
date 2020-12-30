@@ -11,9 +11,9 @@ import { TrainingLogEditorView } from '../components/TrainingLogView';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbPath } from '../firebase';
+import { useUser } from '../hooks';
 import { Activity, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
-import { useUser } from '../useUser';
 
 const AddActivityInput = styled.input`
   box-sizing: content-box;
