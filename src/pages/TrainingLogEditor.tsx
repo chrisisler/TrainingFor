@@ -29,7 +29,7 @@ export const TrainingLogEditor: FC = () => {
 
   const location = useLocation<{ from?: Location }>();
   const history = useHistory();
-  const [user] = useUser();
+  const user = useUser();
   const { logId } = useParams<{ logId?: string }>();
 
   const [logDoc, setLogDoc] = useState<

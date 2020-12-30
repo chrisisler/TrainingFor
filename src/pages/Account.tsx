@@ -22,8 +22,7 @@ export const Account: FC = () => {
     DataState.Empty
   );
 
-  // TODO Remove setUser calls - Is this needed still?
-  const [user, setUser] = useUser();
+  const user = useUser();
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
@@ -76,11 +75,6 @@ export const Account: FC = () => {
     }
   }, [userId, user, isFollowing]);
 
-  const signOut = useCallback(() => {
-    auth.signOut();
-    setUser(null);
-  }, [setUser]);
-
   // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
     if (!userId || !DataState.isReady(selectedUser) || !user) return;
@@ -111,7 +105,7 @@ export const Account: FC = () => {
         {!userId && (
           <Button
             variant="text"
-            onClick={signOut}
+            onClick={auth.signOut}
             className={css`
               margin-left: auto !important;
             `}
@@ -160,7 +154,7 @@ export const Account: FC = () => {
 };
 
 const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
-  const [user] = useUser();
+  const user = useUser();
   const history = useHistory();
   const location = useLocation();
 

@@ -19,7 +19,10 @@
     "@types/react": "^16.9.53",
     "@types/react-dom": "^16.9.8",
     "@types/react-router-dom": "^5.1.6",
+    "@typescript-eslint/eslint-plugin": "^4.11.1",
+    "@typescript-eslint/parser": "^4.11.1",
     "date-fns": "^2.16.1",
+    "eslint-config-react-app": "^6.0.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "firebase": "^8.1.1",
     "prettier": "^2.2.1",
@@ -39,14 +42,22 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
     "extends": [
       "react-app",
-      "react-app/jest"
+      "react-app/jest",
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
     ],
-    "plugins": ["simple-import-sort"],
+    "plugins": [
+      "simple-import-sort",
+      "@typescript-eslint"
+    ],
     "rules": {
       "simple-import-sort/imports": "error",
-      "sort-imports": "off"
+      "sort-imports": "off",
+      "@typescript-eslint/explicit-module-boundary-types": "off"
     }
   },
   "browserslist": {

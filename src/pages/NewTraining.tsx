@@ -18,7 +18,7 @@ const TrainingLogEditorContainer = styled.div`
 
 export const NewTraining: FC = () => {
   const history = useHistory();
-  const [user] = useUser();
+  const user = useUser();
 
   const addLog = useCallback(() => {
     if (!user) return;

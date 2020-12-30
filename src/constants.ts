@@ -10,10 +10,10 @@ export enum TabIndex {
 
 export const Paths = {
   account: '/account',
-  logView: (userId: string = ':userId', logId: string = ':logId') =>
+  logView: (userId = ':userId', logId = ':logId') =>
     `/user/${userId}/log/${logId}`,
-  user: (userId: string = ':userId') => `/user/${userId}`,
-  logEditor: (logId: string = ':logId') => `/log/${logId}`,
+  user: (userId = ':userId') => `/user/${userId}`,
+  logEditor: (logId = ':logId') => `/log/${logId}`,
   welcome: '/welcome',
   signUp: '/welcome/signup',
   logIn: '/welcome/login',

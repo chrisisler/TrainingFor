@@ -51,6 +51,7 @@ export const Timeline: FC = () => {
       if (event.key === 'Escape') closeSuggestions();
     };
     const onChange = (event: Event) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((event.target as any)?.value === '') closeSuggestions();
       else openSuggestions();
     };
@@ -204,7 +205,7 @@ export const Timeline: FC = () => {
 };
 
 const TimelineView: FC = () => {
-  const [user] = useUser();
+  const user = useUser();
 
   const [followedUsersLogs] = useDataState<TrainingLog[]>(async () => {
     const following = await db

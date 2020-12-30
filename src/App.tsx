@@ -13,6 +13,7 @@ import { NavBar, navBarHeight } from './components/NavBar';
 import { Paths } from './constants';
 import { DataState, DataStateView } from './DataState';
 import { auth } from './firebase';
+import { UserProvider } from './hooks';
 import { Account } from './pages/Account';
 import { LogIn } from './pages/LogIn';
 import { NewTraining } from './pages/NewTraining';
@@ -74,48 +75,50 @@ export const App: FC = () => {
             </Switch>
           )}
         >
-          {() => (
-            <Switch>
-              <Route exact path={Paths.logView()}>
-                <ViewWithNavBar>
-                  <TrainingLogViewPage />
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
-              <Route exact path={Paths.user()}>
-                <ViewWithNavBar>
-                  <Account />
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
-              <Route exact path={Paths.logEditor()}>
-                <ViewWithNavBar>
-                  <TrainingLogEditor />
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
-              <Route exact path={Paths.timeline}>
-                <ViewWithNavBar>
-                  <Timeline />
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
-              <Route exact path={Paths.account}>
-                <ViewWithNavBar>
-                  <Account />
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
-              <Route exact path={Paths.newTraining}>
-                <ViewWithNavBar>
-                  <NewTraining />
-                  <NavBar />
-                </ViewWithNavBar>
-              </Route>
-              <Route path="/">
-                <Redirect to={Paths.newTraining} />
-              </Route>
-            </Switch>
+          {user => (
+            <UserProvider user={user}>
+              <Switch>
+                <Route exact path={Paths.logView()}>
+                  <ViewWithNavBar>
+                    <TrainingLogViewPage />
+                    <NavBar />
+                  </ViewWithNavBar>
+                </Route>
+                <Route exact path={Paths.user()}>
+                  <ViewWithNavBar>
+                    <Account />
+                    <NavBar />
+                  </ViewWithNavBar>
+                </Route>
+                <Route exact path={Paths.logEditor()}>
+                  <ViewWithNavBar>
+                    <TrainingLogEditor />
+                    <NavBar />
+                  </ViewWithNavBar>
+                </Route>
+                <Route exact path={Paths.timeline}>
+                  <ViewWithNavBar>
+                    <Timeline />
+                    <NavBar />
+                  </ViewWithNavBar>
+                </Route>
+                <Route exact path={Paths.account}>
+                  <ViewWithNavBar>
+                    <Account />
+                    <NavBar />
+                  </ViewWithNavBar>
+                </Route>
+                <Route exact path={Paths.newTraining}>
+                  <ViewWithNavBar>
+                    <NewTraining />
+                    <NavBar />
+                  </ViewWithNavBar>
+                </Route>
+                <Route path="/">
+                  <Redirect to={Paths.newTraining} />
+                </Route>
+              </Switch>
+            </UserProvider>
           )}
         </DataStateView>
       </Router>
