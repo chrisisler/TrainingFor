@@ -10,6 +10,8 @@ export enum TabIndex {
 
 export const Paths = {
   account: '/account',
+  logView: (userId: string = ':userId', logId: string = ':logId') =>
+    `/user/${userId}/log/${logId}`,
   user: (userId: string = ':userId') => `/user/${userId}`,
   logEditor: (logId: string = ':logId') => `/log/${logId}`,
   welcome: '/welcome',

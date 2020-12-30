@@ -2,7 +2,7 @@ import React, { FC, useCallback, useState, useEffect } from 'react';
 import { css } from '@emotion/css';
 import { Typography, Button, IconButton } from '@material-ui/core';
 import firebase from 'firebase/app';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { Redirect, useHistory, useLocation, useParams } from 'react-router-dom';
 import format from 'date-fns/format';
 import { Replay } from '@material-ui/icons';
 
@@ -160,9 +160,12 @@ export const Account: FC = () => {
 };
 
 const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
+  const [redirect, setRedirect] = useState('');
+
   const [user] = useUser();
   const history = useHistory();
   const location = useLocation();
+
   /** If this userId exists, then we are viewing someone elses account.  */
   const { userId } = useParams<{ userId?: string }>();
 
@@ -172,6 +175,11 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   const navigateToTraining = useCallback(
     () => history.push(Paths.logEditor(log.id), { from: location }),
     [history, location, log.id]
+  );
+
+  const navigateToViewedUserLog = useCallback(
+    () => setRedirect(Paths.logView(userId, log.id)),
+    [userId, log.id]
   );
 
   const repeatTraining = useCallback(async () => {
@@ -218,6 +226,8 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
     }
   }, [user, log, navigateToTraining]);
 
+  if (redirect) return <Redirect to={redirect} />;
+
   return (
     <Rows
       className={css`
@@ -227,7 +237,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
         min-height: fit-content;
       `}
     >
-      <Columns onClick={userId ? undefined : navigateToTraining}>
+      <Columns onClick={userId ? navigateToViewedUserLog : navigateToTraining}>
         <Typography variant="body1" color="textSecondary">
           {log.title}
         </Typography>

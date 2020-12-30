@@ -20,6 +20,7 @@ import { NavBar, navBarHeight } from './components/NavBar';
 import { auth } from './firebase';
 import { DataState, DataStateView } from './DataState';
 import { Paths } from './constants';
+import { TrainingLogViewPage } from './pages/TrainingLogViewPage';
 
 const AppContainer = styled.div`
   width: 100%;
@@ -75,6 +76,12 @@ export const App: FC = () => {
         >
           {() => (
             <Switch>
+              <Route exact path={Paths.logView()}>
+                <ViewWithNavBar>
+                  <TrainingLogViewPage />
+                  <NavBar />
+                </ViewWithNavBar>
+              </Route>
               <Route exact path={Paths.user()}>
                 <ViewWithNavBar>
                   <Account />
