@@ -109,6 +109,7 @@ export const TrainingLogEditor: FC = () => {
           notes: null,
           sets: [],
           position: prevMaxPosition + 1,
+          attachmentUrl: null,
         };
         db.collection(DbPath.Users)
           .doc(user.uid)

@@ -15,9 +15,9 @@ import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
 import { v4 as uuid } from 'uuid';
 
-import { Format } from '../constants';
+import { Format, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { db, DbPath } from '../firebase';
+import { db, DbPath, storage } from '../firebase';
 import {
   Activity,
   ActivitySet,
@@ -160,6 +160,21 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   );
 };
 
+const ImagePreview = styled.div`
+  background-size: cover;
+  background-image: url(${(props: { src: string }) => props.src});
+  border-radius: 8px;
+  width: 100%;
+  min-height: 120px;
+  height: 20vh;
+  right: ${Pad.Large};
+`;
+
+/**
+ * Provides a view upon an Activity object, displaying sets as well.
+ *
+ * If `editable` is set to true, this View is for the TrainingLogEditor.
+ */
 // TODO Move from logId and logAuthorId prop to collection prop that these props
 // are used for
 const ActivityView: FC<{
@@ -173,8 +188,11 @@ const ActivityView: FC<{
   logAuthorId: string;
 }> = ({ activities, index, editable, logId, logAuthorId }) => {
   const activity = activities[index];
-  const [notes, setNotes] = useState<Activity['notes']>(activity.notes);
+
+  const attachmentRef = useRef<HTMLInputElement | null>(null);
   const notesRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const [notes, setNotes] = useState<Activity['notes']>(activity.notes);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
@@ -184,6 +202,57 @@ const ActivityView: FC<{
   const [pressHoldButtonRef] = usePressHoldRef(() =>
     addActivitySet(ActivityStatus.Completed)
   );
+
+  const addActivityAttachment = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      closeActivityMenu();
+      const attachment = event.target.files?.[0];
+      if (!attachment) return;
+      if (!window.confirm('Upload chosen attachment?')) return;
+      const upload = storage.ref(`images/${attachment.name}`).put(attachment);
+      upload.on(
+        'state_changed',
+        () => {
+          /** no-op */
+        },
+        error => {
+          alert(error.message);
+        },
+        async () => {
+          const attachmentUrl = await storage
+            .ref('images')
+            .child(attachment.name)
+            .getDownloadURL();
+          db.collection(DbPath.Users)
+            .doc(logAuthorId)
+            .collection(DbPath.UserLogs)
+            .doc(logId)
+            .collection(DbPath.UserLogActivities)
+            .doc(activity.id)
+            .update({ attachmentUrl } as Partial<Activity>);
+        }
+      );
+    },
+    [logId, logAuthorId, activity.id]
+  );
+
+  const removeAttachment = useCallback(async () => {
+    closeActivityMenu();
+    if (!window.confirm('Remove image?')) return;
+    if (activity.attachmentUrl === null) return;
+    try {
+      await storage.refFromURL(activity.attachmentUrl).delete();
+      db.collection(DbPath.Users)
+        .doc(logAuthorId)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        .doc(activity.id)
+        .update({ attachmentUrl: null } as Partial<Activity>);
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activity.attachmentUrl, logId, logAuthorId, activity.id]);
 
   const addActivitySet = (status?: ActivityStatus) => {
     const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
@@ -372,9 +441,29 @@ const ActivityView: FC<{
                   {!notes && (
                     <MenuItem onClick={addActivityNotes}>Add notes</MenuItem>
                   )}
+                  <MenuItem
+                    onClick={
+                      activity.attachmentUrl
+                        ? removeAttachment
+                        : () => attachmentRef.current?.click()
+                    }
+                  >
+                    {activity.attachmentUrl ? 'Remove image' : 'Add image'}
+                  </MenuItem>
                   <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                   <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
                 </Menu>
+                <input
+                  ref={attachmentRef}
+                  className={css`
+                    width: 0;
+                    height: 0;
+                  `}
+                  tabIndex={TabIndex.NotFocusable}
+                  type="file"
+                  accept="image/*"
+                  onChange={addActivityAttachment}
+                />
               </div>
             </ClickAwayListener>
           </Rows>
@@ -416,6 +505,7 @@ const ActivityView: FC<{
           </FlipMoveChild>
         ))}
       </FlipMove>
+      {activity.attachmentUrl && <ImagePreview src={activity.attachmentUrl} />}
     </Columns>
   );
 };

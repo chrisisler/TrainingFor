@@ -35,6 +35,7 @@ export interface Activity extends FirestoreDocument {
   notes: null | string;
   position: number;
   sets: ActivitySet[];
+  attachmentUrl: null | string;
 }
 
 export interface ActivitySet {
