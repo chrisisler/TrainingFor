@@ -104,8 +104,19 @@ export const TrainingLogEditorView: FC<{
 
 /**
  * Read-only view of a TrainingLog.
+ * This component is for viewing logs not authored by the authenticated user.
  */
 export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
+  const [authorName] = useDataState<string>(
+    () =>
+      db
+        .collection(DbPath.Users)
+        .doc(log.authorId)
+        .get()
+        .then(doc => doc.get('displayName')),
+    [log.authorId]
+  );
+
   const [activities] = useDataState(
     () =>
       db
@@ -132,18 +143,27 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
             border-bottom: 1px solid lightgray;
           `}
         >
-          <Rows maxWidth between padding={`${Pad.Medium} ${Pad.Large}`}>
-            {logDate && (
-              <Typography variant="body2" color="textSecondary">
-                {format(logDate, Format.date)}
-                <br />
-                {format(logDate, Format.time)}
+          <Columns padding={`${Pad.Medium} ${Pad.Large}`}>
+            <DataStateView data={authorName} error={() => null}>
+              {authorName => (
+                <Typography variant="body1" color="textPrimary">
+                  {authorName}
+                </Typography>
+              )}
+            </DataStateView>
+            <Rows maxWidth between>
+              {logDate && (
+                <Typography variant="body2" color="textSecondary">
+                  {format(logDate, Format.date)}
+                  <br />
+                  {format(logDate, Format.time)}
+                </Typography>
+              )}
+              <Typography variant="body1" color="textSecondary">
+                {log.title}
               </Typography>
-            )}
-            <Typography variant="body1" color="textSecondary">
-              {log.title}
-            </Typography>
-          </Rows>
+            </Rows>
+          </Columns>
           {activities.map(({ id }, index) => (
             <ActivityView
               key={id}
@@ -488,6 +508,7 @@ const ActivityView: FC<{
           font-size: 0.8em;
           font-style: italic;
           font-family: inherit;
+          background-color: transparent;
         `}
         value={notes ?? ''}
       />
