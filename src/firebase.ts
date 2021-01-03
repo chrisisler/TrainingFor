@@ -4,6 +4,8 @@ import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/storage';
 
+import { Activity, TrainingLog, User } from './interfaces';
+
 const firebaseConfig = {
   apiKey: 'AIzaSyBLnwnJBVUw1SXeK7E1-oL9uCG-ysm1N6w',
   authDomain: 'training-for.firebaseapp.com',
@@ -32,3 +34,48 @@ export enum DbPath {
 }
 
 export { db, auth, storage };
+
+const trainingLogConverter: firebase.firestore.FirestoreDataConverter<TrainingLog> = {
+  toFirestore: (log: TrainingLog): firebase.firestore.DocumentData => {
+    return log;
+  },
+  fromFirestore: (
+    doc: firebase.firestore.QueryDocumentSnapshot<TrainingLog>
+  ): TrainingLog => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
+const activityConverter: firebase.firestore.FirestoreDataConverter<Activity> = {
+  toFirestore: (activity: Activity): firebase.firestore.DocumentData => {
+    return activity;
+  },
+  fromFirestore: (
+    doc: firebase.firestore.QueryDocumentSnapshot<Activity>
+  ): Activity => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
+const userConverter: firebase.firestore.FirestoreDataConverter<User> = {
+  toFirestore: (user: User): firebase.firestore.DocumentData => {
+    return user;
+  },
+  fromFirestore: (
+    doc: firebase.firestore.QueryDocumentSnapshot<User>
+  ): User => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
+export const DbConverter = {
+  TrainingLog: trainingLogConverter,
+  Activity: activityConverter,
+  User: userConverter,
+};

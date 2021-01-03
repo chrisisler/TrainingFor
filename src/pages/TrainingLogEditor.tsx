@@ -10,7 +10,7 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { TrainingLogEditorView } from '../components/TrainingLogView';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
-import { db, DbPath } from '../firebase';
+import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
 import { Activity, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
@@ -34,18 +34,15 @@ export const TrainingLogEditor: FC = () => {
 
   const [logDoc, setLogDoc] = useState<
     DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
-  >(DataState.Empty);
+  >(DataState.Loading);
 
-  const logState = DataState.map(logDoc, doc => {
-    const data = doc.data();
-    if (!data) return DataState.error('TrainingLog document does not exist.');
-    data.id = doc.id;
-    return data as TrainingLog;
+  const log = DataState.map(logDoc, doc => {
+    const log = doc.data();
+    if (!log) return DataState.error('TrainingLog document does not exist.');
+    return log;
   });
 
-  const logDate = DataState.map(logState, log =>
-    (log.timestamp as firebase.firestore.Timestamp)?.toDate()
-  );
+  const logDate = DataState.map(log, l => TrainingLog.getDate(l));
 
   // Subscribe to updates to the TrainingLog ID from the URL
   useEffect(() => {
@@ -54,11 +51,10 @@ export const TrainingLogEditor: FC = () => {
       .collection(DbPath.Users)
       .doc(user.uid)
       .collection(DbPath.UserLogs)
+      .withConverter(DbConverter.TrainingLog)
       .doc(logId)
       .onSnapshot(
-        s => {
-          setLogDoc(s as firebase.firestore.DocumentSnapshot<TrainingLog>);
-        },
+        document => setLogDoc(document),
         err => setLogDoc(DataState.error(err.message))
       );
   }, [user.uid, logId]);
@@ -69,7 +65,7 @@ export const TrainingLogEditor: FC = () => {
   }, [setLogDoc, history]);
 
   const renameLog = useCallback(() => {
-    const title = DataState.unwrap(DataState.map(logState, log => log.title));
+    const title = DataState.unwrap(DataState.map(log, log => log.title));
     const newTitle = window.prompt('Update training log title', title);
     if (!newTitle) return;
     db.collection(DbPath.Users)
@@ -80,7 +76,7 @@ export const TrainingLogEditor: FC = () => {
       .catch(error => {
         alert(error.message);
       });
-  }, [user.uid, logId, logState]);
+  }, [user.uid, logId, log]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -144,7 +140,7 @@ export const TrainingLogEditor: FC = () => {
 
   return (
     <DataStateView
-      data={logState}
+      data={log}
       error={() => (
         <Typography variant="h4" color="textPrimary">
           Error

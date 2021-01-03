@@ -11,9 +11,9 @@ import { useHistory } from 'react-router-dom';
 import { TrainingLogView } from '../components/TrainingLogView';
 import { Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { db, DbPath } from '../firebase';
+import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
-import { TrainingLog, User } from '../interfaces';
+import { User } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 
 const listItemStyle = css`
@@ -207,7 +207,7 @@ export const Timeline: FC = () => {
 const TimelineView: FC = () => {
   const user = useUser();
 
-  const [followedUsersLogs] = useDataState<TrainingLog[]>(async () => {
+  const [followedUsersLogs] = useDataState(async () => {
     const following = await db
       .collection(DbPath.Users)
       .doc(user.uid)
@@ -219,15 +219,17 @@ const TimelineView: FC = () => {
         .collection(DbPath.Users)
         .doc(authorId)
         .collection(DbPath.UserLogs)
+        .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')
         .limit(5)
         .get()
-        .then(({ docs }) =>
-          docs.map(
-            doc =>
-              // TODO Remove `authorId` as TrainingLog DB docs are updated
-              ({ ...doc.data(), id: doc.id, authorId } as TrainingLog)
-          )
+        .then(snapshot =>
+          snapshot.docs.map(doc => {
+            const log = doc.data();
+            // TODO Remove `authorId` as TrainingLog DB docs are updated
+            log.authorId = authorId;
+            return log;
+          })
         )
     );
     const logs = await Promise.all(promisesForLogs);

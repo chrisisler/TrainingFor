@@ -17,7 +17,7 @@ import { v4 as uuid } from 'uuid';
 
 import { Format, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { db, DbPath, storage } from '../firebase';
+import { db, DbConverter, DbPath, storage } from '../firebase';
 import {
   Activity,
   ActivitySet,
@@ -67,14 +67,10 @@ export const TrainingLogEditorView: FC<{
       .collection(DbPath.UserLogs)
       .doc(logId)
       .collection(DbPath.UserLogActivities)
+      .withConverter(DbConverter.Activity)
       .orderBy('position', 'desc')
       .onSnapshot(
-        snapshot =>
-          setActivities(
-            snapshot.docs.map(
-              doc => ({ ...doc.data(), id: doc.id } as Activity)
-            )
-          ),
+        snapshot => setActivities(snapshot.docs.map(doc => doc.data())),
         error => setActivities(DataState.error(error.message))
       );
   }, [logAuthorId, logId]);
@@ -107,7 +103,7 @@ export const TrainingLogEditorView: FC<{
  * This component is for viewing logs not authored by the authenticated user.
  */
 export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
-  const [authorName] = useDataState<string>(
+  const [authorName] = useDataState(
     () =>
       db
         .collection(DbPath.Users)
@@ -125,11 +121,10 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         .collection(DbPath.UserLogs)
         .doc(log.id)
         .collection(DbPath.UserLogActivities)
+        .withConverter(DbConverter.Activity)
         .orderBy('position', 'desc')
         .get()
-        .then(snapshot =>
-          snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Activity))
-        ),
+        .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [log.authorId, log.id]
   );
 

@@ -8,9 +8,9 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { auth, db, DbPath } from '../firebase';
+import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
-import { Activity, ActivityStatus, TrainingLog, User } from '../interfaces';
+import { ActivityStatus, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 
 /**
@@ -27,17 +27,16 @@ export const Account: FC = () => {
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
 
-  const [logs] = useDataState<TrainingLog[]>(
+  const [logs] = useDataState(
     async () =>
       db
         .collection(DbPath.Users)
         .doc(userId ?? user.uid)
         .collection(DbPath.UserLogs)
+        .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')
         .get()
-        .then(({ docs }) =>
-          docs.map(doc => ({ ...doc.data(), id: doc.id } as TrainingLog))
-        ),
+        .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [userId, user.uid]
   );
 
@@ -45,9 +44,14 @@ export const Account: FC = () => {
     () =>
       db
         .collection(DbPath.Users)
+        .withConverter(DbConverter.User)
         .doc(userId)
         .get()
-        .then(doc => ({ ...doc.data(), id: doc.id } as User)),
+        .then(doc => {
+          const user = doc.data();
+          if (!user) return DataState.error('User document does not exist');
+          return user;
+        }),
     [userId]
   );
 
@@ -161,40 +165,31 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
 
   const logDate = TrainingLog.getDate(log);
 
-  const navigateToTraining = useCallback(
-    () => history.push(Paths.logEditor(log.id), { from: location }),
-    [history, location, log.id]
-  );
-
-  const navigateToViewedUserLog = useCallback(
-    () => history.push(Paths.logView(userId, log.id)),
-    [history, userId, log.id]
-  );
-
   const repeatTraining = useCallback(async () => {
     if (!window.confirm('Repeat this training?')) return;
     try {
-      const repeatLog: Omit<TrainingLog, 'id'> = {
-        ...log,
-        title: 'Repeat - ' + log.title,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      };
       const [logRef, activities] = await Promise.all([
         db
           .collection(DbPath.Users)
           .doc(user.uid)
           .collection(DbPath.UserLogs)
-          .add(repeatLog),
+          .withConverter(DbConverter.TrainingLog)
+          .add({
+            ...log,
+            title: 'Repeat - ' + log.title,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          }),
         db
           .collection(DbPath.Users)
           .doc(user.uid)
           .collection(DbPath.UserLogs)
           .doc(log.id)
           .collection(DbPath.UserLogActivities)
+          .withConverter(DbConverter.Activity)
           .get()
           .then(snapshot =>
             snapshot.docs.map(doc => {
-              const activity = { ...doc.data(), id: doc.id } as Activity;
+              const activity = doc.data();
               activity.sets.forEach(set => {
                 set.status = ActivityStatus.Unattempted;
               });
@@ -208,11 +203,11 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
         writeBatch.set(activitiesCollection.doc(a.id), a);
       });
       await writeBatch.commit();
-      navigateToTraining();
+      history.push(Paths.logEditor(logRef.id), { from: location });
     } catch (error) {
       alert(error.message);
     }
-  }, [user.uid, log, navigateToTraining]);
+  }, [user.uid, log, history, location]);
 
   return (
     <Rows
@@ -223,7 +218,13 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
         min-height: fit-content;
       `}
     >
-      <Columns onClick={userId ? navigateToViewedUserLog : navigateToTraining}>
+      <Columns
+        onClick={
+          userId
+            ? () => history.push(Paths.logView(userId, log.id))
+            : () => history.push(Paths.logEditor(log.id), { from: location })
+        }
+      >
         <Typography variant="body1" color="textSecondary">
           {log.title}
         </Typography>
