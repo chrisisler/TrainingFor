@@ -4,6 +4,7 @@ import firebase from 'firebase/app';
 import React, { FC, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 
+import { Paths } from '../constants';
 import { db, DbPath } from '../firebase';
 import { useUser } from '../hooks';
 import { TrainingLog } from '../interfaces';
@@ -20,23 +21,23 @@ export const NewTraining: FC = () => {
   const history = useHistory();
   const user = useUser();
 
-  const addLog = useCallback(() => {
+  const addLog = useCallback(async () => {
     const newLog: Omit<TrainingLog, 'id'> = {
       title: 'Untitled',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       notes: null,
       authorId: user.uid,
     };
-    db.collection(DbPath.Users)
-      .doc(user.uid)
-      .collection(DbPath.UserLogs)
-      .add(newLog)
-      .then(ref => {
-        history.push(`/log/${ref.id}`);
-      })
-      .catch(error => {
-        alert(error.message);
-      });
+    try {
+      const { id } = await db
+        .collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserLogs)
+        .add(newLog);
+      history.push(Paths.logEditor(id));
+    } catch (error) {
+      alert(error.message);
+    }
   }, [user.uid, history]);
 
   return (
