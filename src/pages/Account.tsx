@@ -135,14 +135,7 @@ export const Account: FC = () => {
       <Typography variant="body1" color="textSecondary" gutterBottom>
         Training Logs
       </Typography>
-      <DataStateView
-        data={logs}
-        error={() => (
-          <Typography variant="body2" color="error">
-            Something went wrong.
-          </Typography>
-        )}
-      >
+      <DataStateView data={logs}>
         {logs => (
           <Columns pad={Pad.Large}>
             {logs.map(log => (

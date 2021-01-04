@@ -60,19 +60,19 @@ export const TrainingLogEditor: FC = () => {
   }, [user.uid, logId]);
 
   const renameLog = useCallback(() => {
-    const title = DataState.unwrap(DataState.map(log, log => log.title));
-    const newTitle = window.prompt('Update training log title', title);
+    if (!DataState.isReady(log)) return;
+    const newTitle = window.prompt('Update training log title', log.title);
     if (!newTitle) return;
     try {
       db.collection(DbPath.Users)
-        .doc(user.uid)
+        .doc(log.authorId)
         .collection(DbPath.UserLogs)
-        .doc(logId)
+        .doc(log.id)
         .set({ title: newTitle } as Partial<TrainingLog>, { merge: true });
     } catch (error) {
       alert(error.message);
     }
-  }, [user.uid, logId, log]);
+  }, [log]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -109,17 +109,8 @@ export const TrainingLogEditor: FC = () => {
     }
   }, [logDoc, history]);
 
-  if (!logId) return null;
-
   return (
-    <DataStateView
-      data={log}
-      error={() => (
-        <Typography variant="h4" color="textPrimary">
-          Error
-        </Typography>
-      )}
-    >
+    <DataStateView data={log}>
       {log => (
         <Columns
           pad={Pad.Small}

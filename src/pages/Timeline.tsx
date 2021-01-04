@@ -1,5 +1,4 @@
 import { css } from '@emotion/css';
-import { Typography } from '@material-ui/core';
 import { SearchOutlined } from '@material-ui/icons';
 import {
   createPopper,
@@ -149,14 +148,7 @@ export const Timeline: FC = () => {
             z-index: 100;
           `}
         >
-          <DataStateView
-            data={results}
-            error={() => (
-              <Typography color="error" variant="body1">
-                Something went wrong.
-              </Typography>
-            )}
-          >
+          <DataStateView data={results}>
             {results => (
               <ul
                 tabIndex={TabIndex.NotFocusable}
@@ -241,14 +233,7 @@ const TimelineView: FC = () => {
   }, [user.uid]);
 
   return (
-    <DataStateView
-      data={followedUsersLogs}
-      error={() => (
-        <Typography color="error" variant="body1">
-          Something went wrong.
-        </Typography>
-      )}
-    >
+    <DataStateView data={followedUsersLogs}>
       {logs => (
         <Columns
           pad={Pad.None}

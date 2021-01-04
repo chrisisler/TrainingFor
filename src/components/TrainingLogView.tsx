@@ -82,7 +82,7 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
   }, [log.authorId, log.id]);
 
   return (
-    <DataStateView data={activities} error={() => null}>
+    <DataStateView data={activities}>
       {activities => (
         <ActivitiesListContainer>
           <FlipMove enterAnimation="fade" leaveAnimation="fade">
@@ -136,7 +136,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   const logDate = TrainingLog.getDate(log);
 
   return (
-    <DataStateView data={activities} error={() => null}>
+    <DataStateView data={activities}>
       {activities => (
         <div
           className={css`
@@ -144,7 +144,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
           `}
         >
           <Columns padding={`${Pad.Medium}`}>
-            <DataStateView data={authorName} error={() => null}>
+            <DataStateView data={authorName}>
               {authorName => (
                 <Typography variant="body1" color="textPrimary">
                   <Link

@@ -1,5 +1,4 @@
 import styled from '@emotion/styled';
-import { Typography } from '@material-ui/core';
 import firebase from 'firebase/app';
 import React, { FC, useEffect, useState } from 'react';
 import {
@@ -53,11 +52,6 @@ export const App: FC = () => {
       <Router>
         <DataStateView
           data={user}
-          error={() => (
-            <Typography variant="body2" color="error">
-              Something went wrong.
-            </Typography>
-          )}
           empty={() => (
             <Switch>
               <Route exact path={Paths.welcome}>

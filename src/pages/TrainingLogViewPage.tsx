@@ -49,7 +49,7 @@ export const TrainingLogViewPage: FC = () => {
           <ArrowBackIosRounded color="primary" />
         </IconButton>
       </Rows>
-      <DataStateView data={log} error={() => null}>
+      <DataStateView data={log}>
         {log => <TrainingLogView log={log} />}
       </DataStateView>
     </div>
