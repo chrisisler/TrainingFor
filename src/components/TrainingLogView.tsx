@@ -12,7 +12,14 @@ import {
 import { MoreHoriz } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
-import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import FlipMove from 'react-flip-move';
 import { NavLink } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
@@ -229,6 +236,19 @@ const ActivityView: FC<{
     addActivitySet(ActivityStatus.Completed)
   );
 
+  const activityDocument = useMemo(
+    () =>
+      db
+        .collection(DbPath.Users)
+        .doc(logAuthorId)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        .withConverter(DbConverter.Activity)
+        .doc(activity.id),
+    [activity.id, logAuthorId, logId]
+  );
+
   const addActivityAttachment = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
       closeActivityMenu();
@@ -249,17 +269,11 @@ const ActivityView: FC<{
             .ref('images')
             .child(attachment.name)
             .getDownloadURL();
-          db.collection(DbPath.Users)
-            .doc(logAuthorId)
-            .collection(DbPath.UserLogs)
-            .doc(logId)
-            .collection(DbPath.UserLogActivities)
-            .doc(activity.id)
-            .update({ attachmentUrl } as Partial<Activity>);
+          activityDocument.update({ attachmentUrl } as Partial<Activity>);
         }
       );
     },
-    [logId, logAuthorId, activity.id]
+    [activityDocument]
   );
 
   const removeAttachment = useCallback(async () => {
@@ -268,146 +282,121 @@ const ActivityView: FC<{
     if (activity.attachmentUrl === null) return;
     try {
       await storage.refFromURL(activity.attachmentUrl).delete();
-      db.collection(DbPath.Users)
-        .doc(logAuthorId)
-        .collection(DbPath.UserLogs)
-        .doc(logId)
-        .collection(DbPath.UserLogActivities)
-        .doc(activity.id)
-        .update({ attachmentUrl: null } as Partial<Activity>);
+      activityDocument.update({ attachmentUrl: null } as Partial<Activity>);
     } catch (error) {
       alert(error.message);
     }
-  }, [activity.attachmentUrl, logId, logAuthorId, activity.id]);
+  }, [activity.attachmentUrl, activityDocument]);
 
-  const addActivitySet = (status?: ActivityStatus) => {
-    const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
-    const newSet: ActivitySet = {
-      uuid: uuid(),
-      name: `Set ${activity.sets.length + 1}`,
-      notes: null,
-      weight,
-      status: status ?? ActivityStatus.Unattempted,
-    };
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activity.id)
-      .update({
-        sets: firebase.firestore.FieldValue.arrayUnion(newSet),
-      })
-      .catch(error => {
+  const addActivitySet = useCallback(
+    (status?: ActivityStatus) => {
+      const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
+      const newSet: ActivitySet = {
+        uuid: uuid(),
+        name: `Set ${activity.sets.length + 1}`,
+        notes: null,
+        weight,
+        status: status ?? ActivityStatus.Unattempted,
+      };
+      try {
+        activityDocument.update({
+          sets: firebase.firestore.FieldValue.arrayUnion(newSet),
+        });
+      } catch (error) {
         alert(error.message);
-      });
-  };
+      }
+    },
+    [activity.sets, activityDocument]
+  );
 
-  const deleteActivity = () => {
+  const deleteActivity = useCallback(() => {
     closeActivityMenu();
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activity.id)
-      .delete()
-      .catch(error => {
-        alert(error.message);
-      });
-  };
+    try {
+      activityDocument.delete();
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activityDocument]);
 
-  const renameActivity = () => {
+  const renameActivity = useCallback(() => {
     closeActivityMenu();
     const newName = window.prompt('Update activity name', activity.name);
     if (!newName) return;
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activity.id)
-      .set({ name: newName } as Partial<Activity>, { merge: true })
-      .catch(error => {
-        alert(error.message);
+    try {
+      activityDocument.set({ name: newName } as Partial<Activity>, {
+        merge: true,
       });
-  };
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activity.name, activityDocument]);
 
-  const moveActivityUp = async () => {
+  const moveActivityUp = useCallback(async () => {
     closeActivityMenu();
     if (activities.length === 1 || index === 0) return;
     try {
       const batch = db.batch();
-      const activitiesColl = db
-        .collection(DbPath.Users)
-        .doc(logAuthorId)
-        .collection(DbPath.UserLogs)
-        .doc(logId)
-        .collection(DbPath.UserLogActivities);
-      const otherDocRef = activitiesColl.doc(activities[index - 1].id);
-      const swapped = (await otherDocRef.get()).get('position') as number;
-      batch.update(activitiesColl.doc(activity.id), {
+      const otherActivityDocument = activityDocument.parent.doc(
+        activities[index - 1].id
+      );
+      const swapped = (await otherActivityDocument.get()).get(
+        'position'
+      ) as number;
+      batch.update(activityDocument, {
         position: swapped,
       } as Partial<Activity>);
-      batch.update(otherDocRef, {
+      batch.update(otherActivityDocument, {
         position: activity.position,
       } as Partial<Activity>);
       await batch.commit();
     } catch (error) {
       alert(error.message);
     }
-  };
+  }, [activities, activity.position, activityDocument, index]);
 
-  const moveActivityDown = async () => {
+  const moveActivityDown = useCallback(async () => {
     closeActivityMenu();
     if (activities.length === 1 || index + 1 === activities.length) return;
     try {
       const batch = db.batch();
-      const activitiesColl = db
-        .collection(DbPath.Users)
-        .doc(logAuthorId)
-        .collection(DbPath.UserLogs)
-        .doc(logId)
-        .collection(DbPath.UserLogActivities);
-      const otherDocRef = activitiesColl.doc(activities[index + 1].id);
-      const swapped = (await otherDocRef.get()).get('position') as number;
-      batch.update(activitiesColl.doc(activity.id), {
+      const otherActivityDocument = activityDocument.parent.doc(
+        activities[index + 1].id
+      );
+      const swapped = (await otherActivityDocument.get()).get(
+        'position'
+      ) as number;
+      batch.update(activityDocument, {
         position: swapped,
       } as Partial<Activity>);
-      batch.update(otherDocRef, {
+      batch.update(otherActivityDocument, {
         position: activity.position,
       } as Partial<Activity>);
       await batch.commit();
     } catch (error) {
       alert(error.message);
     }
-  };
+  }, [activities, activity.position, activityDocument, index]);
 
-  const updateActivityNotes = async () => {
+  /** Close the notes input if it's empty, otherwise write notes to DB. */
+  const updateActivityNotes = useCallback(async () => {
     // Hide notes if user set value to empty string
     const nullIfEmpty = notes === '' ? null : notes;
     setNotes(nullIfEmpty);
     try {
-      db.collection(DbPath.Users)
-        .doc(logAuthorId)
-        .collection(DbPath.UserLogs)
-        .doc(logId)
-        .collection(DbPath.UserLogActivities)
-        .doc(activity.id)
-        .update({ notes: nullIfEmpty } as Partial<Activity>);
+      activityDocument.update({ notes: nullIfEmpty } as Partial<Activity>);
     } catch (error) {
       alert(error.message);
     }
-  };
+  }, [activityDocument, notes]);
 
-  const addActivityNotes = () => {
+  const showActivityNotesInput = useCallback(() => {
     closeActivityMenu();
     if (notes) return;
     // Make the notes textarea visible. See <ActivityNotesTextarea />
     setNotes('');
     // Wait for the event loop to render the element so we can focus it
     Promise.resolve().then(() => notesRef.current?.focus());
-  };
+  }, [notes]);
 
   return (
     <Columns maxWidth padding={`0 ${Pad.Small} ${Pad.Small} ${Pad.Large}`}>
@@ -465,7 +454,9 @@ const ActivityView: FC<{
                     Move down
                   </MenuItem>
                   {!notes && (
-                    <MenuItem onClick={addActivityNotes}>Add notes</MenuItem>
+                    <MenuItem onClick={showActivityNotesInput}>
+                      Add notes
+                    </MenuItem>
                   )}
                   <MenuItem
                     onClick={
@@ -524,10 +515,8 @@ const ActivityView: FC<{
             <ActivitySetView
               index={index}
               sets={activity.sets}
-              activityId={activity.id}
               editable={editable}
-              logAuthorId={logAuthorId}
-              logId={logId}
+              activityDocument={activityDocument}
             />
           </FlipMoveChild>
         ))}
@@ -540,11 +529,9 @@ const ActivityView: FC<{
 const ActivitySetView: FC<{
   index: number;
   sets: ActivitySet[];
-  activityId: string;
   editable: boolean;
-  logAuthorId: string;
-  logId: string;
-}> = ({ index, sets, activityId, editable, logAuthorId, logId }) => {
+  activityDocument: firebase.firestore.DocumentReference<Activity>;
+}> = ({ index, sets, editable, activityDocument }) => {
   const set = sets[index];
   const [weight, setWeight] = useState(set.weight);
 
@@ -553,90 +540,66 @@ const ActivitySetView: FC<{
     setAnchorEl(event.currentTarget);
   const closeSetMenu = () => setAnchorEl(null);
 
-  const cycleSetStatus = () => {
+  const cycleSetStatus = useCallback(() => {
     sets[index].status = Activity.cycleStatus(set.status);
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activityId)
-      .set({ sets }, { merge: true })
-      .catch(error => {
-        alert(error.message);
-      });
-  };
+    try {
+      activityDocument.set({ sets }, { merge: true });
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activityDocument, index, set.status, sets]);
 
-  /** Duplicate this set, except for its ActivityStatus. */
-  const duplicateSet = () => {
+  const duplicateSet = useCallback(() => {
     closeSetMenu();
-    const duplicateSet = {
-      ...sets[index],
-      uuid: uuid(),
-      notes: null,
-      status: ActivityStatus.Unattempted,
-    };
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activityId)
-      .update({
+    try {
+      const duplicateSet = {
+        ...sets[index],
+        uuid: uuid(),
+        notes: null,
+        status: ActivityStatus.Unattempted,
+      };
+      activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayUnion(duplicateSet),
-      })
-      .catch(error => {
-        alert(error.message);
       });
-  };
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activityDocument, index, sets]);
 
-  const deleteSet = () => {
+  const deleteSet = useCallback(() => {
     closeSetMenu();
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activityId)
-      .update({
+    try {
+      activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayRemove(set),
-      })
-      .catch(error => {
-        alert(error.message);
       });
-  };
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activityDocument, set]);
 
-  const renameSet = () => {
+  const renameSet = useCallback(() => {
     closeSetMenu();
     const newName = window.prompt('Update set name', set.name);
     if (!newName) return;
-    sets[index].name = newName;
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activityId)
-      .set({ sets }, { merge: true })
-      .catch(error => {
-        alert(error.message);
-      });
-  };
+    try {
+      sets[index].name = newName;
+      activityDocument.set({ sets } as Partial<Activity>, { merge: true });
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activityDocument, index, set.name, sets]);
 
-  /** Modify `sets` in-place, updating the weight of the current set. */
-  const updateSetWeight = (event: React.ChangeEvent<HTMLInputElement>) => {
-    sets[index].weight = Number(event.target.value);
-    db.collection(DbPath.Users)
-      .doc(logAuthorId)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .collection(DbPath.UserLogActivities)
-      .doc(activityId)
-      .set({ sets }, { merge: true })
-      .catch(error => {
+  const updateSetWeight = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      sets[index].weight = Number(event.target.value);
+      try {
+        activityDocument.set({ sets } as Partial<Activity>, { merge: true });
+      } catch (error) {
         alert(error.message);
-      });
-  };
+      }
+    },
+    [activityDocument, index, sets]
+  );
 
   return (
     <Rows maxWidth center padding={`0 ${Pad.Small}`} between>

@@ -120,21 +120,18 @@ export const TrainingLogEditor: FC = () => {
     [activityName, user.uid, logDoc]
   );
 
-  const deleteLogDoc = useCallback(() => {
+  const deleteLog = useCallback(() => {
     if (!DataState.isReady(logDoc)) return;
     if (!window.confirm('Delete this training log forever?')) return;
-    // TODO Remove this
-    setLogDoc(DataState.Loading);
     logDoc.ref
       .delete()
       .catch(error => {
-        setLogDoc(DataState.error(error.message));
         alert(error.message);
       })
       .finally(() => {
         history.push(Paths.account);
       });
-  }, [logDoc, setLogDoc, history]);
+  }, [logDoc, history]);
 
   if (!logId) return null;
 
@@ -167,7 +164,7 @@ export const TrainingLogEditor: FC = () => {
                 {log.title}
               </Typography>
             </IconButton>
-            <IconButton aria-label="Delete training log" onClick={deleteLogDoc}>
+            <IconButton aria-label="Delete training log" onClick={deleteLog}>
               <DeleteOutline color="action" />
             </IconButton>
           </Rows>
