@@ -140,7 +140,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
             border-bottom: 1px solid lightgray;
           `}
         >
-          <Columns padding={`${Pad.Medium} ${Pad.Large}`}>
+          <Columns padding={`${Pad.Medium}`}>
             <DataStateView data={authorName} error={() => null}>
               {authorName => (
                 <Typography variant="body1" color="textPrimary">

@@ -13,7 +13,7 @@ import { Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
-import { User } from '../interfaces';
+import { TrainingLog, User } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 
 const listItemStyle = css`
@@ -208,12 +208,8 @@ const TimelineView: FC = () => {
   const user = useUser();
 
   const [followedUsersLogs] = useDataState(async () => {
-    const following = await db
-      .collection(DbPath.Users)
-      .doc(user.uid)
-      .get()
-      .then(doc => doc.get('following') as string[]);
-    /** The five latest logs of each followed user. */
+    const userDoc = await db.collection(DbPath.Users).doc(user.uid).get();
+    const following: string[] = userDoc.get('following');
     const promisesForLogs = following.map(authorId =>
       db
         .collection(DbPath.Users)
@@ -232,9 +228,16 @@ const TimelineView: FC = () => {
           })
         )
     );
-    const logs = await Promise.all(promisesForLogs);
-    // TODO sort
-    return logs.flatMap(log => log);
+    const usersLogs = await Promise.all(promisesForLogs);
+    return usersLogs
+      .flatMap(logs => logs)
+      .sort((a, b) => {
+        const dateA = TrainingLog.getDate(a)?.valueOf();
+        const dateB = TrainingLog.getDate(b)?.valueOf();
+        if (!dateA || !dateB) return NaN;
+        if (dateA === dateB) return 0;
+        return dateA > dateB ? -1 : 1;
+      });
   }, [user.uid]);
 
   return (
