@@ -61,10 +61,7 @@ const ActivityNotesTextarea = styled.textarea`
     props.notes === null ? 'none' : 'block'};
 `;
 
-export const TrainingLogEditorView: FC<{
-  logAuthorId: string;
-  logId: string;
-}> = ({ logAuthorId, logId }) => {
+export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Loading
   );
@@ -72,9 +69,9 @@ export const TrainingLogEditorView: FC<{
   useEffect(() => {
     return db
       .collection(DbPath.Users)
-      .doc(logAuthorId)
+      .doc(log.authorId)
       .collection(DbPath.UserLogs)
-      .doc(logId)
+      .doc(log.id)
       .collection(DbPath.UserLogActivities)
       .withConverter(DbConverter.Activity)
       .orderBy('position', 'desc')
@@ -82,7 +79,7 @@ export const TrainingLogEditorView: FC<{
         snapshot => setActivities(snapshot.docs.map(doc => doc.data())),
         error => setActivities(DataState.error(error.message))
       );
-  }, [logAuthorId, logId]);
+  }, [log.authorId, log.id]);
 
   return (
     <DataStateView data={activities} error={() => null}>
@@ -95,8 +92,7 @@ export const TrainingLogEditorView: FC<{
                   editable
                   activities={activities}
                   index={index}
-                  logId={logId}
-                  logAuthorId={logAuthorId}
+                  log={log}
                 />
               </FlipMoveChild>
             ))}
@@ -182,9 +178,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
               key={id}
               activities={activities}
               index={index}
-              editable={false}
-              logId={log.id}
-              logAuthorId={log.authorId}
+              log={log}
             />
           ))}
         </div>
@@ -206,20 +200,17 @@ const ImagePreview = styled.div`
 /**
  * Provides a view upon an Activity object, displaying sets as well.
  *
- * If `editable` is set to true, this View is for the TrainingLogEditor.
+ * If `editable` is true, this view is for the TrainingLogEditor.
  */
-// TODO Move from logId and logAuthorId prop to collection prop that these props
-// are used for
 const ActivityView: FC<{
   /**
    * Caution! Providing the wrong value can break the entire app at runtime.
    */
-  editable: boolean;
+  editable?: boolean;
   activities: Activity[];
   index: number;
-  logId: string;
-  logAuthorId: string;
-}> = ({ activities, index, editable, logId, logAuthorId }) => {
+  log: TrainingLog;
+}> = ({ activities, index, editable = false, log }) => {
   const activity = activities[index];
 
   const attachmentRef = useRef<HTMLInputElement | null>(null);
@@ -240,13 +231,13 @@ const ActivityView: FC<{
     () =>
       db
         .collection(DbPath.Users)
-        .doc(logAuthorId)
+        .doc(log.authorId)
         .collection(DbPath.UserLogs)
-        .doc(logId)
+        .doc(log.id)
         .collection(DbPath.UserLogActivities)
         .withConverter(DbConverter.Activity)
         .doc(activity.id),
-    [activity.id, logAuthorId, logId]
+    [activity.id, log.authorId, log.id]
   );
 
   const addActivityAttachment = useCallback(

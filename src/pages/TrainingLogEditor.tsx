@@ -59,78 +59,54 @@ export const TrainingLogEditor: FC = () => {
       );
   }, [user.uid, logId]);
 
-  const navigateToAccount = useCallback(() => {
-    setLogDoc(DataState.Empty);
-    history.push(Paths.account);
-  }, [setLogDoc, history]);
-
   const renameLog = useCallback(() => {
     const title = DataState.unwrap(DataState.map(log, log => log.title));
     const newTitle = window.prompt('Update training log title', title);
     if (!newTitle) return;
-    db.collection(DbPath.Users)
-      .doc(user.uid)
-      .collection(DbPath.UserLogs)
-      .doc(logId)
-      .set({ title: newTitle } as Partial<TrainingLog>, { merge: true })
-      .catch(error => {
-        alert(error.message);
-      });
+    try {
+      db.collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .set({ title: newTitle } as Partial<TrainingLog>, { merge: true });
+    } catch (error) {
+      alert(error.message);
+    }
   }, [user.uid, logId, log]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
+      event.preventDefault();
+      if (!activityName.length || !DataState.isReady(logDoc)) return;
+      setActivityName('');
       try {
-        event.preventDefault();
-        if (!activityName.length || !DataState.isReady(logDoc)) return;
-        setActivityName('');
-        // Look to the previous activity to determine the position
-        // number of the activity being added
-        // TODO Combine TrainingLogView into this so we can
-        // use `activities` array from use effect instead of hitting DB
-        const prevMaxPosition = await db
-          .collection(DbPath.Users)
-          .doc(user.uid)
-          .collection(DbPath.UserLogs)
-          .doc(logDoc.id)
-          .collection(DbPath.UserLogActivities)
-          .orderBy('position', 'desc')
-          .limit(1)
-          .get()
-          .then(({ empty, docs }) =>
-            empty ? 0 : (docs[0].get('position') as number)
-          );
+        const activitiesColl = logDoc.ref.collection(DbPath.UserLogActivities);
+        const { size: activitiesCount } = await activitiesColl.get();
         const newActivity: Omit<Activity, 'id'> = {
           name: activityName,
           notes: null,
           sets: [],
-          position: prevMaxPosition + 1,
+          position: activitiesCount + 1,
           attachmentUrl: null,
         };
-        db.collection(DbPath.Users)
-          .doc(user.uid)
-          .collection(DbPath.UserLogs)
-          .doc(logDoc.id)
-          .collection(DbPath.UserLogActivities)
-          .add(newActivity);
+        activitiesColl.add(newActivity);
       } catch (error) {
         alert(error.message);
       }
     },
-    [activityName, user.uid, logDoc]
+    [activityName, logDoc]
   );
 
   const deleteLog = useCallback(() => {
     if (!DataState.isReady(logDoc)) return;
     if (!window.confirm('Delete this training log forever?')) return;
-    logDoc.ref
-      .delete()
-      .catch(error => {
-        alert(error.message);
-      })
-      .finally(() => {
-        history.push(Paths.account);
-      });
+    try {
+      logDoc.ref.delete();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      history.push(Paths.account);
+    }
   }, [logDoc, history]);
 
   if (!logId) return null;
@@ -152,7 +128,10 @@ export const TrainingLogEditor: FC = () => {
           `}
         >
           <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
-            <IconButton aria-label="Done training" onClick={navigateToAccount}>
+            <IconButton
+              aria-label="Done training"
+              onClick={() => history.push(Paths.account)}
+            >
               {location.state?.from?.pathname.includes(Paths.account) ? (
                 <ArrowBackIosRounded color="primary" />
               ) : (
@@ -205,7 +184,7 @@ export const TrainingLogEditor: FC = () => {
               )}
             </Rows>
           </Columns>
-          <TrainingLogEditorView logAuthorId={user.uid} logId={logId} />
+          <TrainingLogEditorView log={log} />
         </Columns>
       )}
     </DataStateView>
