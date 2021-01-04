@@ -4,6 +4,7 @@ import {
   Button,
   ClickAwayListener,
   IconButton,
+  Link,
   Menu,
   MenuItem,
   Typography,
@@ -13,9 +14,10 @@ import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
+import { NavLink } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 
-import { Format, TabIndex } from '../constants';
+import { Format, Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath, storage } from '../firebase';
 import {
@@ -142,7 +144,16 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
             <DataStateView data={authorName} error={() => null}>
               {authorName => (
                 <Typography variant="body1" color="textPrimary">
-                  {authorName}
+                  <Link
+                    component={NavLink}
+                    to={Paths.user(log.authorId)}
+                    className={css`
+                      color: rgba(0, 0, 0, 0.87) !important;
+                      text-decoration: underline !important;
+                    `}
+                  >
+                    {authorName}
+                  </Link>
                 </Typography>
               )}
             </DataStateView>
