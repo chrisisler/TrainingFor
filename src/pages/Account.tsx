@@ -81,7 +81,7 @@ export const Account: FC = () => {
 
   // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
-    if (!userId || !DataState.isReady(selectedUser)) return;
+    if (!userId) return;
     return db
       .collection(DbPath.Users)
       .doc(user.uid)
@@ -92,7 +92,7 @@ export const Account: FC = () => {
         },
         err => setIsFollowing(DataState.error(err.message))
       );
-  }, [userId, selectedUser, user.uid]);
+  }, [userId, user.uid]);
 
   return (
     <Columns
@@ -115,21 +115,25 @@ export const Account: FC = () => {
             Sign Out
           </Button>
         )}
-        {userId && DataState.isReady(isFollowing) && (
-          <Button
-            variant="text"
-            onClick={toggleFollow}
-            className={css`
-              margin-left: auto !important;
-            `}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </Button>
-        )}
+        <DataStateView data={isFollowing}>
+          {isFollowing => (
+            <Button
+              variant="text"
+              onClick={toggleFollow}
+              className={css`
+                margin-left: auto !important;
+              `}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </Button>
+          )}
+        </DataStateView>
       </Rows>
       <Typography variant="h4" color="textSecondary" gutterBottom>
-        {userId && DataState.isReady(selectedUser)
-          ? selectedUser.displayName
+        {userId
+          ? DataState.isReady(selectedUser)
+            ? selectedUser.displayName
+            : null
           : user.displayName}
       </Typography>
       <Typography variant="body1" color="textSecondary" gutterBottom>

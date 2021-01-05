@@ -200,16 +200,6 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   );
 };
 
-const ImagePreview = styled.div`
-  background-size: cover;
-  background-image: url(${(props: { src: string }) => props.src});
-  border-radius: 8px;
-  width: 100%;
-  min-height: 120px;
-  height: 20vh;
-  right: ${Pad.Large};
-`;
-
 /**
  * Provides a view upon an Activity object, displaying sets as well.
  *
@@ -406,6 +396,7 @@ const ActivityView: FC<{
     <Columns maxWidth padding={`0 ${Pad.Small}`}>
       <div
         className={css`
+          width: 100%;
           box-shadow: 4px 2px 16px 0px rgba(0, 0, 0, 0.1);
           padding: ${Pad.Small};
           padding-left: ${Pad.Medium};
@@ -523,6 +514,10 @@ const ActivityView: FC<{
             font-style: italic;
             font-family: inherit;
             background-color: transparent;
+
+            &:disabled {
+              color: gray;
+            }
           `}
           value={notes ?? ''}
         />
@@ -561,7 +556,16 @@ const ActivityView: FC<{
           </>
         )}
         {activity.attachmentUrl && (
-          <ImagePreview src={activity.attachmentUrl} />
+          <img
+            src={activity.attachmentUrl}
+            alt=""
+            className={css`
+              width: 100%;
+              object-fit: contain;
+              min-height: 120px;
+              height: 20vh;
+            `}
+          />
         )}
       </div>
     </Columns>
@@ -679,6 +683,10 @@ const ActivitySetView: FC<{
             border: 0;
             font-family: monospace;
             text-align: center;
+
+            &:disabled {
+              color: gray;
+            }
           `}
         />
         <ActivityStatusButton disabled={!editable} onClick={cycleSetStatus}>
