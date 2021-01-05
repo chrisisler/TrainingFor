@@ -37,7 +37,7 @@ import { Columns, Pad, Rows } from '../style';
 
 const ActivityStatusButton = styled.button`
   color: lightgray;
-  font-size: 0.72em;
+  font-size: 0.75em;
   border: 0;
   font-weight: 800;
   background-color: transparent;
@@ -45,10 +45,13 @@ const ActivityStatusButton = styled.button`
   outline: none;
 `;
 
-const ActivitiesListContainer = styled.div`
-  height: 100%;
-  width: 100%;
-  overflow-y: scroll;
+const activityViewContainerCss = css`
+  display: flex;
+  flex-direction: column;
+
+  & > * {
+    margin-bottom: ${Pad.Medium};
+  }
 `;
 
 const FlipMoveChild = React.forwardRef<
@@ -84,20 +87,27 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
   return (
     <DataStateView data={activities}>
       {activities => (
-        <ActivitiesListContainer>
-          <FlipMove enterAnimation="fade" leaveAnimation="fade">
-            {activities.map(({ id }, index) => (
-              <FlipMoveChild key={id}>
-                <ActivityView
-                  editable
-                  activities={activities}
-                  index={index}
-                  log={log}
-                />
-              </FlipMoveChild>
-            ))}
-          </FlipMove>
-        </ActivitiesListContainer>
+        <FlipMove
+          enterAnimation="fade"
+          leaveAnimation="fade"
+          className={css`
+            height: 100%;
+            width: 100%;
+            overflow-y: scroll;
+            ${activityViewContainerCss}
+          `}
+        >
+          {activities.map(({ id }, index) => (
+            <FlipMoveChild key={id}>
+              <ActivityView
+                editable
+                activities={activities}
+                index={index}
+                log={log}
+              />
+            </FlipMoveChild>
+          ))}
+        </FlipMove>
       )}
     </DataStateView>
   );
@@ -141,6 +151,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         <div
           className={css`
             border-bottom: 1px solid lightgray;
+            background-color: #fefefe;
           `}
         >
           <Columns padding={`${Pad.Medium}`}>
@@ -173,14 +184,16 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
               </Typography>
             </Rows>
           </Columns>
-          {activities.map(({ id }, index) => (
-            <ActivityView
-              key={id}
-              activities={activities}
-              index={index}
-              log={log}
-            />
-          ))}
+          <div className={activityViewContainerCss}>
+            {activities.map(({ id }, index) => (
+              <ActivityView
+                key={id}
+                activities={activities}
+                index={index}
+                log={log}
+              />
+            ))}
+          </div>
         </div>
       )}
     </DataStateView>
@@ -390,129 +403,167 @@ const ActivityView: FC<{
   }, [notes]);
 
   return (
-    <Columns maxWidth padding={`0 ${Pad.Small} ${Pad.Small} ${Pad.Large}`}>
-      <Rows maxWidth center between>
-        <Typography variant="subtitle1" color="textPrimary" gutterBottom>
-          {activity.name}
-        </Typography>
-        {editable && (
-          <Rows center>
-            <Button
-              ref={editable ? pressHoldButtonRef : undefined}
-              disabled={!editable}
-              variant="contained"
-              color="primary"
-              size="small"
-              onClick={() => addActivitySet()}
-            >
-              +
-            </Button>
-            <ClickAwayListener onClickAway={closeActivityMenu}>
-              <div>
-                <IconButton
-                  disabled={!editable}
-                  aria-label="Open activity menu"
-                  aria-controls="activity-menu"
-                  aria-haspopup="true"
-                  onClick={openActivityMenu}
-                >
-                  <MoreHoriz
-                    className={css`
-                      color: lightgray;
-                    `}
-                  />
-                </IconButton>
-                <Menu
-                  id="activity-menu"
-                  keepMounted
-                  anchorEl={anchorEl}
-                  open={!!anchorEl}
-                  onClose={closeActivityMenu}
-                  MenuListProps={{ dense: true }}
-                >
-                  <MenuItem
-                    onClick={moveActivityUp}
-                    disabled={activities.length === 1 || index === 0}
-                  >
-                    Move up
-                  </MenuItem>
-                  <MenuItem
-                    onClick={moveActivityDown}
-                    disabled={
-                      activities.length === 1 || index + 1 === activities.length
-                    }
-                  >
-                    Move down
-                  </MenuItem>
-                  {!notes && (
-                    <MenuItem onClick={showActivityNotesInput}>
-                      Add notes
-                    </MenuItem>
-                  )}
-                  <MenuItem
-                    onClick={
-                      activity.attachmentUrl
-                        ? removeAttachment
-                        : () => attachmentRef.current?.click()
-                    }
-                  >
-                    {activity.attachmentUrl ? 'Remove image' : 'Add image'}
-                  </MenuItem>
-                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
-                  <MenuItem onClick={deleteActivity}>Delete activity</MenuItem>
-                </Menu>
-                <input
-                  ref={attachmentRef}
-                  className={css`
-                    width: 0;
-                    height: 0;
-                  `}
-                  tabIndex={TabIndex.NotFocusable}
-                  type="file"
-                  accept="image/*"
-                  onChange={addActivityAttachment}
-                />
-              </div>
-            </ClickAwayListener>
-          </Rows>
-        )}
-      </Rows>
-      <ActivityNotesTextarea
-        disabled={!editable}
-        notes={notes}
-        name="notes"
-        placeholder="Notes"
-        ref={notesRef}
-        rows={2}
-        maxLength={140}
-        onChange={event => setNotes(event.target.value)}
-        onBlur={updateActivityNotes}
+    <Columns maxWidth padding={`0 ${Pad.Small}`}>
+      <div
         className={css`
-          width: 90%;
-          color: gray;
-          border: 0;
-          padding: 0 ${Pad.XSmall};
-          resize: none;
-          font-size: 0.8em;
-          font-style: italic;
-          font-family: inherit;
-          background-color: transparent;
+          box-shadow: 4px 2px 16px 0px rgba(0, 0, 0, 0.1);
+          padding: ${Pad.Small};
+          padding-left: ${Pad.Medium};
+          border-radius: 8px;
         `}
-        value={notes ?? ''}
-      />
-      <FlipMove enterAnimation="fade" leaveAnimation="fade">
-        {activity.sets.map(({ uuid }, index) => (
-          <FlipMoveChild key={uuid}>
-            <ActivitySetView
-              index={index}
-              sets={activity.sets}
-              editable={editable}
-              activityDocument={activityDocument}
-            />
-          </FlipMoveChild>
-        ))}
-      </FlipMove>
-      {activity.attachmentUrl && <ImagePreview src={activity.attachmentUrl} />}
+      >
+        <Rows maxWidth center between>
+          <Typography variant="subtitle1" color="textPrimary">
+            {activity.name}
+          </Typography>
+          {editable && (
+            <Rows center>
+              <Button
+                ref={editable ? pressHoldButtonRef : undefined}
+                disabled={!editable}
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={() => addActivitySet()}
+              >
+                +
+              </Button>
+              <ClickAwayListener onClickAway={closeActivityMenu}>
+                <div>
+                  <IconButton
+                    disabled={!editable}
+                    aria-label="Open activity menu"
+                    aria-controls="activity-menu"
+                    aria-haspopup="true"
+                    onClick={openActivityMenu}
+                  >
+                    <MoreHoriz
+                      className={css`
+                        color: lightgray;
+                      `}
+                    />
+                  </IconButton>
+                  <Menu
+                    id="activity-menu"
+                    keepMounted
+                    anchorEl={anchorEl}
+                    open={!!anchorEl}
+                    onClose={closeActivityMenu}
+                    MenuListProps={{ dense: true }}
+                  >
+                    <MenuItem
+                      onClick={moveActivityUp}
+                      disabled={activities.length === 1 || index === 0}
+                    >
+                      Move up
+                    </MenuItem>
+                    <MenuItem
+                      onClick={moveActivityDown}
+                      disabled={
+                        activities.length === 1 ||
+                        index + 1 === activities.length
+                      }
+                    >
+                      Move down
+                    </MenuItem>
+                    {!notes && (
+                      <MenuItem onClick={showActivityNotesInput}>
+                        Add notes
+                      </MenuItem>
+                    )}
+                    <MenuItem
+                      onClick={
+                        activity.attachmentUrl
+                          ? removeAttachment
+                          : () => attachmentRef.current?.click()
+                      }
+                    >
+                      {activity.attachmentUrl ? 'Remove image' : 'Add image'}
+                    </MenuItem>
+                    <MenuItem onClick={renameActivity}>
+                      Rename activity
+                    </MenuItem>
+                    <MenuItem onClick={deleteActivity}>
+                      Delete activity
+                    </MenuItem>
+                  </Menu>
+                  <input
+                    ref={attachmentRef}
+                    className={css`
+                      width: 0;
+                      height: 0;
+                    `}
+                    tabIndex={TabIndex.NotFocusable}
+                    type="file"
+                    accept="image/*"
+                    onChange={addActivityAttachment}
+                  />
+                </div>
+              </ClickAwayListener>
+            </Rows>
+          )}
+        </Rows>
+        <ActivityNotesTextarea
+          disabled={!editable}
+          notes={notes}
+          name="notes"
+          placeholder="Notes"
+          ref={notesRef}
+          rows={2}
+          maxLength={140}
+          onChange={event => setNotes(event.target.value)}
+          onBlur={updateActivityNotes}
+          className={css`
+            width: 90%;
+            color: gray;
+            border: 0;
+            padding: 0;
+            resize: none;
+            font-size: 0.8em;
+            font-style: italic;
+            font-family: inherit;
+            background-color: transparent;
+          `}
+          value={notes ?? ''}
+        />
+        {editable ? (
+          <FlipMove
+            enterAnimation="fade"
+            leaveAnimation="fade"
+            className={css`
+              & > *:last-child {
+                margin-bottom: ${Pad.Small};
+              }
+            `}
+          >
+            {activity.sets.map(({ uuid }, index) => (
+              <FlipMoveChild key={uuid}>
+                <ActivitySetView
+                  index={index}
+                  sets={activity.sets}
+                  editable={editable}
+                  activityDocument={activityDocument}
+                />
+              </FlipMoveChild>
+            ))}
+          </FlipMove>
+        ) : (
+          <>
+            {activity.sets.map(({ uuid }, index) => (
+              <ActivitySetView
+                key={uuid}
+                index={index}
+                sets={activity.sets}
+                editable={editable}
+                activityDocument={activityDocument}
+              />
+            ))}
+          </>
+        )}
+        {activity.attachmentUrl && (
+          <ImagePreview src={activity.attachmentUrl} />
+        )}
+      </div>
     </Columns>
   );
 };
@@ -593,7 +644,7 @@ const ActivitySetView: FC<{
   );
 
   return (
-    <Rows maxWidth center padding={`0 ${Pad.Small}`} between>
+    <Rows maxWidth center padding={`0 ${Pad.Small} 0 0`} between>
       <Rows center pad={Pad.Small}>
         <Typography
           variant="subtitle1"
@@ -607,7 +658,7 @@ const ActivitySetView: FC<{
           {set.name}
         </Typography>
       </Rows>
-      <Rows center pad={Pad.XSmall}>
+      <Rows center>
         <input
           disabled={!editable}
           type="tel"
