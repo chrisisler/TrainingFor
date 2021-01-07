@@ -9,7 +9,7 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
-import { useUser } from '../hooks';
+import { useNewTraining, useUser } from '../hooks';
 import { ActivityStatus, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 
@@ -23,6 +23,7 @@ export const Account: FC = () => {
   );
 
   const user = useUser();
+  const newTraining = useNewTraining();
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
@@ -140,13 +141,24 @@ export const Account: FC = () => {
         Training Logs
       </Typography>
       <DataStateView data={logs}>
-        {logs => (
-          <Columns pad={Pad.Large}>
-            {logs.map(log => (
-              <TrainingLogPreview log={log} key={log.id} />
-            ))}
-          </Columns>
-        )}
+        {logs =>
+          logs.length ? (
+            <Columns pad={Pad.Large}>
+              {logs.map(log => (
+                <TrainingLogPreview log={log} key={log.id} />
+              ))}
+            </Columns>
+          ) : (
+            <Columns pad={Pad.Medium}>
+              <Typography variant="h6" color="textSecondary">
+                You have not been training!
+              </Typography>
+              <Button variant="contained" color="primary" onClick={newTraining}>
+                Start Training
+              </Button>
+            </Columns>
+          )
+        }
       </DataStateView>
     </Columns>
   );

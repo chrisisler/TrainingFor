@@ -397,7 +397,7 @@ const ActivityView: FC<{
       <div
         className={css`
           width: 100%;
-          box-shadow: 4px 2px 16px 0px rgba(0, 0, 0, 0.1);
+          box-shadow: 4px 4px 12px 0px rgba(0, 0, 0, 0.1);
           padding: ${Pad.Small};
           padding-left: ${Pad.Medium};
           border-radius: 8px;
@@ -490,8 +490,11 @@ const ActivityView: FC<{
                   <input
                     ref={attachmentRef}
                     className={css`
-                      width: 0;
-                      height: 0;
+                      width: 0.1px;
+                      height: 0.1px;
+                      opacity: 0;
+                      position: abslute;
+                      overflow: hidden;
                     `}
                     tabIndex={TabIndex.NotFocusable}
                     type="file"
