@@ -9,7 +9,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { MoreHoriz } from '@material-ui/icons';
+import { CameraAltOutlined, MoreHoriz } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, {
@@ -248,7 +248,7 @@ const ActivityView: FC<{
       closeActivityMenu();
       const attachment = event.target.files?.[0];
       if (!attachment) return;
-      if (!window.confirm('Upload chosen attachment?')) return;
+      if (!window.confirm('Confirm attachment?')) return;
       const upload = storage.ref(`images/${attachment.name}`).put(attachment);
       upload.on(
         'state_changed',
@@ -404,9 +404,18 @@ const ActivityView: FC<{
         `}
       >
         <Rows maxWidth center between>
-          <Typography variant="subtitle1" color="textPrimary">
-            {activity.name}
-          </Typography>
+          <Rows pad={Pad.Small} center>
+            <Typography variant="subtitle1" color="textPrimary">
+              {activity.name}
+            </Typography>
+            {activity.attachmentUrl && (
+              <CameraAltOutlined
+                className={css`
+                  color: rgba(0, 0, 0, 0.45);
+                `}
+              />
+            )}
+          </Rows>
           {editable && (
             <Rows center>
               <Button
@@ -554,18 +563,6 @@ const ActivityView: FC<{
               />
             ))}
           </>
-        )}
-        {activity.attachmentUrl && (
-          <img
-            src={activity.attachmentUrl}
-            alt=""
-            className={css`
-              width: 100%;
-              object-fit: contain;
-              min-height: 120px;
-              height: 20vh;
-            `}
-          />
         )}
       </div>
     </Columns>
