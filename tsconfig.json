@@ -14,7 +14,7 @@
     "noImplicitAny": false,
     "module": "esnext",
     "noUnusedLocals": false,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,

@@ -49,6 +49,10 @@ export interface ActivitySet {
   status: ActivityStatus;
   /** Currently unitless */
   weight: number;
+  /**
+   * Either the repetition count or the time count for time-based activities.
+   */
+  // count: number;
 }
 
 export enum ActivityStatus {
@@ -58,6 +62,9 @@ export enum ActivityStatus {
   Skipped = 'skipped',
 }
 
+const isNotAlpha = /^[^A-Za-z_]+$/;
+const isAllCaps = /^[A-Z0-9]+$/;
+
 // eslint-disable-next-line
 export const Activity = {
   cycleStatus: (s: ActivityStatus): ActivityStatus => {
@@ -66,6 +73,16 @@ export const Activity = {
     if (s === ActivityStatus.Skipped) return ActivityStatus.Injured;
     if (s === ActivityStatus.Injured) return ActivityStatus.Unattempted;
     throw Error('Unreachable');
+  },
+  abbreviate: (name: string): string => {
+    return name
+      .split(' ')
+      .flatMap(word => {
+        if (isNotAlpha.test(word[0])) return [];
+        if (isAllCaps.test(word)) return [word];
+        return [word[0]];
+      })
+      .join('');
   },
 };
 

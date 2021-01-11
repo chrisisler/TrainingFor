@@ -1,7 +1,6 @@
 import { css } from '@emotion/css';
 import styled from '@emotion/styled';
 import {
-  Button,
   ClickAwayListener,
   IconButton,
   Link,
@@ -9,7 +8,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { CameraAltOutlined, MoreHoriz } from '@material-ui/icons';
+import { MoreHoriz, MoreVert } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, {
@@ -36,7 +35,7 @@ import {
 import { Columns, Pad, Rows } from '../style';
 
 const ActivityStatusButton = styled.button`
-  color: lightgray;
+  color: gray;
   font-size: 0.75em;
   border: 0;
   font-weight: 800;
@@ -48,10 +47,6 @@ const ActivityStatusButton = styled.button`
 const activityViewContainerCss = css`
   display: flex;
   flex-direction: column;
-
-  & > * {
-    margin-bottom: ${Pad.Medium};
-  }
 `;
 
 const FlipMoveChild = React.forwardRef<
@@ -226,10 +221,6 @@ const ActivityView: FC<{
     setAnchorEl(event.currentTarget);
   const closeActivityMenu = () => setAnchorEl(null);
 
-  const [pressHoldButtonRef] = usePressHoldRef(() =>
-    addActivitySet(ActivityStatus.Completed)
-  );
-
   const activityDocument = useMemo(
     () =>
       db
@@ -282,26 +273,23 @@ const ActivityView: FC<{
     }
   }, [activity.attachmentUrl, activityDocument]);
 
-  const addActivitySet = useCallback(
-    (status?: ActivityStatus) => {
-      const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
-      const newSet: ActivitySet = {
-        uuid: uuid(),
-        name: `Set ${activity.sets.length + 1}`,
-        notes: null,
-        weight,
-        status: status ?? ActivityStatus.Unattempted,
-      };
-      try {
-        activityDocument.update({
-          sets: firebase.firestore.FieldValue.arrayUnion(newSet),
-        });
-      } catch (error) {
-        alert(error.message);
-      }
-    },
-    [activity.sets, activityDocument]
-  );
+  const addActivitySet = useCallback(() => {
+    const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
+    const newSet: ActivitySet = {
+      uuid: uuid(),
+      name: `Set ${activity.sets.length + 1}`,
+      notes: null,
+      weight,
+      status: ActivityStatus.Unattempted,
+    };
+    try {
+      activityDocument.update({
+        sets: firebase.firestore.FieldValue.arrayUnion(newSet),
+      });
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [activity.sets, activityDocument]);
 
   const deleteActivity = useCallback(() => {
     closeActivityMenu();
@@ -393,119 +381,167 @@ const ActivityView: FC<{
   }, [notes]);
 
   return (
-    <Columns maxWidth padding={`0 ${Pad.Small}`}>
-      <div
+    <Rows
+      className={css`
+        margin: ${Pad.Medium};
+        border-radius: 8px;
+        padding: ${Pad.Medium};
+        box-shadow: 4px 4px 12px 0px rgba(0, 0, 0, 0.1);
+      `}
+      pad={Pad.Medium}
+    >
+      <Columns
+        pad={Pad.Small}
         className={css`
-          width: 100%;
-          box-shadow: 4px 4px 12px 0px rgba(0, 0, 0, 0.1);
-          padding: ${Pad.Small};
-          padding-left: ${Pad.Medium};
-          border-radius: 8px;
+          width: min-content;
         `}
       >
-        <Rows maxWidth center between>
-          <Rows pad={Pad.Small} center>
-            <Typography variant="subtitle1" color="textPrimary">
-              {activity.name}
-            </Typography>
-            {activity.attachmentUrl && (
-              <CameraAltOutlined
-                className={css`
-                  color: rgba(0, 0, 0, 0.45);
-                `}
-              />
-            )}
-          </Rows>
+        <div
+          className={css`
+            border: 1px solid lightgray;
+            border-radius: 5px;
+            width: 80px;
+            height: 80px;
+            position: relative;
+            overflow: hidden;
+          `}
+          onClick={({ target, currentTarget }) => {
+            if (!editable) return;
+            if (target !== currentTarget) return;
+            addActivitySet();
+          }}
+        >
           {editable && (
-            <Rows center>
-              <Button
-                ref={editable ? pressHoldButtonRef : undefined}
-                disabled={!editable}
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={() => addActivitySet()}
+            <ClickAwayListener onClickAway={closeActivityMenu}>
+              <div
+                className={css`
+                  position: absolute;
+                  left: -5%;
+                  top: 5%;
+                `}
               >
-                +
-              </Button>
-              <ClickAwayListener onClickAway={closeActivityMenu}>
-                <div>
-                  <IconButton
-                    disabled={!editable}
-                    aria-label="Open activity menu"
-                    aria-controls="activity-menu"
-                    aria-haspopup="true"
-                    onClick={openActivityMenu}
-                  >
-                    <MoreHoriz
-                      className={css`
-                        color: lightgray;
-                      `}
-                    />
-                  </IconButton>
-                  <Menu
-                    id="activity-menu"
-                    keepMounted
-                    anchorEl={anchorEl}
-                    open={!!anchorEl}
-                    onClose={closeActivityMenu}
-                    MenuListProps={{ dense: true }}
-                  >
-                    <MenuItem
-                      onClick={moveActivityUp}
-                      disabled={activities.length === 1 || index === 0}
-                    >
-                      Move up
-                    </MenuItem>
-                    <MenuItem
-                      onClick={moveActivityDown}
-                      disabled={
-                        activities.length === 1 ||
-                        index + 1 === activities.length
-                      }
-                    >
-                      Move down
-                    </MenuItem>
-                    {!notes && (
-                      <MenuItem onClick={showActivityNotesInput}>
-                        Add notes
-                      </MenuItem>
-                    )}
-                    <MenuItem
-                      onClick={
-                        activity.attachmentUrl
-                          ? removeAttachment
-                          : () => attachmentRef.current?.click()
-                      }
-                    >
-                      {activity.attachmentUrl ? 'Remove image' : 'Add image'}
-                    </MenuItem>
-                    <MenuItem onClick={renameActivity}>
-                      Rename activity
-                    </MenuItem>
-                    <MenuItem onClick={deleteActivity}>
-                      Delete activity
-                    </MenuItem>
-                  </Menu>
-                  <input
-                    ref={attachmentRef}
+                <IconButton
+                  disabled={!editable}
+                  aria-label="Open activity menu"
+                  aria-controls="activity-menu"
+                  aria-haspopup="true"
+                  onClick={openActivityMenu}
+                  size="small"
+                >
+                  <MoreVert
                     className={css`
-                      width: 0.1px;
-                      height: 0.1px;
-                      opacity: 0;
-                      position: abslute;
-                      overflow: hidden;
+                      color: lightgray;
                     `}
-                    tabIndex={TabIndex.NotFocusable}
-                    type="file"
-                    accept="image/*"
-                    onChange={addActivityAttachment}
                   />
-                </div>
-              </ClickAwayListener>
-            </Rows>
+                </IconButton>
+                <Menu
+                  id="activity-menu"
+                  keepMounted
+                  anchorEl={anchorEl}
+                  open={!!anchorEl}
+                  onClose={closeActivityMenu}
+                  MenuListProps={{ dense: true }}
+                >
+                  <MenuItem
+                    onClick={moveActivityUp}
+                    disabled={activities.length === 1 || index === 0}
+                  >
+                    Move up
+                  </MenuItem>
+                  <MenuItem
+                    onClick={moveActivityDown}
+                    disabled={
+                      activities.length === 1 || index + 1 === activities.length
+                    }
+                  >
+                    Move down
+                  </MenuItem>
+                  {!notes && (
+                    <MenuItem onClick={showActivityNotesInput}>
+                      Add notes
+                    </MenuItem>
+                  )}
+                  <MenuItem
+                    onClick={
+                      activity.attachmentUrl
+                        ? removeAttachment
+                        : () => attachmentRef.current?.click()
+                    }
+                  >
+                    {activity.attachmentUrl ? 'Remove image' : 'Add image'}
+                  </MenuItem>
+                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
+                  <MenuItem onClick={deleteActivity}>
+                    <b>Delete activity</b>
+                  </MenuItem>
+                </Menu>
+                <input
+                  ref={attachmentRef}
+                  className={css`
+                    width: 0.1px;
+                    height: 0.1px;
+                    opacity: 0;
+                    position: abslute;
+                    overflow: hidden;
+                  `}
+                  tabIndex={TabIndex.NotFocusable}
+                  type="file"
+                  accept="image/*"
+                  onChange={addActivityAttachment}
+                />
+              </div>
+            </ClickAwayListener>
           )}
-        </Rows>
+          <p
+            className={css`
+              position: absolute;
+              left: 10%;
+              color: rgba(0, 0, 0, 0.87);
+              bottom: 8%;
+              font-size: 1.3em;
+              text-transform: uppercase;
+            `}
+          >
+            {Activity.abbreviate(activity.name)}
+          </p>
+        </div>
+        <p
+          className={css`
+            font-size: 1em;
+            color: rgba(0, 0, 0, 0.87);
+          `}
+        >
+          {activity.name}
+        </p>
+        <ol
+          className={css`
+            padding: 0;
+
+            & > li {
+              display: inline-block;
+              height: 25px;
+              margin-right: 4px;
+              width: 4px;
+              background-color: palevioletred;
+              border-radius: 4px;
+
+              &:nth-child(5n) {
+                transform: rotate(300deg);
+                height: 35px;
+                position: relative;
+                left: -20px;
+                top: 5px;
+                margin-top: -${Pad.Small};
+              }
+            }
+          `}
+        >
+          {activity.sets.map(() => (
+            <li />
+          ))}
+        </ol>
+      </Columns>
+      <Columns maxWidth>
         <ActivityNotesTextarea
           disabled={!editable}
           notes={notes}
@@ -517,7 +553,7 @@ const ActivityView: FC<{
           onChange={event => setNotes(event.target.value)}
           onBlur={updateActivityNotes}
           className={css`
-            width: 90%;
+            width: 100%;
             color: gray;
             border: 0;
             padding: 0;
@@ -526,23 +562,11 @@ const ActivityView: FC<{
             font-style: italic;
             font-family: inherit;
             background-color: transparent;
-
-            &:disabled {
-              color: gray;
-            }
           `}
           value={notes ?? ''}
         />
         {editable ? (
-          <FlipMove
-            enterAnimation="fade"
-            leaveAnimation="fade"
-            className={css`
-              & > *:last-child {
-                margin-bottom: ${Pad.Small};
-              }
-            `}
-          >
+          <FlipMove enterAnimation="fade" leaveAnimation="fade">
             {activity.sets.map(({ uuid }, index) => (
               <FlipMoveChild key={uuid}>
                 <ActivitySetView
@@ -567,8 +591,8 @@ const ActivityView: FC<{
             ))}
           </>
         )}
-      </div>
-    </Columns>
+      </Columns>
+    </Rows>
   );
 };
 
@@ -623,18 +647,6 @@ const ActivitySetView: FC<{
     }
   }, [activityDocument, set]);
 
-  const renameSet = useCallback(() => {
-    closeSetMenu();
-    const newName = window.prompt('Update set name', set.name);
-    if (!newName) return;
-    try {
-      sets[index].name = newName;
-      activityDocument.set({ sets } as Partial<Activity>, { merge: true });
-    } catch (error) {
-      alert(error.message);
-    }
-  }, [activityDocument, index, set.name, sets]);
-
   const updateSetWeight = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       sets[index].weight = Number(event.target.value);
@@ -648,19 +660,21 @@ const ActivitySetView: FC<{
   );
 
   return (
-    <Rows maxWidth center padding={`0 ${Pad.Small} 0 0`} between>
-      <Rows center pad={Pad.Small}>
+    <Rows maxWidth center between>
+      <Rows center>
         <Typography
           variant="subtitle1"
           className={css`
+            font-size: 0.8em;
             color: lightgray;
+            font-style: italic;
           `}
         >
-          #{index + 1}
+          {index + 1}
         </Typography>
-        <Typography variant="subtitle2" color="textSecondary">
-          {set.name}
-        </Typography>
+        <ActivityStatusButton disabled={!editable} onClick={cycleSetStatus}>
+          {set.status}
+        </ActivityStatusButton>
       </Rows>
       <Rows center>
         <input
@@ -678,116 +692,47 @@ const ActivitySetView: FC<{
           onBlur={updateSetWeight}
           className={css`
             background-color: transparent;
-            width: 5ch;
+            width: 4ch;
             color: gray;
             border: 0;
             font-family: monospace;
             text-align: center;
-
-            &:disabled {
-              color: gray;
-            }
           `}
         />
-        <ActivityStatusButton disabled={!editable} onClick={cycleSetStatus}>
-          {set.status}
-        </ActivityStatusButton>
-        <ClickAwayListener onClickAway={closeSetMenu}>
-          <div>
-            <IconButton
-              disabled={!editable}
-              size="small"
-              aria-label="Open set menu"
-              aria-controls="set-menu"
-              aria-haspopup="true"
-              onClick={openSetMenu}
-            >
-              <MoreHoriz
-                className={css`
-                  color: lightgray;
-                `}
-              />
-            </IconButton>
-            <Menu
-              id="set-menu"
-              keepMounted
-              anchorEl={anchorEl}
-              open={!!anchorEl}
-              onClose={closeSetMenu}
-              MenuListProps={{ dense: true }}
-            >
-              <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
-              <MenuItem onClick={renameSet}>Rename set</MenuItem>
-              <MenuItem onClick={deleteSet}>
-                <strong>Delete set</strong>
-              </MenuItem>
-            </Menu>
-          </div>
-        </ClickAwayListener>
+        {editable && (
+          <ClickAwayListener onClickAway={closeSetMenu}>
+            <div>
+              <IconButton
+                disabled={!editable}
+                size="small"
+                aria-label="Open set menu"
+                aria-controls="set-menu"
+                aria-haspopup="true"
+                onClick={openSetMenu}
+              >
+                <MoreHoriz
+                  className={css`
+                    color: lightgray;
+                  `}
+                />
+              </IconButton>
+              <Menu
+                id="set-menu"
+                keepMounted
+                anchorEl={anchorEl}
+                open={!!anchorEl}
+                onClose={closeSetMenu}
+                MenuListProps={{ dense: true }}
+              >
+                <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
+                <MenuItem onClick={deleteSet}>
+                  <b>Delete set</b>
+                </MenuItem>
+              </Menu>
+            </div>
+          </ClickAwayListener>
+        )}
       </Rows>
     </Rows>
   );
-};
-
-/**
- * From https://www.kirupa.com/html5/press_and_hold.htm
- *
- * Provides a ref enabling buttons to listen to press hold events.
- */
-const usePressHoldRef = (
-  onPressHold: () => void
-): [React.MutableRefObject<HTMLButtonElement | null>] => {
-  const ref = useRef<HTMLButtonElement | null>(null);
-
-  const timerId = useRef<number | null>(null);
-  const tickCounter = useRef(0);
-
-  // Count ticks at 60fps until duration is satisfied, then invoke.
-  const onTick = useCallback(() => {
-    if (tickCounter.current < 60) {
-      timerId.current = requestAnimationFrame(onTick);
-      tickCounter.current++;
-    } else {
-      if (tickCounter.current === -1) return;
-      onPressHold();
-    }
-  }, [timerId, onPressHold]);
-
-  const startHoldTimer = useCallback(
-    (event: Event) => {
-      requestAnimationFrame(onTick);
-      event.preventDefault();
-      tickCounter.current = 0;
-    },
-    [onTick]
-  );
-
-  const stopHoldTimer = useCallback(() => {
-    if (timerId.current) cancelAnimationFrame(timerId.current);
-    // If held for small amount of time, assume click and signal to stop
-    if (tickCounter.current < 20) {
-      ref.current?.click();
-    } else {
-      tickCounter.current = -1;
-    }
-  }, [timerId]);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    node.addEventListener('mousedown', startHoldTimer, false);
-    node.addEventListener('mouseup', stopHoldTimer, false);
-    node.addEventListener('mouseleave', stopHoldTimer, false);
-    node.addEventListener('touchstart', startHoldTimer, false);
-    node.addEventListener('touchend', stopHoldTimer, false);
-    return () => {
-      node.removeEventListener('mousedown', startHoldTimer);
-      node.removeEventListener('mouseup', stopHoldTimer);
-      node.removeEventListener('mouseleave', stopHoldTimer);
-      node.removeEventListener('touchstart', startHoldTimer);
-      node.removeEventListener('touchend', stopHoldTimer);
-    };
-  }, [startHoldTimer, stopHoldTimer]);
-
-  return [ref];
 };

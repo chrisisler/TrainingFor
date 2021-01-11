@@ -22,6 +22,7 @@ const AddActivityInput = styled.input`
   border: 1px solid lightgray;
   border-radius: 3px;
   font-size: 1em;
+  box-shadow: none;
 `;
 
 export const TrainingLogEditor: FC = () => {

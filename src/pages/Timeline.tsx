@@ -236,7 +236,6 @@ const TimelineView: FC = () => {
     <DataStateView data={followedUsersLogs}>
       {logs => (
         <Columns
-          pad={Pad.None}
           className={css`
             height: 100%;
             overflow-y: scroll;
