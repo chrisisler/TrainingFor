@@ -3,12 +3,11 @@ import styled from '@emotion/styled';
 import {
   ClickAwayListener,
   IconButton,
-  Link,
   Menu,
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { MoreHoriz, MoreVert } from '@material-ui/icons';
+import { ChatBubbleOutline, MoreHoriz, MoreVert } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, {
@@ -20,19 +19,21 @@ import React, {
   useState,
 } from 'react';
 import FlipMove from 'react-flip-move';
-import { NavLink } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 
 import { Format, Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath, storage } from '../firebase';
+import { useUser } from '../hooks';
 import {
   Activity,
   ActivitySet,
   ActivityStatus,
+  Comment,
   TrainingLog,
 } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
+import { AppLink } from './AppLink';
 
 const ActivityStatusButton = styled.button`
   color: gray;
@@ -153,16 +154,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
             <DataStateView data={authorName}>
               {authorName => (
                 <Typography variant="body1" color="textPrimary">
-                  <Link
-                    component={NavLink}
-                    to={Paths.user(log.authorId)}
-                    className={css`
-                      color: rgba(0, 0, 0, 0.87) !important;
-                      text-decoration: underline !important;
-                    `}
-                  >
-                    {authorName}
-                  </Link>
+                  <AppLink to={Paths.user(log.authorId)}>{authorName}</AppLink>
                 </Typography>
               )}
             </DataStateView>
@@ -213,13 +205,20 @@ const ActivityView: FC<{
 
   const attachmentRef = useRef<HTMLInputElement | null>(null);
   const notesRef = useRef<HTMLTextAreaElement | null>(null);
+  const commentRef = useRef<HTMLInputElement | null>(null);
 
   const [notes, setNotes] = useState<Activity['notes']>(activity.notes);
+  const [comment, setComment] = useState<null | string>(null);
+  const [comments, setComments] = useState<DataState<Comment[]>>(
+    DataState.Empty
+  );
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
   const closeActivityMenu = () => setAnchorEl(null);
+
+  const user = useUser();
 
   const activityDocument = useMemo(
     () =>
@@ -380,219 +379,358 @@ const ActivityView: FC<{
     Promise.resolve().then(() => notesRef.current?.focus());
   }, [notes]);
 
+  const showActivityCommentInput = useCallback(() => {
+    if (comment) {
+      // TODO Route to comments view for this activity
+      return;
+    }
+    // Unhide the comment input and focus it
+    setComment('');
+    Promise.resolve().then(() => commentRef.current?.focus());
+  }, [comment]);
+
+  const addActivityComment = useCallback(
+    <E extends React.SyntheticEvent>(event: E) => {
+      event.preventDefault();
+      if (!user.displayName || !comment) return;
+      try {
+        const newComment: Omit<Comment, 'id'> = {
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          text: comment,
+          author: {
+            id: user.uid,
+            displayName: user.displayName,
+          },
+        };
+        setComment('');
+        activityDocument
+          .collection(DbPath.UserLogActivityComments)
+          .add(newComment);
+      } catch (error) {
+        alert(error.message);
+      }
+    },
+    [activityDocument, comment, user.displayName, user.uid]
+  );
+
+  // Load `comments` and subscribe to changes to the collection
+  useEffect(() => {
+    return activityDocument
+      .collection(DbPath.UserLogActivityComments)
+      .withConverter(DbConverter.Comment)
+      .orderBy('timestamp', 'desc')
+      .limit(3)
+      .onSnapshot(
+        snapshot => setComments(snapshot.docs.map(doc => doc.data())),
+        err => setComments(DataState.error(err.message))
+      );
+  }, [activityDocument]);
+
   return (
-    <Rows
+    <Columns
       className={css`
         margin: ${Pad.Medium};
         border-radius: 8px;
         padding: ${Pad.Medium};
+        padding-bottom: ${Pad.Small};
         box-shadow: 4px 4px 12px 0px rgba(0, 0, 0, 0.1);
       `}
-      pad={Pad.Medium}
+      pad={Pad.Small}
     >
-      <Columns
-        pad={Pad.Small}
-        className={css`
-          width: min-content;
-        `}
-      >
-        <div
+      <Rows pad={Pad.Small}>
+        <Columns
+          pad={Pad.Small}
           className={css`
-            border: 1px solid lightgray;
-            border-radius: 5px;
-            width: 80px;
-            height: 80px;
-            position: relative;
-            overflow: hidden;
+            width: min-content;
           `}
-          onClick={({ target, currentTarget }) => {
-            if (!editable) return;
-            if (target !== currentTarget) return;
-            addActivitySet();
-          }}
         >
-          {editable && (
-            <ClickAwayListener onClickAway={closeActivityMenu}>
-              <div
-                className={css`
-                  position: absolute;
-                  left: -5%;
-                  top: 5%;
-                `}
-              >
-                <IconButton
-                  disabled={!editable}
-                  aria-label="Open activity menu"
-                  aria-controls="activity-menu"
-                  aria-haspopup="true"
-                  onClick={openActivityMenu}
-                  size="small"
-                >
-                  <MoreVert
-                    className={css`
-                      color: lightgray;
-                    `}
-                  />
-                </IconButton>
-                <Menu
-                  id="activity-menu"
-                  keepMounted
-                  anchorEl={anchorEl}
-                  open={!!anchorEl}
-                  onClose={closeActivityMenu}
-                  MenuListProps={{ dense: true }}
-                >
-                  <MenuItem
-                    onClick={moveActivityUp}
-                    disabled={activities.length === 1 || index === 0}
-                  >
-                    Move up
-                  </MenuItem>
-                  <MenuItem
-                    onClick={moveActivityDown}
-                    disabled={
-                      activities.length === 1 || index + 1 === activities.length
-                    }
-                  >
-                    Move down
-                  </MenuItem>
-                  {!notes && (
-                    <MenuItem onClick={showActivityNotesInput}>
-                      Add notes
-                    </MenuItem>
-                  )}
-                  <MenuItem
-                    onClick={
-                      activity.attachmentUrl
-                        ? removeAttachment
-                        : () => attachmentRef.current?.click()
-                    }
-                  >
-                    {activity.attachmentUrl ? 'Remove image' : 'Add image'}
-                  </MenuItem>
-                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
-                  <MenuItem onClick={deleteActivity}>
-                    <b>Delete activity</b>
-                  </MenuItem>
-                </Menu>
-                <input
-                  ref={attachmentRef}
+          <div
+            className={css`
+              border: 1px solid lightgray;
+              border-radius: 5px;
+              width: 80px;
+              height: 80px;
+              position: relative;
+              overflow: hidden;
+            `}
+            onClick={({ target, currentTarget }) => {
+              if (!editable) return;
+              if (target !== currentTarget) return;
+              addActivitySet();
+            }}
+          >
+            {editable && (
+              <ClickAwayListener onClickAway={closeActivityMenu}>
+                <div
                   className={css`
-                    width: 0.1px;
-                    height: 0.1px;
-                    opacity: 0;
-                    position: abslute;
-                    overflow: hidden;
+                    position: absolute;
+                    left: -5%;
+                    top: 5%;
                   `}
-                  tabIndex={TabIndex.NotFocusable}
-                  type="file"
-                  accept="image/*"
-                  onChange={addActivityAttachment}
-                />
-              </div>
-            </ClickAwayListener>
-          )}
+                >
+                  <IconButton
+                    disabled={!editable}
+                    aria-label="Open activity menu"
+                    aria-controls="activity-menu"
+                    aria-haspopup="true"
+                    onClick={openActivityMenu}
+                    size="small"
+                  >
+                    <MoreVert
+                      className={css`
+                        color: lightgray;
+                      `}
+                    />
+                  </IconButton>
+                  <Menu
+                    id="activity-menu"
+                    keepMounted
+                    anchorEl={anchorEl}
+                    open={!!anchorEl}
+                    onClose={closeActivityMenu}
+                    MenuListProps={{ dense: true }}
+                  >
+                    <MenuItem
+                      onClick={moveActivityUp}
+                      disabled={activities.length === 1 || index === 0}
+                    >
+                      Move up
+                    </MenuItem>
+                    <MenuItem
+                      onClick={moveActivityDown}
+                      disabled={
+                        activities.length === 1 ||
+                        index + 1 === activities.length
+                      }
+                    >
+                      Move down
+                    </MenuItem>
+                    {!notes && (
+                      <MenuItem onClick={showActivityNotesInput}>
+                        Add notes
+                      </MenuItem>
+                    )}
+                    <MenuItem
+                      onClick={
+                        activity.attachmentUrl
+                          ? removeAttachment
+                          : () => attachmentRef.current?.click()
+                      }
+                    >
+                      {activity.attachmentUrl ? 'Remove image' : 'Add image'}
+                    </MenuItem>
+                    <MenuItem onClick={renameActivity}>
+                      Rename activity
+                    </MenuItem>
+                    <MenuItem onClick={deleteActivity}>
+                      <b>Delete activity</b>
+                    </MenuItem>
+                  </Menu>
+                  <input
+                    ref={attachmentRef}
+                    className={css`
+                      width: 0.1px;
+                      height: 0.1px;
+                      opacity: 0;
+                      position: abslute;
+                      overflow: hidden;
+                    `}
+                    tabIndex={TabIndex.NotFocusable}
+                    type="file"
+                    accept="image/*"
+                    onChange={addActivityAttachment}
+                  />
+                </div>
+              </ClickAwayListener>
+            )}
+            <p
+              className={css`
+                position: absolute;
+                left: 10%;
+                color: rgba(0, 0, 0, 0.87);
+                bottom: 8%;
+                font-size: 1.3em;
+                text-transform: uppercase;
+              `}
+            >
+              {Activity.abbreviate(activity.name)}
+            </p>
+          </div>
           <p
             className={css`
-              position: absolute;
-              left: 10%;
               color: rgba(0, 0, 0, 0.87);
-              bottom: 8%;
-              font-size: 1.3em;
-              text-transform: uppercase;
             `}
           >
-            {Activity.abbreviate(activity.name)}
+            {activity.name}
           </p>
-        </div>
-        <p
-          className={css`
-            font-size: 1em;
-            color: rgba(0, 0, 0, 0.87);
-          `}
-        >
-          {activity.name}
-        </p>
-        <ol
-          className={css`
-            padding: 0;
+          <ol
+            className={css`
+              padding: 0;
 
-            & > li {
-              display: inline-block;
-              height: 25px;
-              margin-right: 4px;
-              width: 4px;
-              background-color: palevioletred;
-              border-radius: 4px;
+              & > li {
+                display: inline-block;
+                height: 25px;
+                margin-right: 4px;
+                width: 4px;
+                background-color: palevioletred;
+                border-radius: 4px;
 
-              &:nth-child(5n) {
-                transform: rotate(300deg);
-                height: 35px;
-                position: relative;
-                left: -20px;
-                top: 5px;
-                margin-top: -${Pad.Small};
+                &:nth-child(5n) {
+                  transform: rotate(300deg);
+                  height: 35px;
+                  position: relative;
+                  left: -20px;
+                  top: 5px;
+                  margin-top: -${Pad.Small};
+                }
               }
-            }
-          `}
-        >
-          {activity.sets.map(() => (
-            <li />
-          ))}
-        </ol>
-      </Columns>
-      <Columns maxWidth>
-        <ActivityNotesTextarea
-          disabled={!editable}
-          notes={notes}
-          name="notes"
-          placeholder="Notes"
-          ref={notesRef}
-          rows={2}
-          maxLength={140}
-          onChange={event => setNotes(event.target.value)}
-          onBlur={updateActivityNotes}
-          className={css`
-            width: 100%;
-            color: gray;
-            border: 0;
-            padding: 0;
-            resize: none;
-            font-size: 0.8em;
-            font-style: italic;
-            font-family: inherit;
-            background-color: transparent;
-          `}
-          value={notes ?? ''}
-        />
-        {editable ? (
-          <FlipMove enterAnimation="fade" leaveAnimation="fade">
-            {activity.sets.map(({ uuid }, index) => (
-              <FlipMoveChild key={uuid}>
+            `}
+          >
+            {activity.sets.map(() => (
+              <li />
+            ))}
+          </ol>
+        </Columns>
+        <Columns maxWidth>
+          <ActivityNotesTextarea
+            disabled={!editable}
+            notes={notes}
+            name="notes"
+            placeholder="Notes"
+            ref={notesRef}
+            rows={2}
+            maxLength={140}
+            onChange={event => setNotes(event.target.value)}
+            onBlur={updateActivityNotes}
+            className={css`
+              width: 100%;
+              color: gray;
+              border: 0;
+              padding: 0;
+              resize: none;
+              font-size: 0.8em;
+              font-style: italic;
+              font-family: inherit;
+              background-color: transparent;
+            `}
+            value={notes ?? ''}
+          />
+          {editable ? (
+            <FlipMove enterAnimation="fade" leaveAnimation="fade">
+              {activity.sets.map(({ uuid }, index) => (
+                <FlipMoveChild key={uuid}>
+                  <ActivitySetView
+                    index={index}
+                    sets={activity.sets}
+                    editable={editable}
+                    activityDocument={activityDocument}
+                  />
+                </FlipMoveChild>
+              ))}
+            </FlipMove>
+          ) : (
+            <>
+              {activity.sets.map(({ uuid }, index) => (
                 <ActivitySetView
+                  key={uuid}
                   index={index}
                   sets={activity.sets}
                   editable={editable}
                   activityDocument={activityDocument}
                 />
-              </FlipMoveChild>
-            ))}
-          </FlipMove>
-        ) : (
-          <>
-            {activity.sets.map(({ uuid }, index) => (
-              <ActivitySetView
-                key={uuid}
-                index={index}
-                sets={activity.sets}
-                editable={editable}
-                activityDocument={activityDocument}
-              />
-            ))}
-          </>
-        )}
+              ))}
+            </>
+          )}
+        </Columns>
+      </Rows>
+      <Columns pad={Pad.Small}>
+        <DataStateView data={comments} loading={() => null} error={() => null}>
+          {comments =>
+            comments.length === 0 ? null : (
+              <Columns
+                pad={Pad.XSmall}
+                className={css`
+                  font-size: 0.8em;
+                  color: rgba(0, 0, 0, 0.52);
+                `}
+              >
+                {comments.map(comment => (
+                  <Rows pad={Pad.XSmall} key={comment.id}>
+                    <p>
+                      <b>{comment.author.displayName}</b>
+                    </p>
+                    <p>{comment.text}</p>
+                  </Rows>
+                ))}
+              </Columns>
+            )
+          }
+        </DataStateView>
+        <Rows maxWidth center pad={Pad.XSmall}>
+          <IconButton
+            aria-label="Add comment"
+            size="small"
+            onClick={showActivityCommentInput}
+          >
+            <ChatBubbleOutline
+              className={css`
+                color: rgba(0, 0, 0, 0.24);
+              `}
+            />
+          </IconButton>
+          {typeof comment === 'string' && (
+            <>
+              <form
+                onSubmit={addActivityComment}
+                className={css`
+                  width: 100%;
+                `}
+              >
+                <input
+                  type="text"
+                  ref={commentRef}
+                  placeholder="Add a comment..."
+                  value={comment ?? ''}
+                  onChange={event => setComment(event.target.value)}
+                  onBlur={() => {
+                    // Hide the comment input
+                    if (comment === '') setComment(null);
+                  }}
+                  className={css`
+                    background-color: transparent;
+                    font-size: 0.8em;
+                    color: rgba(0, 0, 0, 0.87);
+                    border: none;
+                    flex: 1;
+                    width: 100%;
+                    margin: 0;
+                    outline: none;
+                    padding: ${Pad.XSmall} 0;
+                  `}
+                />
+              </form>
+              {comment && comment.length > 0 && (
+                <button
+                  className={css`
+                    border: none;
+                    padding: 0;
+                    background-color: transparent;
+                    text-transform: uppercase;
+                    font-size: 0.8em;
+                    font-weight: 600;
+                    outline: none;
+                    color: rgba(0, 0, 0, 0.52);
+                  `}
+                  onClick={addActivityComment}
+                >
+                  Post
+                </button>
+              )}
+            </>
+          )}
+        </Rows>
       </Columns>
-    </Rows>
+    </Columns>
   );
 };
 

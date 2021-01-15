@@ -62,6 +62,12 @@ export enum ActivityStatus {
   Skipped = 'skipped',
 }
 
+export interface Comment extends FirestoreDocument {
+  timestamp: FirestoreTimestamp;
+  author: Required<Pick<User, 'id' | 'displayName'>>;
+  text: string;
+}
+
 const isNotAlpha = /^[^A-Za-z_]+$/;
 const isAllCaps = /^[A-Z0-9]+$/;
 

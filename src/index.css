@@ -27,3 +27,7 @@ body {
 code {
   font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+input {
+  box-sizing: content-box;
+}

@@ -92,8 +92,17 @@ export const DataStateView = <T extends unknown>(props: {
   error?: () => JSX.Element | null;
   empty?: () => JSX.Element | null;
 }): JSX.Element | null => {
-  if (DataStateEmpty === props.data) return props.empty?.() ?? null;
-  if (DataState.isLoading(props.data)) return props.loading?.() ?? <Loading />;
-  if (DataState.isError(props.data)) return props.error?.() ?? <Sorry />;
+  if (DataStateEmpty === props.data) {
+    if (props.empty) return props.empty();
+    return null;
+  }
+  if (DataState.isLoading(props.data)) {
+    if (props.loading) return props.loading();
+    return <Loading />;
+  }
+  if (DataState.isError(props.data)) {
+    if (props.error) return props.error();
+    return <Sorry />;
+  }
   return props.children(props.data);
 };

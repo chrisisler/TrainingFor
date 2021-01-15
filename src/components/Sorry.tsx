@@ -13,7 +13,6 @@ export const Sorry: FC = () => {
     >
       <p
         className={css`
-          font-size: 1em;
           font-style: italic;
         `}
       >

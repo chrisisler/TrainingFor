@@ -133,7 +133,6 @@ export const Timeline: FC = () => {
             border: 0;
             background-color: #fff;
             border-radius: 5px;
-            font-size: 1em;
           `}
         />
       </Rows>

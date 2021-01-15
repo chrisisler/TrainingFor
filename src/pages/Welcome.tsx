@@ -36,7 +36,7 @@ export const Welcome: FC = () => {
           Sign Up
         </Button>
         <Button
-          variant="contained"
+          variant="text"
           color="primary"
           component={NavLink}
           to={Paths.logIn}

@@ -4,7 +4,7 @@ import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/storage';
 
-import { Activity, TrainingLog, User } from './interfaces';
+import { Activity, TrainingLog, User, Comment } from './interfaces';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBLnwnJBVUw1SXeK7E1-oL9uCG-ysm1N6w',
@@ -31,6 +31,7 @@ export enum DbPath {
   Users = 'users',
   UserLogs = 'logs',
   UserLogActivities = 'activities',
+  UserLogActivityComments = 'comments',
 }
 
 export { db, auth, storage };
@@ -74,8 +75,22 @@ const userConverter: firebase.firestore.FirestoreDataConverter<User> = {
   },
 };
 
+const commentConverter: firebase.firestore.FirestoreDataConverter<Comment> = {
+  toFirestore: (comment: Comment): firebase.firestore.DocumentData => {
+    return comment;
+  },
+  fromFirestore: (
+    doc: firebase.firestore.QueryDocumentSnapshot<Comment>
+  ): Comment => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
 export const DbConverter = {
   TrainingLog: trainingLogConverter,
   Activity: activityConverter,
   User: userConverter,
+  Comment: commentConverter,
 };
