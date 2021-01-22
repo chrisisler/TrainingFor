@@ -29,7 +29,7 @@ export const Account: FC = () => {
   const { userId } = useParams<{ userId?: string }>();
 
   const [logs] = useDataState(
-    async () =>
+    () =>
       db
         .collection(DbPath.Users)
         .doc(userId ?? user.uid)
@@ -40,6 +40,17 @@ export const Account: FC = () => {
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [userId, user.uid]
   );
+
+  const [logCountLast30Days] = useDataState(() => {
+    const last30days = new Date(Date.now() - 2592000000);
+    return db
+      .collection(DbPath.Users)
+      .doc(userId ?? user.uid)
+      .collection(DbPath.UserLogs)
+      .where('timestamp', '>', last30days)
+      .get()
+      .then(({ size }) => size);
+  }, [userId, user.uid]);
 
   const [selectedUser] = useDataState(
     () =>
@@ -130,28 +141,36 @@ export const Account: FC = () => {
           )}
         </DataStateView>
       </Rows>
-      <Typography variant="h4" color="textSecondary" gutterBottom>
+      <Typography variant="h5" color="textPrimary" gutterBottom>
         {userId
           ? DataState.isReady(selectedUser)
             ? selectedUser.displayName
             : null
           : user.displayName}
       </Typography>
-      <Typography variant="body1" color="textSecondary" gutterBottom>
-        Training Logs
-      </Typography>
       <DataStateView data={logs}>
         {logs =>
           logs.length ? (
-            <Columns pad={Pad.Large}>
-              {logs.map(log => (
-                <TrainingLogPreview log={log} key={log.id} />
-              ))}
-            </Columns>
+            <>
+              <Rows pad={Pad.Small}>
+                <Statistic text="training logs" value={logs.length} />
+                {DataState.isReady(logCountLast30Days) && (
+                  <Statistic
+                    text="in the last 30 days"
+                    value={logCountLast30Days}
+                  />
+                )}
+              </Rows>
+              <Columns pad={Pad.Large}>
+                {logs.map(log => (
+                  <TrainingLogPreview log={log} key={log.id} />
+                ))}
+              </Columns>
+            </>
           ) : (
             <Columns pad={Pad.Medium}>
               <Typography variant="h6" color="textSecondary">
-                You have not been training!
+                No training found - get started:
               </Typography>
               <Button variant="contained" color="primary" onClick={newTraining}>
                 Start Training
@@ -161,6 +180,40 @@ export const Account: FC = () => {
         }
       </DataStateView>
     </Columns>
+  );
+};
+
+const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
+  text,
+  value,
+}) => {
+  return (
+    <Rows
+      className={css`
+        align-items: center !important;
+      `}
+    >
+      <p
+        className={css`
+          font-size: 2.2em;
+          color: royalblue;
+        `}
+      >
+        {value}
+      </p>
+      <p
+        className={css`
+          font-size: 0.75em;
+          font-weight: 500;
+          text-transform: uppercase;
+          color: rgba(0, 0, 0, 0.52);
+          width: 11ch;
+          overflow-x: hidden;
+        `}
+      >
+        {text}
+      </p>
+    </Rows>
   );
 };
 

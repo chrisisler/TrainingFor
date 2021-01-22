@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import styled from '@emotion/styled';
 import { IconButton, Link } from '@material-ui/core';
-import { Add, List, Person } from '@material-ui/icons';
+import { ClearAll, Create, Person } from '@material-ui/icons';
 import React, { FC, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -41,7 +41,7 @@ export const NavBar: FC = () => {
           className={linkStyle(Paths.timeline)}
           to={Paths.timeline}
         >
-          <List />
+          <ClearAll />
         </Link>
       </IconButton>
       <IconButton aria-label="Start Training">
@@ -50,7 +50,7 @@ export const NavBar: FC = () => {
           className={linkStyle(Paths.newTraining)}
           to={Paths.newTraining}
         >
-          <Add />
+          <Create />
         </Link>
       </IconButton>
       <IconButton aria-label="Navigate to account">
