@@ -59,5 +59,5 @@ export const useNewTraining = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, history]);
+  }, [history, user.uid]);
 };

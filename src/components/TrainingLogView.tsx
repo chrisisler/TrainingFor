@@ -36,16 +36,6 @@ import {
 import { Columns, Pad, Rows } from '../style';
 import { AppLink } from './AppLink';
 
-const ActivityStatusButton = styled.button`
-  color: gray;
-  font-size: 0.75em;
-  border: 0;
-  font-weight: 800;
-  background-color: transparent;
-  text-transform: uppercase;
-  outline: none;
-`;
-
 const activityViewContainerCss = css`
   display: flex;
   flex-direction: column;
@@ -811,9 +801,17 @@ const ActivitySetView: FC<{
         >
           {index + 1}
         </Typography>
-        <ActivityStatusButton disabled={!editable} onClick={cycleSetStatus}>
+        <button disabled={!editable} onClick={cycleSetStatus} className={css`
+  color: gray;
+  font-size: 0.75em;
+  border: 0;
+  font-weight: 800;
+  background-color: transparent;
+  text-transform: uppercase;
+  outline: none;
+        `}>
           {set.status}
-        </ActivityStatusButton>
+        </button>
       </Rows>
       <Rows center>
         <input

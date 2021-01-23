@@ -1,5 +1,4 @@
 import { css } from '@emotion/css';
-import styled from '@emotion/styled';
 import { Button, IconButton, Typography } from '@material-ui/core';
 import { ArrowBackIosRounded, DeleteOutline, Done } from '@material-ui/icons';
 import format from 'date-fns/format';
@@ -15,16 +14,6 @@ import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
 import { Activity, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
-
-const AddActivityInput = styled.input`
-  box-sizing: content-box;
-  width: 100%;
-  padding: ${Pad.Medium};
-  border: 1px solid lightgray;
-  border-radius: 5px;
-  font-size: 1em;
-  box-shadow: none;
-`;
 
 export const TrainingLogEditor: FC = () => {
   const [activityName, setActivityName] = useState<string>('');
@@ -157,11 +146,20 @@ export const TrainingLogEditor: FC = () => {
                 </Typography>
               ))}
             <Rows maxWidth as="form" onSubmit={addActivity}>
-              <AddActivityInput
+              <input
                 type="text"
                 placeholder="Enter Activity"
                 value={activityName}
                 onChange={event => setActivityName(event.target.value)}
+                className={css`
+                  box-sizing: content-box;
+                  width: 100%;
+                  padding: ${Pad.Medium};
+                  border: 1px solid lightgray;
+                  border-radius: 5px;
+                  font-size: 1em;
+                  box-shadow: none;
+                `}
               />
               {activityName.length > 0 && (
                 <Button

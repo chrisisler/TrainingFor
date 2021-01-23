@@ -1,3 +1,4 @@
+import { css } from '@emotion/css';
 import styled from '@emotion/styled';
 import { Button, IconButton, TextField, Typography } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
@@ -11,28 +12,10 @@ import { auth, db, DbPath } from '../firebase';
 import { User } from '../interfaces';
 import { Columns, Pad } from '../style';
 
-const SignUpContainer = styled.div`
-  height: 100vh;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  background-color: #eee;
-`;
-
 const SignUpCard = styled(Columns)`
   width: 100%;
   padding: ${Pad.XLarge};
   background-color: #fff;
-`;
-
-const SignUpNav = styled.nav`
-  position: absolute;
-  top: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: ${Pad.Medium};
-  height: min-content;
 `;
 
 export const SignUp: FC = () => {
@@ -70,8 +53,26 @@ export const SignUp: FC = () => {
   );
 
   return (
-    <SignUpContainer>
-      <SignUpNav>
+    <div
+      className={css`
+        height: 100vh;
+        width: 100%;
+        display: grid;
+        place-items: center;
+        background-color: #eee;
+      `}
+    >
+      <nav
+        className={css`
+          position: absolute;
+          top: 0;
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          padding: ${Pad.Medium};
+          height: min-content;
+        `}
+      >
         <IconButton
           aria-label="Navigate back"
           size="small"
@@ -81,7 +82,7 @@ export const SignUp: FC = () => {
         >
           <ArrowBackIosRounded />
         </IconButton>
-      </SignUpNav>
+      </nav>
       <SignUpCard pad={Pad.Medium}>
         <Columns>
           <Typography variant="h4" color="textPrimary" align="center">
@@ -108,6 +109,6 @@ export const SignUp: FC = () => {
           Start Training
         </Button>
       </SignUpCard>
-    </SignUpContainer>
+    </div>
   );
 };

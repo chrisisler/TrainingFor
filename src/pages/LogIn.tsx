@@ -10,28 +10,10 @@ import { Paths } from '../constants';
 import { auth } from '../firebase';
 import { Columns, Pad } from '../style';
 
-const LogInContainer = styled.div`
-  height: 100vh;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  background-color: #eee;
-`;
-
 const LogInCard = styled(Columns)`
   width: 100%;
   padding: ${Pad.XLarge};
   background-color: #fff;
-`;
-
-const LogInNav = styled.nav`
-  position: absolute;
-  top: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: ${Pad.Medium};
-  height: min-content;
 `;
 
 export const LogIn: FC = () => {
@@ -68,8 +50,26 @@ export const LogIn: FC = () => {
   }, []);
 
   return (
-    <LogInContainer>
-      <LogInNav>
+    <div
+      className={css`
+        height: 100vh;
+        width: 100%;
+        display: grid;
+        place-items: center;
+        background-color: #eee;
+      `}
+    >
+      <nav
+        className={css`
+          position: absolute;
+          top: 0;
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          padding: ${Pad.Medium};
+          height: min-content;
+        `}
+      >
         <IconButton
           aria-label="Navigate back"
           size="small"
@@ -79,7 +79,7 @@ export const LogIn: FC = () => {
         >
           <ArrowBackIosRounded />
         </IconButton>
-      </LogInNav>
+      </nav>
       <LogInCard pad={Pad.Medium}>
         <Typography variant="h4" color="textPrimary" align="center">
           TrainingFor
@@ -115,6 +115,6 @@ export const LogIn: FC = () => {
           Start Training
         </Button>
       </LogInCard>
-    </LogInContainer>
+    </div>
   );
 };

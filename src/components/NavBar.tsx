@@ -8,7 +8,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Paths } from '../constants';
 import { Pad, Rows } from '../style';
 
-export const navBarHeight = 50;
+const navBarHeight = 50;
 
 const NavBarContainer = styled(Rows)`
   justify-content: space-between;
@@ -21,7 +21,21 @@ const NavBarContainer = styled(Rows)`
   border-top: 1px solid lightgray;
 `;
 
-export const NavBar: FC = () => {
+export const ViewWithNavBar: FC<{
+  children: React.ReactNode;
+}> = ({ children }) => (
+  <div
+    className={css`
+      width: 100%;
+      height: calc(100% - ${navBarHeight}px);
+    `}
+  >
+    {children}
+    <NavBar />
+  </div>
+);
+
+const NavBar: FC = () => {
   const { pathname } = useLocation();
 
   // This is to highlight the active navigation

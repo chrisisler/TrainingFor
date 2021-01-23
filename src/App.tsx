@@ -1,7 +1,6 @@
 import 'react-toastify/dist/ReactToastify.min.css';
 
 import { css } from '@emotion/css';
-import styled from '@emotion/styled';
 import firebase from 'firebase/app';
 import React, { FC, useEffect, useState } from 'react';
 import {
@@ -12,7 +11,7 @@ import {
 } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
-import { NavBar, navBarHeight } from './components/NavBar';
+import { ViewWithNavBar } from './components/NavBar';
 import { Paths } from './constants';
 import { DataState, DataStateView } from './DataState';
 import { auth } from './firebase';
@@ -26,17 +25,6 @@ import { TrainingLogEditor } from './pages/TrainingLogEditor';
 import { TrainingLogViewPage } from './pages/TrainingLogViewPage';
 import { Welcome } from './pages/Welcome';
 import { Pad } from './style';
-
-const AppContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-width: 512px;
-`;
-
-const ViewWithNavBar = styled.div`
-  width: 100%;
-  height: calc(100% - ${navBarHeight}px);
-`;
 
 export const App: FC = () => {
   const [user, setUser] = useState<DataState<firebase.User>>(DataState.Loading);
@@ -53,7 +41,13 @@ export const App: FC = () => {
   }, []);
 
   return (
-    <AppContainer>
+    <div
+      className={css`
+        width: 100%;
+        height: 100%;
+        max-width: 512px;
+      `}
+    >
       <ToastContainer
         hideProgressBar
         pauseOnFocusLoss={false}
@@ -95,37 +89,31 @@ export const App: FC = () => {
                 <Route exact path={Paths.logView()}>
                   <ViewWithNavBar>
                     <TrainingLogViewPage />
-                    <NavBar />
                   </ViewWithNavBar>
                 </Route>
                 <Route exact path={Paths.user()}>
                   <ViewWithNavBar>
                     <Account />
-                    <NavBar />
                   </ViewWithNavBar>
                 </Route>
                 <Route exact path={Paths.logEditor()}>
                   <ViewWithNavBar>
                     <TrainingLogEditor />
-                    <NavBar />
                   </ViewWithNavBar>
                 </Route>
                 <Route exact path={Paths.timeline}>
                   <ViewWithNavBar>
                     <Timeline />
-                    <NavBar />
                   </ViewWithNavBar>
                 </Route>
                 <Route exact path={Paths.account}>
                   <ViewWithNavBar>
                     <Account />
-                    <NavBar />
                   </ViewWithNavBar>
                 </Route>
                 <Route exact path={Paths.newTraining}>
                   <ViewWithNavBar>
                     <NewTraining />
-                    <NavBar />
                   </ViewWithNavBar>
                 </Route>
                 <Route path="/">
@@ -136,6 +124,6 @@ export const App: FC = () => {
           )}
         </DataStateView>
       </Router>
-    </AppContainer>
+    </div>
   );
 };

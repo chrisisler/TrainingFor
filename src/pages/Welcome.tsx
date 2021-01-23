@@ -1,4 +1,4 @@
-import styled from '@emotion/styled';
+import { css } from '@emotion/css';
 import { Button, Typography } from '@material-ui/core';
 import React, { FC } from 'react';
 import { NavLink } from 'react-router-dom';
@@ -6,24 +6,25 @@ import { NavLink } from 'react-router-dom';
 import { Paths } from '../constants';
 import { Columns, Pad } from '../style';
 
-const WelcomeContainer = styled.div`
-  height: 100vh;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  background-color: #eee;
-`;
-
-const WelcomeCard = styled(Columns)`
-  width: 100%;
-  padding: ${Pad.XLarge};
-  background-color: #fff;
-`;
-
 export const Welcome: FC = () => {
   return (
-    <WelcomeContainer>
-      <WelcomeCard pad={Pad.Large}>
+    <div
+      className={css`
+        height: 100vh;
+        width: 100%;
+        display: grid;
+        place-items: center;
+        background-color: #eee;
+      `}
+    >
+      <Columns
+        pad={Pad.Large}
+        className={css`
+          width: 100%;
+          padding: ${Pad.XLarge};
+          background-color: #fff;
+        `}
+      >
         <Typography variant="h4" color="textPrimary" align="center">
           TrainingFor
         </Typography>
@@ -43,7 +44,7 @@ export const Welcome: FC = () => {
         >
           Log In
         </Button>
-      </WelcomeCard>
-    </WelcomeContainer>
+      </Columns>
+    </div>
   );
 };
