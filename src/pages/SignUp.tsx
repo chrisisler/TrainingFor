@@ -4,6 +4,7 @@ import { ArrowBackIosRounded } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { Paths } from '../constants';
 import { auth, db, DbPath } from '../firebase';
@@ -59,9 +60,10 @@ export const SignUp: FC = () => {
           followers: [],
           following: [],
         };
+        // Insert the user data under the id = uid
         db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
       } catch (error) {
-        alert(error.message);
+        toast.error(error.message);
       }
     },
     [displayName, email, password]

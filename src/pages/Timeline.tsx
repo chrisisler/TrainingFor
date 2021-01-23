@@ -6,6 +6,7 @@ import {
 } from '@popperjs/core/lib/popper-lite';
 import React, { FC, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { TrainingLogView } from '../components/TrainingLogView';
 import { Paths, TabIndex } from '../constants';
@@ -87,7 +88,7 @@ export const Timeline: FC = () => {
         });
         setResults(matches);
       } catch (error) {
-        alert(error.message);
+        toast.error(error.message);
         setResults(DataState.error(error.message));
       }
     };

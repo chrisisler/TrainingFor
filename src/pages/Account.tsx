@@ -5,6 +5,7 @@ import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
@@ -87,7 +88,7 @@ export const Account: FC = () => {
       });
       await batch.commit();
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [userId, user.uid, isFollowing]);
 
@@ -267,7 +268,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
       await writeBatch.commit();
       history.push(Paths.logEditor(logRef.id), { from: location });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [user.uid, log, history, location]);
 

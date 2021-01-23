@@ -19,6 +19,7 @@ import React, {
   useState,
 } from 'react';
 import FlipMove from 'react-flip-move';
+import { toast } from 'react-toastify';
 import { v4 as uuid } from 'uuid';
 
 import { Format, Paths, TabIndex } from '../constants';
@@ -246,7 +247,7 @@ const ActivityView: FC<{
           /** no-op */
         },
         error => {
-          alert(error.message);
+          toast.error(error.message);
         },
         async () => {
           const attachmentUrl = await storage
@@ -268,7 +269,7 @@ const ActivityView: FC<{
       await storage.refFromURL(activity.attachmentUrl).delete();
       activityDocument.update({ attachmentUrl: null } as Partial<Activity>);
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activity.attachmentUrl, activityDocument]);
 
@@ -286,7 +287,7 @@ const ActivityView: FC<{
         sets: firebase.firestore.FieldValue.arrayUnion(newSet),
       });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activity.sets, activityDocument]);
 
@@ -295,7 +296,7 @@ const ActivityView: FC<{
     try {
       activityDocument.delete();
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activityDocument]);
 
@@ -308,7 +309,7 @@ const ActivityView: FC<{
         merge: true,
       });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activity.name, activityDocument]);
 
@@ -331,7 +332,7 @@ const ActivityView: FC<{
       } as Partial<Activity>);
       await batch.commit();
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activities, activity.position, activityDocument, index]);
 
@@ -354,7 +355,7 @@ const ActivityView: FC<{
       } as Partial<Activity>);
       await batch.commit();
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activities, activity.position, activityDocument, index]);
 
@@ -366,7 +367,7 @@ const ActivityView: FC<{
     try {
       activityDocument.update({ notes: nullIfEmpty } as Partial<Activity>);
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activityDocument, notes]);
 
@@ -407,7 +408,7 @@ const ActivityView: FC<{
           .collection(DbPath.UserLogActivityComments)
           .add(newComment);
       } catch (error) {
-        alert(error.message);
+        toast.error(error.message);
       }
     },
     [activityDocument, comment, user.displayName, user.uid]
@@ -753,7 +754,7 @@ const ActivitySetView: FC<{
     try {
       activityDocument.set({ sets }, { merge: true });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activityDocument, index, set.status, sets]);
 
@@ -770,7 +771,7 @@ const ActivitySetView: FC<{
         sets: firebase.firestore.FieldValue.arrayUnion(duplicateSet),
       });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activityDocument, index, sets]);
 
@@ -781,7 +782,7 @@ const ActivitySetView: FC<{
         sets: firebase.firestore.FieldValue.arrayRemove(set),
       });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [activityDocument, set]);
 
@@ -791,7 +792,7 @@ const ActivitySetView: FC<{
       try {
         activityDocument.set({ sets } as Partial<Activity>, { merge: true });
       } catch (error) {
-        alert(error.message);
+        toast.error(error.message);
       }
     },
     [activityDocument, index, sets]

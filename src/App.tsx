@@ -1,3 +1,6 @@
+import 'react-toastify/dist/ReactToastify.min.css';
+
+import { css } from '@emotion/css';
 import styled from '@emotion/styled';
 import firebase from 'firebase/app';
 import React, { FC, useEffect, useState } from 'react';
@@ -7,6 +10,7 @@ import {
   Route,
   Switch,
 } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 
 import { NavBar, navBarHeight } from './components/NavBar';
 import { Paths } from './constants';
@@ -21,6 +25,7 @@ import { Timeline } from './pages/Timeline';
 import { TrainingLogEditor } from './pages/TrainingLogEditor';
 import { TrainingLogViewPage } from './pages/TrainingLogViewPage';
 import { Welcome } from './pages/Welcome';
+import { Pad } from './style';
 
 const AppContainer = styled.div`
   width: 100%;
@@ -49,6 +54,21 @@ export const App: FC = () => {
 
   return (
     <AppContainer>
+      <ToastContainer
+        hideProgressBar
+        pauseOnFocusLoss={false}
+        className={css`
+          padding: ${Pad.Small};
+
+          & > *:not(:last-child) {
+            margin-bottom: ${Pad.XSmall};
+          }
+        `}
+        toastClassName={css`
+          border-radius: 5px;
+          font-weight: 500;
+        `}
+      />
       <Router>
         <DataStateView
           data={user}

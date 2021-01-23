@@ -1,6 +1,7 @@
 import firebase from 'firebase/app';
 import { createContext, FC, useCallback, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { Paths } from './constants';
 import { db, DbPath } from './firebase';
@@ -56,7 +57,7 @@ export const useNewTraining = () => {
         .add(newLog);
       history.push(Paths.logEditor(id));
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [user.uid, history]);
 };

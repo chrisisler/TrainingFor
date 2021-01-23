@@ -4,6 +4,7 @@ import { Button, IconButton, TextField, Typography } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
 import React, { FC, useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { Paths } from '../constants';
 import { auth } from '../firebase';
@@ -46,7 +47,7 @@ export const LogIn: FC = () => {
         auth.signInWithEmailAndPassword(email, password);
         setPassword('');
       } catch (error) {
-        alert(error.message);
+        toast.error(error.message);
       }
     },
     [email, password]
@@ -60,9 +61,9 @@ export const LogIn: FC = () => {
     try {
       auth.sendPasswordResetEmail(email);
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
-      alert(`A password reset link has been sent to ${email}`);
+      toast.error(`A password reset link has been sent to ${email}`);
     }
   }, []);
 

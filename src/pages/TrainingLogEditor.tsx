@@ -6,6 +6,7 @@ import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { TrainingLogEditorView } from '../components/TrainingLogView';
 import { Format, Paths } from '../constants';
@@ -20,7 +21,7 @@ const AddActivityInput = styled.input`
   width: 100%;
   padding: ${Pad.Medium};
   border: 1px solid lightgray;
-  border-radius: 3px;
+  border-radius: 5px;
   font-size: 1em;
   box-shadow: none;
 `;
@@ -71,7 +72,7 @@ export const TrainingLogEditor: FC = () => {
         .doc(log.id)
         .set({ title: newTitle } as Partial<TrainingLog>, { merge: true });
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     }
   }, [log]);
 
@@ -92,7 +93,7 @@ export const TrainingLogEditor: FC = () => {
         };
         activitiesColl.add(newActivity);
       } catch (error) {
-        alert(error.message);
+        toast.error(error.message);
       }
     },
     [activityName, logDoc]
@@ -104,7 +105,7 @@ export const TrainingLogEditor: FC = () => {
     try {
       logDoc.ref.delete();
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       history.push(Paths.account);
     }
