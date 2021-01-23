@@ -1,9 +1,16 @@
 import { css } from '@emotion/css';
-import { Button, IconButton, Typography } from '@material-ui/core';
-import { Replay } from '@material-ui/icons';
+import {
+  Button,
+  ClickAwayListener,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@material-ui/core';
+import { MoreHoriz, Replay } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -25,6 +32,7 @@ export const Account: FC = () => {
 
   const user = useUser();
   const newTraining = useNewTraining();
+  const menu = useMaterialMenu();
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
@@ -92,6 +100,18 @@ export const Account: FC = () => {
     }
   }, [userId, user.uid, isFollowing]);
 
+  const deleteAccount = useCallback(async () => {
+    if (!window.confirm('Delete account?')) return;
+    try {
+      await db.collection(DbPath.Users).doc(user.uid).delete();
+      if (!auth.currentUser) throw Error('Impossible');
+      await auth.currentUser.delete();
+      toast.info('Account deleted successfully.');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid]);
+
   // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
     if (!userId) return;
@@ -109,51 +129,77 @@ export const Account: FC = () => {
 
   return (
     <Columns
-      pad={Pad.Small}
+      pad={Pad.Medium}
       className={css`
         height: 100%;
         overflow-y: scroll;
-        padding: 0 ${Pad.Large} ${Pad.Large};
+        padding: ${Pad.Medium} ${Pad.Large};
       `}
     >
-      <Rows center maxWidth>
-        {!userId && (
-          <Button
-            variant="text"
-            onClick={() => auth.signOut()}
-            className={css`
-              margin-left: auto !important;
-            `}
-          >
-            Sign Out
-          </Button>
-        )}
+      <Rows center pad={Pad.Small}>
+        <Typography variant="h4" color="textPrimary">
+          {userId
+            ? DataState.isReady(selectedUser)
+              ? selectedUser.displayName
+              : null
+            : user.displayName}
+        </Typography>
         <DataStateView data={isFollowing}>
           {isFollowing => (
-            <Button
-              variant="text"
-              onClick={toggleFollow}
-              className={css`
-                margin-left: auto !important;
-              `}
-            >
+            <Button variant="text" onClick={toggleFollow}>
               {isFollowing ? 'Following' : 'Follow'}
             </Button>
           )}
         </DataStateView>
+        {!userId && (
+          <ClickAwayListener onClickAway={menu.close}>
+            <div>
+              <IconButton
+                aria-label="Open account menu"
+                aria-controls="account-menu"
+                aria-haspopup="true"
+                onClick={menu.open}
+                size="small"
+              >
+                <MoreHoriz
+                  className={css`
+                    color: lightgray;
+                  `}
+                />
+              </IconButton>
+              <Menu
+                id="account-menu"
+                anchorEl={menu.ref}
+                open={!!menu.ref}
+                onClose={menu.close}
+                MenuListProps={{ dense: true }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    if (!window.confirm('Sign out?')) return;
+                    auth.signOut();
+                  }}
+                >
+                  Sign Out
+                </MenuItem>
+                <MenuItem onClick={deleteAccount}>
+                  <b>Delete Account</b>
+                </MenuItem>
+              </Menu>
+            </div>
+          </ClickAwayListener>
+        )}
       </Rows>
-      <Typography variant="h5" color="textPrimary" gutterBottom>
-        {userId
-          ? DataState.isReady(selectedUser)
-            ? selectedUser.displayName
-            : null
-          : user.displayName}
-      </Typography>
       <DataStateView data={logs}>
         {logs =>
           logs.length ? (
             <>
-              <Rows pad={Pad.Small}>
+              <Rows
+                pad={Pad.Small}
+                className={css`
+                  height: min-height;
+                `}
+              >
                 <Statistic text="training logs" value={logs.length} />
                 {DataState.isReady(logCountLast30Days) && (
                   <Statistic
@@ -184,6 +230,28 @@ export const Account: FC = () => {
   );
 };
 
+const useMaterialMenu = () => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const openMenu = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) =>
+      setAnchorEl(event.currentTarget),
+    []
+  );
+  const closeMenu = useCallback(() => setAnchorEl(null), []);
+
+  const menu = useMemo(
+    () => ({
+      ref: anchorEl,
+      open: openMenu,
+      close: closeMenu,
+    }),
+    [anchorEl, closeMenu, openMenu]
+  );
+
+  return menu;
+};
+
 const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
   text,
   value,
@@ -197,6 +265,7 @@ const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
       <p
         className={css`
           font-size: 2.2em;
+          line-height: 1em;
           color: royalblue;
         `}
       >

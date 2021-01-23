@@ -475,7 +475,6 @@ const ActivityView: FC<{
                   </IconButton>
                   <Menu
                     id="activity-menu"
-                    keepMounted
                     anchorEl={anchorEl}
                     open={!!anchorEl}
                     onClose={closeActivityMenu}
@@ -801,15 +800,19 @@ const ActivitySetView: FC<{
         >
           {index + 1}
         </Typography>
-        <button disabled={!editable} onClick={cycleSetStatus} className={css`
-  color: gray;
-  font-size: 0.75em;
-  border: 0;
-  font-weight: 800;
-  background-color: transparent;
-  text-transform: uppercase;
-  outline: none;
-        `}>
+        <button
+          disabled={!editable}
+          onClick={cycleSetStatus}
+          className={css`
+            color: gray;
+            font-size: 0.75em;
+            border: 0;
+            font-weight: 800;
+            background-color: transparent;
+            text-transform: uppercase;
+            outline: none;
+          `}
+        >
           {set.status}
         </button>
       </Rows>
@@ -855,7 +858,6 @@ const ActivitySetView: FC<{
               </IconButton>
               <Menu
                 id="set-menu"
-                keepMounted
                 anchorEl={anchorEl}
                 open={!!anchorEl}
                 onClose={closeSetMenu}
