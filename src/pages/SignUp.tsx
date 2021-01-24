@@ -1,6 +1,5 @@
 import { css } from '@emotion/css';
-import { Button, IconButton, TextField, Typography } from '@material-ui/core';
-import { ArrowBackIosRounded } from '@material-ui/icons';
+import { Button, TextField, Typography } from '@material-ui/core';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -55,27 +54,6 @@ export const SignUp: FC = () => {
         background-color: #eee;
       `}
     >
-      <nav
-        className={css`
-          position: absolute;
-          top: 0;
-          width: 100%;
-          display: flex;
-          justify-content: space-between;
-          padding: ${Pad.Medium};
-          height: min-content;
-        `}
-      >
-        <IconButton
-          aria-label="Navigate back"
-          size="small"
-          onClick={() => {
-            history.push(Paths.logIn);
-          }}
-        >
-          <ArrowBackIosRounded />
-        </IconButton>
-      </nav>
       <Columns
         pad={Pad.Medium}
         maxWidth
@@ -89,11 +67,13 @@ export const SignUp: FC = () => {
         </Typography>
         <TextField
           label="Display name"
+          variant="outlined"
           value={displayName}
           onChange={event => setDisplayName(event.target.value)}
         />
         <TextField
           label="Email"
+          variant="outlined"
           value={email}
           onChange={event => setEmail(event.target.value)}
         />
@@ -101,6 +81,7 @@ export const SignUp: FC = () => {
           <TextField
             fullWidth
             label="Password"
+            variant="outlined"
             type="password"
             value={password}
             onChange={event => setPassword(event.target.value)}
@@ -108,6 +89,15 @@ export const SignUp: FC = () => {
         </form>
         <Button variant="contained" color="primary" onClick={addUser}>
           Start Training
+        </Button>
+        <Button
+          variant="text"
+          color="primary"
+          onClick={() => {
+            history.push(Paths.logIn);
+          }}
+        >
+          Log In
         </Button>
       </Columns>
     </div>

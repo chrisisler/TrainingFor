@@ -62,6 +62,7 @@ export const LogIn: FC = () => {
         </Typography>
         <TextField
           label="Email"
+          variant="outlined"
           value={email}
           onChange={event => setEmail(event.target.value)}
         />
@@ -69,6 +70,7 @@ export const LogIn: FC = () => {
           <form onSubmit={logIn}>
             <TextField
               fullWidth
+              variant="outlined"
               label="Password"
               type="password"
               value={password}
@@ -91,11 +93,11 @@ export const LogIn: FC = () => {
             Reset Password
           </button>
         </Columns>
-        <Button variant="outlined" color="primary" onClick={logIn}>
+        <Button variant="contained" color="primary" onClick={logIn}>
           Start Training
         </Button>
         <Button
-          variant="contained"
+          variant="text"
           component={NavLink}
           color="primary"
           to={Paths.signUp}
