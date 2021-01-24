@@ -61,7 +61,6 @@ export const LogIn: FC = () => {
           TrainingFor
         </Typography>
         <TextField
-          fullWidth
           label="Email"
           value={email}
           onChange={event => setEmail(event.target.value)}
