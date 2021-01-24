@@ -15,6 +15,7 @@ interface Props {
   center?: boolean;
   padding?: Pad | string;
   between?: boolean;
+  /** `width: 100%` will not work - use `maxWidth` instead. */
   maxWidth?: boolean;
 }
 

@@ -1,5 +1,4 @@
 import { css } from '@emotion/css';
-import styled from '@emotion/styled';
 import { Button, IconButton, TextField, Typography } from '@material-ui/core';
 import { ArrowBackIosRounded } from '@material-ui/icons';
 import firebase from 'firebase/app';
@@ -11,12 +10,6 @@ import { Paths } from '../constants';
 import { auth, db, DbPath } from '../firebase';
 import { User } from '../interfaces';
 import { Columns, Pad } from '../style';
-
-const SignUpCard = styled(Columns)`
-  width: 100%;
-  padding: ${Pad.XLarge};
-  background-color: #fff;
-`;
 
 export const SignUp: FC = () => {
   const [displayName, setDisplayName] = useState<string>('');
@@ -77,18 +70,23 @@ export const SignUp: FC = () => {
           aria-label="Navigate back"
           size="small"
           onClick={() => {
-            history.push(Paths.welcome);
+            history.push(Paths.logIn);
           }}
         >
           <ArrowBackIosRounded />
         </IconButton>
       </nav>
-      <SignUpCard pad={Pad.Medium}>
-        <Columns>
-          <Typography variant="h4" color="textPrimary" align="center">
-            TrainingFor
-          </Typography>
-        </Columns>
+      <Columns
+        pad={Pad.Medium}
+        maxWidth
+        className={css`
+          padding: ${Pad.XLarge};
+          background-color: #fff;
+        `}
+      >
+        <Typography variant="h4" color="textPrimary" align="center">
+          TrainingFor
+        </Typography>
         <TextField
           label="Display name"
           value={displayName}
@@ -99,16 +97,19 @@ export const SignUp: FC = () => {
           value={email}
           onChange={event => setEmail(event.target.value)}
         />
-        <TextField
-          label="Password"
-          type="password"
-          value={password}
-          onChange={event => setPassword(event.target.value)}
-        />
+        <form onSubmit={addUser}>
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+          />
+        </form>
         <Button variant="contained" color="primary" onClick={addUser}>
           Start Training
         </Button>
-      </SignUpCard>
+      </Columns>
     </div>
   );
 };

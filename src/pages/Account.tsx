@@ -180,10 +180,10 @@ export const Account: FC = () => {
                     auth.signOut();
                   }}
                 >
-                  Sign Out
+                  Sign out
                 </MenuItem>
                 <MenuItem onClick={deleteAccount}>
-                  <b>Delete Account</b>
+                  <b>Delete account</b>
                 </MenuItem>
               </Menu>
             </div>

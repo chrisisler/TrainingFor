@@ -23,7 +23,6 @@ import { SignUp } from './pages/SignUp';
 import { Timeline } from './pages/Timeline';
 import { TrainingLogEditor } from './pages/TrainingLogEditor';
 import { TrainingLogViewPage } from './pages/TrainingLogViewPage';
-import { Welcome } from './pages/Welcome';
 import { Pad } from './style';
 
 export const App: FC = () => {
@@ -61,6 +60,7 @@ export const App: FC = () => {
         toastClassName={css`
           border-radius: 5px;
           font-weight: 500;
+          padding-left: ${Pad.Medium};
         `}
       />
       <Router>
@@ -68,17 +68,14 @@ export const App: FC = () => {
           data={user}
           empty={() => (
             <Switch>
-              <Route exact path={Paths.welcome}>
-                <Welcome />
+              <Route exact path={Paths.logIn}>
+                <LogIn />
               </Route>
               <Route exact path={Paths.signUp}>
                 <SignUp />
               </Route>
-              <Route exact path={Paths.logIn}>
-                <LogIn />
-              </Route>
               <Route path="/">
-                <Redirect to={Paths.welcome} />
+                <Redirect to={Paths.logIn} />
               </Route>
             </Switch>
           )}
