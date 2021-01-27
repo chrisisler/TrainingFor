@@ -7,7 +7,12 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { ChatBubbleOutline, MoreHoriz, MoreVert } from '@material-ui/icons';
+import {
+  Add,
+  ChatBubbleOutline,
+  MoreHoriz,
+  MoreVert,
+} from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, {
@@ -72,30 +77,46 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
   }, [log.authorId, log.id]);
 
   return (
-    <DataStateView data={activities}>
-      {activities => (
-        <FlipMove
-          enterAnimation="fade"
-          leaveAnimation="fade"
-          className={css`
-            height: 100%;
-            width: 100%;
-            overflow-y: scroll;
-            ${activityViewContainerCss}
-          `}
-        >
-          {activities.map(({ id }, index) => (
-            <FlipMoveChild key={id}>
-              <ActivityView
-                editable
-                activities={activities}
-                index={index}
-                log={log}
-              />
+    <DataStateView data={activities} loading={() => null}>
+      {activities =>
+        activities.length ? (
+          <FlipMove
+            enterAnimation="fade"
+            leaveAnimation="fade"
+            className={css`
+              height: 100%;
+              width: 100%;
+              overflow-y: scroll;
+              ${activityViewContainerCss}
+            `}
+          >
+            {activities.map(({ id }, index) => (
+              <FlipMoveChild key={id}>
+                <ActivityView
+                  editable
+                  activities={activities}
+                  index={index}
+                  log={log}
+                />
+              </FlipMoveChild>
+            ))}
+          </FlipMove>
+        ) : (
+          <FlipMove enterAnimation="fade" leaveAnimation="fade">
+            <FlipMoveChild>
+              <Typography
+                variant="body1"
+                color="textSecondary"
+                className={css`
+                  padding: ${Pad.Large};
+                `}
+              >
+                No activities, add one to get started!
+              </Typography>
             </FlipMoveChild>
-          ))}
-        </FlipMove>
-      )}
+          </FlipMove>
+        )
+      }
     </DataStateView>
   );
 };
@@ -105,7 +126,7 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
  * This component is for viewing logs not authored by the authenticated user.
  */
 export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
-  const [authorName] = useDataState(
+  const [authorName] = useDataState<string>(
     () =>
       db
         .collection(DbPath.Users)
@@ -133,7 +154,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   const logDate = TrainingLog.getDate(log);
 
   return (
-    <DataStateView data={activities}>
+    <DataStateView data={activities} error={() => null}>
       {activities => (
         <div
           className={css`
@@ -142,13 +163,11 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
           `}
         >
           <Columns padding={`${Pad.Medium}`}>
-            <DataStateView data={authorName}>
-              {authorName => (
-                <Typography variant="body1" color="textPrimary">
-                  <AppLink to={Paths.user(log.authorId)}>{authorName}</AppLink>
-                </Typography>
-              )}
-            </DataStateView>
+            {DataState.isReady(authorName) && (
+              <Typography variant="body1" color="textPrimary">
+                <AppLink to={Paths.user(log.authorId)}>{authorName}</AppLink>
+              </Typography>
+            )}
             <Rows maxWidth between>
               {logDate && (
                 <Typography variant="body2" color="textSecondary">
@@ -157,7 +176,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
                   {format(logDate, Format.time)}
                 </Typography>
               )}
-              <Typography variant="body1" color="textSecondary">
+              <Typography variant="body1" color="textPrimary">
                 {log.title}
               </Typography>
             </Rows>
@@ -424,11 +443,11 @@ const ActivityView: FC<{
         border-radius: 8px;
         padding: ${Pad.Medium};
         padding-bottom: ${Pad.Small};
-        box-shadow: 4px 4px 12px 0px rgba(0, 0, 0, 0.1);
+        border: 1px solid lightgray;
       `}
       pad={Pad.Small}
     >
-      <Rows pad={Pad.Small}>
+      <Rows pad={Pad.Medium}>
         <Columns
           pad={Pad.Small}
           className={css`
@@ -437,7 +456,7 @@ const ActivityView: FC<{
         >
           <div
             className={css`
-              border: 1px solid lightgray;
+              box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
               border-radius: 5px;
               width: 80px;
               height: 80px;
@@ -446,7 +465,12 @@ const ActivityView: FC<{
             `}
             onClick={({ target, currentTarget }) => {
               if (!editable) return;
-              if (target !== currentTarget) return;
+              if (
+                target !== currentTarget &&
+                target !== currentTarget.lastElementChild
+              ) {
+                return;
+              }
               addActivitySet();
             }}
           >
@@ -455,7 +479,7 @@ const ActivityView: FC<{
                 <div
                   className={css`
                     position: absolute;
-                    left: -5%;
+                    left: -1%;
                     top: 5%;
                   `}
                 >
@@ -469,11 +493,14 @@ const ActivityView: FC<{
                   >
                     <MoreVert
                       className={css`
-                        color: lightgray;
+                        color: gray;
                       `}
                     />
                   </IconButton>
                   <Menu
+                    /**
+                     * TODO - Issue is menuitems display as inline-block
+                     */
                     id="activity-menu"
                     anchorEl={anchorEl}
                     open={!!anchorEl}
@@ -545,6 +572,19 @@ const ActivityView: FC<{
             >
               {Activity.abbreviate(activity.name)}
             </p>
+            <div
+              className={css`
+                position: absolute;
+                left: 65%;
+                bottom: 63%;
+              `}
+            >
+              <Add
+                className={css`
+                  color: dodgerblue;
+                `}
+              />
+            </div>
           </div>
           <p
             className={css`
@@ -576,8 +616,8 @@ const ActivityView: FC<{
               }
             `}
           >
-            {activity.sets.map(() => (
-              <li />
+            {activity.sets.map(({ uuid }) => (
+              <li key={uuid} />
             ))}
           </ol>
         </Columns>

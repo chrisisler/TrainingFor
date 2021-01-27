@@ -67,7 +67,7 @@ export const Timeline: FC = () => {
   /** #endregion */
 
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<
+  const [searchResults, setSearchResults] = useState<
     DataState<Pick<User, 'id' | 'displayName'>[]>
   >(DataState.Empty);
 
@@ -76,20 +76,20 @@ export const Timeline: FC = () => {
   useEffect(() => {
     const searchUsers = async () => {
       if (!search.length) return;
-      setResults(DataState.Loading);
+      setSearchResults(DataState.Loading);
       try {
         const { docs } = await db.collection(DbPath.Users).get();
-        const matches = docs.flatMap<Pick<User, 'id' | 'displayName'>>(doc => {
+        const users = docs.flatMap<Pick<User, 'id' | 'displayName'>>(doc => {
           const displayName = doc.get('displayName') as string;
           if (displayName.toLowerCase().startsWith(search.toLowerCase())) {
             return [{ displayName, id: doc.id }];
           }
           return [];
         });
-        setResults(matches);
+        setSearchResults(users);
       } catch (error) {
         toast.error(error.message);
-        setResults(DataState.error(error.message));
+        setSearchResults(DataState.error(error.message));
       }
     };
     const id = setTimeout(searchUsers, 250);
@@ -106,36 +106,47 @@ export const Timeline: FC = () => {
     >
       <Rows
         maxWidth
-        center
-        pad={Pad.XSmall}
         className={css`
-          padding: ${Pad.Medium};
-          border-bottom: 1px solid lightgray;
+          padding: ${Pad.Small};
           background-color: #eee;
         `}
       >
-        <SearchOutlined htmlColor="gray" />
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Search TrainingFor"
-          value={search}
-          // TODO Move open & closeSuggestions out of this listener
-          onChange={event => {
-            // Do not flash previous results
-            setResults(DataState.Empty);
-            setSearch(event.target.value);
-            if (event.target.value === '') closeSuggestions();
-            else openSuggestions();
-          }}
+        <Rows
+          maxWidth
+          center
           className={css`
-            width: 100%;
-            padding: ${Pad.Medium};
-            border: 0;
             background-color: #fff;
-            border-radius: 5px;
           `}
-        />
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search TrainingFor"
+            value={search}
+            // TODO Move open & closeSuggestions out of this listener
+            onChange={event => {
+              // Do not flash previous results
+              setSearchResults(DataState.Empty);
+              setSearch(event.target.value);
+              if (event.target.value === '') closeSuggestions();
+              else openSuggestions();
+            }}
+            className={css`
+              width: 100%;
+              font-size: 1em;
+              padding: ${Pad.Small} ${Pad.Medium};
+              border: 0;
+              background-color: #fff;
+            `}
+          />
+          <div
+            className={css`
+              padding: ${Pad.Small};
+            `}
+          >
+            <SearchOutlined htmlColor="gray" />
+          </div>
+        </Rows>
       </Rows>
       {showSuggestions && (
         <div
@@ -148,8 +159,8 @@ export const Timeline: FC = () => {
             z-index: 100;
           `}
         >
-          <DataStateView data={results}>
-            {results => (
+          <DataStateView data={searchResults}>
+            {searchResults => (
               <ul
                 tabIndex={TabIndex.NotFocusable}
                 className={css`
@@ -166,8 +177,8 @@ export const Timeline: FC = () => {
                   if (event.key === 'Escape') closeSuggestions();
                 }}
               >
-                {results.length ? (
-                  results.map(user => (
+                {searchResults.length ? (
+                  searchResults.map(user => (
                     <li
                       key={user.id}
                       className={listItemStyle}
@@ -183,7 +194,7 @@ export const Timeline: FC = () => {
                     className={listItemStyle}
                     tabIndex={TabIndex.NotFocusable}
                   >
-                    No matches
+                    No results
                   </li>
                 )}
               </ul>

@@ -5,6 +5,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Skeleton,
   Typography,
 } from '@material-ui/core';
 import { MoreHoriz, Replay } from '@material-ui/icons';
@@ -144,13 +145,11 @@ export const Account: FC = () => {
               : null
             : user.displayName}
         </Typography>
-        <DataStateView data={isFollowing}>
-          {isFollowing => (
-            <Button variant="text" onClick={toggleFollow}>
-              {isFollowing ? 'Following' : 'Follow'}
-            </Button>
-          )}
-        </DataStateView>
+        {DataState.isReady(isFollowing) && (
+          <Button variant="text" onClick={toggleFollow}>
+            {isFollowing ? 'Following' : 'Follow'}
+          </Button>
+        )}
         {!userId && (
           <ClickAwayListener onClickAway={menu.close}>
             <div>
@@ -190,7 +189,17 @@ export const Account: FC = () => {
           </ClickAwayListener>
         )}
       </Rows>
-      <DataStateView data={logs}>
+      <DataStateView
+        data={logs}
+        loading={() => (
+          <>
+            <Skeleton width="45%" />
+            <Skeleton height={80} variant="rectangular" />
+            <Skeleton height={80} variant="rectangular" />
+            <Skeleton height={80} variant="rectangular" />
+          </>
+        )}
+      >
         {logs =>
           logs.length ? (
             <>
@@ -215,9 +224,9 @@ export const Account: FC = () => {
               </Columns>
             </>
           ) : (
-            <Columns pad={Pad.Medium}>
-              <Typography variant="h6" color="textSecondary">
-                No training found - get started:
+            <Columns pad={Pad.Large}>
+              <Typography variant="body1" color="textSecondary">
+                You haven't trained a bit!
               </Typography>
               <Button variant="contained" color="primary" onClick={newTraining}>
                 Start Training
