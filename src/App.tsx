@@ -29,6 +29,10 @@ export const App: FC = () => {
   const [user, setUser] = useState<DataState<firebase.User>>(DataState.Loading);
 
   useEffect(() => {
+    window.screen.orientation.lock('portrait');
+  }, []);
+
+  useEffect(() => {
     return auth.onAuthStateChanged(
       authUser => {
         setUser(authUser ?? DataState.Empty);
