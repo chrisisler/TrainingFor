@@ -30,7 +30,7 @@ import { v4 as uuid } from 'uuid';
 import { Format, Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath, storage } from '../firebase';
-import { useUser } from '../hooks';
+import { useMaterialMenu, useUser } from '../hooks';
 import {
   Activity,
   ActivitySet,
@@ -223,10 +223,7 @@ const ActivityView: FC<{
     DataState.Empty
   );
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const openActivityMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
-    setAnchorEl(event.currentTarget);
-  const closeActivityMenu = () => setAnchorEl(null);
+  const menu = useMaterialMenu();
 
   const user = useUser();
 
@@ -245,7 +242,7 @@ const ActivityView: FC<{
 
   const addActivityAttachment = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
-      closeActivityMenu();
+      menu.close();
       const attachment = event.target.files?.[0];
       if (!attachment) return;
       if (!window.confirm('Confirm attachment?')) return;
@@ -267,11 +264,11 @@ const ActivityView: FC<{
         }
       );
     },
-    [activityDocument]
+    [activityDocument, menu]
   );
 
   const removeAttachment = useCallback(async () => {
-    closeActivityMenu();
+    menu.close();
     if (!window.confirm('Remove image?')) return;
     if (activity.attachmentUrl === null) return;
     try {
@@ -280,7 +277,7 @@ const ActivityView: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activity.attachmentUrl, activityDocument]);
+  }, [activity.attachmentUrl, activityDocument, menu]);
 
   const addActivitySet = useCallback(() => {
     const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
@@ -301,16 +298,16 @@ const ActivityView: FC<{
   }, [activity.sets, activityDocument]);
 
   const deleteActivity = useCallback(() => {
-    closeActivityMenu();
+    menu.close();
     try {
       activityDocument.delete();
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument]);
+  }, [activityDocument, menu]);
 
   const renameActivity = useCallback(() => {
-    closeActivityMenu();
+    menu.close();
     const newName = window.prompt('Update activity name', activity.name);
     if (!newName) return;
     try {
@@ -320,10 +317,10 @@ const ActivityView: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activity.name, activityDocument]);
+  }, [activity.name, activityDocument, menu]);
 
   const moveActivityUp = useCallback(async () => {
-    closeActivityMenu();
+    menu.close();
     if (activities.length === 1 || index === 0) return;
     try {
       const batch = db.batch();
@@ -343,10 +340,10 @@ const ActivityView: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activities, activity.position, activityDocument, index]);
+  }, [activities, activity.position, activityDocument, index, menu]);
 
   const moveActivityDown = useCallback(async () => {
-    closeActivityMenu();
+    menu.close();
     if (activities.length === 1 || index + 1 === activities.length) return;
     try {
       const batch = db.batch();
@@ -366,7 +363,7 @@ const ActivityView: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activities, activity.position, activityDocument, index]);
+  }, [activities, activity.position, activityDocument, index, menu]);
 
   /** Close the notes input if it's empty, otherwise write notes to DB. */
   const updateActivityNotes = useCallback(async () => {
@@ -381,13 +378,13 @@ const ActivityView: FC<{
   }, [activityDocument, notes]);
 
   const showActivityNotesInput = useCallback(() => {
-    closeActivityMenu();
+    menu.close();
     if (notes) return;
     // Make the notes textarea visible. See <ActivityNotesTextarea />
     setNotes('');
     // Wait for the event loop to render the element so we can focus it
     Promise.resolve().then(() => notesRef.current?.focus());
-  }, [notes]);
+  }, [notes, menu]);
 
   const showActivityCommentInput = useCallback(() => {
     if (comment) {
@@ -475,7 +472,7 @@ const ActivityView: FC<{
             }}
           >
             {editable && (
-              <ClickAwayListener onClickAway={closeActivityMenu}>
+              <ClickAwayListener onClickAway={menu.close}>
                 <div
                   className={css`
                     position: absolute;
@@ -488,7 +485,7 @@ const ActivityView: FC<{
                     aria-label="Open activity menu"
                     aria-controls="activity-menu"
                     aria-haspopup="true"
-                    onClick={openActivityMenu}
+                    onClick={menu.open}
                     size="small"
                   >
                     <MoreVert
@@ -502,9 +499,9 @@ const ActivityView: FC<{
                      * TODO - Issue is menuitems display as inline-block
                      */
                     id="activity-menu"
-                    anchorEl={anchorEl}
-                    open={!!anchorEl}
-                    onClose={closeActivityMenu}
+                    anchorEl={menu.ref}
+                    open={!!menu.ref}
+                    onClose={menu.close}
                     MenuListProps={{ dense: true }}
                   >
                     <MenuItem
@@ -773,10 +770,7 @@ const ActivitySetView: FC<{
   const set = sets[index];
   const [weight, setWeight] = useState(set.weight);
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const openSetMenu = (event: React.MouseEvent<HTMLButtonElement>) =>
-    setAnchorEl(event.currentTarget);
-  const closeSetMenu = () => setAnchorEl(null);
+  const menu = useMaterialMenu();
 
   const cycleSetStatus = useCallback(() => {
     sets[index].status = Activity.cycleStatus(set.status);
@@ -788,7 +782,7 @@ const ActivitySetView: FC<{
   }, [activityDocument, index, set.status, sets]);
 
   const duplicateSet = useCallback(() => {
-    closeSetMenu();
+    menu.close();
     try {
       const duplicateSet = {
         ...sets[index],
@@ -802,10 +796,10 @@ const ActivitySetView: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument, index, sets]);
+  }, [activityDocument, index, sets, menu]);
 
   const deleteSet = useCallback(() => {
-    closeSetMenu();
+    menu.close();
     try {
       activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayRemove(set),
@@ -813,7 +807,7 @@ const ActivitySetView: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument, set]);
+  }, [activityDocument, set, menu]);
 
   const updateSetWeight = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -880,7 +874,7 @@ const ActivitySetView: FC<{
           `}
         />
         {editable && (
-          <ClickAwayListener onClickAway={closeSetMenu}>
+          <ClickAwayListener onClickAway={menu.close}>
             <div>
               <IconButton
                 disabled={!editable}
@@ -888,7 +882,7 @@ const ActivitySetView: FC<{
                 aria-label="Open set menu"
                 aria-controls="set-menu"
                 aria-haspopup="true"
-                onClick={openSetMenu}
+                onClick={menu.open}
               >
                 <MoreHoriz
                   className={css`
@@ -898,9 +892,9 @@ const ActivitySetView: FC<{
               </IconButton>
               <Menu
                 id="set-menu"
-                anchorEl={anchorEl}
-                open={!!anchorEl}
-                onClose={closeSetMenu}
+                anchorEl={menu.ref}
+                open={!!menu.ref}
+                onClose={menu.close}
                 MenuListProps={{ dense: true }}
               >
                 <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>

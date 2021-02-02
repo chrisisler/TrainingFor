@@ -11,14 +11,14 @@ import {
 import { MoreHoriz, Replay } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
-import { useNewTraining, useUser } from '../hooks';
+import { useMaterialMenu, useNewTraining, useUser } from '../hooks';
 import { ActivityStatus, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 
@@ -237,28 +237,6 @@ export const Account: FC = () => {
       </DataStateView>
     </Columns>
   );
-};
-
-const useMaterialMenu = () => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const openMenu = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) =>
-      setAnchorEl(event.currentTarget),
-    []
-  );
-  const closeMenu = useCallback(() => setAnchorEl(null), []);
-
-  const menu = useMemo(
-    () => ({
-      ref: anchorEl,
-      open: openMenu,
-      close: closeMenu,
-    }),
-    [anchorEl, closeMenu, openMenu]
-  );
-
-  return menu;
 };
 
 const Statistic: FC<{ text: string; value: React.ReactNode }> = ({

@@ -1,5 +1,12 @@
 import firebase from 'firebase/app';
-import { createContext, FC, useCallback, useContext } from 'react';
+import {
+  createContext,
+  FC,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -60,4 +67,29 @@ export const useNewTraining = () => {
       toast.error(error.message);
     }
   }, [history, user.uid]);
+};
+
+/**
+ * Simplifies the usage of Material-UI's Menu interactions.
+ */
+export const useMaterialMenu = () => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const openMenu = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) =>
+      setAnchorEl(event.currentTarget),
+    []
+  );
+  const closeMenu = useCallback(() => setAnchorEl(null), []);
+
+  const menu = useMemo(
+    () => ({
+      ref: anchorEl,
+      open: openMenu,
+      close: closeMenu,
+    }),
+    [anchorEl, closeMenu, openMenu]
+  );
+
+  return menu;
 };
