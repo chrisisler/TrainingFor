@@ -47,10 +47,9 @@ export interface ActivitySet {
   name: string;
   notes: null | string;
   status: ActivityStatus;
-  /** Currently unitless */
   weight: number;
   /**
-   * Either the repetition count or the time count for time-based activities.
+   * Number of repititions or amount of time the set consumed.
    */
   // count: number;
 }

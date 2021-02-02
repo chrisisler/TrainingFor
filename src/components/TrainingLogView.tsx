@@ -25,6 +25,11 @@ import React, {
 } from 'react';
 import FlipMove from 'react-flip-move';
 import { toast } from 'react-toastify';
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer as ChartContainer,
+} from 'recharts';
 import { v4 as uuid } from 'uuid';
 
 import { Format, Paths, TabIndex } from '../constants';
@@ -197,14 +202,11 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   );
 };
 
-/**
- * Provides a view upon an Activity object, displaying sets as well.
- *
- * If `editable` is true, this view is for the TrainingLogEditor.
- */
 const ActivityView: FC<{
   /**
-   * Caution! Providing the wrong value can break the entire app at runtime.
+   * If set to true, this view is for the TrainingLogEditor.
+   *
+   * CAUTION: Providing the wrong value will break the entire app!
    */
   editable?: boolean;
   activities: Activity[];
@@ -460,14 +462,13 @@ const ActivityView: FC<{
               position: relative;
               overflow: hidden;
             `}
-            onClick={({ target, currentTarget }) => {
+            onClick={event => {
               if (!editable) return;
-              if (
-                target !== currentTarget &&
-                target !== currentTarget.lastElementChild
-              ) {
-                return;
-              }
+              const self = event.currentTarget;
+              const target = event.target as EventTarget & Node;
+              // Add set if not clicking menu icon
+              if (!self.contains(target)) return;
+              if (self.firstElementChild?.contains(target)) return;
               addActivitySet();
             }}
           >
@@ -476,8 +477,8 @@ const ActivityView: FC<{
                 <div
                   className={css`
                     position: absolute;
-                    left: -1%;
-                    top: 5%;
+                    left: -3%;
+                    top: 3%;
                   `}
                 >
                   <IconButton
@@ -495,9 +496,6 @@ const ActivityView: FC<{
                     />
                   </IconButton>
                   <Menu
-                    /**
-                     * TODO - Issue is menuitems display as inline-block
-                     */
                     id="activity-menu"
                     anchorEl={menu.ref}
                     open={!!menu.ref}
@@ -619,6 +617,19 @@ const ActivityView: FC<{
           </ol>
         </Columns>
         <Columns maxWidth>
+          {activity.sets.length > 2 && activity.sets[1].weight > 0 && (
+            <ChartContainer height={30} width="100%">
+              <LineChart data={activity.sets}>
+                <Line
+                  type="monotone"
+                  dataKey="weight"
+                  stroke="#99eb99"
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ChartContainer>
+          )}
           <ActivityNotesTextarea
             disabled={!editable}
             notes={notes}

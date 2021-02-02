@@ -29,7 +29,7 @@ export const App: FC = () => {
   const [user, setUser] = useState<DataState<firebase.User>>(DataState.Loading);
 
   useEffect(() => {
-    window.screen.orientation.lock('portrait');
+    window.screen.orientation.lock('portrait').catch(() => {});
   }, []);
 
   useEffect(() => {
