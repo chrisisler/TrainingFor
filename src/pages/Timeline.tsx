@@ -220,7 +220,7 @@ const TimelineView: FC = () => {
         .collection(DbPath.UserLogs)
         .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')
-        .limit(5)
+        .limit(3)
         .get()
         .then(snapshot =>
           snapshot.docs.map(doc => {
