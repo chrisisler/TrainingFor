@@ -1,27 +1,33 @@
 import { css } from '@emotion/css';
-import { Button, IconButton, Typography } from '@material-ui/core';
-import { ArrowBackIosRounded, DeleteOutline, Done } from '@material-ui/icons';
+import {
+  ClickAwayListener,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@material-ui/core';
+import { MoreVert } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { TrainingLogEditorView } from '../components/TrainingLogView';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { useUser } from '../hooks';
+import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const [activityName, setActivityName] = useState<string>('');
 
-  const location = useLocation<{ from?: Location }>();
   const history = useHistory();
   const user = useUser();
   const { logId } = useParams<{ logId?: string }>();
+  const menu = useMaterialMenu();
 
   const [logDoc, setLogDoc] = useState<
     DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
@@ -109,69 +115,103 @@ export const TrainingLogEditor: FC = () => {
             height: 100%;
           `}
         >
-          <Rows between center maxWidth padding={`0 ${Pad.Medium}`}>
-            <IconButton
-              aria-label="Done training"
-              onClick={() => history.push(Paths.account)}
-            >
-              {location.state?.from?.pathname.includes(Paths.account) ? (
-                <ArrowBackIosRounded color="primary" />
-              ) : (
-                <Done color="primary" />
-              )}
-            </IconButton>
-            <IconButton aria-label="Edit log name" onClick={renameLog}>
-              <Typography variant="subtitle1" color="textSecondary">
-                {log.title}
-              </Typography>
-            </IconButton>
-            <IconButton aria-label="Delete training log" onClick={deleteLog}>
-              <DeleteOutline color="action" />
-            </IconButton>
-          </Rows>
           <Columns
-            pad={Pad.Small}
-            padding={`0 ${Pad.Large} ${Pad.Medium}`}
+            padding={`${Pad.Medium} ${Pad.Large}`}
             className={css`
               border-bottom: 1px solid lightgray;
               min-height: fit-content;
             `}
           >
+            <Rows center maxWidth between>
+              <Typography variant="h6" color="textPrimary">
+                {log.title}
+              </Typography>
+              <ClickAwayListener onClickAway={menu.close}>
+                <div>
+                  <IconButton
+                    aria-label="Open log menu"
+                    aria-controls="log-menu"
+                    aria-haspopup="true"
+                    onClick={menu.open}
+                    size="small"
+                  >
+                    <MoreVert
+                      className={css`
+                        color: lightgray;
+                      `}
+                    />
+                  </IconButton>
+                  <Menu
+                    id="log-menu"
+                    anchorEl={menu.ref}
+                    open={!!menu.ref}
+                    onClose={menu.close}
+                    MenuListProps={{ dense: true }}
+                  >
+                    <MenuItem onClick={renameLog}>Edit title</MenuItem>
+                    <MenuItem onClick={deleteLog}>
+                      <b>Delete training log</b>
+                    </MenuItem>
+                  </Menu>
+                </div>
+              </ClickAwayListener>
+            </Rows>
             {DataState.isReady(logDate) &&
               (!logDate ? null : (
-                <Typography variant="body1" color="textPrimary">
-                  {format(logDate, Format.date)}
-                  <br />
-                  {format(logDate, Format.time)}
-                </Typography>
+                <Rows center pad={Pad.XSmall}>
+                  <Typography variant="body2" color="textPrimary">
+                    {format(logDate, Format.time)}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {format(logDate, Format.date)}
+                  </Typography>
+                </Rows>
               ))}
-            <Rows maxWidth as="form" onSubmit={addActivity}>
+            <Rows
+              maxWidth
+              as="form"
+              onSubmit={addActivity}
+              padding={`${Pad.Medium} 0 0 0`}
+              pad={Pad.Medium}
+            >
               <input
                 type="text"
-                placeholder="Enter Activity"
+                placeholder="Add an activity..."
                 value={activityName}
                 onChange={event => setActivityName(event.target.value)}
                 className={css`
                   box-sizing: content-box;
                   width: 100%;
-                  padding: ${Pad.Medium};
-                  border: 1px solid lightgray;
-                  border-radius: 5px;
+                  border: none;
                   font-size: 1em;
                   box-shadow: none;
+                  outline: none;
+                  font-weight: 400;
+                  color: #000;
+                  padding: ${Pad.XSmall} 0;
+
+                  &::placeholder {
+                    font-weight: 600;
+                  }
                 `}
               />
               {activityName.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="primary"
+                <button
                   className={css`
-                    margin: 0 0 0 ${Pad.Medium} !important;
+                    padding: ${Pad.Small} ${Pad.Medium};
+                    border-radius: 5px;
+                    border: 1px solid lightgray;
+                    background-color: transparent;
+                    text-transform: uppercase;
+                    font-size: 0.8em;
+                    font-weight: 600;
+                    outline: none;
+                    color: rgba(0, 0, 0, 0.87);
                   `}
                   onClick={addActivity}
                 >
                   Add
-                </Button>
+                </button>
               )}
             </Rows>
           </Columns>
