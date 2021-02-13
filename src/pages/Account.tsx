@@ -5,7 +5,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Skeleton,
   Typography,
 } from '@material-ui/core';
 import { MoreHoriz, Replay } from '@material-ui/icons';
@@ -189,17 +188,7 @@ export const Account: FC = () => {
           </ClickAwayListener>
         )}
       </Rows>
-      <DataStateView
-        data={logs}
-        loading={() => (
-          <>
-            <Skeleton width="45%" />
-            <Skeleton height={80} variant="rectangular" />
-            <Skeleton height={80} variant="rectangular" />
-            <Skeleton height={80} variant="rectangular" />
-          </>
-        )}
-      >
+      <DataStateView data={logs}>
         {logs =>
           logs.length ? (
             <>
