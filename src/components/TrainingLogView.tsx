@@ -411,7 +411,8 @@ const ActivityView: FC<{
             displayName: user.displayName,
           },
         };
-        setComment('');
+        // Hide (and unfocus) the comment input.
+        setComment(null);
         activityDocument
           .collection(DbPath.UserLogActivityComments)
           .add(newComment);
