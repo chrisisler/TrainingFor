@@ -3,7 +3,12 @@ import 'react-toastify/dist/ReactToastify.min.css';
 import { css } from '@emotion/css';
 import firebase from 'firebase/app';
 import React, { FC, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Redirect,
+  Route,
+  Switch,
+} from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
 import { ViewWithNavBar } from './components/NavBar';
@@ -66,8 +71,11 @@ export const App: FC = () => {
               <Route exact path={Paths.logIn}>
                 <LogIn />
               </Route>
-              <Route path={Paths.signUp}>
+              <Route exact path={Paths.signUp}>
                 <SignUp />
+              </Route>
+              <Route path="/">
+                <Redirect to={Paths.logIn} />
               </Route>
             </Switch>
           )}
@@ -100,10 +108,13 @@ export const App: FC = () => {
                     <Account />
                   </ViewWithNavBar>
                 </Route>
-                <Route path={Paths.newTraining}>
+                <Route exact path={Paths.newTraining}>
                   <ViewWithNavBar>
                     <NewTraining />
                   </ViewWithNavBar>
+                </Route>
+                <Route path="/">
+                  <Redirect to={Paths.newTraining} />
                 </Route>
               </Switch>
             </UserProvider>
