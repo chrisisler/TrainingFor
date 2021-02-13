@@ -159,7 +159,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
   const logDate = TrainingLog.getDate(log);
 
   return (
-    <DataStateView data={activities} error={() => null}>
+    <DataStateView data={activities} error={() => null} loading={() => null}>
       {activities => (
         <div
           className={css`
