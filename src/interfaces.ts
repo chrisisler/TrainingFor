@@ -48,10 +48,7 @@ export interface ActivitySet {
   notes: null | string;
   status: ActivityStatus;
   weight: number;
-  /**
-   * Number of repititions or amount of time the set consumed.
-   */
-  // count: number;
+  repCount: null | number;
 }
 
 export enum ActivityStatus {

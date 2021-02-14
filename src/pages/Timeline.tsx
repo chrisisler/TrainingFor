@@ -121,7 +121,7 @@ export const Timeline: FC = () => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search TrainingFor"
+            placeholder="Search TrainingFor..."
             value={search}
             // TODO Move open & closeSuggestions out of this listener
             onChange={event => {

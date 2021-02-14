@@ -78,12 +78,16 @@ export const TrainingLogEditor: FC = () => {
       setActivityName('');
       try {
         const activitiesColl = logDoc.ref.collection(DbPath.UserLogActivities);
-        const { size: activitiesCount } = await activitiesColl.get();
+        const { docs } = await activitiesColl
+          .orderBy('position', 'desc')
+          .limit(1)
+          .get();
+        const prevMaxPosition = docs[0]?.get('position') ?? 0;
         const newActivity: Omit<Activity, 'id'> = {
           name: activityName,
           notes: null,
           sets: [],
-          position: activitiesCount + 1,
+          position: prevMaxPosition + 1,
           attachmentUrl: null,
         };
         activitiesColl.add(newActivity);

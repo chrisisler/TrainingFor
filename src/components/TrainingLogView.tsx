@@ -46,7 +46,7 @@ import {
 import { Columns, Pad, Rows } from '../style';
 import { AppLink } from './AppLink';
 
-const activityViewContainerCss = css`
+const activityViewContainerStyle = css`
   display: flex;
   flex-direction: column;
 `;
@@ -92,7 +92,7 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
               height: 100%;
               width: 100%;
               overflow-y: scroll;
-              ${activityViewContainerCss}
+              ${activityViewContainerStyle}
             `}
           >
             {activities.map(({ id }, index) => (
@@ -186,7 +186,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
               </Typography>
             </Rows>
           </Columns>
-          <div className={activityViewContainerCss}>
+          <div className={activityViewContainerStyle}>
             {activities.map(({ id }, index) => (
               <ActivityView
                 key={id}
@@ -282,12 +282,15 @@ const ActivityView: FC<{
   }, [activity.attachmentUrl, activityDocument, menu]);
 
   const addActivitySet = useCallback(() => {
-    const weight = activity.sets[activity.sets.length - 1]?.weight ?? 0;
+    const lastSet = activity.sets[activity.sets.length - 1];
+    const weight = lastSet?.weight ?? 0;
+    const repCount = lastSet?.repCount ?? null;
     const newSet: ActivitySet = {
       uuid: uuid(),
       name: `Set ${activity.sets.length + 1}`,
       notes: null,
       weight,
+      repCount,
       status: ActivityStatus.Unattempted,
     };
     try {
@@ -780,7 +783,9 @@ const ActivitySetView: FC<{
   activityDocument: firebase.firestore.DocumentReference<Activity>;
 }> = ({ index, sets, editable, activityDocument }) => {
   const set = sets[index];
+
   const [weight, setWeight] = useState(set.weight);
+  const [repCount, setRepCount] = useState(set.repCount);
 
   const menu = useMaterialMenu();
 
@@ -821,16 +826,29 @@ const ActivitySetView: FC<{
     }
   }, [activityDocument, set, menu]);
 
-  const updateSetWeight = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      sets[index].weight = Number(event.target.value);
+  const updateSets = useCallback(
+    (sets: ActivitySet[]) => {
       try {
         activityDocument.set({ sets } as Partial<Activity>, { merge: true });
       } catch (error) {
         toast.error(error.message);
       }
     },
-    [activityDocument, index, sets]
+    [activityDocument]
+  );
+
+  const setInputStyle = useMemo(
+    () => css`
+      background-color: transparent;
+      width: 4ch;
+      font-size: 1em;
+      border: none;
+      outline: none;
+      padding: 0;
+      font-family: sans-serif;
+      font-style: italic;
+    `,
+    []
   );
 
   return (
@@ -862,7 +880,12 @@ const ActivitySetView: FC<{
           {set.status}
         </button>
       </Rows>
-      <Rows center>
+      <div
+        className={css`
+          display: flex;
+          align-items: baseline;
+        `}
+      >
         <input
           disabled={!editable}
           type="tel"
@@ -875,49 +898,82 @@ const ActivitySetView: FC<{
             if (Number.isNaN(event.target.value)) return;
             setWeight(Number(event.target.value));
           }}
-          onBlur={updateSetWeight}
+          onBlur={event => {
+            sets[index].weight = Number(event.target.value);
+            updateSets(sets);
+          }}
           className={css`
-            background-color: transparent;
-            width: 4ch;
-            color: gray;
-            border: 0;
-            font-family: monospace;
-            text-align: center;
+            ${setInputStyle}
+            font-weight: 400;
+            text-align: right;
+            color: rgba(0, 0, 0, 0.87);
           `}
         />
-        {editable && (
-          <ClickAwayListener onClickAway={menu.close}>
-            <div>
-              <IconButton
-                disabled={!editable}
-                size="small"
-                aria-label="Open set menu"
-                aria-controls="set-menu"
-                aria-haspopup="true"
-                onClick={menu.open}
-              >
-                <MoreHoriz
-                  className={css`
-                    color: lightgray;
-                  `}
-                />
-              </IconButton>
-              <Menu
-                id="set-menu"
-                anchorEl={menu.ref}
-                open={!!menu.ref}
-                onClose={menu.close}
-                MenuListProps={{ dense: true }}
-              >
-                <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
-                <MenuItem onClick={deleteSet}>
-                  <b>Delete set</b>
-                </MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
-        )}
-      </Rows>
+        <p
+          className={css`
+            font-family: monospace;
+            font-weight: 0.8em;
+            font-weight: 600;
+            font-style: italic;
+            color: rgba(0, 0, 0, 0.52);
+          `}
+        >
+          x
+        </p>
+        <input
+          disabled={!editable}
+          type="tel"
+          min={0}
+          max={999}
+          name="repCount"
+          value={repCount ?? 0}
+          onChange={event => {
+            if (Number.isNaN(event.target.value)) return;
+            setRepCount(Number(event.target.value));
+          }}
+          onBlur={event => {
+            sets[index].repCount = Number(event.target.value);
+            updateSets(sets);
+          }}
+          className={css`
+            ${setInputStyle}
+            color: rgba(0, 0, 0, 0.52);
+            font-weight: 600;
+          `}
+        />
+      </div>
+      {editable && (
+        <ClickAwayListener onClickAway={menu.close}>
+          <div>
+            <IconButton
+              disabled={!editable}
+              size="small"
+              aria-label="Open set menu"
+              aria-controls="set-menu"
+              aria-haspopup="true"
+              onClick={menu.open}
+            >
+              <MoreHoriz
+                className={css`
+                  color: lightgray;
+                `}
+              />
+            </IconButton>
+            <Menu
+              id="set-menu"
+              anchorEl={menu.ref}
+              open={!!menu.ref}
+              onClose={menu.close}
+              MenuListProps={{ dense: true }}
+            >
+              <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
+              <MenuItem onClick={deleteSet}>
+                <b>Delete set</b>
+              </MenuItem>
+            </Menu>
+          </div>
+        </ClickAwayListener>
+      )}
     </Rows>
   );
 };
