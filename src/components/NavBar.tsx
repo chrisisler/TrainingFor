@@ -42,7 +42,7 @@ const NavBar: FC = () => {
   const linkStyle = useCallback(
     (path: string) =>
       css`
-        color: ${pathname === path ? 'blue' : '#555'} !important;
+        color: ${pathname === path ? 'gray' : 'lightgray'} !important;
       `,
     [pathname]
   );

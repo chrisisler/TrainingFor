@@ -144,7 +144,7 @@ export const Timeline: FC = () => {
               padding: ${Pad.Small};
             `}
           >
-            <SearchOutlined htmlColor="gray" />
+            <SearchOutlined htmlColor="lightgray" />
           </div>
         </Rows>
       </Rows>
