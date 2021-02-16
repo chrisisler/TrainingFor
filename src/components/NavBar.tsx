@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import styled from '@emotion/styled';
 import { IconButton, Link } from '@material-ui/core';
-import { ClearAll, Create, Person } from '@material-ui/icons';
+import { Add, Forum, Person } from '@material-ui/icons';
 import React, { FC, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -42,7 +42,7 @@ const NavBar: FC = () => {
   const linkStyle = useCallback(
     (path: string) =>
       css`
-        color: ${pathname === path ? 'gray' : 'lightgray'} !important;
+        color: ${pathname === path ? '#222' : 'darkgray'} !important;
       `,
     [pathname]
   );
@@ -55,7 +55,7 @@ const NavBar: FC = () => {
           className={linkStyle(Paths.timeline)}
           to={Paths.timeline}
         >
-          <ClearAll />
+          <Forum />
         </Link>
       </IconButton>
       <IconButton aria-label="Start Training">
@@ -64,7 +64,7 @@ const NavBar: FC = () => {
           className={linkStyle(Paths.newTraining)}
           to={Paths.newTraining}
         >
-          <Create />
+          <Add />
         </Link>
       </IconButton>
       <IconButton aria-label="Navigate to account">
