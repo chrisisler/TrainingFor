@@ -52,14 +52,15 @@ export const Account: FC = () => {
     [userId, user.uid]
   );
 
-  const [past7Days] = useDataState(async () => {
-    const last7Days = new Date(Date.now() - Milliseconds.Day * 7);
+  /** A list of tuples mapping days of the week to the existence of logs. */
+  const [logsPast7Days] = useDataState(async () => {
+    const past7Days = new Date(Date.now() - Milliseconds.Day * 7);
     const snapshot = await db
       .collection(DbPath.Users)
       .doc(userId ?? user.uid)
       .collection(DbPath.UserLogs)
       .withConverter(DbConverter.TrainingLog)
-      .where('timestamp', '>', last7Days)
+      .where('timestamp', '>', past7Days)
       .get();
     const logDates = snapshot.docs.flatMap(doc => {
       const log = doc.data();
@@ -77,13 +78,13 @@ export const Account: FC = () => {
       });
   }, [userId, user.uid]);
 
-  const [logCountLast30Days] = useDataState(() => {
-    const last30days = new Date(Date.now() - Milliseconds.Day * 30);
+  const [logCountPast30Days] = useDataState(() => {
+    const past30days = new Date(Date.now() - Milliseconds.Day * 30);
     return db
       .collection(DbPath.Users)
       .doc(userId ?? user.uid)
       .collection(DbPath.UserLogs)
-      .where('timestamp', '>', last30days)
+      .where('timestamp', '>', past30days)
       .get()
       .then(({ size }) => size);
   }, [userId, user.uid]);
@@ -226,14 +227,14 @@ export const Account: FC = () => {
                 `}
               >
                 <Statistic text="training logs" value={logs.length} />
-                {DataState.isReady(logCountLast30Days) && (
+                {DataState.isReady(logCountPast30Days) && (
                   <Statistic
-                    text="in the last 30 days"
-                    value={logCountLast30Days}
+                    text="in the past 30 days"
+                    value={logCountPast30Days}
                   />
                 )}
               </Rows>
-              <DataStateView data={past7Days}>
+              <DataStateView data={logsPast7Days}>
                 {past7Days => (
                   <Columns pad={Pad.Medium}>
                     <Typography variant="body2" color="textSecondary">
