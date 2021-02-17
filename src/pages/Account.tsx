@@ -14,12 +14,14 @@ import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { Format, Paths } from '../constants';
+import { Format, Milliseconds, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useNewTraining, useUser } from '../hooks';
 import { ActivityStatus, TrainingLog } from '../interfaces';
 import { Columns, Pad, Rows } from '../style';
+
+const modulo = (n: number, m: number) => ((n % m) + m) % m;
 
 /**
  * Presents the currently authenticated user and their logs OR presents another
@@ -50,8 +52,33 @@ export const Account: FC = () => {
     [userId, user.uid]
   );
 
+  const [past7Days] = useDataState(async () => {
+    const last7Days = new Date(Date.now() - Milliseconds.Day * 7);
+    const snapshot = await db
+      .collection(DbPath.Users)
+      .doc(userId ?? user.uid)
+      .collection(DbPath.UserLogs)
+      .withConverter(DbConverter.TrainingLog)
+      .where('timestamp', '>', last7Days)
+      .get();
+    const logDates = snapshot.docs.flatMap(doc => {
+      const log = doc.data();
+      const date = TrainingLog.getDate(log);
+      return date ? [date.getDate()] : [];
+    });
+    return Array(7)
+      .fill(new Date())
+      .map((today, index): [string, boolean] => {
+        const date = today.getDate() - index;
+        const dayIndex = modulo(today.getDay() - index, 7);
+        const dayName = Weekdays[dayIndex].slice(0, 2);
+        if (logDates.includes(date)) return [dayName, true];
+        return [dayName, false];
+      });
+  }, [userId, user.uid]);
+
   const [logCountLast30Days] = useDataState(() => {
-    const last30days = new Date(Date.now() - 2592000000);
+    const last30days = new Date(Date.now() - Milliseconds.Day * 30);
     return db
       .collection(DbPath.Users)
       .doc(userId ?? user.uid)
@@ -206,6 +233,40 @@ export const Account: FC = () => {
                   />
                 )}
               </Rows>
+              <DataStateView data={past7Days}>
+                {past7Days => (
+                  <Columns pad={Pad.Medium}>
+                    <Typography variant="body2" color="textSecondary">
+                      <b>Past 7 Days</b>
+                    </Typography>
+                    <Rows between padding={`0 ${Pad.Large} ${Pad.Small}`}>
+                      {past7Days.map(([dayName, hasLog]) => (
+                        <div key={dayName}>
+                          <p
+                            className={css`
+                              color: ${hasLog
+                                ? 'rgba(0, 0, 0, 0.87)'
+                                : 'rgba(0, 0, 0, 0.52)'};
+                              font-weight: ${hasLog ? 600 : 400};
+                            `}
+                          >
+                            {dayName}
+                          </p>
+                          {hasLog && (
+                            <div
+                              className={css`
+                                height: 2px;
+                                width: 100%;
+                                background-color: royalblue;
+                              `}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </Rows>
+                  </Columns>
+                )}
+              </DataStateView>
               <Columns pad={Pad.Large}>
                 {logs.map(log => (
                   <TrainingLogPreview log={log} key={log.id} />

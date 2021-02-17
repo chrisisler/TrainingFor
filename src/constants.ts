@@ -8,6 +8,20 @@ export enum TabIndex {
   Focusable = 0,
 }
 
+export enum Weekdays {
+  Sunday,
+  Monday,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday,
+  Saturday,
+}
+
+export enum Milliseconds {
+  Day = 86400000,
+}
+
 export const Paths = {
   account: '/account',
   logView: (userId = ':userId', logId = ':logId') =>

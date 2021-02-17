@@ -59,10 +59,11 @@
       "@typescript-eslint"
     ],
     "rules": {
-      "simple-import-sort/imports": "error",
+      "simple-import-sort/imports": "warn",
       "sort-imports": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-empty-function": "off"
+      "@typescript-eslint/no-empty-function": "off",
+      "no-debugger": "off"
     }
   },
   "browserslist": {
