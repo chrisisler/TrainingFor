@@ -82,7 +82,7 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
   }, [log.authorId, log.id]);
 
   return (
-    <DataStateView data={activities} loading={() => null}>
+    <DataStateView data={activities}>
       {activities =>
         activities.length ? (
           <FlipMove
@@ -116,7 +116,7 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
                   padding: ${Pad.Large};
                 `}
               >
-                No activities, add one to get started!
+                No activities!
               </Typography>
             </FlipMoveChild>
           </FlipMove>
@@ -845,7 +845,6 @@ const ActivitySetView: FC<{
       outline: none;
       padding: 0;
       font-family: sans-serif;
-      font-style: italic;
     `,
     []
   );
@@ -937,6 +936,7 @@ const ActivitySetView: FC<{
             ${setInputStyle}
             color: ${Color.FontSecondary};
             font-weight: 600;
+            font-style: italic;
           `}
         />
       </div>

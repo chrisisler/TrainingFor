@@ -59,7 +59,7 @@ export const App: FC = () => {
         `}
         toastClassName={css`
           border-radius: 5px;
-          font-weight: 500;
+          font-weight: 400;
           padding-left: ${Pad.Medium};
         `}
       />

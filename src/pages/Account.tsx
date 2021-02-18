@@ -312,7 +312,7 @@ const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
       <p
         className={css`
           font-size: 0.75em;
-          font-weight: 500;
+          font-weight: 600;
           text-transform: uppercase;
           color: ${Color.FontSecondary};
           width: 11ch;

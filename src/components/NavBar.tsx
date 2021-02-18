@@ -38,7 +38,6 @@ export const ViewWithNavBar: FC<{
 const NavBar: FC = () => {
   const { pathname } = useLocation();
 
-  // This is to highlight the active navigation
   const linkStyle = useCallback(
     (path: string) =>
       css`

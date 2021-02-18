@@ -15,11 +15,7 @@ type FirestoreTimestamp = null | firebase.firestore.FieldValue;
 export interface User extends FirestoreDocument {
   creationTime: FirestoreTimestamp;
   displayName: string;
-
-  /** List of users (IDs) this user is following. */
   following: string[];
-
-  /** List of users (IDs) following this user. */
   followers: string[];
 }
 
@@ -90,9 +86,6 @@ export const Activity = {
 
 // eslint-disable-next-line
 export const TrainingLog = {
-  /**
-   * Attempts to convert the timestamp of a log to a date.
-   */
   getDate: (log: TrainingLog): Date | null => {
     if (!log.timestamp) return null;
     return (log.timestamp as firebase.firestore.Timestamp)?.toDate();

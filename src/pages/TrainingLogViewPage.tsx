@@ -29,7 +29,6 @@ export const TrainingLogViewPage: FC = () => {
               if (!log) {
                 return DataState.error('TrainingLog document does not exist.');
               }
-              // The viewed user is the author the viewed log
               log.authorId = userId;
               return log;
             }),
