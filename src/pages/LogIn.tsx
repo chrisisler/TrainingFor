@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 
 import { Paths } from '../constants';
 import { auth } from '../firebase';
-import { Columns, Pad } from '../style';
+import { Color, Columns, Font, Pad } from '../style';
 
 export const LogIn: FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -84,8 +84,8 @@ export const LogIn: FC = () => {
               max-width: fit-content;
               margin: 0;
               padding: 0;
-              color: gray;
-              font-size: 0.8em;
+              color: ${Color.ActionPrimary};
+              font-size: ${Font.Small};
               margin-left: auto;
             `}
             onClick={resetPassword}

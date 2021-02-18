@@ -43,7 +43,7 @@ import {
   Comment,
   TrainingLog,
 } from '../interfaces';
-import { Columns, Pad, Rows } from '../style';
+import { Color, Columns, Font, Pad, Rows } from '../style';
 import { AppLink } from './AppLink';
 
 const activityViewContainerStyle = css`
@@ -495,7 +495,7 @@ const ActivityView: FC<{
                   >
                     <MoreVert
                       className={css`
-                        color: gray;
+                        color: ${Color.ActionPrimary};
                       `}
                     />
                   </IconButton>
@@ -563,9 +563,9 @@ const ActivityView: FC<{
               className={css`
                 position: absolute;
                 left: 10%;
-                color: rgba(0, 0, 0, 0.87);
+                color: ${Color.FontPrimary};
                 bottom: 8%;
-                font-size: 1.3em;
+                font-size: 1.3rem;
                 text-transform: uppercase;
               `}
             >
@@ -587,7 +587,7 @@ const ActivityView: FC<{
           </div>
           <p
             className={css`
-              color: rgba(0, 0, 0, 0.87);
+              color: ${Color.FontPrimary};
             `}
           >
             {activity.name}
@@ -646,11 +646,11 @@ const ActivityView: FC<{
             onBlur={updateActivityNotes}
             className={css`
               width: 100%;
-              color: gray;
+              color: ${Color.ActionPrimary};
               border: 0;
               padding: 0;
               resize: none;
-              font-size: 0.8em;
+              font-size: ${Font.Small};
               font-style: italic;
               font-family: inherit;
               background-color: transparent;
@@ -692,8 +692,8 @@ const ActivityView: FC<{
               <Columns
                 pad={Pad.XSmall}
                 className={css`
-                  font-size: 0.8em;
-                  color: rgba(0, 0, 0, 0.52);
+                  font-size: ${Font.Small};
+                  color: ${Color.FontSecondary};
                 `}
               >
                 {comments.map(comment => (
@@ -740,8 +740,8 @@ const ActivityView: FC<{
                   }}
                   className={css`
                     background-color: transparent;
-                    font-size: 0.8em;
-                    color: rgba(0, 0, 0, 0.87);
+                    font-size: ${Font.Small};
+                    color: ${Color.FontPrimary};
                     border: none;
                     flex: 1;
                     width: 100%;
@@ -758,10 +758,10 @@ const ActivityView: FC<{
                     padding: 0;
                     background-color: transparent;
                     text-transform: uppercase;
-                    font-size: 0.8em;
+                    font-size: ${Font.Small};
                     font-weight: 600;
                     outline: none;
-                    color: rgba(0, 0, 0, 0.52);
+                    color: ${Color.FontSecondary};
                   `}
                   onClick={addActivityComment}
                 >
@@ -841,7 +841,6 @@ const ActivitySetView: FC<{
     () => css`
       background-color: transparent;
       width: 4ch;
-      font-size: 1em;
       border: none;
       outline: none;
       padding: 0;
@@ -857,8 +856,8 @@ const ActivitySetView: FC<{
         <Typography
           variant="subtitle1"
           className={css`
-            font-size: 0.8em;
-            color: lightgray;
+            font-size: ${Font.Small};
+            color: ${Color.ActionSecondary};
             font-style: italic;
           `}
         >
@@ -868,8 +867,8 @@ const ActivitySetView: FC<{
           disabled={!editable}
           onClick={cycleSetStatus}
           className={css`
-            color: gray;
-            font-size: 0.75em;
+            color: ${Color.ActionPrimary};
+            font-size: 0.75rem;
             border: 0;
             font-weight: 800;
             background-color: transparent;
@@ -906,16 +905,15 @@ const ActivitySetView: FC<{
             ${setInputStyle}
             font-weight: 400;
             text-align: right;
-            color: rgba(0, 0, 0, 0.87);
+            color: ${Color.FontPrimary};
           `}
         />
         <p
           className={css`
             font-family: monospace;
-            font-weight: 0.8em;
             font-weight: 600;
             font-style: italic;
-            color: rgba(0, 0, 0, 0.52);
+            color: ${Color.FontSecondary};
           `}
         >
           x
@@ -937,7 +935,7 @@ const ActivitySetView: FC<{
           }}
           className={css`
             ${setInputStyle}
-            color: rgba(0, 0, 0, 0.52);
+            color: ${Color.FontSecondary};
             font-weight: 600;
           `}
         />
@@ -955,7 +953,7 @@ const ActivitySetView: FC<{
             >
               <MoreHoriz
                 className={css`
-                  color: lightgray;
+                  color: ${Color.ActionSecondary};
                 `}
               />
             </IconButton>

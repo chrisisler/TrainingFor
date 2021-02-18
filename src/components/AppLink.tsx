@@ -3,8 +3,10 @@ import { Link } from '@material-ui/core';
 import React, { FC, ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 
+import { Color } from '../style';
+
 const style = css`
-  color: rgba(0, 0, 0, 0.87) !important;
+  color: ${Color.FontPrimary} !important;
   text-decoration: underline !important;
 `;
 

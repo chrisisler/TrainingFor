@@ -133,7 +133,6 @@ export const Timeline: FC = () => {
             }}
             className={css`
               width: 100%;
-              font-size: 1em;
               padding: ${Pad.Small} ${Pad.Medium};
               border: 0;
               background-color: #fff;

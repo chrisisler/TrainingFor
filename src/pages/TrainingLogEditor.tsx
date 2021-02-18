@@ -19,7 +19,7 @@ import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog } from '../interfaces';
-import { Columns, Pad, Rows } from '../style';
+import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const [activityName, setActivityName] = useState<string>('');
@@ -141,7 +141,7 @@ export const TrainingLogEditor: FC = () => {
                   >
                     <MoreVert
                       className={css`
-                        color: lightgray;
+                        color: ${Color.ActionSecondary};
                       `}
                     />
                   </IconButton>
@@ -187,7 +187,6 @@ export const TrainingLogEditor: FC = () => {
                   box-sizing: content-box;
                   width: 100%;
                   border: none;
-                  font-size: 1em;
                   box-shadow: none;
                   outline: none;
                   font-weight: 400;
@@ -207,10 +206,10 @@ export const TrainingLogEditor: FC = () => {
                     border: 1px solid lightgray;
                     background-color: transparent;
                     text-transform: uppercase;
-                    font-size: 0.8em;
+                    font-size: ${Font.Small};
                     font-weight: 600;
                     outline: none;
-                    color: rgba(0, 0, 0, 0.87);
+                    color: ${Color.FontPrimary};
                   `}
                   onClick={addActivity}
                 >

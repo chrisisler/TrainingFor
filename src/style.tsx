@@ -1,6 +1,16 @@
 import styled from '@emotion/styled';
 
-export enum Color {}
+export enum Font {
+  Small = '0.8rem',
+  Medium = '1rem',
+}
+
+export enum Color {
+  FontPrimary = 'rgba(0, 0, 0, 0.87)',
+  FontSecondary = 'rgba(0, 0, 0, 0.52)',
+  ActionPrimary = '#808080',
+  ActionSecondary = '#d3d3d3',
+}
 
 export enum Pad {
   None = '0',

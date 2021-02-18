@@ -19,7 +19,7 @@ import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useNewTraining, useUser } from '../hooks';
 import { ActivityStatus, TrainingLog } from '../interfaces';
-import { Columns, Pad, Rows } from '../style';
+import { Color, Columns, Pad, Rows } from '../style';
 
 const modulo = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -189,7 +189,7 @@ export const Account: FC = () => {
               >
                 <MoreHoriz
                   className={css`
-                    color: lightgray;
+                    color: ${Color.ActionSecondary};
                   `}
                 />
               </IconButton>
@@ -246,8 +246,8 @@ export const Account: FC = () => {
                           <p
                             className={css`
                               color: ${hasLog
-                                ? 'rgba(0, 0, 0, 0.87)'
-                                : 'rgba(0, 0, 0, 0.52)'};
+                                ? Color.FontPrimary
+                                : Color.FontSecondary};
                               font-weight: ${hasLog ? 600 : 400};
                             `}
                           >
@@ -314,7 +314,7 @@ const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
           font-size: 0.75em;
           font-weight: 500;
           text-transform: uppercase;
-          color: rgba(0, 0, 0, 0.52);
+          color: ${Color.FontSecondary};
           width: 11ch;
           overflow-x: hidden;
         `}
