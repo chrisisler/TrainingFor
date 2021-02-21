@@ -67,7 +67,7 @@ export const Account: FC = () => {
       const date = TrainingLog.getDate(log);
       return date ? [date.getDate()] : [];
     });
-    return Array(7)
+    return Array<Date>(7)
       .fill(new Date())
       .map((today, index): [string, boolean] => {
         const date = today.getDate() - index;
