@@ -459,8 +459,8 @@ const ActivityView: FC<{
         >
           <div
             className={css`
-              box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-              border-radius: 5px;
+              box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3);
+              border-radius: 8px;
               width: 80px;
               height: 80px;
               position: relative;
@@ -495,7 +495,7 @@ const ActivityView: FC<{
                   >
                     <MoreVert
                       className={css`
-                        color: ${Color.ActionPrimary};
+                        color: ${Color.ActionPrimaryGray};
                       `}
                     />
                   </IconButton>
@@ -563,10 +563,11 @@ const ActivityView: FC<{
               className={css`
                 position: absolute;
                 left: 10%;
-                color: ${Color.FontPrimary};
+                color: ${Color.ActionPrimaryBlue};
                 bottom: 8%;
                 font-size: 1.3rem;
                 text-transform: uppercase;
+                font-weight: 600;
               `}
             >
               {Activity.abbreviate(activity.name)}
@@ -580,7 +581,7 @@ const ActivityView: FC<{
             >
               <Add
                 className={css`
-                  color: dodgerblue;
+                  color: ${Color.ActionPrimaryBlue};
                 `}
               />
             </div>
@@ -646,7 +647,7 @@ const ActivityView: FC<{
             onBlur={updateActivityNotes}
             className={css`
               width: 100%;
-              color: ${Color.ActionPrimary};
+              color: ${Color.ActionPrimaryGray};
               border: 0;
               padding: 0;
               resize: none;
@@ -856,7 +857,7 @@ const ActivitySetView: FC<{
           variant="subtitle1"
           className={css`
             font-size: ${Font.Small};
-            color: ${Color.ActionSecondary};
+            color: ${Color.ActionSecondaryGray};
             font-style: italic;
           `}
         >
@@ -866,7 +867,7 @@ const ActivitySetView: FC<{
           disabled={!editable}
           onClick={cycleSetStatus}
           className={css`
-            color: ${Color.ActionPrimary};
+            color: ${Color.ActionPrimaryGray};
             font-size: 0.75rem;
             border: 0;
             font-weight: 800;
@@ -953,7 +954,7 @@ const ActivitySetView: FC<{
             >
               <MoreHoriz
                 className={css`
-                  color: ${Color.ActionSecondary};
+                  color: ${Color.ActionSecondaryGray};
                 `}
               />
             </IconButton>

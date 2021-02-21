@@ -84,7 +84,7 @@ export const LogIn: FC = () => {
               max-width: fit-content;
               margin: 0;
               padding: 0;
-              color: ${Color.ActionPrimary};
+              color: ${Color.ActionPrimaryGray};
               font-size: ${Font.Small};
               margin-left: auto;
             `}

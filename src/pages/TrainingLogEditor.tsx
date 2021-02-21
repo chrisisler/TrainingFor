@@ -141,7 +141,7 @@ export const TrainingLogEditor: FC = () => {
                   >
                     <MoreVert
                       className={css`
-                        color: ${Color.ActionSecondary};
+                        color: ${Color.ActionSecondaryGray};
                       `}
                     />
                   </IconButton>

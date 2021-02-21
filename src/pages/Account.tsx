@@ -189,7 +189,7 @@ export const Account: FC = () => {
               >
                 <MoreHoriz
                   className={css`
-                    color: ${Color.ActionSecondary};
+                    color: ${Color.ActionSecondaryGray};
                   `}
                 />
               </IconButton>
@@ -258,7 +258,7 @@ export const Account: FC = () => {
                               className={css`
                                 height: 2px;
                                 width: 100%;
-                                background-color: royalblue;
+                                background-color: ${Color.ActionPrimaryBlue};
                               `}
                             />
                           )}
@@ -304,7 +304,7 @@ const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
         className={css`
           font-size: 2.2em;
           line-height: 1em;
-          color: royalblue;
+          color: ${Color.ActionPrimaryBlue};
         `}
       >
         {value}

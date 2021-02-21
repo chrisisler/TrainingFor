@@ -8,8 +8,9 @@ export enum Font {
 export enum Color {
   FontPrimary = 'rgba(0, 0, 0, 0.87)',
   FontSecondary = 'rgba(0, 0, 0, 0.52)',
-  ActionPrimary = '#808080',
-  ActionSecondary = '#d3d3d3',
+  ActionPrimaryGray = '#808080', // gray
+  ActionSecondaryGray = '#d3d3d3', // lightgray
+  ActionPrimaryBlue = '#1e90ff', // dodgerblue
 }
 
 export enum Pad {
