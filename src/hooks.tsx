@@ -10,7 +10,7 @@ import {
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { Paths } from './constants';
+import { Paths, Weekdays } from './constants';
 import { db, DbPath } from './firebase';
 import { TrainingLog } from './interfaces';
 
@@ -51,7 +51,7 @@ export const useNewTraining = () => {
 
   return useCallback(async () => {
     const newLog: Omit<TrainingLog, 'id'> = {
-      title: 'Untitled',
+      title: `${Weekdays[new Date().getDay()]} Training`,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       notes: null,
       authorId: user.uid,

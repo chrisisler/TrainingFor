@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { Button } from '@material-ui/core';
 import formatDistanceToNow from 'date-fns/formatDistanceToNow';
-import React, { FC } from 'react';
+import React, { FC, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import { Paths } from '../constants';
@@ -13,6 +13,7 @@ import { Columns, Pad } from '../style';
 
 const trainingLabels = [
   'Go',
+  'Go Mode',
   'Start training',
   'Get after it',
   'What are you waiting for?',
@@ -26,6 +27,8 @@ export const NewTraining: FC = () => {
   const newTraining = useNewTraining();
   const user = useUser();
   const history = useHistory();
+
+  const randomTrainingLabel = useMemo(() => randomFrom(trainingLabels), []);
 
   const [lastLog] = useDataState(
     () =>
@@ -69,7 +72,7 @@ export const NewTraining: FC = () => {
           onClick={newTraining}
           size="large"
         >
-          {randomFrom(trainingLabels)}
+          {randomTrainingLabel}
         </Button>
         <Button
           disabled={!DataState.isReady(lastLogDay)}
