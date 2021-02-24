@@ -4,7 +4,9 @@ import {
   FC,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -92,4 +94,34 @@ export const useMaterialMenu = () => {
   );
 
   return menu;
+};
+
+export const useResizableInputRef = (): React.MutableRefObject<HTMLInputElement | null> => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const resizeInput = useCallback((node: HTMLInputElement) => {
+    if (node.value.length === 0) node.value = '0';
+    node.style.width = node.value.length + 'ch';
+  }, []);
+
+  // Adjust the input element width to the length of the value
+  useEffect(() => {
+    const node = inputRef.current;
+    if (!node) return;
+    const listener = event => resizeInput(event.currentTarget);
+    node.addEventListener('input', listener);
+    node.addEventListener('blur', listener);
+    return () => {
+      node.removeEventListener('input', listener);
+      node.removeEventListener('blur', listener);
+    };
+  }, [resizeInput]);
+
+  // Immediately set the input size to the existing value length on render
+  useEffect(() => {
+    if (!inputRef.current) return;
+    resizeInput(inputRef.current);
+  }, [resizeInput]);
+
+  return inputRef;
 };
