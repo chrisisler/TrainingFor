@@ -205,6 +205,7 @@ const ActivityView: FC<{
   const [comments, setComments] = useState<DataState<Comment[]>>(
     DataState.Empty
   );
+  const [isFirstSet, setIsFirstSet] = useState(activity.sets.length === 0);
 
   const menu = useMaterialMenu();
   const user = useUser();
@@ -262,6 +263,7 @@ const ActivityView: FC<{
   }, [activity.attachmentUrl, activityDocument, menu]);
 
   const addActivitySet = useCallback(() => {
+    setIsFirstSet(activity.sets.length === 0);
     const lastSet = activity.sets[activity.sets.length - 1];
     const weight = lastSet?.weight ?? 0;
     const repCount = lastSet?.repCount ?? null;
@@ -598,6 +600,7 @@ const ActivityView: FC<{
                 sets={activity.sets}
                 editable={editable}
                 activityDocument={activityDocument}
+                isFirstSet={isFirstSet}
               />
             </FlipMoveChild>
           ))}
@@ -699,7 +702,8 @@ const ActivitySetView: FC<{
   sets: ActivitySet[];
   editable: boolean;
   activityDocument: firebase.firestore.DocumentReference<Activity>;
-}> = ({ index, sets, editable, activityDocument }) => {
+  isFirstSet: boolean;
+}> = ({ index, sets, editable, activityDocument, isFirstSet }) => {
   const set = sets[index];
 
   const resizeWeightInput = useResizableInputRef();
@@ -773,20 +777,14 @@ const ActivitySetView: FC<{
     []
   );
 
-  // TODO
-  // const [selected, setSelected] = useEditorActionsMenu()
-  // const openEditorMenu = () => {
-  //   console.warn('Unimplemented!');
-  // };
+  useEffect(() => {
+    if (!resizeWeightInput.current) return;
+    if (!isFirstSet) return;
+    resizeWeightInput.current.focus();
+  }, [resizeWeightInput, isFirstSet]);
 
   return (
-    <Rows
-      center
-      between
-      // onClick={() => {
-      //   openEditorMenu();
-      // }}
-    >
+    <Rows center between>
       <Columns center>
         <Rows maxWidth center pad={Pad.Large}>
           <ClickAwayListener onClickAway={menu.close}>
