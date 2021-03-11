@@ -836,6 +836,9 @@ const ActivitySetView: FC<{
               max={999}
               name="weight"
               value={weight}
+              onClick={event => {
+                event.currentTarget.select();
+              }}
               onChange={event => {
                 if (Number.isNaN(event.target.value)) return;
                 setWeight(Number(event.target.value));
@@ -867,6 +870,9 @@ const ActivitySetView: FC<{
               max={999}
               name="repCount"
               value={repCount ?? 0}
+              onClick={event => {
+                event.currentTarget.select();
+              }}
               onChange={event => {
                 if (Number.isNaN(event.target.value)) return;
                 setRepCount(Number(event.target.value));
