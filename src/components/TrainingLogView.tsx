@@ -205,8 +205,6 @@ const ActivityView: FC<{
   const [comments, setComments] = useState<DataState<Comment[]>>(
     DataState.Empty
   );
-  const [isFirstSet, setIsFirstSet] = useState(activity.sets.length === 0);
-
   const menu = useMaterialMenu();
   const user = useUser();
 
@@ -263,7 +261,6 @@ const ActivityView: FC<{
   }, [activity.attachmentUrl, activityDocument, menu]);
 
   const addActivitySet = useCallback(() => {
-    setIsFirstSet(activity.sets.length === 0);
     const lastSet = activity.sets[activity.sets.length - 1];
     const weight = lastSet?.weight ?? 0;
     const repCount = lastSet?.repCount ?? null;
@@ -600,7 +597,6 @@ const ActivityView: FC<{
                 sets={activity.sets}
                 editable={editable}
                 activityDocument={activityDocument}
-                isFirstSet={isFirstSet}
               />
             </FlipMoveChild>
           ))}
@@ -702,8 +698,7 @@ const ActivitySetView: FC<{
   sets: ActivitySet[];
   editable: boolean;
   activityDocument: firebase.firestore.DocumentReference<Activity>;
-  isFirstSet: boolean;
-}> = ({ index, sets, editable, activityDocument, isFirstSet }) => {
+}> = ({ index, sets, editable, activityDocument }) => {
   const set = sets[index];
 
   const resizeWeightInput = useResizableInputRef();
@@ -777,12 +772,6 @@ const ActivitySetView: FC<{
     []
   );
 
-  useEffect(() => {
-    if (!resizeWeightInput.current) return;
-    if (!isFirstSet) return;
-    resizeWeightInput.current.focus();
-  }, [resizeWeightInput, isFirstSet]);
-
   return (
     <Rows center between>
       <Columns center>
@@ -836,7 +825,7 @@ const ActivitySetView: FC<{
               max={999}
               name="weight"
               value={weight}
-              onClick={event => {
+              onFocus={event => {
                 event.currentTarget.select();
               }}
               onChange={event => {
@@ -870,7 +859,7 @@ const ActivitySetView: FC<{
               max={999}
               name="repCount"
               value={repCount ?? 0}
-              onClick={event => {
+              onFocus={event => {
                 event.currentTarget.select();
               }}
               onChange={event => {
