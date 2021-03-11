@@ -1,3 +1,4 @@
+import { formatDuration, intervalToDuration } from 'date-fns';
 import firebase from 'firebase';
 
 interface FirestoreDocument {
@@ -6,7 +7,8 @@ interface FirestoreDocument {
 
 /**
  * The _actual_ return value of
- * `firebase.firestore.FieldValue.serverTimestamp()`.
+ * `firebase.firestore.FieldValue.serverTimestamp()` due to timestamps being
+ * null before they are calculated on the server.
  *
  * Sometimes Firestore timestamps are null before they exist.
  */
@@ -84,10 +86,24 @@ export const Activity = {
   },
 };
 
+const durationRegEx = /\d+\s+\w/;
+
 // eslint-disable-next-line
 export const TrainingLog = {
   getDate: (log: TrainingLog): Date | null => {
     if (!log.timestamp) return null;
     return (log.timestamp as firebase.firestore.Timestamp)?.toDate();
+  },
+  getDistance: (logTimestamp: FirestoreTimestamp): string => {
+    if (!logTimestamp) return '';
+    const logDate = (logTimestamp as firebase.firestore.Timestamp)?.toDate();
+    // `distance` is a string like "27 days 42 seconds"
+    const distance = formatDuration(
+      intervalToDuration({ start: logDate, end: new Date() })
+    );
+    // Select the first number, space, and first letter of the token, "27 d"
+    const matched = durationRegEx.exec(distance)?.[0];
+    if (!matched) throw Error('Unreachable');
+    return matched.replace(' ', '');
   },
 };

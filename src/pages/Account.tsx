@@ -332,6 +332,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   const { userId } = useParams<{ userId?: string }>();
 
   const logDate = TrainingLog.getDate(log);
+  const logDateDistance = TrainingLog.getDistance(log.timestamp);
 
   const repeatTraining = useCallback(async () => {
     if (!window.confirm('Repeat this training?')) return;
@@ -381,8 +382,8 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
     <Rows
       className={css`
         border-radius: 5px;
-        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
-        padding: ${Pad.Medium} ${Pad.Large};
+        border: 1px solid ${Color.ActionSecondaryGray};
+        padding: ${Pad.Large};
         min-height: fit-content;
       `}
     >
@@ -393,23 +394,24 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
             : () => history.push(Paths.logEditor(log.id), { from: location })
         }
       >
-        <Typography variant="body1" color="textSecondary">
+        <Typography variant="body1" color="textPrimary">
           {log.title}
         </Typography>
         {logDate && (
-          <Typography variant="body2" color="textPrimary">
-            {format(logDate, `${Format.date} - ${Format.time}`)}
+          <Typography variant="body2" color="textSecondary">
+            {format(logDate, `${Format.time}`)} / {logDateDistance}
           </Typography>
         )}
       </Columns>
       {!userId && (
         <IconButton
-          size="medium"
+          size="small"
           edge="end"
           aria-label="Repeat this training"
           onClick={repeatTraining}
           className={css`
             margin-left: auto !important;
+            color: ${Color.ActionPrimaryBlue} !important;
           `}
         >
           <Replay />

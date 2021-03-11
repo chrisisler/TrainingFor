@@ -43,7 +43,14 @@ export const TrainingLogEditor: FC = () => {
     return log;
   });
 
-  const logDate = DataState.map(log, l => TrainingLog.getDate(l));
+  const logDate = DataState.map(
+    log,
+    l => TrainingLog.getDate(l) ?? DataState.Empty
+  );
+
+  const logDateDistance = DataState.map(log, log =>
+    TrainingLog.getDistance(log.timestamp)
+  );
 
   // Subscribe to updates to the TrainingLog ID from the URL
   useEffect(() => {
@@ -210,41 +217,40 @@ export const TrainingLogEditor: FC = () => {
                 </div>
               </ClickAwayListener>
             </Rows>
-            {DataState.isReady(logDate) &&
-              (!logDate ? null : (
-                <Rows between>
-                  <Rows center pad={Pad.XSmall}>
-                    <Typography variant="body2" color="textPrimary">
-                      {format(logDate, Format.time)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {format(logDate, Format.date)}
-                    </Typography>
-                  </Rows>
-                  <Rows>
-                    <IconButton
-                      aria-label="Open previous log"
-                      size="small"
-                      className={css`
-                        color: ${Color.ActionPrimaryGray} !important;
-                      `}
-                      onClick={openPreviousLog}
-                    >
-                      <ArrowBackIosRounded fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Open next log"
-                      size="small"
-                      className={css`
-                        color: ${Color.ActionPrimaryGray} !important;
-                      `}
-                      onClick={openNextLog}
-                    >
-                      <ArrowForwardIosRounded fontSize="small" />
-                    </IconButton>
-                  </Rows>
+            {DataState.isReady(logDate) && (
+              <Rows between>
+                <Rows center pad={Pad.XSmall}>
+                  <Typography variant="body2" color="textPrimary">
+                    {format(logDate, Format.time)}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {logDateDistance}
+                  </Typography>
                 </Rows>
-              ))}
+                <Rows>
+                  <IconButton
+                    aria-label="Open previous log"
+                    size="small"
+                    className={css`
+                      color: ${Color.ActionPrimaryGray} !important;
+                    `}
+                    onClick={openPreviousLog}
+                  >
+                    <ArrowBackIosRounded fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    aria-label="Open next log"
+                    size="small"
+                    className={css`
+                      color: ${Color.ActionPrimaryGray} !important;
+                    `}
+                    onClick={openNextLog}
+                  >
+                    <ArrowForwardIosRounded fontSize="small" />
+                  </IconButton>
+                </Rows>
+              </Rows>
+            )}
             <Rows
               maxWidth
               as="form"
