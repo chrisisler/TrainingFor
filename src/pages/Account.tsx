@@ -52,7 +52,10 @@ export const Account: FC = () => {
     [userId, user.uid]
   );
 
-  /** A list of tuples mapping days of the week to the existence of logs. */
+  /**
+   * A list of days of the week as a string and whether a log for that day
+   * exists or not.
+   */
   const [logsPast7Days] = useDataState(async () => {
     const past7Days = new Date(Date.now() - Milliseconds.Day * 7);
     const snapshot = await db
@@ -62,7 +65,7 @@ export const Account: FC = () => {
       .withConverter(DbConverter.TrainingLog)
       .where('timestamp', '>', past7Days)
       .get();
-    const logDates = snapshot.docs.flatMap(doc => {
+    const loggedDates = snapshot.docs.flatMap(doc => {
       const log = doc.data();
       const date = TrainingLog.getDate(log);
       return date ? [date.getDate()] : [];
@@ -73,8 +76,7 @@ export const Account: FC = () => {
         const date = today.getDate() - index;
         const dayIndex = modulo(today.getDay() - index, 7);
         const dayName = Weekdays[dayIndex].slice(0, 2);
-        if (logDates.includes(date)) return [dayName, true];
-        return [dayName, false];
+        return [dayName, loggedDates.includes(date)];
       });
   }, [userId, user.uid]);
 
@@ -104,10 +106,6 @@ export const Account: FC = () => {
     [userId]
   );
 
-  /**
-   * If the current user is following the viewed user, unfollow them. Otherwise
-   * follow them. This is a no-op if viewing one's own account page.
-   */
   const toggleFollow = useCallback(async () => {
     if (!userId || !DataState.isReady(isFollowing)) return;
     try {
