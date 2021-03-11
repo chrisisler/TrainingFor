@@ -61,7 +61,7 @@ export interface Comment extends FirestoreDocument {
 }
 
 const isNotAlpha = /^[^A-Za-z_]+$/;
-const isAllCaps = /^[A-Z0-9]+$/;
+const whitespaceOrDash = /(\s+|-+)/;
 
 // eslint-disable-next-line
 export const Activity = {
@@ -74,10 +74,10 @@ export const Activity = {
   },
   abbreviate: (name: string): string => {
     return name
-      .split(' ')
+      .split(whitespaceOrDash)
       .flatMap(word => {
+        // Skip tokens that are not words
         if (isNotAlpha.test(word[0])) return [];
-        if (isAllCaps.test(word)) return [word];
         return [word[0]];
       })
       .join('');
