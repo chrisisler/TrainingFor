@@ -6,7 +6,11 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { MoreVert } from '@material-ui/icons';
+import {
+  ArrowBackIosRounded,
+  ArrowForwardIosRounded,
+  MoreVert,
+} from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useState } from 'react';
@@ -110,6 +114,52 @@ export const TrainingLogEditor: FC = () => {
     }
   }, [logDoc, history]);
 
+  const openPreviousLog = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm('Open previous log?')) return;
+    try {
+      const { docs } = await db
+        .collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserLogs)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        .startAfter(log.timestamp)
+        .get();
+      const doc = docs[0];
+      if (!doc) {
+        toast.warn('No log found');
+        return;
+      }
+      history.push(Paths.logEditor(doc.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, history]);
+
+  const openNextLog = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm('Open next log?')) return;
+    try {
+      const { docs } = await db
+        .collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserLogs)
+        .orderBy('timestamp', 'asc')
+        .limit(1)
+        .startAfter(log.timestamp)
+        .get();
+      const doc = docs[0];
+      if (!doc) {
+        toast.warn('No log found');
+        return;
+      }
+      history.push(Paths.logEditor(doc.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, history]);
+
   return (
     <DataStateView data={log}>
       {log => (
@@ -162,13 +212,37 @@ export const TrainingLogEditor: FC = () => {
             </Rows>
             {DataState.isReady(logDate) &&
               (!logDate ? null : (
-                <Rows center pad={Pad.XSmall}>
-                  <Typography variant="body2" color="textPrimary">
-                    {format(logDate, Format.time)}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {format(logDate, Format.date)}
-                  </Typography>
+                <Rows between>
+                  <Rows center pad={Pad.XSmall}>
+                    <Typography variant="body2" color="textPrimary">
+                      {format(logDate, Format.time)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {format(logDate, Format.date)}
+                    </Typography>
+                  </Rows>
+                  <Rows>
+                    <IconButton
+                      aria-label="Open previous log"
+                      size="small"
+                      className={css`
+                        color: ${Color.ActionPrimaryGray} !important;
+                      `}
+                      onClick={openPreviousLog}
+                    >
+                      <ArrowBackIosRounded fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Open next log"
+                      size="small"
+                      className={css`
+                        color: ${Color.ActionPrimaryGray} !important;
+                      `}
+                      onClick={openNextLog}
+                    >
+                      <ArrowForwardIosRounded fontSize="small" />
+                    </IconButton>
+                  </Rows>
                 </Rows>
               ))}
             <Rows
