@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { Button } from '@material-ui/core';
-import formatDistanceToNow from 'date-fns/formatDistanceToNow';
-import React, { FC, useMemo } from 'react';
+import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict';
+import React, { FC } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import { Paths } from '../constants';
@@ -11,26 +11,12 @@ import { useNewTraining, useUser } from '../hooks';
 import { TrainingLog } from '../interfaces';
 import { Columns, Pad } from '../style';
 
-const trainingLabels = [
-  'Go',
-  'Go Mode',
-  'Start training',
-  'Get after it',
-  'What are you waiting for?',
-  "Let's fucking get it",
-];
-
-const randomFrom = <T extends unknown>(array: T[]): T =>
-  array[Math.floor(Math.random() * array.length)];
-
 export const NewTraining: FC = () => {
   const newTraining = useNewTraining();
   const user = useUser();
   const history = useHistory();
 
-  const randomTrainingLabel = useMemo(() => randomFrom(trainingLabels), []);
-
-  const [lastLog] = useDataState(
+  const [prevLog] = useDataState(
     () =>
       db
         .collection(DbPath.Users)
@@ -44,8 +30,8 @@ export const NewTraining: FC = () => {
     [user.uid]
   );
 
-  const lastLogDay = DataState.map(
-    lastLog,
+  const prevLogDate = DataState.map<TrainingLog, Date>(
+    prevLog,
     log => TrainingLog.getDate(log) ?? DataState.Empty
   );
 
@@ -60,41 +46,34 @@ export const NewTraining: FC = () => {
       `}
     >
       <Columns
-        pad={Pad.Medium}
+        pad={Pad.Small}
         className={css`
           text-align: center;
         `}
         maxWidth
       >
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={newTraining}
-          size="large"
-        >
-          {randomTrainingLabel}
+        <Button variant="contained" color="primary" onClick={newTraining}>
+          Go
         </Button>
         <Button
-          disabled={!DataState.isReady(lastLogDay)}
-          variant="outlined"
+          disabled={!DataState.isReady(prevLogDate)}
+          variant="text"
           color="primary"
           onClick={() => {
-            if (!DataState.isReady(lastLog)) return;
-            history.push(Paths.logEditor(lastLog.id));
+            if (!DataState.isReady(prevLog)) return;
+            history.push(Paths.logEditor(prevLog.id));
           }}
         >
           <DataStateView
-            data={lastLogDay}
-            loading={() => <>Loading previous...</>}
-            error={() => null}
-            empty={() => <>No previous training</>}
+            data={prevLogDate}
+            error={() => <>No previous training</>}
+            loading={() => <>Loading previous training...</>}
           >
-            {lastLogDay => (
+            {prevLogDate => (
               <>
-                Continue from{' '}
-                {formatDistanceToNow(lastLogDay, {
+                Or continue from{' '}
+                {formatDistanceToNowStrict(prevLogDate, {
                   addSuffix: true,
-                  includeSeconds: true,
                 })}
               </>
             )}
