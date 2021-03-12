@@ -7,7 +7,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { MoreHoriz, Replay } from '@material-ui/icons';
+import { DeleteOutline, MoreHoriz, Replay } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
@@ -28,16 +28,11 @@ const modulo = (n: number, m: number) => ((n % m) + m) % m;
  * user's account and logs with a button to follow/unfollow.
  */
 export const Account: FC = () => {
-  const [isFollowing, setIsFollowing] = useState<DataState<boolean>>(
-    DataState.Empty
-  );
-
+  /** The ID of the selected user. Is `undefined` if viewing our own page. */
+  const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
   const newTraining = useNewTraining();
   const menu = useMaterialMenu();
-
-  /** The ID of the selected user. Is `undefined` if viewing our own page. */
-  const { userId } = useParams<{ userId?: string }>();
 
   const [logs] = useDataState(
     () =>
@@ -106,26 +101,6 @@ export const Account: FC = () => {
     [userId]
   );
 
-  const toggleFollow = useCallback(async () => {
-    if (!userId || !DataState.isReady(isFollowing)) return;
-    try {
-      const batch = db.batch();
-      batch.update(db.collection(DbPath.Users).doc(userId), {
-        followers: isFollowing
-          ? firebase.firestore.FieldValue.arrayRemove(user.uid)
-          : firebase.firestore.FieldValue.arrayUnion(user.uid),
-      });
-      batch.update(db.collection(DbPath.Users).doc(user.uid), {
-        following: isFollowing
-          ? firebase.firestore.FieldValue.arrayRemove(userId)
-          : firebase.firestore.FieldValue.arrayUnion(userId),
-      });
-      await batch.commit();
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [userId, user.uid, isFollowing]);
-
   const deleteAccount = useCallback(async () => {
     if (!window.confirm('Delete account?')) return;
     try {
@@ -137,21 +112,6 @@ export const Account: FC = () => {
       toast.error(error.message);
     }
   }, [user.uid]);
-
-  // Define `isFollowing` and keep its value up-to-date
-  useEffect(() => {
-    if (!userId) return;
-    return db
-      .collection(DbPath.Users)
-      .doc(user.uid)
-      .onSnapshot(
-        doc => {
-          const following = doc.get('following') as string[];
-          setIsFollowing(following.includes(userId));
-        },
-        err => setIsFollowing(DataState.error(err.message))
-      );
-  }, [userId, user.uid]);
 
   return (
     <Columns
@@ -170,11 +130,7 @@ export const Account: FC = () => {
               : null
             : user.displayName}
         </Typography>
-        {DataState.isReady(isFollowing) && (
-          <Button variant="text" onClick={toggleFollow}>
-            {isFollowing ? 'Following' : 'Follow'}
-          </Button>
-        )}
+        {userId && <FollowButton />}
         {!userId && (
           <ClickAwayListener onClickAway={menu.close}>
             <div>
@@ -288,6 +244,59 @@ export const Account: FC = () => {
   );
 };
 
+const FollowButton: FC = () => {
+  /** The ID of the selected user. Is `undefined` if viewing our own page. */
+  const { userId } = useParams<{ userId?: string }>();
+  const user = useUser();
+
+  const [isFollowing, setIsFollowing] = useState<DataState<boolean>>(
+    DataState.Empty
+  );
+
+  // Define `isFollowing` and keep its value up-to-date
+  useEffect(() => {
+    if (!userId) return;
+    return db
+      .collection(DbPath.Users)
+      .doc(user.uid)
+      .onSnapshot(
+        doc => {
+          const following = doc.get('following') as string[];
+          setIsFollowing(following.includes(userId));
+        },
+        err => setIsFollowing(DataState.error(err.message))
+      );
+  }, [userId, user.uid]);
+
+  const toggleFollow = useCallback(async () => {
+    if (!userId || !DataState.isReady(isFollowing)) return;
+    try {
+      const batch = db.batch();
+      // Add/remove the authenticated user to/from the viewed users followers
+      batch.update(db.collection(DbPath.Users).doc(userId), {
+        followers: isFollowing
+          ? firebase.firestore.FieldValue.arrayRemove(user.uid)
+          : firebase.firestore.FieldValue.arrayUnion(user.uid),
+      });
+      // Add/remove the viewed user to/from the authenticated users follow list
+      batch.update(db.collection(DbPath.Users).doc(user.uid), {
+        following: isFollowing
+          ? firebase.firestore.FieldValue.arrayRemove(userId)
+          : firebase.firestore.FieldValue.arrayUnion(userId),
+      });
+      await batch.commit();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [userId, user.uid, isFollowing]);
+
+  return (
+    <Button variant="text" onClick={toggleFollow}>
+      {isFollowing ? 'Following' : 'Follow'}
+    </Button>
+  );
+};
+
 const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
   text,
   value,
@@ -332,10 +341,27 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   const { userId } = useParams<{ userId?: string }>();
 
   const logDate = TrainingLog.getDate(log);
+
   const logDateDistance = useMemo(
     () => TrainingLog.getDistance(log.timestamp),
     [log.timestamp]
   );
+
+  const deleteLog = useCallback(async () => {
+    if (log.authorId !== user.uid) return;
+    if (!window.confirm(`Delete log "${log.title}" forever?`)) return;
+    try {
+      await db
+        .collection(DbPath.Users)
+        .doc(log.authorId)
+        .collection(DbPath.UserLogs)
+        .doc(log.id)
+        .delete();
+      toast.info('Log successfully deleted');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log]);
 
   const repeatTraining = useCallback(async () => {
     if (!window.confirm('Repeat this training?')) return;
@@ -407,18 +433,33 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
         )}
       </Columns>
       {!userId && (
-        <IconButton
-          size="small"
-          edge="end"
-          aria-label="Repeat this training"
-          onClick={repeatTraining}
+        <Rows
           className={css`
             margin-left: auto !important;
-            color: ${Color.ActionPrimaryBlue} !important;
           `}
         >
-          <Replay />
-        </IconButton>
+          <IconButton
+            size="small"
+            edge="end"
+            aria-label="Repeat this training"
+            onClick={repeatTraining}
+            className={css`
+              color: ${Color.ActionPrimaryBlue} !important;
+            `}
+          >
+            <Replay />
+          </IconButton>
+          <IconButton
+            size="small"
+            aria-label="Delete this training log forever"
+            onClick={deleteLog}
+            className={css`
+              color: ${Color.ActionPrimaryBlue} !important;
+            `}
+          >
+            <DeleteOutline />
+          </IconButton>
+        </Rows>
       )}
     </Rows>
   );

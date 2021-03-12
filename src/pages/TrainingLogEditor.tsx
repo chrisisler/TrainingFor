@@ -1,15 +1,8 @@
 import { css } from '@emotion/css';
-import {
-  ClickAwayListener,
-  IconButton,
-  Menu,
-  MenuItem,
-  Typography,
-} from '@material-ui/core';
+import { IconButton, Typography } from '@material-ui/core';
 import {
   ArrowBackIosRounded,
   ArrowForwardIosRounded,
-  MoreVert,
 } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
@@ -21,7 +14,7 @@ import { TrainingLogEditorView } from '../components/TrainingLogView';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { useMaterialMenu, useUser } from '../hooks';
+import { useUser } from '../hooks';
 import { Activity, TrainingLog } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
@@ -31,7 +24,6 @@ export const TrainingLogEditor: FC = () => {
   const history = useHistory();
   const user = useUser();
   const { logId } = useParams<{ logId?: string }>();
-  const menu = useMaterialMenu();
 
   const [logDoc, setLogDoc] = useState<
     DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
@@ -110,18 +102,6 @@ export const TrainingLogEditor: FC = () => {
     [activityName, logDoc]
   );
 
-  const deleteLog = useCallback(() => {
-    if (!DataState.isReady(logDoc)) return;
-    if (!window.confirm('Delete this training log forever?')) return;
-    try {
-      logDoc.ref.delete();
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      history.push(Paths.account);
-    }
-  }, [logDoc, history]);
-
   const openPreviousLog = useCallback(async () => {
     if (!DataState.isReady(log)) return;
     if (!window.confirm('Open previous log?')) return;
@@ -185,69 +165,36 @@ export const TrainingLogEditor: FC = () => {
             `}
           >
             <Rows center maxWidth between>
-              <Typography variant="h6" color="textPrimary">
-                {log.title}
+              <Typography variant="h6" color="textPrimary" onClick={renameLog}>
+                <b>{log.title}</b>
               </Typography>
-              <ClickAwayListener onClickAway={menu.close}>
-                <div>
-                  <IconButton
-                    aria-label="Open log menu"
-                    aria-controls="log-menu"
-                    aria-haspopup="true"
-                    onClick={menu.open}
-                    size="small"
-                  >
-                    <MoreVert
-                      className={css`
-                        color: ${Color.ActionSecondaryGray};
-                      `}
-                    />
-                  </IconButton>
-                  <Menu
-                    id="log-menu"
-                    anchorEl={menu.ref}
-                    open={!!menu.ref}
-                    onClose={menu.close}
-                    MenuListProps={{ dense: true }}
-                  >
-                    <MenuItem onClick={renameLog}>Edit title</MenuItem>
-                    <MenuItem onClick={deleteLog}>
-                      <b>Delete training log</b>
-                    </MenuItem>
-                  </Menu>
-                </div>
-              </ClickAwayListener>
+              <Rows>
+                <IconButton
+                  aria-label="Open previous log"
+                  size="small"
+                  className={css`
+                    color: ${Color.ActionPrimaryGray} !important;
+                  `}
+                  onClick={openPreviousLog}
+                >
+                  <ArrowBackIosRounded fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label="Open next log"
+                  size="small"
+                  className={css`
+                    color: ${Color.ActionPrimaryGray} !important;
+                  `}
+                  onClick={openNextLog}
+                >
+                  <ArrowForwardIosRounded fontSize="small" />
+                </IconButton>
+              </Rows>
             </Rows>
             {DataState.isReady(logDate) && (
-              <Rows between>
-                <Rows center pad={Pad.XSmall}>
-                  <Typography variant="body2" color="textSecondary">
-                    {format(logDate, Format.date)}
-                  </Typography>
-                </Rows>
-                <Rows>
-                  <IconButton
-                    aria-label="Open previous log"
-                    size="small"
-                    className={css`
-                      color: ${Color.ActionPrimaryGray} !important;
-                    `}
-                    onClick={openPreviousLog}
-                  >
-                    <ArrowBackIosRounded fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    aria-label="Open next log"
-                    size="small"
-                    className={css`
-                      color: ${Color.ActionPrimaryGray} !important;
-                    `}
-                    onClick={openNextLog}
-                  >
-                    <ArrowForwardIosRounded fontSize="small" />
-                  </IconButton>
-                </Rows>
-              </Rows>
+              <Typography variant="body2" color="textSecondary">
+                {format(logDate, Format.date)}
+              </Typography>
             )}
             <Rows
               maxWidth
