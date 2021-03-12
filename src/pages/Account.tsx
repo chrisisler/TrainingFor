@@ -10,7 +10,7 @@ import {
 import { MoreHoriz, Replay } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -332,7 +332,10 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   const { userId } = useParams<{ userId?: string }>();
 
   const logDate = TrainingLog.getDate(log);
-  const logDateDistance = TrainingLog.getDistance(log.timestamp);
+  const logDateDistance = useMemo(
+    () => TrainingLog.getDistance(log.timestamp),
+    [log.timestamp]
+  );
 
   const repeatTraining = useCallback(async () => {
     if (!window.confirm('Repeat this training?')) return;

@@ -13,7 +13,7 @@ import {
 } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -37,19 +37,20 @@ export const TrainingLogEditor: FC = () => {
     DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
   >(DataState.Loading);
 
-  const log = DataState.map(logDoc, doc => {
-    const log = doc.data();
-    if (!log) return DataState.error('TrainingLog document does not exist.');
-    return log;
-  });
+  const log = useMemo(
+    () =>
+      // TODO Eliminate `logDoc`
+      DataState.map(
+        logDoc,
+        doc =>
+          doc.data() ?? DataState.error('TrainingLog document does not exist.')
+      ),
+    [logDoc]
+  );
 
   const logDate = DataState.map(
     log,
     l => TrainingLog.getDate(l) ?? DataState.Empty
-  );
-
-  const logDateDistance = DataState.map(log, log =>
-    TrainingLog.getDistance(log.timestamp)
   );
 
   // Subscribe to updates to the TrainingLog ID from the URL
@@ -220,11 +221,8 @@ export const TrainingLogEditor: FC = () => {
             {DataState.isReady(logDate) && (
               <Rows between>
                 <Rows center pad={Pad.XSmall}>
-                  <Typography variant="body2" color="textPrimary">
-                    {format(logDate, Format.time)}
-                  </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {logDateDistance}
+                    {format(logDate, Format.date)}
                   </Typography>
                 </Rows>
                 <Rows>

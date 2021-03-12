@@ -87,6 +87,7 @@ export const Activity = {
 };
 
 const durationRegEx = /\d+\s+\w/;
+const monthsRegEx = /^\d+\smonth\w?\s+/;
 
 // eslint-disable-next-line
 export const TrainingLog = {
@@ -94,16 +95,31 @@ export const TrainingLog = {
     if (!log.timestamp) return null;
     return (log.timestamp as firebase.firestore.Timestamp)?.toDate();
   },
+  /**
+   * Given a TrainingLog (or any Firestore timestamped resource) compute it's
+   * days relative to now.
+   *
+   * The result of this function should be memomized due to multiple
+   * `RegExp#exec` calls.
+   *
+   * @returns A string like `"1m4d"`
+   */
   getDistance: (logTimestamp: FirestoreTimestamp): string => {
     if (!logTimestamp) return '';
     const logDate = (logTimestamp as firebase.firestore.Timestamp)?.toDate();
+    const duration = intervalToDuration({ start: logDate, end: new Date() });
     // `distance` is a string like "27 days 42 seconds"
-    const distance = formatDuration(
-      intervalToDuration({ start: logDate, end: new Date() })
-    );
+    const distance = formatDuration(duration);
+    // Instead of only "1m", get month + day abbreviations (like "7m4d")
+    if (duration.months) {
+      const months = monthsRegEx.exec(distance)?.[0] ?? '';
+      const monthsStr = durationRegEx.exec(months)?.[0].replace(' ', '') ?? '';
+      const monthlessDistance = distance.replace(monthsRegEx, '');
+      const daysStr =
+        durationRegEx.exec(monthlessDistance)?.[0].replace(' ', '') ?? '';
+      return monthsStr + daysStr;
+    }
     // Select the first number, space, and first letter of the token, "27 d"
-    const matched = durationRegEx.exec(distance)?.[0];
-    if (!matched) throw Error('Unreachable');
-    return matched.replace(' ', '');
+    return durationRegEx.exec(distance)?.[0].replace(' ', '') ?? '';
   },
 };
