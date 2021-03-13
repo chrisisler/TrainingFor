@@ -10,6 +10,7 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
+import { TrainingLogMenuButton } from '../components/TrainingLogMenuButton';
 import { TrainingLogEditorView } from '../components/TrainingLogView';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
@@ -40,9 +41,14 @@ export const TrainingLogEditor: FC = () => {
     [logDoc]
   );
 
-  const logDate = DataState.map(
-    log,
-    l => TrainingLog.getDate(l) ?? DataState.Empty
+  const logDate = useMemo(
+    () =>
+      DataState.map(log, l => {
+        const date = TrainingLog.getDate(l);
+        if (!date) return DataState.Empty;
+        return format(date, Format.time);
+      }),
+    [log]
   );
 
   // Subscribe to updates to the TrainingLog ID from the URL
@@ -60,6 +66,7 @@ export const TrainingLogEditor: FC = () => {
       );
   }, [user.uid, logId]);
 
+  // TODO Use border-less input for log title
   const renameLog = useCallback(() => {
     if (!DataState.isReady(log)) return;
     const newTitle = window.prompt('Update training log title', log.title);
@@ -165,15 +172,35 @@ export const TrainingLogEditor: FC = () => {
             `}
           >
             <Rows center maxWidth between>
-              <Typography variant="h6" color="textPrimary" onClick={renameLog}>
-                <b>{log.title}</b>
-              </Typography>
+              <Columns>
+                <Typography variant="body2" color="textSecondary">
+                  <DataStateView
+                    data={logDate}
+                    loading={() => <>Loading...</>}
+                    error={() => null}
+                  >
+                    {logDate => <>{logDate}</>}
+                  </DataStateView>
+                </Typography>
+                <Typography
+                  color="textPrimary"
+                  onClick={renameLog}
+                  className={css`
+                    /** Slightly smaller than variant=h6 */
+                    font-size: 1.2rem;
+                    line-height: 1.2;
+                  `}
+                >
+                  <b>{log.title}</b>
+                </Typography>
+              </Columns>
               <Rows>
+                <TrainingLogMenuButton log={log} />
                 <IconButton
                   aria-label="Open previous log"
                   size="small"
                   className={css`
-                    color: ${Color.ActionPrimaryGray} !important;
+                    color: ${Color.ActionSecondaryGray} !important;
                   `}
                   onClick={openPreviousLog}
                 >
@@ -183,7 +210,7 @@ export const TrainingLogEditor: FC = () => {
                   aria-label="Open next log"
                   size="small"
                   className={css`
-                    color: ${Color.ActionPrimaryGray} !important;
+                    color: ${Color.ActionSecondaryGray} !important;
                   `}
                   onClick={openNextLog}
                 >
@@ -191,11 +218,6 @@ export const TrainingLogEditor: FC = () => {
                 </IconButton>
               </Rows>
             </Rows>
-            {DataState.isReady(logDate) && (
-              <Typography variant="body2" color="textSecondary">
-                {format(logDate, Format.date)}
-              </Typography>
-            )}
             <Rows
               maxWidth
               as="form"

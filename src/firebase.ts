@@ -4,7 +4,13 @@ import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/storage';
 
-import { Activity, TrainingLog, User, Comment } from './interfaces';
+import {
+  Activity,
+  TrainingLog,
+  User,
+  Comment,
+  TrainingTemplate,
+} from './interfaces';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBLnwnJBVUw1SXeK7E1-oL9uCG-ysm1N6w',
@@ -30,6 +36,9 @@ const storage = firebase.storage();
 export enum DbPath {
   Users = 'users',
   UserLogs = 'logs',
+  UserTemplates = 'templates',
+  // TODO Delete this and use `export const db = { activities: db.collection('activities') }`
+  UserTemplateActivities = 'activities',
   UserLogActivities = 'activities',
   UserLogActivityComments = 'comments',
 }
@@ -88,8 +97,24 @@ const commentConverter: firebase.firestore.FirestoreDataConverter<Comment> = {
   },
 };
 
+const trainingTemplateConverter: firebase.firestore.FirestoreDataConverter<TrainingTemplate> = {
+  toFirestore: (
+    template: TrainingTemplate
+  ): firebase.firestore.DocumentData => {
+    return template;
+  },
+  fromFirestore: (
+    doc: firebase.firestore.QueryDocumentSnapshot<TrainingTemplate>
+  ): TrainingTemplate => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
 export const DbConverter = {
   TrainingLog: trainingLogConverter,
+  TrainingTemplate: trainingTemplateConverter,
   Activity: activityConverter,
   User: userConverter,
   Comment: commentConverter,

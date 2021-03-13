@@ -23,6 +23,13 @@ export interface User extends FirestoreDocument {
 
 // type Feeling = 'sad' | 'amazed';
 
+export interface TrainingTemplate extends FirestoreDocument {
+  title: string;
+  authorId: string;
+  /** IDs of TrainingLogs stamped out from this template. */
+  logIds: string[];
+}
+
 export interface TrainingLog extends FirestoreDocument {
   title: string;
   timestamp: FirestoreTimestamp;

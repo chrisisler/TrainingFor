@@ -7,18 +7,19 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { DeleteOutline, MoreHoriz, Replay } from '@material-ui/icons';
+import { MoreHoriz } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
+import { TrainingLogMenuButton } from '../components/TrainingLogMenuButton';
 import { Format, Milliseconds, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useNewTraining, useUser } from '../hooks';
-import { ActivityStatus, TrainingLog } from '../interfaces';
+import { TrainingLog } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 
 const modulo = (n: number, m: number) => ((n % m) + m) % m;
@@ -33,6 +34,19 @@ export const Account: FC = () => {
   const user = useUser();
   const newTraining = useNewTraining();
   const menu = useMaterialMenu();
+  const history = useHistory();
+
+  const [templates] = useDataState(
+    () =>
+      db
+        .collection(DbPath.Users)
+        .doc(userId ?? user.uid)
+        .collection(DbPath.UserTemplates)
+        .withConverter(DbConverter.TrainingTemplate)
+        .get()
+        .then(snapshot => snapshot.docs.map(doc => doc.data())),
+    [userId, user.uid]
+  );
 
   const [logs] = useDataState(
     () =>
@@ -169,6 +183,40 @@ export const Account: FC = () => {
             </div>
           </ClickAwayListener>
         )}
+      </Rows>
+      <Typography variant="body2" color="textSecondary">
+        <b>Templates</b>
+      </Typography>
+      <Rows between padding={`0 ${Pad.Large}`}>
+        <DataStateView data={templates}>
+          {templates =>
+            templates.length ? (
+              <>
+                {templates.map(template => (
+                  <Columns
+                    pad={Pad.XSmall}
+                    key={template.id}
+                    onClick={() => {
+                      history.push(Paths.logEditor(template.id));
+                    }}
+                    className={css`
+                      background-color: ${Color.ActionSecondaryGray};
+                      border-radius: 5px;
+                    `}
+                  >
+                    <Typography variant="subtitle2" color="textPrimary">
+                      {template.title}
+                    </Typography>
+                    <Statistic
+                      text="logs from template"
+                      value={template.logIds.length}
+                    />
+                  </Columns>
+                ))}
+              </>
+            ) : null
+          }
+        </DataStateView>
       </Rows>
       <DataStateView data={logs}>
         {logs =>
@@ -333,7 +381,6 @@ const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
 };
 
 const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
-  const user = useUser();
   const history = useHistory();
   const location = useLocation();
 
@@ -346,66 +393,6 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
     () => TrainingLog.getDistance(log.timestamp),
     [log.timestamp]
   );
-
-  const deleteLog = useCallback(async () => {
-    if (log.authorId !== user.uid) return;
-    if (!window.confirm(`Delete log "${log.title}" forever?`)) return;
-    try {
-      await db
-        .collection(DbPath.Users)
-        .doc(log.authorId)
-        .collection(DbPath.UserLogs)
-        .doc(log.id)
-        .delete();
-      toast.info('Log successfully deleted');
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [user.uid, log]);
-
-  const repeatTraining = useCallback(async () => {
-    if (!window.confirm('Repeat this training?')) return;
-    try {
-      const [logRef, activities] = await Promise.all([
-        db
-          .collection(DbPath.Users)
-          .doc(user.uid)
-          .collection(DbPath.UserLogs)
-          .withConverter(DbConverter.TrainingLog)
-          .add({
-            ...log,
-            title: 'Repeat - ' + log.title,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          }),
-        db
-          .collection(DbPath.Users)
-          .doc(user.uid)
-          .collection(DbPath.UserLogs)
-          .doc(log.id)
-          .collection(DbPath.UserLogActivities)
-          .withConverter(DbConverter.Activity)
-          .get()
-          .then(snapshot =>
-            snapshot.docs.map(doc => {
-              const activity = doc.data();
-              activity.sets.forEach(set => {
-                set.status = ActivityStatus.Unattempted;
-              });
-              return activity;
-            })
-          ),
-      ]);
-      const activitiesCollection = logRef.collection(DbPath.UserLogActivities);
-      const writeBatch = db.batch();
-      activities.forEach(a => {
-        writeBatch.set(activitiesCollection.doc(a.id), a);
-      });
-      await writeBatch.commit();
-      history.push(Paths.logEditor(logRef.id), { from: location });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [user.uid, log, history, location]);
 
   return (
     <Rows
@@ -432,35 +419,7 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
           </Typography>
         )}
       </Columns>
-      {!userId && (
-        <Rows
-          className={css`
-            margin-left: auto !important;
-          `}
-        >
-          <IconButton
-            size="small"
-            edge="end"
-            aria-label="Repeat this training"
-            onClick={repeatTraining}
-            className={css`
-              color: ${Color.ActionPrimaryBlue} !important;
-            `}
-          >
-            <Replay />
-          </IconButton>
-          <IconButton
-            size="small"
-            aria-label="Delete this training log forever"
-            onClick={deleteLog}
-            className={css`
-              color: ${Color.ActionPrimaryBlue} !important;
-            `}
-          >
-            <DeleteOutline />
-          </IconButton>
-        </Rows>
-      )}
+      {!userId && <TrainingLogMenuButton log={log} />}
     </Rows>
   );
 };
