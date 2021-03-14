@@ -1,25 +1,13 @@
 import { css } from '@emotion/css';
-import styled from '@emotion/styled';
 import { IconButton, Link } from '@material-ui/core';
 import { Add, Forum, Person } from '@material-ui/icons';
 import React, { FC, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { Paths } from '../constants';
-import { Pad, Rows } from '../style';
+import { Color, Pad } from '../style';
 
-const navBarHeight = 50;
-
-const NavBarContainer = styled(Rows)`
-  justify-content: space-between;
-  position: fixed;
-  background-color: #fff;
-  bottom: 0;
-  padding: 0 ${Pad.Large};
-  height: ${navBarHeight}px;
-  width: 100%;
-  border-top: 1px solid lightgray;
-`;
+const navBarHeight = 65;
 
 export const ViewWithNavBar: FC<{
   children: React.ReactNode;
@@ -47,7 +35,19 @@ const NavBar: FC = () => {
   );
 
   return (
-    <NavBarContainer as="nav">
+    <nav
+      className={css`
+        display: flex;
+        justify-content: space-between;
+        position: fixed;
+        background-color: #fff;
+        bottom: 0;
+        padding: 0 ${Pad.Large} ${Pad.Medium};
+        height: ${navBarHeight}px;
+        width: 100%;
+        border-top: 1px solid ${Color.ActionSecondaryGray};
+      `}
+    >
       <IconButton aria-label="Navigate to timeline">
         <Link
           component={NavLink}
@@ -75,6 +75,6 @@ const NavBar: FC = () => {
           <Person />
         </Link>
       </IconButton>
-    </NavBarContainer>
+    </nav>
   );
 };
