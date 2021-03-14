@@ -21,9 +21,9 @@ import FlipMove from 'react-flip-move';
 import { toast } from 'react-toastify';
 import { v4 as uuid } from 'uuid';
 
-import { Format, Paths, TabIndex } from '../constants';
+import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { db, DbConverter, DbPath, storage } from '../firebase';
+import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useResizableInputRef, useUser } from '../hooks';
 import {
   Activity,
@@ -205,7 +205,6 @@ const ActivityView: FC<{
   const activity = activities[index];
   const isTemplate = TrainingLog.isTemplate(log);
 
-  const attachmentRef = useRef<HTMLInputElement | null>(null);
   const commentRef = useRef<HTMLInputElement | null>(null);
 
   const [comment, setComment] = useState<null | string>(null);
@@ -228,45 +227,6 @@ const ActivityView: FC<{
         .doc(activity.id),
     [activity.id, log.authorId, log.id, isTemplate]
   );
-
-  const addActivityAttachment = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>): void => {
-      menu.close();
-      const attachment = event.target.files?.[0];
-      if (!attachment) return;
-      if (!window.confirm('Confirm attachment?')) return;
-      const upload = storage.ref(`images/${attachment.name}`).put(attachment);
-      upload.on(
-        'state_changed',
-        () => {
-          /** no-op */
-        },
-        error => {
-          toast.error(error.message);
-        },
-        async () => {
-          const attachmentUrl = await storage
-            .ref('images')
-            .child(attachment.name)
-            .getDownloadURL();
-          activityDocument.update({ attachmentUrl } as Partial<Activity>);
-        }
-      );
-    },
-    [activityDocument, menu]
-  );
-
-  const removeAttachment = useCallback(async () => {
-    menu.close();
-    if (!window.confirm('Remove image?')) return;
-    if (activity.attachmentUrl === null) return;
-    try {
-      await storage.refFromURL(activity.attachmentUrl).delete();
-      activityDocument.update({ attachmentUrl: null } as Partial<Activity>);
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [activity.attachmentUrl, activityDocument, menu]);
 
   const addActivitySet = useCallback(() => {
     const lastSet = activity.sets[activity.sets.length - 1];
@@ -487,15 +447,6 @@ const ActivityView: FC<{
                     >
                       Move down
                     </MenuItem>
-                    <MenuItem
-                      onClick={
-                        activity.attachmentUrl
-                          ? removeAttachment
-                          : () => attachmentRef.current?.click()
-                      }
-                    >
-                      {activity.attachmentUrl ? 'Remove image' : 'Add image'}
-                    </MenuItem>
                     <MenuItem onClick={renameActivity}>
                       Rename activity
                     </MenuItem>
@@ -503,20 +454,6 @@ const ActivityView: FC<{
                       <b>Delete activity</b>
                     </MenuItem>
                   </Menu>
-                  <input
-                    ref={attachmentRef}
-                    className={css`
-                      width: 0.1px;
-                      height: 0.1px;
-                      opacity: 0;
-                      position: abslute;
-                      overflow: hidden;
-                    `}
-                    tabIndex={TabIndex.NotFocusable}
-                    type="file"
-                    accept="image/*"
-                    onChange={addActivityAttachment}
-                  />
                 </div>
               </ClickAwayListener>
             )}
