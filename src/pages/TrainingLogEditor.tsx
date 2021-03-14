@@ -170,7 +170,7 @@ export const TrainingLogEditor: FC = () => {
           `}
         >
           <Columns
-            padding={`${Pad.Medium} ${Pad.Large}`}
+            padding={`${Pad.Small} ${Pad.Large} ${Pad.Medium}`}
             className={css`
               border-bottom: 1px solid lightgray;
               min-height: fit-content;
@@ -194,13 +194,14 @@ export const TrainingLogEditor: FC = () => {
                   )}
                 </Typography>
                 <Typography
+                  variant="h6"
                   color="textPrimary"
                   onClick={renameLog}
                   className={css`
                     line-height: 1.2;
                   `}
                 >
-                  <b>{log.title}</b>
+                  {log.title}
                 </Typography>
               </Columns>
               <Rows>
@@ -247,7 +248,8 @@ export const TrainingLogEditor: FC = () => {
                   outline: none;
                   font-weight: 400;
                   color: #000;
-                  padding: ${Pad.XSmall} 0 0 0;
+                  padding: ${Pad.XSmall} 0;
+                  line-height: 1.6;
 
                   &::placeholder {
                     font-weight: 600;
@@ -259,13 +261,12 @@ export const TrainingLogEditor: FC = () => {
                   className={css`
                     padding: ${Pad.Small} ${Pad.Medium};
                     border-radius: 5px;
-                    border: 1px solid lightgray;
+                    border: 1px solid ${Color.ActionSecondaryGray};
                     background-color: transparent;
                     text-transform: uppercase;
                     font-size: ${Font.Small};
                     font-weight: 600;
-                    outline: none;
-                    color: ${Color.FontPrimary};
+                    color: ${Color.ActionPrimaryBlue};
                   `}
                   onClick={addActivity}
                 >

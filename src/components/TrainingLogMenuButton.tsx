@@ -29,7 +29,6 @@ export const TrainingLogMenuButton: FC<{
 
   const isTemplate = TrainingLog.isTemplate(log);
 
-  /** Create new template entry in collections then open it in the editor. */
   const createTemplate = useCallback(async () => {
     if (isTemplate) return;
     if (!window.confirm('Create a Template from this log?')) return;
@@ -44,11 +43,12 @@ export const TrainingLogMenuButton: FC<{
         .doc(user.uid)
         .collection(DbPath.UserTemplates)
         .add(newTemplate);
-      const activitiesP = db
+      const logDoc = db
         .collection(DbPath.Users)
         .doc(user.uid)
         .collection(DbPath.UserLogs)
-        .doc(log.id)
+        .doc(log.id);
+      const activitiesP = logDoc
         .collection(DbPath.UserLogActivities)
         .withConverter(DbConverter.Activity)
         .get()
@@ -61,19 +61,17 @@ export const TrainingLogMenuButton: FC<{
             return activity;
           })
         );
-      const [templateRef, activities] = await Promise.all([
+      const [templateRef, logActivities] = await Promise.all([
         templateRefP,
         activitiesP,
       ]);
       const templateActivities = templateRef.collection(
         DbPath.UserLogActivities
       );
-      const writeBatch = db.batch();
-      activities.forEach(a => {
-        // Create a document with A's ID assigned to A's data
-        writeBatch.set(templateActivities.doc(a.id), a);
-      });
-      await writeBatch.commit();
+      const batch = db.batch();
+      logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
+      await batch.commit();
+      logDoc.delete();
       // Navigate to the newly created template if nothing went wrong
       history.push(Paths.template(templateRef.id));
     } catch (error) {
