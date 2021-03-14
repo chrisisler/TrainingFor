@@ -91,7 +91,7 @@ export const TrainingLogMenuButton: FC<{
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .delete();
-      history.push(Paths.newTraining);
+      history.push(Paths.account);
       toast.info('Deleted successfully!');
     } catch (error) {
       toast.error(error.message);
