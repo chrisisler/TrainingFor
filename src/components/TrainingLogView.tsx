@@ -120,6 +120,9 @@ export const TrainingLogEditorView: FC<{
  * This component is for viewing logs not authored by the authenticated user.
  */
 export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
+  const logDate = TrainingLog.getDate(log);
+  const isTemplate = TrainingLog.isTemplate(log);
+
   const [authorName] = useDataState<string>(
     () =>
       db
@@ -135,7 +138,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
       db
         .collection(DbPath.Users)
         .doc(log.authorId)
-        .collection(DbPath.UserLogs)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .collection(DbPath.UserLogActivities)
         .withConverter(DbConverter.Activity)
@@ -144,8 +147,6 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [log.authorId, log.id]
   );
-
-  const logDate = TrainingLog.getDate(log);
 
   return (
     <DataStateView data={activities} error={() => null} loading={() => null}>
@@ -202,6 +203,7 @@ const ActivityView: FC<{
   log: TrainingLog;
 }> = ({ activities, index, editable = false, log }) => {
   const activity = activities[index];
+  const isTemplate = TrainingLog.isTemplate(log);
 
   const attachmentRef = useRef<HTMLInputElement | null>(null);
   const commentRef = useRef<HTMLInputElement | null>(null);
@@ -210,6 +212,7 @@ const ActivityView: FC<{
   const [comments, setComments] = useState<DataState<Comment[]>>(
     DataState.Empty
   );
+
   const menu = useMaterialMenu();
   const user = useUser();
 
@@ -218,12 +221,12 @@ const ActivityView: FC<{
       db
         .collection(DbPath.Users)
         .doc(log.authorId)
-        .collection(DbPath.UserLogs)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .collection(DbPath.UserLogActivities)
         .withConverter(DbConverter.Activity)
         .doc(activity.id),
-    [activity.id, log.authorId, log.id]
+    [activity.id, log.authorId, log.id, isTemplate]
   );
 
   const addActivityAttachment = useCallback(

@@ -197,8 +197,6 @@ export const TrainingLogEditor: FC = () => {
                   color="textPrimary"
                   onClick={renameLog}
                   className={css`
-                    /** Slightly smaller than variant=h6 */
-                    font-size: 1.2rem;
                     line-height: 1.2;
                   `}
                 >
