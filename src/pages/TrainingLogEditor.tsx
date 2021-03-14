@@ -5,7 +5,6 @@ import {
   ArrowForwardIosRounded,
 } from '@material-ui/icons';
 import format from 'date-fns/format';
-import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -16,34 +15,28 @@ import { Format, Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
-import { Activity, TrainingLog } from '../interfaces';
+import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const [activityName, setActivityName] = useState<string>('');
+  const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(
+    DataState.Loading
+  );
 
   const history = useHistory();
   const user = useUser();
-  const { logId } = useParams<{ logId?: string }>();
+  const { logId, templateId } = useParams<{
+    logId?: string;
+    templateId?: string;
+  }>();
 
-  const [logDoc, setLogDoc] = useState<
-    DataState<firebase.firestore.DocumentSnapshot<TrainingLog>>
-  >(DataState.Loading);
-
-  const log = useMemo(
-    () =>
-      // TODO Eliminate `logDoc`
-      DataState.map(
-        logDoc,
-        doc =>
-          doc.data() ?? DataState.error('TrainingLog document does not exist.')
-      ),
-    [logDoc]
-  );
+  const isTemplate = !!templateId;
 
   const logDate = useMemo(
     () =>
       DataState.map(log, l => {
+        if (TrainingLog.isTemplate(l)) return DataState.Empty;
         const date = TrainingLog.getDate(l);
         if (!date) return DataState.Empty;
         return format(date, Format.time);
@@ -51,44 +44,54 @@ export const TrainingLogEditor: FC = () => {
     [log]
   );
 
-  // Subscribe to updates to the TrainingLog ID from the URL
+  // Subscribe to updates to the TrainingLog/Template ID from the URL
   useEffect(() => {
-    if (!logId) return;
+    if (!logId && !templateId) {
+      toast.error('No logId or templateId given in URL.');
+      return;
+    }
     return db
       .collection(DbPath.Users)
       .doc(user.uid)
-      .collection(DbPath.UserLogs)
-      .withConverter(DbConverter.TrainingLog)
-      .doc(logId)
+      .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
+      .withConverter(
+        templateId ? DbConverter.TrainingTemplate : DbConverter.TrainingLog
+      )
+      .doc(templateId ?? logId)
       .onSnapshot(
-        document => setLogDoc(document),
-        err => setLogDoc(DataState.error(err.message))
+        doc => setLog(doc.data() ?? DataState.error('No doc found')),
+        err => setLog(DataState.error(err.message))
       );
-  }, [user.uid, logId]);
+  }, [user.uid, logId, templateId]);
 
-  // TODO Use border-less input for log title
+  // TODO Use border-less input for title
   const renameLog = useCallback(() => {
     if (!DataState.isReady(log)) return;
-    const newTitle = window.prompt('Update training log title', log.title);
-    if (!newTitle) return;
+    const title = window.prompt('Update training log title', log.title);
+    if (!title) return;
     try {
       db.collection(DbPath.Users)
         .doc(log.authorId)
-        .collection(DbPath.UserLogs)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
-        .set({ title: newTitle } as Partial<TrainingLog>, { merge: true });
+        .set({ title } as Pick<TrainingLog, 'title'>, { merge: true });
     } catch (error) {
       toast.error(error.message);
     }
-  }, [log]);
+  }, [log, isTemplate]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
-      if (!activityName.length || !DataState.isReady(logDoc)) return;
+      if (!activityName.length || !DataState.isReady(log)) return;
       setActivityName('');
       try {
-        const activitiesColl = logDoc.ref.collection(DbPath.UserLogActivities);
+        const activitiesColl = db
+          .collection(DbPath.Users)
+          .doc(user.uid)
+          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+          .doc(log.id)
+          .collection(DbPath.UserLogActivities);
         const { docs } = await activitiesColl
           .orderBy('position', 'desc')
           .limit(1)
@@ -106,7 +109,7 @@ export const TrainingLogEditor: FC = () => {
         toast.error(error.message);
       }
     },
-    [activityName, logDoc]
+    [activityName, log, user.uid, isTemplate]
   );
 
   const openPreviousLog = useCallback(async () => {
@@ -116,7 +119,7 @@ export const TrainingLogEditor: FC = () => {
       const { docs } = await db
         .collection(DbPath.Users)
         .doc(user.uid)
-        .collection(DbPath.UserLogs)
+        .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
         .orderBy('timestamp', 'desc')
         .limit(1)
         .startAfter(log.timestamp)
@@ -126,11 +129,12 @@ export const TrainingLogEditor: FC = () => {
         toast.warn('No log found');
         return;
       }
-      history.push(Paths.logEditor(doc.id));
+      const createPath = templateId ? Paths.template : Paths.logEditor;
+      history.push(createPath(doc.id));
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log, history]);
+  }, [user.uid, log, history, templateId]);
 
   const openNextLog = useCallback(async () => {
     if (!DataState.isReady(log)) return;
@@ -139,7 +143,7 @@ export const TrainingLogEditor: FC = () => {
       const { docs } = await db
         .collection(DbPath.Users)
         .doc(user.uid)
-        .collection(DbPath.UserLogs)
+        .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
         .orderBy('timestamp', 'asc')
         .limit(1)
         .startAfter(log.timestamp)
@@ -149,11 +153,12 @@ export const TrainingLogEditor: FC = () => {
         toast.warn('No log found');
         return;
       }
-      history.push(Paths.logEditor(doc.id));
+      const createPath = templateId ? Paths.template : Paths.logEditor;
+      history.push(createPath(doc.id));
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log, history]);
+  }, [user.uid, log, history, templateId]);
 
   return (
     <DataStateView data={log}>
@@ -174,13 +179,19 @@ export const TrainingLogEditor: FC = () => {
             <Rows center maxWidth between>
               <Columns>
                 <Typography variant="body2" color="textSecondary">
-                  <DataStateView
-                    data={logDate}
-                    loading={() => <>Loading...</>}
-                    error={() => null}
-                  >
-                    {logDate => <>{logDate}</>}
-                  </DataStateView>
+                  {templateId ? (
+                    <i>
+                      <b>Training Template</b>
+                    </i>
+                  ) : (
+                    <DataStateView
+                      data={logDate}
+                      loading={() => <>Loading...</>}
+                      error={() => null}
+                    >
+                      {logDate => <>{logDate}</>}
+                    </DataStateView>
+                  )}
                 </Typography>
                 <Typography
                   color="textPrimary"
@@ -238,7 +249,7 @@ export const TrainingLogEditor: FC = () => {
                   outline: none;
                   font-weight: 400;
                   color: #000;
-                  padding: ${Pad.XSmall} 0;
+                  padding: ${Pad.XSmall} 0 0 0;
 
                   &::placeholder {
                     font-weight: 600;

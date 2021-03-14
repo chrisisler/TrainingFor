@@ -89,12 +89,7 @@ export const App: FC = () => {
                     <TrainingLogViewPage />
                   </ViewWithNavBar>
                 </Route>
-                <Route exact path={Paths.user()}>
-                  <ViewWithNavBar>
-                    <Account />
-                  </ViewWithNavBar>
-                </Route>
-                <Route exact path={Paths.logEditor()}>
+                <Route exact path={[Paths.logEditor(), Paths.template()]}>
                   <ViewWithNavBar>
                     <TrainingLogEditor />
                   </ViewWithNavBar>
@@ -104,7 +99,7 @@ export const App: FC = () => {
                     <Timeline />
                   </ViewWithNavBar>
                 </Route>
-                <Route exact path={Paths.account}>
+                <Route exact path={[Paths.account, Paths.user()]}>
                   <ViewWithNavBar>
                     <Account />
                   </ViewWithNavBar>

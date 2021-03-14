@@ -28,6 +28,7 @@ export const Paths = {
     `/user/${userId}/log/${logId}`,
   user: (userId = ':userId') => `/user/${userId}`,
   logEditor: (logId = ':logId') => `/log/${logId}`,
+  template: (templateId = ':templateId') => `/template/${templateId}`,
   signUp: '/signup',
   logIn: '/login',
   timeline: '/timeline',

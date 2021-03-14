@@ -187,24 +187,31 @@ export const Account: FC = () => {
       <Typography variant="body2" color="textSecondary">
         <b>Templates</b>
       </Typography>
-      <Rows between padding={`0 ${Pad.Large}`}>
+      <div>
         <DataStateView data={templates}>
           {templates =>
             templates.length ? (
-              <>
+              <Rows
+                pad={Pad.Medium}
+                padding={`0 ${Pad.Large}`}
+                className={css`
+                  overflow-x: scroll;
+                `}
+              >
                 {templates.map(template => (
                   <Columns
-                    pad={Pad.XSmall}
                     key={template.id}
                     onClick={() => {
-                      history.push(Paths.logEditor(template.id));
+                      history.push(Paths.template(template.id));
                     }}
                     className={css`
-                      background-color: ${Color.ActionSecondaryGray};
+                      border: 1px solid ${Color.ActionPrimaryBlue};
                       border-radius: 5px;
+                      padding: ${Pad.Small} ${Pad.Medium};
                     `}
+                    between
                   >
-                    <Typography variant="subtitle2" color="textPrimary">
+                    <Typography variant="body2" color="textPrimary">
                       {template.title}
                     </Typography>
                     <Statistic
@@ -213,11 +220,15 @@ export const Account: FC = () => {
                     />
                   </Columns>
                 ))}
-              </>
-            ) : null
+              </Rows>
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                <i>No templates</i>
+              </Typography>
+            )
           }
         </DataStateView>
-      </Rows>
+      </div>
       <DataStateView data={logs}>
         {logs =>
           logs.length ? (
@@ -402,6 +413,8 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
         padding: ${Pad.Large};
         min-height: fit-content;
       `}
+      between
+      center
     >
       <Columns
         onClick={

@@ -6,6 +6,7 @@ import {
   MenuItem,
 } from '@material-ui/core';
 import { MoreVert } from '@material-ui/icons';
+import firebase from 'firebase/app';
 import React, { FC, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -13,24 +14,29 @@ import { toast } from 'react-toastify';
 import { Paths } from '../constants';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { ActivityStatus, TrainingLog } from '../interfaces';
+import { ActivityStatus, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color } from '../style';
 
 /**
  * Presents a menu icon with menu options to act on the given TrainingLog.
  */
-export const TrainingLogMenuButton: FC<{ log: TrainingLog }> = ({ log }) => {
+export const TrainingLogMenuButton: FC<{
+  log: TrainingLog | TrainingTemplate;
+}> = ({ log }) => {
   const user = useUser();
   const menu = useMaterialMenu();
   const history = useHistory();
 
+  const isTemplate = TrainingLog.isTemplate(log);
+
   /** Create new template entry in collections then open it in the editor. */
   const createTemplate = useCallback(async () => {
-    if (!window.confirm('Create a Training Template from this log?')) return;
+    if (isTemplate) return;
+    if (!window.confirm('Create a Template from this log?')) return;
     try {
-      const newTemplate = {
-        title: log.title,
-        authorId: log.authorId,
+      const newTemplate: TrainingTemplate = {
+        ...log,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         logIds: [log.id],
       };
       const templateRefP = db
@@ -69,27 +75,28 @@ export const TrainingLogMenuButton: FC<{ log: TrainingLog }> = ({ log }) => {
       });
       await writeBatch.commit();
       // Navigate to the newly created template if nothing went wrong
-      history.push(Paths.logEditor(templateRef.id));
+      history.push(Paths.template(templateRef.id));
     } catch (error) {
       toast.error(error.message);
     }
-  }, [log, user.uid, history]);
+  }, [log, user.uid, history, isTemplate]);
 
   const deleteLog = useCallback(async () => {
     if (log.authorId !== user.uid) return;
-    if (!window.confirm(`Delete log "${log.title}" forever?`)) return;
+    if (!window.confirm(`Delete "${log.title}" forever?`)) return;
     try {
       await db
         .collection(DbPath.Users)
         .doc(log.authorId)
-        .collection(DbPath.UserLogs)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .delete();
-      toast.info('Log successfully deleted');
+      history.push(Paths.newTraining);
+      toast.info('Deleted successfully!');
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log]);
+  }, [user.uid, log, history, isTemplate]);
 
   // Render nothing if the logged-in user is not the owner of the given log
   if (log.authorId !== user.uid) return null;
@@ -117,9 +124,11 @@ export const TrainingLogMenuButton: FC<{ log: TrainingLog }> = ({ log }) => {
           onClose={menu.close}
           MenuListProps={{ dense: true }}
         >
-          <MenuItem onClick={createTemplate}>Create Template</MenuItem>
+          {!isTemplate && (
+            <MenuItem onClick={createTemplate}>Create Template</MenuItem>
+          )}
           <MenuItem onClick={deleteLog}>
-            <b>Delete Training Log</b>
+            <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
           </MenuItem>
         </Menu>
       </div>

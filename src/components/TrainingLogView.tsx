@@ -31,6 +31,7 @@ import {
   ActivityStatus,
   Comment,
   TrainingLog,
+  TrainingTemplate,
 } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 import { AppLink } from './AppLink';
@@ -45,16 +46,20 @@ const FlipMoveChild = React.forwardRef<
   { children: React.ReactNode }
 >((props, ref) => <div ref={ref}>{props.children}</div>);
 
-export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
+export const TrainingLogEditorView: FC<{
+  log: TrainingLog | TrainingTemplate;
+}> = ({ log }) => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Loading
   );
+
+  const isTemplate = TrainingLog.isTemplate(log);
 
   useEffect(() => {
     return db
       .collection(DbPath.Users)
       .doc(log.authorId)
-      .collection(DbPath.UserLogs)
+      .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
       .doc(log.id)
       .collection(DbPath.UserLogActivities)
       .withConverter(DbConverter.Activity)
@@ -63,7 +68,7 @@ export const TrainingLogEditorView: FC<{ log: TrainingLog }> = ({ log }) => {
         snapshot => setActivities(snapshot.docs.map(doc => doc.data())),
         error => setActivities(DataState.error(error.message))
       );
-  }, [log.authorId, log.id]);
+  }, [log.authorId, log.id, isTemplate]);
 
   return (
     <DataStateView data={activities}>

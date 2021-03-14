@@ -46,6 +46,8 @@ export const useUser = (): firebase.User => {
  *
  * Must be used within the `UserProvider` app context (due to accessing the
  * authenticated user).
+ *
+ * TODO Delete this
  */
 export const useNewTraining = () => {
   const history = useHistory();

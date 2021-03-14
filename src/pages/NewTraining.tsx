@@ -1,18 +1,26 @@
 import { css } from '@emotion/css';
-import { Button } from '@material-ui/core';
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  NativeSelect,
+} from '@material-ui/core';
 import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict';
-import React, { FC } from 'react';
+import firebase from 'firebase/app';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
-import { Paths } from '../constants';
+import { Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { useNewTraining, useUser } from '../hooks';
-import { TrainingLog } from '../interfaces';
+import { useUser } from '../hooks';
+import { TrainingLog, TrainingTemplate } from '../interfaces';
 import { Columns, Pad } from '../style';
 
 export const NewTraining: FC = () => {
-  const newTraining = useNewTraining();
+  const [templateId, setTemplateId] = useState('');
+
   const user = useUser();
   const history = useHistory();
 
@@ -29,11 +37,75 @@ export const NewTraining: FC = () => {
         .then(({ empty, docs }) => (empty ? DataState.Empty : docs[0].data())),
     [user.uid]
   );
-
   const prevLogDate = DataState.map<TrainingLog, Date>(
     prevLog,
     log => TrainingLog.getDate(log) ?? DataState.Empty
   );
+
+  const [templates] = useDataState<Map<string, TrainingTemplate>>(
+    () =>
+      db
+        .collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserTemplates)
+        .withConverter(DbConverter.TrainingTemplate)
+        .get()
+        .then(({ docs }) => new Map(docs.map(doc => [doc.id, doc.data()]))),
+    [user.uid]
+  );
+
+  const selectedTemplate = useMemo(
+    () =>
+      DataState.map(templates, map => map.get(templateId) ?? DataState.Empty),
+    [templates, templateId]
+  );
+
+  const createTrainingLog = useCallback(async () => {
+    const templateTitle = DataState.isReady(selectedTemplate)
+      ? selectedTemplate.title
+      : '';
+    const newLog: Omit<TrainingLog, 'id'> = {
+      title: `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      notes: null,
+      authorId: user.uid,
+    };
+    try {
+      const newLogRef = await db
+        .collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserLogs)
+        .add(newLog);
+      // If using a template...
+      if (DataState.isReady(selectedTemplate)) {
+        const logActivities = newLogRef.collection(DbPath.UserLogActivities);
+        const templateActivities = await db
+          .collection(DbPath.Users)
+          .doc(user.uid)
+          .collection(DbPath.UserTemplates)
+          .doc(selectedTemplate.id)
+          .collection(DbPath.UserTemplateActivities)
+          .withConverter(DbConverter.Activity)
+          .get()
+          .then(snapshot => snapshot.docs.map(doc => doc.data()));
+        // Copy the template activites to the new training log
+        const batch = db.batch();
+        templateActivities.forEach(a => batch.set(logActivities.doc(a.id), a));
+        await batch.commit();
+        // Add this log to the list of logs created from the selected template
+        db.collection(DbPath.Users)
+          .doc(user.uid)
+          .collection(DbPath.UserTemplates)
+          .doc(selectedTemplate.id)
+          .update({
+            logIds: firebase.firestore.FieldValue.arrayUnion(newLogRef.id),
+          });
+      }
+      history.push(Paths.logEditor(newLogRef.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [history, user.uid, selectedTemplate]);
 
   return (
     <div
@@ -46,28 +118,68 @@ export const NewTraining: FC = () => {
       `}
     >
       <Columns
-        pad={Pad.Small}
+        pad={Pad.Medium}
         className={css`
           text-align: center;
         `}
         maxWidth
       >
-        <Button variant="contained" color="primary" onClick={newTraining}>
-          Go
+        <FormControl disabled={!DataState.isReady(templates)}>
+          <InputLabel htmlFor="template-helper">Training Templates</InputLabel>
+          <NativeSelect
+            value={templateId}
+            onChange={event => setTemplateId(event.target.value)}
+            inputProps={{
+              name: 'Training Template',
+              id: 'template-helper',
+            }}
+          >
+            <option aria-label="None" value="" />
+            <DataStateView
+              data={templates}
+              error={() => null}
+              loading={() => null}
+            >
+              {templates =>
+                templates.size ? (
+                  <>
+                    {Array.from(templates.values()).map(template => (
+                      <option key={template.id} value={template.id}>
+                        {template.title}
+                      </option>
+                    ))}
+                  </>
+                ) : (
+                  <option aria-label="None" value="">
+                    No templates!
+                  </option>
+                )
+              }
+            </DataStateView>
+          </NativeSelect>
+        </FormControl>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={createTrainingLog}
+          size="large"
+        >
+          Start Training
         </Button>
         <Button
           disabled={!DataState.isReady(prevLogDate)}
-          variant="text"
+          variant="outlined"
           color="primary"
           onClick={() => {
             if (!DataState.isReady(prevLog)) return;
             history.push(Paths.logEditor(prevLog.id));
           }}
+          size="small"
         >
           <DataStateView
             data={prevLogDate}
-            error={() => <>No previous training</>}
-            loading={() => <>Loading previous training...</>}
+            error={() => null}
+            loading={() => <>Loading last training...</>}
           >
             {prevLogDate => (
               <>

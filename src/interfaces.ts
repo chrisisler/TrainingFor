@@ -21,11 +21,7 @@ export interface User extends FirestoreDocument {
   followers: string[];
 }
 
-// type Feeling = 'sad' | 'amazed';
-
-export interface TrainingTemplate extends FirestoreDocument {
-  title: string;
-  authorId: string;
+export interface TrainingTemplate extends TrainingLog {
   /** IDs of TrainingLogs stamped out from this template. */
   logIds: string[];
 }
@@ -35,8 +31,6 @@ export interface TrainingLog extends FirestoreDocument {
   timestamp: FirestoreTimestamp;
   notes: null | string;
   authorId: string;
-  /** The way the trainee felt going into training. */
-  // feeling: Feeling;
 }
 
 export interface Activity extends FirestoreDocument {
@@ -114,4 +108,6 @@ export const TrainingLog = {
     // Select the first number, space, and first letter of the token, "27 d"
     return durationRegEx.exec(distance)?.[0].replace(' ', '') ?? '';
   },
+  isTemplate: (log: TrainingLog | TrainingTemplate): log is TrainingTemplate =>
+    Object.prototype.hasOwnProperty.call(log, 'logIds'),
 };
