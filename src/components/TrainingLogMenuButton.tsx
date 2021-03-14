@@ -36,7 +36,7 @@ export const TrainingLogMenuButton: FC<{
       const newTemplate: TrainingTemplate = {
         ...log,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        logIds: [log.id],
+        logIds: [],
       };
       const templateRefP = db
         .collection(DbPath.Users)
