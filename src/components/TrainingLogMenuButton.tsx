@@ -72,7 +72,7 @@ export const TrainingLogMenuButton: FC<{
       logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
       await batch.commit();
       logDoc.delete();
-      history.push(Paths.template());
+      history.push(Paths.template(templateRef.id));
     } catch (error) {
       toast.error(error.message);
     }
