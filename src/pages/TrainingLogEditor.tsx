@@ -96,7 +96,7 @@ export const TrainingLogEditor: FC = () => {
           .orderBy('position', 'desc')
           .limit(1)
           .get();
-        const prevMaxPosition = docs[0]?.get('position') ?? 0;
+        const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
         const newActivity: Omit<Activity, 'id'> = {
           name: activityName,
           notes: null,

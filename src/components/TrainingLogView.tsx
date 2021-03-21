@@ -63,7 +63,7 @@ export const TrainingLogEditorView: FC<{
       .doc(log.id)
       .collection(DbPath.UserLogActivities)
       .withConverter(DbConverter.Activity)
-      .orderBy('position', 'desc')
+      .orderBy('position', 'asc')
       .onSnapshot(
         snapshot => setActivities(snapshot.docs.map(doc => doc.data())),
         error => setActivities(DataState.error(error.message))
@@ -142,7 +142,7 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
         .doc(log.id)
         .collection(DbPath.UserLogActivities)
         .withConverter(DbConverter.Activity)
-        .orderBy('position', 'desc')
+        .orderBy('position', 'asc')
         .get()
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [log.authorId, log.id]
