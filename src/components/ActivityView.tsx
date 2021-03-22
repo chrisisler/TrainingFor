@@ -345,7 +345,8 @@ export const ActivityView = forwardRef<
             <ChatBubbleOutline
               fontSize="small"
               className={css`
-                color: rgba(0, 0, 0, 0.24);
+                color: ${Color.ActionSecondaryGray};
+                transform: scaleX(-1);
               `}
             />
           </IconButton>
