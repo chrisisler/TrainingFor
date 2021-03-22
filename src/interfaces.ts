@@ -55,6 +55,7 @@ export enum ActivityStatus {
   Completed = 'completed',
   Injured = 'injured',
   Skipped = 'skipped',
+  Optional = 'optional',
 }
 
 export interface Comment extends FirestoreDocument {
@@ -72,7 +73,8 @@ export const Activity = {
     if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
     if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;
     if (s === ActivityStatus.Skipped) return ActivityStatus.Injured;
-    if (s === ActivityStatus.Injured) return ActivityStatus.Unattempted;
+    if (s === ActivityStatus.Injured) return ActivityStatus.Optional;
+    if (s === ActivityStatus.Optional) return ActivityStatus.Unattempted;
     throw Error('Unreachable');
   },
   abbreviate: (name: string): string => {
