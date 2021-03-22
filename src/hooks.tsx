@@ -9,12 +9,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useHistory } from 'react-router-dom';
-import { toast } from 'react-toastify';
-
-import { Paths, Weekdays } from './constants';
-import { db, DbPath } from './firebase';
-import { TrainingLog } from './interfaces';
 
 // Tell TypeScript we're supplying a `firebase.User` here even though we do not
 // have an authenticated user yet. This context will not be consumed outside of
@@ -38,39 +32,6 @@ export const UserProvider: FC<{
 export const useUser = (): firebase.User => {
   const user = useContext(UserContext);
   return user;
-};
-
-/**
- * Create a new `DbPath.UserLogs` entry and navigate the client to the log
- * editor.
- *
- * Must be used within the `UserProvider` app context (due to accessing the
- * authenticated user).
- *
- * TODO Delete this
- */
-export const useNewTraining = () => {
-  const history = useHistory();
-  const user = useUser();
-
-  return useCallback(async () => {
-    const newLog: Omit<TrainingLog, 'id'> = {
-      title: `${Weekdays[new Date().getDay()]} Training`,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      notes: null,
-      authorId: user.uid,
-    };
-    try {
-      const { id } = await db
-        .collection(DbPath.Users)
-        .doc(user.uid)
-        .collection(DbPath.UserLogs)
-        .add(newLog);
-      history.push(Paths.logEditor(id));
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [history, user.uid]);
 };
 
 /**

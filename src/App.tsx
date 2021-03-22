@@ -84,7 +84,7 @@ export const App: FC = () => {
           {user => (
             <UserProvider user={user}>
               <Switch>
-                <Route exact path={Paths.logView()}>
+                <Route exact path={[Paths.logView(), Paths.templateView()]}>
                   <ViewWithNavBar>
                     <TrainingLogViewPage />
                   </ViewWithNavBar>

@@ -209,6 +209,7 @@ export const Timeline: FC = () => {
 const TimelineView: FC = () => {
   const user = useUser();
 
+  // TODO Just fetch the followedUsersLogsIds, get the data when rendering
   const [followedUsersLogs] = useDataState(async () => {
     const userDoc = await db.collection(DbPath.Users).doc(user.uid).get();
     const following: string[] = userDoc.get('following');

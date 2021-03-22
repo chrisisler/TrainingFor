@@ -18,7 +18,7 @@ import { TrainingLogMenuButton } from '../components/TrainingLogMenuButton';
 import { Format, Milliseconds, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
-import { useMaterialMenu, useNewTraining, useUser } from '../hooks';
+import { useMaterialMenu, useUser } from '../hooks';
 import { TrainingLog } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 
@@ -32,7 +32,6 @@ export const Account: FC = () => {
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
-  const newTraining = useNewTraining();
   const menu = useMaterialMenu();
   const history = useHistory();
 
@@ -202,7 +201,11 @@ export const Account: FC = () => {
                   <Columns
                     key={template.id}
                     onClick={() => {
-                      history.push(Paths.template(template.id));
+                      const templatePath =
+                        template.authorId === user.uid
+                          ? Paths.template(template.id)
+                          : Paths.templateView(template.authorId, template.id);
+                      history.push(templatePath);
                     }}
                     className={css`
                       border: 1px solid ${Color.ActionPrimaryBlue};
@@ -288,14 +291,9 @@ export const Account: FC = () => {
               </Columns>
             </>
           ) : (
-            <Columns pad={Pad.Large}>
-              <Typography variant="body1" color="textSecondary">
-                You haven't trained a bit!
-              </Typography>
-              <Button variant="contained" color="primary" onClick={newTraining}>
-                Start Training
-              </Button>
-            </Columns>
+            <Typography variant="body1" color="textSecondary">
+              <i>No training found.</i>
+            </Typography>
           )
         }
       </DataStateView>

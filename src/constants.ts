@@ -28,7 +28,10 @@ export const Paths = {
     `/user/${userId}/log/${logId}`,
   user: (userId = ':userId') => `/user/${userId}`,
   logEditor: (logId = ':logId') => `/log/${logId}`,
+  // TODO Rename 'template' to 'templateEditor'
   template: (templateId = ':templateId') => `/template/${templateId}`,
+  templateView: (userId = ':userId', templateId = ':templateId') =>
+    `/user/${userId}/template/${templateId}`,
   signUp: '/signup',
   logIn: '/login',
   timeline: '/timeline',

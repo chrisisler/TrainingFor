@@ -92,7 +92,7 @@ const durationRegEx = /\d+\s+\w/;
 // eslint-disable-next-line
 export const TrainingLog = {
   getDate: (log: TrainingLog): Date | null => {
-    if (!log.timestamp) return null;
+    if (!log?.timestamp) return null;
     return (log.timestamp as firebase.firestore.Timestamp)?.toDate();
   },
   /**

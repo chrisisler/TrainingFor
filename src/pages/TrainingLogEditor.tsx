@@ -4,14 +4,16 @@ import {
   ArrowBackIosRounded,
   ArrowForwardIosRounded,
 } from '@material-ui/icons';
-import format from 'date-fns/format';
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { TrainingLogMenuButton } from '../components/TrainingLogMenuButton';
-import { TrainingLogEditorView } from '../components/TrainingLogView';
-import { Format, Paths } from '../constants';
+import {
+  TrainingLogDateView,
+  TrainingLogEditorView,
+} from '../components/TrainingLogView';
+import { Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
@@ -33,17 +35,6 @@ export const TrainingLogEditor: FC = () => {
 
   const isTemplate = !!templateId;
 
-  const logDate = useMemo(
-    () =>
-      DataState.map(log, l => {
-        if (TrainingLog.isTemplate(l)) return DataState.Empty;
-        const date = TrainingLog.getDate(l);
-        if (!date) return DataState.Empty;
-        return format(date, Format.time);
-      }),
-    [log]
-  );
-
   // Subscribe to updates to the TrainingLog/Template ID from the URL
   useEffect(() => {
     if (!logId && !templateId) {
@@ -59,7 +50,7 @@ export const TrainingLogEditor: FC = () => {
       )
       .doc(templateId ?? logId)
       .onSnapshot(
-        doc => setLog(doc.data() ?? DataState.error('No doc found')),
+        doc => setLog(doc.data() ?? DataState.Empty),
         err => setLog(DataState.error(err.message))
       );
   }, [user.uid, logId, templateId]);
@@ -178,21 +169,7 @@ export const TrainingLogEditor: FC = () => {
           >
             <Rows center maxWidth between>
               <Columns>
-                <Typography variant="body2" color="textSecondary">
-                  {templateId ? (
-                    <i>
-                      <b>Training Template</b>
-                    </i>
-                  ) : (
-                    <DataStateView
-                      data={logDate}
-                      loading={() => <>Loading...</>}
-                      error={() => null}
-                    >
-                      {logDate => <>{logDate}</>}
-                    </DataStateView>
-                  )}
-                </Typography>
+                <TrainingLogDateView log={log} />
                 <Typography
                   variant="h6"
                   color="textPrimary"
@@ -259,7 +236,7 @@ export const TrainingLogEditor: FC = () => {
               {activityName.length > 0 && (
                 <button
                   className={css`
-                    padding: ${Pad.Small} ${Pad.Medium};
+                    padding: ${Pad.Small} ${Pad.Large};
                     border-radius: 5px;
                     border: 1px solid ${Color.ActionSecondaryGray};
                     background-color: transparent;

@@ -119,7 +119,10 @@ export const TrainingLogEditorView: FC<{
  * Read-only view of a TrainingLog.
  * This component is for viewing logs not authored by the authenticated user.
  */
-export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
+// TODO Update to look like the Editor
+export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
+  log,
+}) => {
   const logDate = TrainingLog.getDate(log);
   const isTemplate = TrainingLog.isTemplate(log);
 
@@ -163,13 +166,14 @@ export const TrainingLogView: FC<{ log: TrainingLog }> = ({ log }) => {
               </Typography>
             )}
             <Rows maxWidth between>
-              {logDate && (
+              {!isTemplate && logDate && (
                 <Typography variant="body2" color="textSecondary">
                   {format(logDate, Format.date)}
                   <br />
                   {format(logDate, Format.time)}
                 </Typography>
               )}
+              {isTemplate && <TrainingLogDateView log={log} />}
               <Typography variant="body1" color="textPrimary">
                 {log.title}
               </Typography>
@@ -841,5 +845,31 @@ const ActivitySetView: FC<{
         </button>
       </Columns>
     </Rows>
+  );
+};
+
+export const TrainingLogDateView: FC<{
+  log: TrainingLog | TrainingTemplate;
+}> = ({ log }) => {
+  const isTemplate = TrainingLog.isTemplate(log);
+  const _date = TrainingLog.getDate(log);
+  const date = _date ? format(_date, Format.time) : DataState.Empty;
+
+  return (
+    <Typography variant="body2" color="textSecondary">
+      {isTemplate ? (
+        <i>
+          <b>Training Template</b>
+        </i>
+      ) : (
+        <DataStateView
+          data={date}
+          loading={() => <>Loading...</>}
+          error={() => null}
+        >
+          {date => <>{date}</>}
+        </DataStateView>
+      )}
+    </Typography>
   );
 };

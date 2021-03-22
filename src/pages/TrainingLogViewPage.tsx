@@ -1,37 +1,37 @@
 import { css } from '@emotion/css';
-import { IconButton } from '@material-ui/core';
-import { ArrowBackIosRounded } from '@material-ui/icons';
 import React, { FC } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { TrainingLogView } from '../components/TrainingLogView';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { Pad, Rows } from '../style';
 
+/**
+ * Read-only presentation of a TrainingLog/Template.
+ *
+ * When viewing one's own log or template , the Editor page is used, not this.
+ */
 export const TrainingLogViewPage: FC = () => {
-  const history = useHistory();
-  const { userId, logId } = useParams<{ userId?: string; logId?: string }>();
+  const { userId, logId, templateId } = useParams<{
+    userId?: string;
+    logId?: string;
+    templateId?: string;
+  }>();
+
+  const isTemplate = !!templateId;
 
   const [log] = useDataState(
     () =>
-      !userId || !logId
-        ? Promise.reject(DataState.error('Invalid route params'))
-        : db
-            .collection(DbPath.Users)
-            .doc(userId)
-            .collection(DbPath.UserLogs)
-            .withConverter(DbConverter.TrainingLog)
-            .doc(logId)
-            .get()
-            .then(doc => {
-              const log = doc.data();
-              if (!log) {
-                return DataState.error('TrainingLog document does not exist.');
-              }
-              log.authorId = userId;
-              return log;
-            }),
+      db
+        .collection(DbPath.Users)
+        .doc(userId)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+        .withConverter(
+          isTemplate ? DbConverter.TrainingTemplate : DbConverter.TrainingLog
+        )
+        .doc(templateId ?? logId)
+        .get()
+        .then(doc => doc.data() ?? DataState.Empty),
     [userId, logId]
   );
 
@@ -43,11 +43,6 @@ export const TrainingLogViewPage: FC = () => {
         overflow-y: scroll;
       `}
     >
-      <Rows maxWidth center padding={`0 ${Pad.Medium}`}>
-        <IconButton aria-label="Go back" onClick={() => history.goBack()}>
-          <ArrowBackIosRounded color="primary" />
-        </IconButton>
-      </Rows>
       <DataStateView data={log}>
         {log => <TrainingLogView log={log} />}
       </DataStateView>

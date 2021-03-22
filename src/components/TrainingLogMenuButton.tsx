@@ -18,7 +18,8 @@ import { ActivityStatus, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color } from '../style';
 
 /**
- * Presents a menu icon with menu options to act on the given TrainingLog.
+ * Presents a menu icon with menu options to act on the given
+ * TrainingLog(Template).
  */
 export const TrainingLogMenuButton: FC<{
   log: TrainingLog | TrainingTemplate;
@@ -27,6 +28,7 @@ export const TrainingLogMenuButton: FC<{
   const menu = useMaterialMenu();
   const history = useHistory();
 
+  const isOwned = log.authorId === user.uid;
   const isTemplate = TrainingLog.isTemplate(log);
 
   const createTemplate = useCallback(async () => {
@@ -79,7 +81,7 @@ export const TrainingLogMenuButton: FC<{
   }, [log, user.uid, history, isTemplate]);
 
   const deleteLog = useCallback(async () => {
-    if (log.authorId !== user.uid) return;
+    if (!isOwned) return;
     if (!window.confirm(`Delete "${log.title}" forever?`)) return;
     try {
       await db
@@ -93,10 +95,23 @@ export const TrainingLogMenuButton: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log, history, isTemplate]);
+  }, [isOwned, log, history, isTemplate]);
 
-  // Render nothing if the logged-in user is not the owner of the given log
-  if (log.authorId !== user.uid) return null;
+  /** Copy the viewed template, adding it to the user's templates */
+  const copyTemplate = useCallback(async () => {
+    if (isOwned || !TrainingLog.isTemplate(log)) return;
+    try {
+      await db
+        .collection(DbPath.Users)
+        .doc(user.uid)
+        .collection(DbPath.UserTemplates)
+        .withConverter(DbConverter.TrainingTemplate)
+        .add(log);
+      toast.success(`Added ${log.title} to your templates!`);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, isOwned]);
 
   return (
     <ClickAwayListener onClickAway={menu.close}>
@@ -121,7 +136,10 @@ export const TrainingLogMenuButton: FC<{
           onClose={menu.close}
           MenuListProps={{ dense: true }}
         >
-          {!isTemplate && (
+          {isTemplate && !isOwned && (
+            <MenuItem onClick={copyTemplate}>Add to Templates</MenuItem>
+          )}
+          {!isTemplate && isOwned && (
             <MenuItem onClick={createTemplate}>Create Template</MenuItem>
           )}
           <MenuItem onClick={deleteLog}>

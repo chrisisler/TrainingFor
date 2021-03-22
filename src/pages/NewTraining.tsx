@@ -164,7 +164,7 @@ export const NewTraining: FC = () => {
           onClick={createTrainingLog}
           size="large"
         >
-          Start Training
+          New Training
         </Button>
         <Button
           disabled={!DataState.isReady(prevLogDate)}
@@ -180,6 +180,7 @@ export const NewTraining: FC = () => {
             data={prevLogDate}
             error={() => null}
             loading={() => <>Loading last training...</>}
+            empty={() => <>No previous training</>}
           >
             {prevLogDate => (
               <>
