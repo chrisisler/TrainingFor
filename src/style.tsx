@@ -32,7 +32,7 @@ interface Props {
 
 const Div = styled.div`
   width: ${({ maxWidth }: Props) => (maxWidth ? '100%' : 'auto')};
-  align-items: ${({ center }: Props) => (center ? 'center' : 'initial')};
+  ${({ center }: Props) => (center ? 'align-items: center;' : '')}
   padding: ${({ padding }: Props) => padding};
   justify-content: ${({ between }: Props) =>
     between ? 'space-between' : 'initial'};

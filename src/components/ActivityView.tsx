@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, ChatBubbleOutline, MoreVert } from '@material-ui/icons';
+import { ChatBubbleOutline, MoreHoriz } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -213,165 +213,118 @@ export const ActivityView: FC<{
       className={css`
         margin: ${Pad.Medium};
         border-radius: 8px;
-        padding: ${Pad.Medium};
-        padding-bottom: ${Pad.Small};
+        padding: ${Pad.Small} ${Pad.Medium};
         border: 1px solid lightgray;
       `}
       pad={Pad.Small}
     >
-      <Rows pad={Pad.Medium}>
-        <Columns
-          pad={Pad.Small}
+      <Columns pad={Pad.Medium}>
+        <Rows
+          pad={Pad.Medium}
+          center
           className={css`
             width: min-content;
           `}
         >
-          <div
-            className={css`
-              box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3);
-              border-radius: 8px;
-              width: 80px;
-              height: 80px;
-              position: relative;
-              overflow: hidden;
-            `}
-            onClick={event => {
-              if (!editable) return;
-              const self = event.currentTarget;
-              const target = event.target as EventTarget & Node;
-              // Add set if not clicking menu icon
-              if (!self.contains(target)) return;
-              if (self.firstElementChild?.contains(target)) return;
-              addActivitySet();
-            }}
-          >
-            {editable && (
-              <ClickAwayListener onClickAway={menu.close}>
-                <div
-                  className={css`
-                    position: absolute;
-                    left: -3%;
-                    top: 3%;
-                  `}
-                >
-                  <IconButton
-                    disabled={!editable}
-                    aria-label="Open activity menu"
-                    aria-controls="activity-menu"
-                    aria-haspopup="true"
-                    onClick={menu.open}
-                    size="small"
-                  >
-                    <MoreVert
-                      className={css`
-                        color: ${Color.ActionPrimaryGray};
-                      `}
-                    />
-                  </IconButton>
-                  <Menu
-                    id="activity-menu"
-                    anchorEl={menu.ref}
-                    open={!!menu.ref}
-                    onClose={menu.close}
-                    MenuListProps={{ dense: true }}
-                  >
-                    <MenuItem
-                      onClick={moveActivityUp}
-                      disabled={activities.length === 1 || index === 0}
-                    >
-                      Move up
-                    </MenuItem>
-                    <MenuItem
-                      onClick={moveActivityDown}
-                      disabled={
-                        activities.length === 1 ||
-                        index + 1 === activities.length
-                      }
-                    >
-                      Move down
-                    </MenuItem>
-                    <MenuItem onClick={renameActivity}>
-                      Rename activity
-                    </MenuItem>
-                    <MenuItem onClick={deleteActivity}>
-                      <b>Delete activity</b>
-                    </MenuItem>
-                  </Menu>
-                </div>
-              </ClickAwayListener>
-            )}
+          <Columns>
             <p
               className={css`
-                position: absolute;
-                left: 10%;
-                color: ${Color.ActionPrimaryBlue};
-                bottom: 8%;
-                font-size: 1.3rem;
-                text-transform: uppercase;
-                font-weight: 600;
+                color: ${Color.FontPrimary};
+                font-size: 1.1rem;
               `}
+              onClick={addActivitySet}
             >
-              {Activity.abbreviate(activity.name)}
+              {activity.name}
             </p>
-            <div
+            <ol
               className={css`
-                position: absolute;
-                left: 65%;
-                bottom: 63%;
+                padding: 0;
+                height: 12px;
+
+                & > li {
+                  display: inline-block;
+                  height: 100%;
+                  margin-right: 5px;
+                  width: 4px;
+                  background-color: palevioletred;
+                  border-radius: 4px;
+
+                  &:nth-child(5n) {
+                    transform: rotate(-75deg);
+                    height: 260%;
+                    position: relative;
+                    left: -22px;
+                    top: 10px;
+                    margin-top: -${Pad.Medium};
+                  }
+                }
               `}
             >
-              <Add
+              {activity.sets.map(({ uuid }) => (
+                <li key={uuid} />
+              ))}
+            </ol>
+          </Columns>
+          {editable && (
+            <ClickAwayListener onClickAway={menu.close}>
+              <div
                 className={css`
-                  color: ${Color.ActionPrimaryBlue};
+                  margin-left: auto;
                 `}
-              />
-            </div>
-          </div>
-          <p
-            className={css`
-              color: ${Color.FontPrimary};
-            `}
-          >
-            {activity.name}
-          </p>
-          <ol
-            className={css`
-              padding: 0;
-
-              & > li {
-                display: inline-block;
-                height: 25px;
-                margin-right: 4px;
-                width: 4px;
-                background-color: palevioletred;
-                border-radius: 4px;
-
-                &:nth-child(5n) {
-                  transform: rotate(300deg);
-                  height: 35px;
-                  position: relative;
-                  left: -20px;
-                  top: 5px;
-                  margin-top: -${Pad.Small};
-                }
-              }
-            `}
-          >
-            {activity.sets.map(({ uuid }) => (
-              <li key={uuid} />
-            ))}
-          </ol>
-        </Columns>
+              >
+                <IconButton
+                  disabled={!editable}
+                  aria-label="Open activity menu"
+                  aria-controls="activity-menu"
+                  aria-haspopup="true"
+                  onClick={menu.open}
+                >
+                  <MoreHoriz
+                    className={css`
+                      color: ${Color.ActionSecondaryGray};
+                    `}
+                    fontSize="small"
+                  />
+                </IconButton>
+                <Menu
+                  id="activity-menu"
+                  anchorEl={menu.ref}
+                  open={!!menu.ref}
+                  onClose={menu.close}
+                  MenuListProps={{ dense: true }}
+                >
+                  <MenuItem
+                    onClick={moveActivityUp}
+                    disabled={activities.length === 1 || index === 0}
+                  >
+                    Move up
+                  </MenuItem>
+                  <MenuItem
+                    onClick={moveActivityDown}
+                    disabled={
+                      activities.length === 1 || index + 1 === activities.length
+                    }
+                  >
+                    Move down
+                  </MenuItem>
+                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
+                  <MenuItem onClick={deleteActivity}>
+                    <b>Delete activity</b>
+                  </MenuItem>
+                </Menu>
+              </div>
+            </ClickAwayListener>
+          )}
+        </Rows>
         <FlipMove
           enterAnimation="fade"
           leaveAnimation="fade"
           className={css`
             display: flex;
-            flex-direction: column;
             flex-wrap: wrap;
             width: 100%;
-            max-height: 300px;
-            overflow-x: scroll;
+            max-height: 150px;
+            overflow-y: scroll;
 
             & > :not(:last-child) {
               margin-bottom: ${Pad.XSmall};
@@ -389,7 +342,7 @@ export const ActivityView: FC<{
             </FlipMoveChild>
           ))}
         </FlipMove>
-      </Rows>
+      </Columns>
       <Columns pad={Pad.Small}>
         <DataStateView data={comments} loading={() => null} error={() => null}>
           {comments =>
