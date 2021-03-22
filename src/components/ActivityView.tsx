@@ -236,34 +236,7 @@ export const ActivityView: FC<{
             >
               {activity.name}
             </p>
-            <ol
-              className={css`
-                padding: 0;
-                height: 12px;
-
-                & > li {
-                  display: inline-block;
-                  height: 100%;
-                  margin-right: 5px;
-                  width: 4px;
-                  background-color: palevioletred;
-                  border-radius: 4px;
-
-                  &:nth-child(5n) {
-                    transform: rotate(-75deg);
-                    height: 260%;
-                    position: relative;
-                    left: -22px;
-                    top: 10px;
-                    margin-top: -${Pad.Medium};
-                  }
-                }
-              `}
-            >
-              {activity.sets.map(({ uuid }) => (
-                <li key={uuid} />
-              ))}
-            </ol>
+            <TallyMarks marks={activity.sets.length} />
           </Columns>
           {editable && (
             <ClickAwayListener onClickAway={menu.close}>
@@ -639,3 +612,36 @@ const ActivitySetView: FC<{
     </Rows>
   );
 };
+
+const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
+  <ol
+    className={css`
+      padding: 0;
+      height: 12px;
+
+      & > li {
+        display: inline-block;
+        height: 100%;
+        margin-right: 5px;
+        width: 4px;
+        background-color: palevioletred;
+        border-radius: 4px;
+
+        &:nth-child(5n) {
+          transform: rotate(-75deg);
+          height: 260%;
+          position: relative;
+          left: -22px;
+          top: 10px;
+          margin-top: -${Pad.Medium};
+        }
+      }
+    `}
+  >
+    {Array(marks)
+      .fill(void 0)
+      .map((_, index) => (
+        <li key={index} />
+      ))}
+  </ol>
+);
