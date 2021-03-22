@@ -136,8 +136,20 @@ export const TrainingLogMenuButton: FC<{
           onClose={menu.close}
           MenuListProps={{ dense: true }}
         >
+          {isOwned && window.navigator.share && (
+            <MenuItem
+              onClick={() => {
+                window.navigator.share({
+                  title: log.title,
+                  url: window.location.href,
+                });
+              }}
+            >
+              Share Template
+            </MenuItem>
+          )}
           {isTemplate && !isOwned && (
-            <MenuItem onClick={copyTemplate}>Add to Templates</MenuItem>
+            <MenuItem onClick={copyTemplate}>Add to your Templates</MenuItem>
           )}
           {!isTemplate && isOwned && (
             <MenuItem onClick={createTemplate}>Create Template</MenuItem>
