@@ -88,14 +88,12 @@ export const TrainingLogEditor: FC = () => {
           .limit(1)
           .get();
         const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
-        const newActivity: Omit<Activity, 'id'> = {
-          name: activityName,
-          notes: null,
-          sets: [],
-          position: prevMaxPosition + 1,
-          attachmentUrl: null,
-        };
-        activitiesColl.add(newActivity);
+        activitiesColl.add(
+          Activity.create({
+            name: activityName,
+            position: prevMaxPosition + 1,
+          })
+        );
       } catch (error) {
         toast.error(error.message);
       }
@@ -163,7 +161,7 @@ export const TrainingLogEditor: FC = () => {
           <Columns
             padding={`${Pad.Small} ${Pad.Large} ${Pad.Medium}`}
             className={css`
-              border-bottom: 1px solid lightgray;
+              border-bottom: 1px solid ${Color.ActionSecondaryGray};
               min-height: fit-content;
             `}
           >

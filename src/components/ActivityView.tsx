@@ -10,6 +10,7 @@ import { ChatBubbleOutline, MoreHoriz } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
+  forwardRef,
   useCallback,
   useEffect,
   useMemo,
@@ -32,19 +33,21 @@ import {
   TrainingTemplate,
 } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
-import { FlipMoveChild } from './FlipMoveChild';
 
-export const ActivityView: FC<{
-  /**
-   * If set to true, this view is for the TrainingLogEditor.
-   *
-   * CAUTION: Providing the wrong value will break the entire app!
-   */
-  editable?: boolean;
-  activities: Activity[];
-  index: number;
-  log: TrainingLog | TrainingTemplate;
-}> = ({ activities, index, editable = false, log }) => {
+export const ActivityView = forwardRef<
+  HTMLDivElement,
+  {
+    /**
+     * If set to true, this view is for the TrainingLogEditor.
+     *
+     * CAUTION: Providing the wrong value will break the entire app!
+     */
+    editable?: boolean;
+    activities: Activity[];
+    index: number;
+    log: TrainingLog | TrainingTemplate;
+  }
+>(({ activities, index, editable = false, log }, ref) => {
   const activity = activities[index];
   const isTemplate = TrainingLog.isTemplate(log);
 
@@ -70,6 +73,19 @@ export const ActivityView: FC<{
         .doc(activity.id),
     [activity.id, log.authorId, log.id, isTemplate]
   );
+
+  // Load `comments` and subscribe to changes to the collection
+  useEffect(() => {
+    return activityDocument
+      .collection(DbPath.UserLogActivityComments)
+      .withConverter(DbConverter.Comment)
+      .orderBy('timestamp', 'desc')
+      .limit(3)
+      .onSnapshot(
+        snapshot => setComments(snapshot.docs.map(doc => doc.data())),
+        err => setComments(DataState.error(err.message))
+      );
+  }, [activityDocument]);
 
   const addActivitySet = useCallback(() => {
     const lastSet = activity.sets[activity.sets.length - 1];
@@ -195,56 +211,89 @@ export const ActivityView: FC<{
     [activityDocument, comment, user.displayName, user.uid]
   );
 
-  // Load `comments` and subscribe to changes to the collection
-  useEffect(() => {
-    return activityDocument
-      .collection(DbPath.UserLogActivityComments)
-      .withConverter(DbConverter.Comment)
-      .orderBy('timestamp', 'desc')
-      .limit(3)
-      .onSnapshot(
-        snapshot => setComments(snapshot.docs.map(doc => doc.data())),
-        err => setComments(DataState.error(err.message))
+  const cycleWeightUnit = useCallback(async () => {
+    try {
+      activityDocument.set(
+        { weightUnit: Activity.cycleWeightUnit(activity.weightUnit) },
+        { merge: true }
       );
-  }, [activityDocument]);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, activity.weightUnit]);
+
+  const cycleRepCountUnit = useCallback(async () => {
+    try {
+      activityDocument.set(
+        { repCountUnit: Activity.cycleRepCountUnit(activity.repCountUnit) },
+        { merge: true }
+      );
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, activity.repCountUnit]);
+
+  const activityUnitButtonStyle = css`
+    color: ${Color.ActionPrimaryGray};
+    padding: ${Pad.XSmall};
+    font-size: ${Font.Small};
+    border: 0;
+    background-color: transparent;
+    text-transform: uppercase;
+    outline: none;
+  `;
 
   return (
     <Columns
+      ref={ref}
       className={css`
-        margin: ${Pad.Medium};
-        border-radius: 8px;
-        padding: ${Pad.Small} ${Pad.Medium};
-        border: 1px solid lightgray;
+        padding: ${Pad.Medium} 0;
+        margin: 0 ${Pad.Medium};
       `}
-      pad={Pad.Small}
+      pad={Pad.Medium}
     >
-      <Columns pad={Pad.Medium}>
+      <Rows
+        center
+        className={css`
+          width: min-content;
+        `}
+      >
+        <Columns onClick={addActivitySet}>
+          <p
+            className={css`
+              color: ${Color.FontPrimary};
+              font-size: ${Font.Medium};
+              font-weight: 500;
+            `}
+          >
+            {activity.name}
+          </p>
+          <TallyMarks marks={activity.sets.length} />
+        </Columns>
         <Rows
-          pad={Pad.Medium}
           center
           className={css`
-            width: min-content;
+            margin-left: auto;
           `}
         >
-          <Columns>
-            <p
-              className={css`
-                color: ${Color.FontPrimary};
-                font-size: 1.1rem;
-              `}
-              onClick={addActivitySet}
-            >
-              {activity.name}
-            </p>
-            <TallyMarks marks={activity.sets.length} />
-          </Columns>
+          <button
+            disabled={!editable}
+            onClick={cycleWeightUnit}
+            className={activityUnitButtonStyle}
+          >
+            {activity.weightUnit}
+          </button>
+          <X />
+          <button
+            disabled={!editable}
+            onClick={cycleRepCountUnit}
+            className={activityUnitButtonStyle}
+          >
+            {activity.repCountUnit}
+          </button>
           {editable && (
             <ClickAwayListener onClickAway={menu.close}>
-              <div
-                className={css`
-                  margin-left: auto;
-                `}
-              >
+              <div>
                 <IconButton
                   disabled={!editable}
                   aria-label="Open activity menu"
@@ -288,34 +337,41 @@ export const ActivityView: FC<{
               </div>
             </ClickAwayListener>
           )}
+          <IconButton
+            aria-label="Add comment"
+            onClick={showActivityCommentInput}
+            size="small"
+          >
+            <ChatBubbleOutline
+              fontSize="small"
+              className={css`
+                color: rgba(0, 0, 0, 0.24);
+              `}
+            />
+          </IconButton>
         </Rows>
-        <FlipMove
-          enterAnimation="fade"
-          leaveAnimation="fade"
-          className={css`
-            display: flex;
-            flex-wrap: wrap;
-            width: 100%;
-            max-height: 150px;
-            overflow-y: scroll;
-
-            & > :not(:last-child) {
-              margin-bottom: ${Pad.XSmall};
-            }
-          `}
-        >
-          {activity.sets.map(({ uuid }, index) => (
-            <FlipMoveChild key={uuid}>
-              <ActivitySetView
-                index={index}
-                sets={activity.sets}
-                editable={editable}
-                activityDocument={activityDocument}
-              />
-            </FlipMoveChild>
-          ))}
-        </FlipMove>
-      </Columns>
+      </Rows>
+      <FlipMove
+        enterAnimation="fade"
+        leaveAnimation="fade"
+        className={css`
+          display: flex;
+          flex-wrap: wrap;
+          width: 100%;
+          max-height: 200px;
+          overflow-y: scroll;
+        `}
+      >
+        {activity.sets.map(({ uuid }, index) => (
+          <ActivitySetView
+            key={uuid}
+            index={index}
+            sets={activity.sets}
+            editable={editable}
+            activityDocument={activityDocument}
+          />
+        ))}
+      </FlipMove>
       <Columns pad={Pad.Small}>
         <DataStateView data={comments} loading={() => null} error={() => null}>
           {comments =>
@@ -340,17 +396,6 @@ export const ActivityView: FC<{
           }
         </DataStateView>
         <Rows maxWidth center pad={Pad.XSmall}>
-          <IconButton
-            aria-label="Add comment"
-            size="small"
-            onClick={showActivityCommentInput}
-          >
-            <ChatBubbleOutline
-              className={css`
-                color: rgba(0, 0, 0, 0.24);
-              `}
-            />
-          </IconButton>
           {typeof comment === 'string' && (
             <>
               <form
@@ -405,14 +450,17 @@ export const ActivityView: FC<{
       </Columns>
     </Columns>
   );
-};
+});
 
-const ActivitySetView: FC<{
-  index: number;
-  sets: ActivitySet[];
-  editable: boolean;
-  activityDocument: firebase.firestore.DocumentReference<Activity>;
-}> = ({ index, sets, editable, activityDocument }) => {
+const ActivitySetView = forwardRef<
+  HTMLDivElement,
+  {
+    index: number;
+    sets: ActivitySet[];
+    editable: boolean;
+    activityDocument: firebase.firestore.DocumentReference<Activity>;
+  }
+>(({ index, sets, editable, activityDocument }, ref) => {
   const set = sets[index];
 
   const resizeWeightInput = useResizableInputRef();
@@ -422,6 +470,21 @@ const ActivitySetView: FC<{
   const [repCount, setRepCount] = useState(set.repCount);
 
   const menu = useMaterialMenu();
+
+  const setInputStyle = useCallback(
+    (value: number) => css`
+      background-color: transparent;
+      width: 3ch;
+      border: none;
+      outline: none;
+      padding: ${Pad.XSmall};
+      font-family: sans-serif;
+      color: ${value === 0 ? Color.ActionSecondaryGray : 'palevioletred'};
+      font-weight: 400;
+      font-size: ${Font.MedLarge};
+    `,
+    []
+  );
 
   const cycleSetStatus = useCallback(() => {
     sets[index].status = Activity.cycleStatus(set.status);
@@ -471,147 +534,132 @@ const ActivitySetView: FC<{
     [activityDocument]
   );
 
-  const setInputStyle = useCallback(
-    (value: number) => css`
-      background-color: transparent;
-      width: 3ch;
-      border: none;
-      outline: none;
-      padding: 0;
-      font-family: sans-serif;
-      color: ${value === 0 ? Color.ActionSecondaryGray : 'palevioletred'};
-      font-weight: 400;
-      font-size: ${Font.Medium};
-    `,
-    []
-  );
-
   return (
-    <Rows center between>
-      <Columns center>
-        <Rows maxWidth center pad={Pad.Large}>
-          <ClickAwayListener onClickAway={menu.close}>
-            <div>
-              <IconButton
-                disabled={!editable}
-                size="small"
-                aria-label="Open set menu"
-                aria-controls="set-menu"
-                aria-haspopup="true"
-                onClick={menu.open}
-              >
-                <Typography
-                  variant="subtitle1"
-                  className={css`
-                    color: ${Color.ActionPrimaryBlue};
-                    font-style: italic;
-                    line-height: 1 !important;
-                  `}
-                >
-                  {index + 1}
-                </Typography>
-              </IconButton>
-              <Menu
-                id="set-menu"
-                anchorEl={menu.ref}
-                open={!!menu.ref}
-                onClose={menu.close}
-                MenuListProps={{ dense: true }}
-              >
-                <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
-                <MenuItem onClick={deleteSet}>
-                  <b>Delete set</b>
-                </MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
-          <div
-            className={css`
-              display: flex;
-              align-items: baseline;
-            `}
-          >
-            <input
+    <Columns
+      ref={ref}
+      className={css`
+        border: 1px solid ${Color.ActionSecondaryGray};
+        border-radius: 5px;
+        margin: 0 ${Pad.Small} ${Pad.XSmall} 0;
+        padding: 0 ${Pad.XSmall};
+        flex: 0.5;
+      `}
+    >
+      <Rows center>
+        <ClickAwayListener onClickAway={menu.close}>
+          <div>
+            <IconButton
               disabled={!editable}
-              ref={resizeWeightInput}
-              type="tel"
-              min={0}
-              max={999}
-              name="weight"
-              value={weight}
-              onFocus={event => {
-                event.currentTarget.select();
-              }}
-              onChange={event => {
-                if (Number.isNaN(event.target.value)) return;
-                setWeight(Number(event.target.value));
-              }}
-              onBlur={event => {
-                sets[index].weight = Number(event.target.value);
-                updateSets(sets);
-              }}
-              className={css`
-                ${setInputStyle(weight)}
-                text-align: end;
-              `}
-            />
-            <p
-              className={css`
-                font-family: monospace;
-                font-style: italic;
-                color: ${Color.ActionSecondaryGray};
-                font-weight: 600;
-              `}
+              size="small"
+              aria-label="Open set menu"
+              aria-controls="set-menu"
+              aria-haspopup="true"
+              onClick={menu.open}
             >
-              x
-            </p>
-            <input
-              disabled={!editable}
-              ref={resizeRepCountInput}
-              type="tel"
-              min={0}
-              max={999}
-              name="repCount"
-              value={repCount ?? 0}
-              onFocus={event => {
-                event.currentTarget.select();
-              }}
-              onChange={event => {
-                if (Number.isNaN(event.target.value)) return;
-                setRepCount(Number(event.target.value));
-              }}
-              onBlur={event => {
-                sets[index].repCount = Number(event.target.value);
-                updateSets(sets);
-              }}
-              className={css`
-                ${setInputStyle(repCount ?? 0)}
-              `}
-            />
+              <Typography
+                variant="subtitle1"
+                className={css`
+                  color: ${Color.ActionPrimaryBlue};
+                  font-style: italic;
+                  line-height: 1 !important;
+                  width: 2ch;
+                  font-size: ${Font.MedLarge};
+                `}
+              >
+                {index + 1}
+              </Typography>
+            </IconButton>
+            <Menu
+              id="set-menu"
+              anchorEl={menu.ref}
+              open={!!menu.ref}
+              onClose={menu.close}
+              MenuListProps={{ dense: true }}
+            >
+              <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
+              <MenuItem onClick={deleteSet}>
+                <b>Delete set</b>
+              </MenuItem>
+            </Menu>
           </div>
-        </Rows>
-        <button
-          disabled={!editable}
-          onClick={cycleSetStatus}
+        </ClickAwayListener>
+        <Rows
           className={css`
-            color: ${Color.ActionPrimaryGray};
-            padding: ${Pad.XSmall};
-            font-size: 0.78rem;
-            border: 0;
-            font-weight: 800;
-            background-color: transparent;
-            text-transform: uppercase;
-            outline: none;
-            width: 100px;
-            text-align: left;
+            align-items: baseline;
+            margin-left: auto;
           `}
         >
-          {set.status}
-        </button>
-      </Columns>
-    </Rows>
+          <input
+            disabled={!editable}
+            ref={resizeWeightInput}
+            type="tel"
+            min={0}
+            max={999}
+            name="weight"
+            value={weight}
+            onFocus={event => {
+              event.currentTarget.select();
+            }}
+            onChange={event => {
+              if (Number.isNaN(event.target.value)) return;
+              setWeight(Number(event.target.value));
+            }}
+            onBlur={event => {
+              sets[index].weight = Number(event.target.value);
+              updateSets(sets);
+            }}
+            className={css`
+              ${setInputStyle(weight)}
+              text-align: end;
+            `}
+          />
+          <X />
+          <input
+            disabled={!editable}
+            ref={resizeRepCountInput}
+            type="tel"
+            min={0}
+            max={999}
+            name="repCount"
+            value={repCount ?? 0}
+            onFocus={event => {
+              event.currentTarget.select();
+            }}
+            onChange={event => {
+              if (Number.isNaN(event.target.value)) return;
+              setRepCount(Number(event.target.value));
+            }}
+            onBlur={event => {
+              sets[index].repCount = Number(event.target.value);
+              updateSets(sets);
+            }}
+            className={css`
+              ${setInputStyle(repCount ?? 0)}
+            `}
+          />
+        </Rows>
+      </Rows>
+      <button
+        disabled={!editable}
+        onClick={cycleSetStatus}
+        className={css`
+          color: ${Color.ActionPrimaryGray};
+          padding: ${Pad.XSmall};
+          font-size: ${Font.Small};
+          border: 0;
+          font-weight: 600;
+          background-color: transparent;
+          text-transform: uppercase;
+          outline: none;
+          width: 100%;
+          text-align: left;
+        `}
+      >
+        {set.status}
+      </button>
+    </Columns>
   );
-};
+});
 
 const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
   <ol
@@ -625,7 +673,7 @@ const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
         margin-right: 5px;
         width: 4px;
         background-color: palevioletred;
-        border-radius: 4px;
+        border-radius: 5px;
 
         &:nth-child(5n) {
           transform: rotate(-75deg);
@@ -644,4 +692,16 @@ const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
         <li key={index} />
       ))}
   </ol>
+);
+
+const X: FC = () => (
+  <p
+    className={css`
+      color: ${Color.ActionSecondaryGray};
+      font-style: italic;
+      font-size: ${Font.Small};
+    `}
+  >
+    x
+  </p>
 );

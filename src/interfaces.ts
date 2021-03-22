@@ -39,6 +39,8 @@ export interface Activity extends FirestoreDocument {
   position: number;
   sets: ActivitySet[];
   attachmentUrl: null | string;
+  weightUnit: ActivityWeightUnit;
+  repCountUnit: ActivityRepCountUnit;
 }
 
 export interface ActivitySet {
@@ -47,7 +49,9 @@ export interface ActivitySet {
   notes: null | string;
   status: ActivityStatus;
   weight: number;
+  /** repCount represents either a time value or repetition count */
   repCount: null | number;
+  // symmetry: ActivitySetSymmetry;
 }
 
 export enum ActivityStatus {
@@ -57,6 +61,23 @@ export enum ActivityStatus {
   Skipped = 'skipped',
   Optional = 'optional',
 }
+
+export enum ActivityRepCountUnit {
+  Repetitions = 'rep',
+  Seconds = 'sec',
+  Minutes = 'min',
+}
+
+export enum ActivityWeightUnit {
+  Kilograms = 'kg',
+  Pounds = 'lb',
+}
+
+// export enum ActivitySetSymmetry {
+//   Symmetrical = 'symmetrical',
+//   Left = 'left',
+//   Right = 'right',
+// }
 
 export interface Comment extends FirestoreDocument {
   timestamp: FirestoreTimestamp;
@@ -69,6 +90,32 @@ const whitespaceOrDash = /(\s+|-+)/;
 
 // eslint-disable-next-line
 export const Activity = {
+  /** Create a valid Activity object given required fields. */
+  create: (
+    data: Pick<Activity, 'name' | 'position'>
+  ): Omit<Activity, 'id'> => ({
+    name: data.name,
+    position: data.position,
+    notes: null,
+    sets: [],
+    attachmentUrl: null,
+    repCountUnit: ActivityRepCountUnit.Repetitions,
+    weightUnit: ActivityWeightUnit.Pounds, // 'MURRICA!!
+  }),
+  cycleWeightUnit: (unit: ActivityWeightUnit): ActivityWeightUnit => {
+    if (unit === ActivityWeightUnit.Pounds) return ActivityWeightUnit.Kilograms;
+    if (unit === ActivityWeightUnit.Kilograms) return ActivityWeightUnit.Pounds;
+    throw Error('Unreachable');
+  },
+  cycleRepCountUnit: (unit: ActivityRepCountUnit): ActivityRepCountUnit => {
+    if (unit === ActivityRepCountUnit.Repetitions)
+      return ActivityRepCountUnit.Seconds;
+    if (unit === ActivityRepCountUnit.Seconds)
+      return ActivityRepCountUnit.Minutes;
+    if (unit === ActivityRepCountUnit.Minutes)
+      return ActivityRepCountUnit.Repetitions;
+    throw Error('Unreachable');
+  },
   cycleStatus: (s: ActivityStatus): ActivityStatus => {
     if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
     if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;

@@ -7,15 +7,25 @@ import FlipMove from 'react-flip-move';
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
-import { Columns, Pad, Rows } from '../style';
+import {
+  Activity,
+  ActivityRepCountUnit,
+  ActivityWeightUnit,
+  TrainingLog,
+  TrainingTemplate,
+} from '../interfaces';
+import { Color, Columns, Pad, Rows } from '../style';
 import { ActivityView } from './ActivityView';
 import { AppLink } from './AppLink';
-import { FlipMoveChild } from './FlipMoveChild';
 
 const activityViewContainerStyle = css`
   display: flex;
   flex-direction: column;
+
+  & > :not(:last-child) {
+    border-bottom: 1px solid ${Color.ActionSecondaryGray};
+    margin-bottom: ${Pad.Medium};
+  }
 `;
 
 export const TrainingLogEditorView: FC<{
@@ -37,7 +47,20 @@ export const TrainingLogEditorView: FC<{
       .withConverter(DbConverter.Activity)
       .orderBy('position', 'asc')
       .onSnapshot(
-        snapshot => setActivities(snapshot.docs.map(doc => doc.data())),
+        snapshot =>
+          setActivities(
+            snapshot.docs.map(doc => {
+              const activity = doc.data();
+              // Patch the fields not present in old data
+              if (!activity.repCountUnit) {
+                activity.repCountUnit = ActivityRepCountUnit.Repetitions;
+              }
+              if (!activity.weightUnit) {
+                activity.weightUnit = ActivityWeightUnit.Pounds;
+              }
+              return activity;
+            })
+          ),
         error => setActivities(DataState.error(error.message))
       );
   }, [log.authorId, log.id, isTemplate]);
@@ -57,30 +80,25 @@ export const TrainingLogEditorView: FC<{
             `}
           >
             {activities.map(({ id }, index) => (
-              <FlipMoveChild key={id}>
-                <ActivityView
-                  editable
-                  activities={activities}
-                  index={index}
-                  log={log}
-                />
-              </FlipMoveChild>
+              <ActivityView
+                key={id}
+                editable
+                activities={activities}
+                index={index}
+                log={log}
+              />
             ))}
           </FlipMove>
         ) : (
-          <FlipMove enterAnimation="fade" leaveAnimation="fade">
-            <FlipMoveChild>
-              <Typography
-                variant="body1"
-                color="textSecondary"
-                className={css`
-                  padding: ${Pad.Large};
-                `}
-              >
-                No activities!
-              </Typography>
-            </FlipMoveChild>
-          </FlipMove>
+          <Typography
+            variant="body1"
+            color="textSecondary"
+            className={css`
+              padding: ${Pad.Large};
+            `}
+          >
+            No activities!
+          </Typography>
         )
       }
     </DataStateView>
@@ -128,7 +146,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
       {activities => (
         <div
           className={css`
-            border-bottom: 1px solid lightgray;
+            border-bottom: 1px solid ${Color.ActionSecondaryGray};
           `}
         >
           <Columns padding={`${Pad.Medium}`}>

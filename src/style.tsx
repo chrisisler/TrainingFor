@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 export enum Font {
   Small = '0.8rem',
   Medium = '1rem',
+  MedLarge = '1.1rem',
 }
 
 export enum Color {
@@ -32,10 +33,9 @@ interface Props {
 
 const Div = styled.div`
   width: ${({ maxWidth }: Props) => (maxWidth ? '100%' : 'auto')};
-  ${({ center }: Props) => (center ? 'align-items: center;' : '')}
   padding: ${({ padding }: Props) => padding};
-  justify-content: ${({ between }: Props) =>
-    between ? 'space-between' : 'initial'};
+  ${({ center }: Props) => (center ? 'align-items: center;' : '')}
+  ${({ between }: Props) => (between ? 'justify-content: space-between;' : '')}
 `;
 
 export const Columns = styled(Div)`
