@@ -69,6 +69,7 @@ export enum ActivityRepCountUnit {
 }
 
 export enum ActivityWeightUnit {
+  Weightless = '--',
   Kilograms = 'kg',
   Pounds = 'lb',
 }
@@ -104,7 +105,10 @@ export const Activity = {
   }),
   cycleWeightUnit: (unit: ActivityWeightUnit): ActivityWeightUnit => {
     if (unit === ActivityWeightUnit.Pounds) return ActivityWeightUnit.Kilograms;
-    if (unit === ActivityWeightUnit.Kilograms) return ActivityWeightUnit.Pounds;
+    if (unit === ActivityWeightUnit.Kilograms)
+      return ActivityWeightUnit.Weightless;
+    if (unit === ActivityWeightUnit.Weightless)
+      return ActivityWeightUnit.Pounds;
     throw Error('Unreachable');
   },
   cycleRepCountUnit: (unit: ActivityRepCountUnit): ActivityRepCountUnit => {

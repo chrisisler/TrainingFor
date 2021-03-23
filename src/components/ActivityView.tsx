@@ -283,7 +283,6 @@ export const ActivityView = forwardRef<
           >
             {activity.weightUnit}
           </button>
-          <X />
           <button
             disabled={!editable}
             onClick={cycleRepCountUnit}
