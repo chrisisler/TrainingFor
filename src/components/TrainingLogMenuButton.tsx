@@ -99,6 +99,7 @@ export const TrainingLogMenuButton: FC<{
 
   /** Copy the viewed template, adding it to the user's templates */
   const copyTemplate = useCallback(async () => {
+    menu.close();
     if (isOwned || !TrainingLog.isTemplate(log)) return;
     try {
       await db
@@ -111,7 +112,7 @@ export const TrainingLogMenuButton: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log, isOwned]);
+  }, [user.uid, log, isOwned, menu]);
 
   return (
     <ClickAwayListener onClickAway={menu.close}>
@@ -139,13 +140,14 @@ export const TrainingLogMenuButton: FC<{
           {isOwned && window.navigator.share && (
             <MenuItem
               onClick={() => {
+                menu.close();
                 const url = isTemplate
                   ? Paths.templateView(log.authorId, log.id)
                   : Paths.logView(log.authorId, log.id);
                 window.navigator.share({ url });
               }}
             >
-              Share link to {isTemplate ? 'Template' : 'Log'}
+              Share link
             </MenuItem>
           )}
           {isTemplate && !isOwned && (

@@ -115,16 +115,18 @@ export const Account: FC = () => {
   );
 
   const deleteAccount = useCallback(async () => {
-    if (!window.confirm('Delete account?')) return;
+    menu.close();
+    const text = window.prompt('Type "delete" to delete account');
+    if (!!text && text?.toLowerCase() !== 'delete') return;
     try {
       await db.collection(DbPath.Users).doc(user.uid).delete();
-      if (!auth.currentUser) throw Error('Impossible');
+      if (!auth.currentUser) throw Error('Unreachable');
       await auth.currentUser.delete();
       toast.info('Account deleted successfully.');
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid]);
+  }, [user.uid, menu]);
 
   return (
     <Columns

@@ -58,7 +58,7 @@ export const TrainingLogEditor: FC = () => {
   // TODO Use border-less input for title
   const renameLog = useCallback(() => {
     if (!DataState.isReady(log)) return;
-    const title = window.prompt('Update training log title', log.title);
+    const title = window.prompt('Update title', log.title);
     if (!title) return;
     try {
       db.collection(DbPath.Users)
