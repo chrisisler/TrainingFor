@@ -139,13 +139,13 @@ export const TrainingLogMenuButton: FC<{
           {isOwned && window.navigator.share && (
             <MenuItem
               onClick={() => {
-                window.navigator.share({
-                  title: log.title,
-                  url: window.location.href,
-                });
+                const url = isTemplate
+                  ? Paths.templateView(log.authorId, log.id)
+                  : Paths.logView(log.authorId, log.id);
+                window.navigator.share({ url });
               }}
             >
-              Share Template
+              Share link to {isTemplate ? 'Template' : 'Log'}
             </MenuItem>
           )}
           {isTemplate && !isOwned && (
