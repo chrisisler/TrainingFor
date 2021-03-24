@@ -542,7 +542,6 @@ const ActivitySetView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        /* border-bottom: 3px solid ${statusColor}; */
         border-left: 1px solid ${statusColor};
         border-bottom: 1px solid ${statusColor};
         border-radius: 5px;
