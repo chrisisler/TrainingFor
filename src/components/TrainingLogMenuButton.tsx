@@ -73,12 +73,15 @@ export const TrainingLogMenuButton: FC<{
       const batch = db.batch();
       logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
       await batch.commit();
-      logDoc.delete();
+      if (isOwned && window.confirm('Delete original log?')) {
+        await logDoc.delete();
+        toast.success('Deleted original log.');
+      }
       history.push(Paths.template(templateRef.id));
     } catch (error) {
       toast.error(error.message);
     }
-  }, [log, user.uid, history, isTemplate]);
+  }, [log, user.uid, history, isTemplate, isOwned]);
 
   const deleteLog = useCallback(async () => {
     if (!isOwned) return;

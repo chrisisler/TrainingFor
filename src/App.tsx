@@ -50,7 +50,7 @@ export const App: FC = () => {
       <ToastContainer
         hideProgressBar
         pauseOnFocusLoss={false}
-        autoClose={3000}
+        autoClose={4000}
         className={css`
           padding: ${Pad.XSmall};
 
