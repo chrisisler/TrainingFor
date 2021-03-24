@@ -128,6 +128,15 @@ export const Activity = {
     if (s === ActivityStatus.Optional) return ActivityStatus.Unattempted;
     throw Error('Unreachable');
   },
+  getStatusColor: (s: ActivityStatus): string => {
+    if (s === ActivityStatus.Unattempted) return 'lightgray';
+    if (s === ActivityStatus.Completed) return 'deepskyblue';
+    // Skipped variant color looks like less emphasized version of Completed
+    if (s === ActivityStatus.Skipped) return 'lightblue';
+    if (s === ActivityStatus.Injured) return 'red';
+    if (s === ActivityStatus.Optional) return 'yellow';
+    throw Error('Unreachable');
+  },
   abbreviate: (name: string): string => {
     return name
       .split(whitespaceOrDash)

@@ -471,6 +471,10 @@ const ActivitySetView = forwardRef<
 
   const menu = useMaterialMenu();
 
+  const statusColor = useMemo(() => Activity.getStatusColor(set.status), [
+    set.status,
+  ]);
+
   const setInputStyle = useCallback(
     (value: number) => css`
       background-color: transparent;
@@ -538,7 +542,9 @@ const ActivitySetView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        border: 1px solid ${Color.ActionSecondaryGray};
+        /* border-bottom: 3px solid ${statusColor}; */
+        border-left: 1px solid ${statusColor};
+        border-bottom: 1px solid ${statusColor};
         border-radius: 5px;
         margin: 0 ${Pad.Small} ${Pad.XSmall} 0;
         padding: 0 ${Pad.XSmall};
