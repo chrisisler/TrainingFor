@@ -207,7 +207,7 @@ export const TrainingLogEditor: FC = () => {
             >
               <input
                 type="text"
-                placeholder="Add an activity..."
+                placeholder="Add activity..."
                 value={activityName}
                 onChange={event => setActivityName(event.target.value)}
                 className={css`

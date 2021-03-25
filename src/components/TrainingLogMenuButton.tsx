@@ -70,7 +70,7 @@ export const TrainingLogMenuButton: FC<{
       await batch.commit();
       if (isOwned && window.confirm('Delete original log?')) {
         await logDoc.delete();
-        toast.success('Deleted original log.');
+        toast.info('Deleted original log.');
       }
       history.push(Paths.template(templateRef.id));
     } catch (error) {
