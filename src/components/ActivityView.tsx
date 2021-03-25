@@ -64,8 +64,7 @@ export const ActivityView = forwardRef<
   const activityDocument = useMemo(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(log.authorId)
+        .user(log.authorId)
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .collection(DbPath.UserLogActivities)

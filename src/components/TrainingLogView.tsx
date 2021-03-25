@@ -39,8 +39,7 @@ export const TrainingLogEditorView: FC<{
 
   useEffect(() => {
     return db
-      .collection(DbPath.Users)
-      .doc(log.authorId)
+      .user(log.authorId)
       .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
       .doc(log.id)
       .collection(DbPath.UserLogActivities)
@@ -119,8 +118,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
   const [authorName] = useDataState<string>(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(log.authorId)
+        .user(log.authorId)
         .get()
         .then(doc => doc.get('displayName')),
     [log.authorId]
@@ -129,8 +127,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
   const [activities] = useDataState(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(log.authorId)
+        .user(log.authorId)
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .collection(DbPath.UserLogActivities)

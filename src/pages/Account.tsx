@@ -38,8 +38,7 @@ export const Account: FC = () => {
   const [templates] = useDataState(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(userId ?? user.uid)
+        .user(userId ?? user.uid)
         .collection(DbPath.UserTemplates)
         .withConverter(DbConverter.TrainingTemplate)
         .get()
@@ -50,8 +49,7 @@ export const Account: FC = () => {
   const [logs] = useDataState(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(userId ?? user.uid)
+        .user(userId ?? user.uid)
         .collection(DbPath.UserLogs)
         .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')
@@ -67,8 +65,7 @@ export const Account: FC = () => {
   const [logsPast7Days] = useDataState(async () => {
     const past7Days = new Date(Date.now() - Milliseconds.Day * 7);
     const snapshot = await db
-      .collection(DbPath.Users)
-      .doc(userId ?? user.uid)
+      .user(userId ?? user.uid)
       .collection(DbPath.UserLogs)
       .withConverter(DbConverter.TrainingLog)
       .where('timestamp', '>', past7Days)
@@ -91,8 +88,7 @@ export const Account: FC = () => {
   const [logCountPast30Days] = useDataState(() => {
     const past30days = new Date(Date.now() - Milliseconds.Day * 30);
     return db
-      .collection(DbPath.Users)
-      .doc(userId ?? user.uid)
+      .user(userId ?? user.uid)
       .collection(DbPath.UserLogs)
       .where('timestamp', '>', past30days)
       .get()
@@ -102,9 +98,7 @@ export const Account: FC = () => {
   const [selectedUser] = useDataState(
     () =>
       db
-        .collection(DbPath.Users)
-        .withConverter(DbConverter.User)
-        .doc(userId)
+        .user(userId)
         .get()
         .then(doc => {
           const user = doc.data();
@@ -119,7 +113,7 @@ export const Account: FC = () => {
     const text = window.prompt('Type "delete" to delete account');
     if (!!text && text?.toLowerCase() !== 'delete') return;
     try {
-      await db.collection(DbPath.Users).doc(user.uid).delete();
+      await db.user(user.uid).delete();
       if (!auth.currentUser) throw Error('Unreachable');
       await auth.currentUser.delete();
       toast.info('Account deleted successfully.');
@@ -315,16 +309,13 @@ const FollowButton: FC = () => {
   // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
     if (!userId) return;
-    return db
-      .collection(DbPath.Users)
-      .doc(user.uid)
-      .onSnapshot(
-        doc => {
-          const following = doc.get('following') as string[];
-          setIsFollowing(following.includes(userId));
-        },
-        err => setIsFollowing(DataState.error(err.message))
-      );
+    return db.user(user.uid).onSnapshot(
+      doc => {
+        const following = doc.get('following') as string[];
+        setIsFollowing(following.includes(userId));
+      },
+      err => setIsFollowing(DataState.error(err.message))
+    );
   }, [userId, user.uid]);
 
   const toggleFollow = useCallback(async () => {
@@ -332,13 +323,13 @@ const FollowButton: FC = () => {
     try {
       const batch = db.batch();
       // Add/remove the authenticated user to/from the viewed users followers
-      batch.update(db.collection(DbPath.Users).doc(userId), {
+      batch.update(db.user(userId), {
         followers: isFollowing
           ? firebase.firestore.FieldValue.arrayRemove(user.uid)
           : firebase.firestore.FieldValue.arrayUnion(user.uid),
       });
       // Add/remove the viewed user to/from the authenticated users follow list
-      batch.update(db.collection(DbPath.Users).doc(user.uid), {
+      batch.update(db.user(user.uid), {
         following: isFollowing
           ? firebase.firestore.FieldValue.arrayRemove(userId)
           : firebase.firestore.FieldValue.arrayUnion(userId),

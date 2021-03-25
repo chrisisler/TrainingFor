@@ -41,15 +41,10 @@ export const TrainingLogMenuButton: FC<{
         logIds: [],
       };
       const templateRefP = db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(DbPath.UserTemplates)
         .add(newTemplate);
-      const logDoc = db
-        .collection(DbPath.Users)
-        .doc(user.uid)
-        .collection(DbPath.UserLogs)
-        .doc(log.id);
+      const logDoc = db.user(user.uid).collection(DbPath.UserLogs).doc(log.id);
       const activitiesP = logDoc
         .collection(DbPath.UserLogActivities)
         .withConverter(DbConverter.Activity)
@@ -88,8 +83,7 @@ export const TrainingLogMenuButton: FC<{
     if (!window.confirm(`Delete "${log.title}" forever?`)) return;
     try {
       await db
-        .collection(DbPath.Users)
-        .doc(log.authorId)
+        .user(log.authorId)
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .delete();
@@ -106,8 +100,7 @@ export const TrainingLogMenuButton: FC<{
     if (isOwned || !TrainingLog.isTemplate(log)) return;
     try {
       await db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(DbPath.UserTemplates)
         .withConverter(DbConverter.TrainingTemplate)
         .add(log);

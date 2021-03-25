@@ -6,7 +6,7 @@ import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { Paths } from '../constants';
-import { auth, db, DbPath } from '../firebase';
+import { auth, db } from '../firebase';
 import { User } from '../interfaces';
 import { Columns, Pad } from '../style';
 
@@ -36,7 +36,7 @@ export const SignUp: FC = () => {
           following: [],
         };
         // Insert the user data under the id = uid
-        db.collection(DbPath.Users).doc(userCredential.user.uid).set(newUser);
+        db.user(userCredential.user.uid).set(newUser as User);
       } catch (error) {
         toast.error(error.message);
       }

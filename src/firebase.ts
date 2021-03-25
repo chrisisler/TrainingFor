@@ -29,7 +29,9 @@ const app =
     : firebase.app();
 
 // Must be in this order
-const db = app.firestore();
+const db = app.firestore() as firebase.firestore.Firestore & {
+  user(id?: string): firebase.firestore.DocumentReference<User>;
+};
 const auth = firebase.auth();
 const storage = firebase.storage();
 
@@ -42,6 +44,12 @@ export enum DbPath {
   UserLogActivities = 'activities',
   UserLogActivityComments = 'comments',
 }
+
+// The Users collection is the only top-level collection in the Firestore.
+// This provides a less verbose way of fetching user data without obnoxious
+// .collection(x) chains.
+db.user = (id?: string) =>
+  db.collection(DbPath.Users).doc(id).withConverter(DbConverter.User);
 
 export { db, auth, storage };
 

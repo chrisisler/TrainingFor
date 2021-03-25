@@ -42,8 +42,7 @@ export const TrainingLogEditor: FC = () => {
       return;
     }
     return db
-      .collection(DbPath.Users)
-      .doc(user.uid)
+      .user(user.uid)
       .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
       .withConverter(
         templateId ? DbConverter.TrainingTemplate : DbConverter.TrainingLog
@@ -61,8 +60,7 @@ export const TrainingLogEditor: FC = () => {
     const title = window.prompt('Update title', log.title);
     if (!title) return;
     try {
-      db.collection(DbPath.Users)
-        .doc(log.authorId)
+      db.user(log.authorId)
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .set({ title } as Pick<TrainingLog, 'title'>, { merge: true });
@@ -78,8 +76,7 @@ export const TrainingLogEditor: FC = () => {
       setActivityName('');
       try {
         const activitiesColl = db
-          .collection(DbPath.Users)
-          .doc(user.uid)
+          .user(user.uid)
           .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
           .doc(log.id)
           .collection(DbPath.UserLogActivities);
@@ -106,8 +103,7 @@ export const TrainingLogEditor: FC = () => {
     if (!window.confirm('Open previous log?')) return;
     try {
       const { docs } = await db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
         .orderBy('timestamp', 'desc')
         .limit(1)
@@ -130,8 +126,7 @@ export const TrainingLogEditor: FC = () => {
     if (!window.confirm('Open next log?')) return;
     try {
       const { docs } = await db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
         .orderBy('timestamp', 'asc')
         .limit(1)

@@ -23,8 +23,7 @@ export const TrainingLogViewPage: FC = () => {
   const [log] = useDataState(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(userId)
+        .user(userId)
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .withConverter(
           isTemplate ? DbConverter.TrainingTemplate : DbConverter.TrainingLog

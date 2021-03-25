@@ -211,12 +211,11 @@ const TimelineView: FC = () => {
 
   // TODO Just fetch the followedUsersLogsIds, get the data when rendering
   const [followedUsersLogs] = useDataState(async () => {
-    const userDoc = await db.collection(DbPath.Users).doc(user.uid).get();
+    const userDoc = await db.user(user.uid).get();
     const following: string[] = userDoc.get('following');
     const promisesForLogs = following.map(authorId =>
       db
-        .collection(DbPath.Users)
-        .doc(authorId)
+        .user(authorId)
         .collection(DbPath.UserLogs)
         .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')

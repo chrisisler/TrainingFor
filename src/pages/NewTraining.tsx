@@ -27,8 +27,7 @@ export const NewTraining: FC = () => {
   const [prevLog] = useDataState(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(DbPath.UserLogs)
         .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')
@@ -45,8 +44,7 @@ export const NewTraining: FC = () => {
   const [templates] = useDataState<Map<string, TrainingTemplate>>(
     () =>
       db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(DbPath.UserTemplates)
         .withConverter(DbConverter.TrainingTemplate)
         .get()
@@ -72,16 +70,14 @@ export const NewTraining: FC = () => {
     };
     try {
       const newLogRef = await db
-        .collection(DbPath.Users)
-        .doc(user.uid)
+        .user(user.uid)
         .collection(DbPath.UserLogs)
         .add(newLog);
       // If using a template...
       if (DataState.isReady(selectedTemplate)) {
         const logActivities = newLogRef.collection(DbPath.UserLogActivities);
         const templateActivities = await db
-          .collection(DbPath.Users)
-          .doc(user.uid)
+          .user(user.uid)
           .collection(DbPath.UserTemplates)
           .doc(selectedTemplate.id)
           .collection(DbPath.UserTemplateActivities)
@@ -93,8 +89,7 @@ export const NewTraining: FC = () => {
         templateActivities.forEach(a => batch.set(logActivities.doc(a.id), a));
         await batch.commit();
         // Add this log to the list of logs created from the selected template
-        db.collection(DbPath.Users)
-          .doc(user.uid)
+        db.user(user.uid)
           .collection(DbPath.UserTemplates)
           .doc(selectedTemplate.id)
           .update({
