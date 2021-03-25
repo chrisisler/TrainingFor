@@ -26,8 +26,10 @@ import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useResizableInputRef, useUser } from '../hooks';
 import {
   Activity,
+  ActivityRepCountUnit,
   ActivitySet,
   ActivityStatus,
+  ActivityWeightUnit,
   Comment,
   TrainingLog,
   TrainingTemplate,
@@ -365,7 +367,7 @@ export const ActivityView = forwardRef<
           <ActivitySetView
             key={uuid}
             index={index}
-            sets={activity.sets}
+            activity={activity}
             editable={editable}
             activityDocument={activityDocument}
           />
@@ -455,11 +457,12 @@ const ActivitySetView = forwardRef<
   HTMLDivElement,
   {
     index: number;
-    sets: ActivitySet[];
+    activity: Activity;
     editable: boolean;
     activityDocument: firebase.firestore.DocumentReference<Activity>;
   }
->(({ index, sets, editable, activityDocument }, ref) => {
+>(({ index, activity, editable, activityDocument }, ref) => {
+  const { sets, weightUnit, repCountUnit } = activity;
   const set = sets[index];
 
   const resizeWeightInput = useResizableInputRef();
@@ -593,31 +596,35 @@ const ActivitySetView = forwardRef<
             margin-left: auto;
           `}
         >
-          <input
-            disabled={!editable}
-            ref={resizeWeightInput}
-            type="tel"
-            min={0}
-            max={999}
-            name="weight"
-            value={weight}
-            onFocus={event => {
-              event.currentTarget.select();
-            }}
-            onChange={event => {
-              if (Number.isNaN(event.target.value)) return;
-              setWeight(Number(event.target.value));
-            }}
-            onBlur={event => {
-              sets[index].weight = Number(event.target.value);
-              updateSets(sets);
-            }}
-            className={css`
-              ${setInputStyle(weight)}
-              text-align: end;
-            `}
-          />
-          <X />
+          {weightUnit !== ActivityWeightUnit.Weightless && (
+            <>
+              <input
+                disabled={!editable}
+                ref={resizeWeightInput}
+                type="tel"
+                min={0}
+                max={999}
+                name="weight"
+                value={weight}
+                onFocus={event => {
+                  event.currentTarget.select();
+                }}
+                onChange={event => {
+                  if (Number.isNaN(event.target.value)) return;
+                  setWeight(Number(event.target.value));
+                }}
+                onBlur={event => {
+                  sets[index].weight = Number(event.target.value);
+                  updateSets(sets);
+                }}
+                className={css`
+                  ${setInputStyle(weight)}
+                  text-align: end;
+                `}
+              />
+              <X>x</X>
+            </>
+          )}
           <input
             disabled={!editable}
             ref={resizeRepCountInput}
@@ -641,6 +648,8 @@ const ActivitySetView = forwardRef<
               ${setInputStyle(repCount ?? 0)}
             `}
           />
+          {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
+          {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
         </Rows>
       </Rows>
       <button
@@ -698,7 +707,7 @@ const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
   </ol>
 );
 
-const X: FC = () => (
+const X: FC = ({ children }) => (
   <p
     className={css`
       color: ${Color.ActionSecondaryGray};
@@ -706,6 +715,6 @@ const X: FC = () => (
       font-size: ${Font.Small};
     `}
   >
-    x
+    {children}
   </p>
 );
