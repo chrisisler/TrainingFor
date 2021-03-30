@@ -5,7 +5,7 @@ import {
   Menu,
   MenuItem,
 } from '@material-ui/core';
-import { MoreVert } from '@material-ui/icons';
+import { MoreHoriz } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -118,12 +118,12 @@ export const TrainingLogMenuButton: FC<{
           aria-controls="log-menu"
           aria-haspopup="true"
           onClick={menu.open}
-          size="small"
         >
-          <MoreVert
+          <MoreHoriz
             className={css`
               color: ${Color.ActionSecondaryGray};
             `}
+            fontSize="small"
           />
         </IconButton>
         <Menu

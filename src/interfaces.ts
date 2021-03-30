@@ -29,7 +29,7 @@ export interface TrainingTemplate extends TrainingLog {
 export interface TrainingLog extends FirestoreDocument {
   title: string;
   timestamp: FirestoreTimestamp;
-  notes: null | string;
+  notes: string;
   authorId: string;
 }
 
@@ -153,6 +153,15 @@ const durationRegEx = /\d+\s+\w/;
 
 // eslint-disable-next-line
 export const TrainingLog = {
+  /** Create a valid TrainingLog object given required fields. */
+  create: (
+    data: Pick<TrainingLog, 'title' | 'authorId'>
+  ): Omit<TrainingLog, 'id'> => ({
+    title: data.title,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    notes: '',
+    authorId: data.authorId,
+  }),
   getDate: (log: TrainingLog): Date | null => {
     if (!log?.timestamp) return null;
     return (log.timestamp as firebase.firestore.Timestamp)?.toDate();

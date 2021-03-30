@@ -62,12 +62,10 @@ export const NewTraining: FC = () => {
     const templateTitle = DataState.isReady(selectedTemplate)
       ? selectedTemplate.title
       : '';
-    const newLog: Omit<TrainingLog, 'id'> = {
+    const newLog = TrainingLog.create({
       title: `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      notes: null,
       authorId: user.uid,
-    };
+    });
     try {
       const newLogRef = await db
         .user(user.uid)

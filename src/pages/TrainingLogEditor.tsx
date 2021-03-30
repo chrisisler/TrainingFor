@@ -3,8 +3,9 @@ import { IconButton, Typography } from '@material-ui/core';
 import {
   ArrowBackIosRounded,
   ArrowForwardIosRounded,
+  ChatBubbleOutline,
 } from '@material-ui/icons';
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -21,10 +22,13 @@ import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
+  const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
+
   const [activityName, setActivityName] = useState<string>('');
   const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(
     DataState.Loading
   );
+  const [logNotes, setLogNotes] = useState<DataState<string>>(DataState.Empty);
 
   const history = useHistory();
   const user = useUser();
@@ -49,7 +53,12 @@ export const TrainingLogEditor: FC = () => {
       )
       .doc(templateId ?? logId)
       .onSnapshot(
-        doc => setLog(doc.data() ?? DataState.Empty),
+        doc => {
+          const log = doc.data();
+          if (!log) return toast.error('Training data does not exist.');
+          setLog(log);
+          setLogNotes(log.notes);
+        },
         err => setLog(DataState.error(err.message))
       );
   }, [user.uid, logId, templateId]);
@@ -144,6 +153,19 @@ export const TrainingLogEditor: FC = () => {
     }
   }, [user.uid, log, history, templateId]);
 
+  const updateLogNotes = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (logNotes === '') setLogNotes(DataState.Empty);
+    try {
+      db.user(user.uid)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+        .doc(log.id)
+        .update({ notes: logNotes } as Partial<TrainingLog>);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, logNotes, isTemplate]);
+
   return (
     <DataStateView data={log}>
       {log => (
@@ -154,11 +176,12 @@ export const TrainingLogEditor: FC = () => {
           `}
         >
           <Columns
-            padding={`${Pad.Small} ${Pad.Large} ${Pad.Medium}`}
+            padding={`${Pad.Small} ${Pad.Medium} ${Pad.Medium}`}
             className={css`
               border-bottom: 1px solid ${Color.ActionSecondaryGray};
               min-height: fit-content;
             `}
+            pad={Pad.Small}
           >
             <Rows center maxWidth between>
               <Columns>
@@ -168,14 +191,13 @@ export const TrainingLogEditor: FC = () => {
                   color="textPrimary"
                   onClick={renameLog}
                   className={css`
-                    line-height: 1.2;
+                    line-height: 1.2 !important;
                   `}
                 >
                   {log.title}
                 </Typography>
               </Columns>
               <Rows>
-                <TrainingLogMenuButton log={log} />
                 <IconButton
                   aria-label="Open previous log"
                   size="small"
@@ -196,15 +218,50 @@ export const TrainingLogEditor: FC = () => {
                 >
                   <ArrowForwardIosRounded fontSize="small" />
                 </IconButton>
+                <TrainingLogMenuButton log={log} />
+                <IconButton
+                  aria-label="Edit training log notes"
+                  size="small"
+                  className={css`
+                    color: ${Color.ActionSecondaryGray} !important;
+                    transform: scaleX(-1);
+                  `}
+                  onClick={() => {
+                    if (DataState.isReady(logNotes) && logNotes) return;
+                    // Unhide the notes input
+                    setLogNotes('');
+                    Promise.resolve().then(() => logNotesRef.current?.focus());
+                  }}
+                >
+                  <ChatBubbleOutline fontSize="small" />
+                </IconButton>
               </Rows>
             </Rows>
-            <Rows
-              maxWidth
-              as="form"
-              onSubmit={addActivity}
-              padding={`${Pad.Medium} 0 0 0`}
-              pad={Pad.Medium}
-            >
+            {DataState.isReady(logNotes) && (
+              <textarea
+                name="Training log notes"
+                ref={logNotesRef}
+                placeholder="Notes..."
+                rows={3}
+                maxLength={500}
+                value={logNotes}
+                onChange={event => setLogNotes(event.target.value)}
+                onBlur={updateLogNotes}
+                className={css`
+                  width: 100%;
+                  color: ${Color.FontSecondary};
+                  border: 0;
+                  padding: 0;
+                  outline: none;
+                  resize: vertical;
+                  font-size: ${Font.Small};
+                  font-style: italic;
+                  font-family: inherit;
+                  background-color: transparent;
+                `}
+              />
+            )}
+            <Rows maxWidth as="form" onSubmit={addActivity} pad={Pad.Medium}>
               <input
                 type="text"
                 placeholder="Add activity..."
