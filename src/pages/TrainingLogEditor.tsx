@@ -241,7 +241,7 @@ export const TrainingLogEditor: FC = () => {
               <textarea
                 name="Training log notes"
                 ref={logNotesRef}
-                placeholder="Notes..."
+                placeholder="What's going on?"
                 rows={3}
                 maxLength={500}
                 value={logNotes}
@@ -251,7 +251,8 @@ export const TrainingLogEditor: FC = () => {
                   width: 100%;
                   color: ${Color.FontSecondary};
                   border: 0;
-                  padding: 0;
+                  border-left: 4px solid ${Color.ActionSecondaryGray};
+                  padding: 0 0 0 ${Pad.Medium};
                   outline: none;
                   resize: vertical;
                   font-size: ${Font.Small};
