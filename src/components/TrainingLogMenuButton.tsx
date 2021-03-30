@@ -81,6 +81,7 @@ export const TrainingLogMenuButton: FC<{
   const deleteLog = useCallback(async () => {
     if (!isOwned) return;
     if (!window.confirm(`Delete "${log.title}" forever?`)) return;
+    menu.close();
     try {
       await db
         .user(log.authorId)
@@ -92,7 +93,7 @@ export const TrainingLogMenuButton: FC<{
     } catch (error) {
       toast.error(error.message);
     }
-  }, [isOwned, log, history, isTemplate]);
+  }, [isOwned, log, history, isTemplate, menu]);
 
   /** Copy the viewed template, adding it to the user's templates */
   const copyTemplate = useCallback(async () => {

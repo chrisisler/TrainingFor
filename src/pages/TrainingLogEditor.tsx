@@ -181,7 +181,7 @@ export const TrainingLogEditor: FC = () => {
               border-bottom: 1px solid ${Color.ActionSecondaryGray};
               min-height: fit-content;
             `}
-            pad={Pad.Small}
+            pad={Pad.Medium}
           >
             <Rows center maxWidth between>
               <Columns>
