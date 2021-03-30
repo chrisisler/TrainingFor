@@ -57,7 +57,7 @@ export const TrainingLogEditor: FC = () => {
           const log = doc.data();
           if (!log) return toast.error('Training data does not exist.');
           setLog(log);
-          setLogNotes(log.notes);
+          if (log.notes.length) setLogNotes(log.notes);
         },
         err => setLog(DataState.error(err.message))
       );
