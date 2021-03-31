@@ -55,9 +55,8 @@ export const TrainingLogEditor: FC = () => {
       .onSnapshot(
         doc => {
           const log = doc.data();
-          if (!log) return toast.error('Training data does not exist.');
-          setLog(log);
-          if (log.notes.length) setLogNotes(log.notes);
+          setLog(log ?? DataState.Empty);
+          if (log?.notes.length) setLogNotes(log.notes);
         },
         err => setLog(DataState.error(err.message))
       );
