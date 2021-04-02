@@ -68,13 +68,14 @@ export const TrainingLogEditor: FC = () => {
         doc => {
           const log = doc.data();
           setLog(log ?? DataState.Empty);
-          if (log?.notes.length) setLogNotes(log.notes);
+          if (log?.notes?.length) setLogNotes(log.notes);
         },
         err => setLog(DataState.error(err.message))
       );
   }, [user.uid, logId, templateId]);
 
   const renameLog = useCallback(() => {
+    menu.close();
     if (!DataState.isReady(log)) return;
     const title = window.prompt('Update title', log.title);
     if (!title) return;
@@ -86,7 +87,7 @@ export const TrainingLogEditor: FC = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }, [log, isTemplate]);
+  }, [log, isTemplate, menu]);
 
   const addActivity = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
@@ -177,6 +178,7 @@ export const TrainingLogEditor: FC = () => {
   }, [user.uid, log, logNotes, isTemplate]);
 
   const createTemplate = useCallback(async () => {
+    menu.close();
     if (isTemplate) return;
     if (!DataState.isReady(log)) return;
     if (!window.confirm('Create a Template from this log?')) return;
@@ -222,7 +224,7 @@ export const TrainingLogEditor: FC = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }, [log, user.uid, history, isTemplate]);
+  }, [log, user.uid, history, isTemplate, menu]);
 
   const deleteLog = useCallback(async () => {
     if (!DataState.isReady(log)) return;

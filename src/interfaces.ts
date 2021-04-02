@@ -52,7 +52,7 @@ export interface ActivitySet {
   weight: number;
   /** repCount represents either a time value or repetition count */
   repCount: null | number;
-  // symmetry: ActivitySetSymmetry;
+  side: ActivitySetSide;
 }
 
 export enum ActivityStatus {
@@ -75,11 +75,11 @@ export enum ActivityWeightUnit {
   Pounds = 'lb',
 }
 
-// export enum ActivitySetSymmetry {
-//   Symmetrical = 'symmetrical',
-//   Left = 'left',
-//   Right = 'right',
-// }
+export enum ActivitySetSide {
+  Both = 'LR',
+  Left = 'L',
+  Right = 'R',
+}
 
 export interface Comment extends FirestoreDocument {
   timestamp: FirestoreTimestamp;
@@ -92,7 +92,6 @@ const whitespaceOrDash = /(\s+|-+)/;
 
 // eslint-disable-next-line
 export const Activity = {
-  /** Create a valid Activity object given required fields. */
   create: (
     data: Pick<Activity, 'name' | 'position'>
   ): Omit<Activity, 'id'> => ({
@@ -154,7 +153,6 @@ const durationRegEx = /\d+\s+\w/;
 
 // eslint-disable-next-line
 export const TrainingLog = {
-  /** Create a valid TrainingLog object given required fields. */
   create: (
     data: Pick<TrainingLog, 'title' | 'authorId'>
   ): Omit<TrainingLog, 'id'> => ({
@@ -193,5 +191,12 @@ export const ActivitySet = {
     uuid: uuid(),
     name: '',
     notes: null,
+    side: ActivitySetSide.Both,
   }),
+  cycleSide: (s: ActivitySetSide): ActivitySetSide => {
+    if (s === ActivitySetSide.Both) return ActivitySetSide.Left;
+    if (s === ActivitySetSide.Left) return ActivitySetSide.Right;
+    if (s === ActivitySetSide.Right) return ActivitySetSide.Both;
+    return s;
+  },
 };

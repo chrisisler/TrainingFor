@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, Close } from '@material-ui/icons';
+import { Add, Close, PanToolOutlined } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -27,6 +27,7 @@ import {
   Activity,
   ActivityRepCountUnit,
   ActivitySet,
+  ActivitySetSide,
   ActivityStatus,
   ActivityWeightUnit,
   Comment,
@@ -552,7 +553,9 @@ const ActivitySetView = forwardRef<
   const updateSets = useCallback(
     (sets: ActivitySet[]) => {
       try {
-        activityDocument.set({ sets } as Partial<Activity>, { merge: true });
+        activityDocument.set({ sets } as Partial<Activity>, {
+          merge: true,
+        });
       } catch (error) {
         toast.error(error.message);
       }
@@ -572,48 +575,66 @@ const ActivitySetView = forwardRef<
         flex: 0.5;
       `}
     >
-      <Rows center>
-        <ClickAwayListener onClickAway={menu.close}>
-          <div>
-            <IconButton
-              disabled={!editable}
-              size="small"
-              aria-label="Open set menu"
-              aria-controls="set-menu"
-              aria-haspopup="true"
-              onClick={menu.open}
-            >
-              <Typography
-                variant="subtitle1"
-                className={css`
-                  color: ${Color.ActionPrimaryBlue};
-                  font-style: italic;
-                  line-height: 1 !important;
-                  width: 2ch;
-                  font-size: ${Font.MedLarge};
-                `}
+      <Rows center between>
+        <Rows>
+          <ClickAwayListener onClickAway={menu.close}>
+            <div>
+              <IconButton
+                disabled={!editable}
+                size="small"
+                aria-label="Open set menu"
+                aria-controls="set-menu"
+                aria-haspopup="true"
+                onClick={menu.open}
               >
-                {index + 1}
-              </Typography>
-            </IconButton>
-            <Menu
-              id="set-menu"
-              anchorEl={menu.ref}
-              open={!!menu.ref}
-              onClose={menu.close}
-              MenuListProps={{ dense: true }}
+                <Typography
+                  variant="subtitle1"
+                  className={css`
+                    color: ${Color.ActionPrimaryBlue};
+                    font-style: italic;
+                    line-height: 1 !important;
+                    width: 2ch;
+                    font-size: ${Font.MedLarge};
+                  `}
+                >
+                  {index + 1}
+                </Typography>
+              </IconButton>
+              <Menu
+                id="set-menu"
+                anchorEl={menu.ref}
+                open={!!menu.ref}
+                onClose={menu.close}
+                MenuListProps={{ dense: true }}
+              >
+                <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
+                <MenuItem onClick={deleteSet}>
+                  <b>Delete set</b>
+                </MenuItem>
+              </Menu>
+            </div>
+          </ClickAwayListener>
+          {set.side && (
+            <button
+              onClick={() => {
+                sets[index].side = ActivitySet.cycleSide(set.side);
+                updateSets(sets);
+              }}
+              className={css`
+                outline: none;
+                border: none;
+                background-color: transparent;
+                color: ${Color.ActionPrimaryGray};
+                padding: ${Pad.XSmall};
+              `}
             >
-              <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
-              <MenuItem onClick={deleteSet}>
-                <b>Delete set</b>
-              </MenuItem>
-            </Menu>
-          </div>
-        </ClickAwayListener>
+              <ActivitySetSideView side={set.side} />
+            </button>
+          )}
+        </Rows>
         <Rows
           className={css`
             align-items: baseline;
-            margin-left: auto;
           `}
         >
           {weightUnit !== ActivityWeightUnit.Weightless && (
@@ -744,3 +765,29 @@ const X: FC = ({ children }) => (
     {children}
   </p>
 );
+
+const ActivitySetSideView: FC<{ side: ActivitySetSide }> = ({ side }) => {
+  const handStyle = css`
+    font-size: ${Font.Small} !important;
+    color: ${Color.ActionSecondaryGray};
+  `;
+  if (side === ActivitySetSide.Right) {
+    return <PanToolOutlined className={handStyle} />;
+  }
+  const reverseXAxisStyle = css`
+    transform: scaleX(-1);
+    ${handStyle}
+  `;
+  if (side === ActivitySetSide.Both) {
+    return (
+      <Rows>
+        <PanToolOutlined className={reverseXAxisStyle} />
+        <PanToolOutlined className={handStyle} />
+      </Rows>
+    );
+  }
+  if (side === ActivitySetSide.Left) {
+    return <PanToolOutlined className={reverseXAxisStyle} />;
+  }
+  return null;
+};
