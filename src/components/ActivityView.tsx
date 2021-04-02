@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, ChatBubbleOutline } from '@material-ui/icons';
+import { Add, DeleteOutline } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -176,14 +176,12 @@ export const ActivityView = forwardRef<
   }, [activities, activity.position, activityDocument, index]);
 
   const showActivityCommentInput = useCallback(() => {
-    if (comment) {
-      // TODO Route to comments view for this activity
-      return;
-    }
+    menu.close();
+    if (comment) return;
     // Unhide the comment input and focus it
     setComment('');
     Promise.resolve().then(() => commentRef.current?.focus());
-  }, [comment]);
+  }, [comment, menu]);
 
   const addActivityComment = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
@@ -293,6 +291,7 @@ export const ActivityView = forwardRef<
                     background-color: transparent;
                     font-family: system-ui;
                     outline: none;
+                    text-align: left;
                   `}
                 >
                   {activity.name}
@@ -317,6 +316,9 @@ export const ActivityView = forwardRef<
                     }
                   >
                     Move down
+                  </MenuItem>
+                  <MenuItem onClick={showActivityCommentInput}>
+                    Add comment
                   </MenuItem>
                   <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                   <MenuItem onClick={deleteActivity}>
@@ -348,19 +350,6 @@ export const ActivityView = forwardRef<
           >
             {activity.repCountUnit}
           </button>
-          <IconButton
-            aria-label="Add comment"
-            onClick={showActivityCommentInput}
-            size="small"
-          >
-            <ChatBubbleOutline
-              fontSize="small"
-              className={css`
-                color: ${Color.ActionSecondaryGray};
-                transform: scaleX(-1);
-              `}
-            />
-          </IconButton>
         </Rows>
       </Rows>
       <FlipMove
@@ -401,6 +390,29 @@ export const ActivityView = forwardRef<
                       <b>{comment.author.displayName}</b>
                     </p>
                     <p>{comment.text}</p>
+                    <IconButton
+                      aria-label="Delete comment"
+                      onClick={() => {
+                        activityDocument
+                          .collection(DbPath.UserLogActivityComments)
+                          .doc(comment.id)
+                          .delete()
+                          .catch(error => {
+                            toast.error(error.message);
+                          });
+                      }}
+                      size="small"
+                      className={css`
+                        margin-left: auto !important;
+                      `}
+                    >
+                      <DeleteOutline
+                        fontSize="small"
+                        className={css`
+                          color: ${Color.ActionSecondaryGray};
+                        `}
+                      />
+                    </IconButton>
                   </Rows>
                 ))}
               </Columns>
