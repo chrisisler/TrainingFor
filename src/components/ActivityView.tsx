@@ -327,7 +327,7 @@ export const ActivityView = forwardRef<
                 </Menu>
               </div>
             </ClickAwayListener>
-            <TallyMarks marks={activity.sets.length} />
+            <TallyMarks sets={activity.sets} />
           </Columns>
         </Rows>
         <Rows
@@ -699,7 +699,7 @@ const ActivitySetView = forwardRef<
   );
 });
 
-const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
+const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
   <ol
     className={css`
       padding: 0;
@@ -710,7 +710,7 @@ const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
         height: 100%;
         margin-right: 5px;
         width: 4px;
-        background-color: palevioletred;
+        background-color: ${Color.ActionSecondaryRed} !important;
         border-radius: 5px;
 
         &:nth-child(5n) {
@@ -721,14 +721,20 @@ const TallyMarks: FC<{ marks: number }> = ({ marks }) => (
           top: 10px;
           margin-top: -${Pad.Medium};
         }
+
+        &.hollow {
+          background-color: transparent !important;
+          border: 1px solid ${Color.ActionSecondaryRed};
+        }
       }
     `}
   >
-    {Array(marks)
-      .fill(void 0)
-      .map((_, index) => (
-        <li key={index} />
-      ))}
+    {sets.map(({ status, uuid }) => (
+      <li
+        key={uuid}
+        className={status === ActivityStatus.Completed ? undefined : 'hollow'}
+      />
+    ))}
   </ol>
 );
 

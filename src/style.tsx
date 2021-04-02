@@ -12,6 +12,7 @@ export enum Color {
   ActionPrimaryGray = '#808080', // gray
   ActionSecondaryGray = '#d3d3d3', // lightgray
   ActionPrimaryBlue = '#1e90ff', // dodgerblue
+  ActionSecondaryRed = '#7f203f', // darker than palevioletred
 }
 
 export enum Pad {
