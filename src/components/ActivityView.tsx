@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, DeleteOutline } from '@material-ui/icons';
+import { Add, Close } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -390,29 +390,31 @@ export const ActivityView = forwardRef<
                       <b>{comment.author.displayName}</b>
                     </p>
                     <p>{comment.text}</p>
-                    <IconButton
-                      aria-label="Delete comment"
-                      onClick={() => {
-                        activityDocument
-                          .collection(DbPath.UserLogActivityComments)
-                          .doc(comment.id)
-                          .delete()
-                          .catch(error => {
-                            toast.error(error.message);
-                          });
-                      }}
-                      size="small"
-                      className={css`
-                        margin-left: auto !important;
-                      `}
-                    >
-                      <DeleteOutline
-                        fontSize="small"
+                    {(editable || user.uid === comment.author.id) && (
+                      <IconButton
+                        aria-label="Delete comment"
+                        onClick={() => {
+                          activityDocument
+                            .collection(DbPath.UserLogActivityComments)
+                            .doc(comment.id)
+                            .delete()
+                            .catch(error => {
+                              toast.error(error.message);
+                            });
+                        }}
+                        size="small"
                         className={css`
-                          color: ${Color.ActionSecondaryGray};
+                          margin-left: auto !important;
                         `}
-                      />
-                    </IconButton>
+                      >
+                        <Close
+                          fontSize="small"
+                          className={css`
+                            color: ${Color.ActionSecondaryGray};
+                          `}
+                        />
+                      </IconButton>
+                    )}
                   </Rows>
                 ))}
               </Columns>
