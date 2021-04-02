@@ -88,14 +88,14 @@ export const ActivityView = forwardRef<
   }, [activityDocument]);
 
   const addActivitySet = useCallback(() => {
-    const lastSet = activity.sets[activity.sets.length - 1];
-    const weight = lastSet?.weight ?? 0;
-    const repCount = lastSet?.repCount ?? null;
-    const newSet = ActivitySet.create({
-      weight,
-      repCount,
-      status: ActivityStatus.Unattempted,
-    });
+    const prevSet = activity.sets[activity.sets.length - 1];
+    const weight = prevSet?.weight ?? 0;
+    const repCount = prevSet?.repCount ?? null;
+    const status =
+      prevSet?.status === ActivityStatus.Optional
+        ? ActivityStatus.Optional
+        : ActivityStatus.Unattempted;
+    const newSet = ActivitySet.create({ weight, repCount, status });
     try {
       activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayUnion(newSet),
