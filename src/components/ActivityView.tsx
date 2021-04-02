@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, ChatBubbleOutline, MoreHoriz } from '@material-ui/icons';
+import { Add, ChatBubbleOutline } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -132,7 +132,6 @@ export const ActivityView = forwardRef<
   }, [activity.name, activityDocument, menu]);
 
   const moveActivityUp = useCallback(async () => {
-    menu.close();
     if (activities.length === 1 || index === 0) return;
     try {
       const batch = db.batch();
@@ -152,10 +151,9 @@ export const ActivityView = forwardRef<
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activities, activity.position, activityDocument, index, menu]);
+  }, [activities, activity.position, activityDocument, index]);
 
   const moveActivityDown = useCallback(async () => {
-    menu.close();
     if (activities.length === 1 || index + 1 === activities.length) return;
     try {
       const batch = db.batch();
@@ -175,7 +173,7 @@ export const ActivityView = forwardRef<
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activities, activity.position, activityDocument, index, menu]);
+  }, [activities, activity.position, activityDocument, index]);
 
   const showActivityCommentInput = useCallback(() => {
     if (comment) {
@@ -277,16 +275,56 @@ export const ActivityView = forwardRef<
               <Add fontSize="small" />
             </button>
           )}
-          <Columns onClick={renameActivity}>
-            <p
-              className={css`
-                color: ${Color.FontPrimary};
-                font-size: ${Font.Medium};
-                font-weight: 500;
-              `}
-            >
-              {activity.name}
-            </p>
+          <Columns>
+            <ClickAwayListener onClickAway={menu.close}>
+              <div>
+                <button
+                  disabled={!editable}
+                  aria-label="Open activity menu"
+                  aria-controls="activity-menu"
+                  aria-haspopup="true"
+                  onClick={menu.open}
+                  className={css`
+                    color: ${Color.FontPrimary};
+                    font-size: ${Font.Medium};
+                    font-weight: 500;
+                    padding: 0;
+                    border: none;
+                    background-color: transparent;
+                    font-family: system-ui;
+                    outline: none;
+                  `}
+                >
+                  {activity.name}
+                </button>
+                <Menu
+                  id="activity-menu"
+                  anchorEl={menu.ref}
+                  open={!!menu.ref}
+                  onClose={menu.close}
+                  MenuListProps={{ dense: true }}
+                >
+                  <MenuItem
+                    onClick={moveActivityUp}
+                    disabled={activities.length === 1 || index === 0}
+                  >
+                    Move up
+                  </MenuItem>
+                  <MenuItem
+                    onClick={moveActivityDown}
+                    disabled={
+                      activities.length === 1 || index + 1 === activities.length
+                    }
+                  >
+                    Move down
+                  </MenuItem>
+                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
+                  <MenuItem onClick={deleteActivity}>
+                    <b>Delete activity</b>
+                  </MenuItem>
+                </Menu>
+              </div>
+            </ClickAwayListener>
             <TallyMarks marks={activity.sets.length} />
           </Columns>
         </Rows>
@@ -310,51 +348,6 @@ export const ActivityView = forwardRef<
           >
             {activity.repCountUnit}
           </button>
-          {editable && (
-            <ClickAwayListener onClickAway={menu.close}>
-              <div>
-                <IconButton
-                  disabled={!editable}
-                  aria-label="Open activity menu"
-                  aria-controls="activity-menu"
-                  aria-haspopup="true"
-                  onClick={menu.open}
-                >
-                  <MoreHoriz
-                    className={css`
-                      color: ${Color.ActionSecondaryGray};
-                    `}
-                    fontSize="small"
-                  />
-                </IconButton>
-                <Menu
-                  id="activity-menu"
-                  anchorEl={menu.ref}
-                  open={!!menu.ref}
-                  onClose={menu.close}
-                  MenuListProps={{ dense: true }}
-                >
-                  <MenuItem
-                    onClick={moveActivityUp}
-                    disabled={activities.length === 1 || index === 0}
-                  >
-                    Move up
-                  </MenuItem>
-                  <MenuItem
-                    onClick={moveActivityDown}
-                    disabled={
-                      activities.length === 1 || index + 1 === activities.length
-                    }
-                  >
-                    Move down
-                  </MenuItem>
-                  <MenuItem onClick={deleteActivity}>
-                    <b>Delete activity</b>
-                  </MenuItem>
-                </Menu>
-              </div>
-            </ClickAwayListener>
-          )}
           <IconButton
             aria-label="Add comment"
             onClick={showActivityCommentInput}
