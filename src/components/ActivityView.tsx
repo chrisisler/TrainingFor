@@ -185,14 +185,13 @@ export const ActivityView = forwardRef<
       event.preventDefault();
       if (!user.displayName || !comment) return;
       try {
-        const newComment: Omit<Comment, 'id'> = {
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        const newComment = Comment.create({
           text: comment,
           author: {
             id: user.uid,
             displayName: user.displayName,
           },
-        };
+        });
         // Hide (and unfocus) the comment input.
         setComment(null);
         activityDocument

@@ -200,3 +200,11 @@ export const ActivitySet = {
     return s;
   },
 };
+
+// eslint-disable-next-line
+export const Comment = {
+  create: (data: Pick<Comment, 'author' | 'text'>): Omit<Comment, 'id'> => ({
+    ...data,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+  }),
+};
