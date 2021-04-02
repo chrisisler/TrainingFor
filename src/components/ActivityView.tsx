@@ -494,7 +494,7 @@ const ActivitySetView = forwardRef<
 
   const menu = useMaterialMenu();
 
-  const statusColor = useMemo(() => Activity.getStatusColor(set.status), [
+  const statusColor = useMemo(() => ActivitySet.getStatusColor(set.status), [
     set.status,
   ]);
 
@@ -514,7 +514,7 @@ const ActivitySetView = forwardRef<
   );
 
   const cycleSetStatus = useCallback(() => {
-    sets[index].status = Activity.cycleStatus(set.status);
+    sets[index].status = ActivitySet.cycleStatus(set.status);
     try {
       activityDocument.set({ sets }, { merge: true });
     } catch (error) {
