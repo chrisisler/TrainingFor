@@ -175,7 +175,7 @@ export const TrainingLogEditor: FC = () => {
           `}
         >
           <Columns
-            padding={`${Pad.Small} ${Pad.Medium} ${Pad.Medium}`}
+            padding={`${Pad.Small} ${Pad.Large} ${Pad.Medium}`}
             className={css`
               border-bottom: 1px solid ${Color.ActionSecondaryGray};
               min-height: fit-content;
@@ -251,7 +251,7 @@ export const TrainingLogEditor: FC = () => {
                   color: ${Color.FontSecondary};
                   border: 0;
                   border-left: 4px solid ${Color.ActionSecondaryGray};
-                  padding: 0 ${Pad.Medium};
+                  padding: 0 ${Pad.Small};
                   border-radius: 0;
                   outline: none;
                   resize: vertical;

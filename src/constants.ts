@@ -1,6 +1,6 @@
 export enum Format {
   date = 'EEEEEE M - d',
-  time = 'h:mm aaa',
+  time = 'h:mmaaaaa',
 }
 
 export enum TabIndex {
