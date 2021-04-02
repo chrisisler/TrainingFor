@@ -19,7 +19,6 @@ import React, {
 } from 'react';
 import FlipMove from 'react-flip-move';
 import { toast } from 'react-toastify';
-import { v4 as uuid } from 'uuid';
 
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
@@ -92,14 +91,11 @@ export const ActivityView = forwardRef<
     const lastSet = activity.sets[activity.sets.length - 1];
     const weight = lastSet?.weight ?? 0;
     const repCount = lastSet?.repCount ?? null;
-    const newSet: ActivitySet = {
-      uuid: uuid(),
-      name: `Set ${activity.sets.length + 1}`,
-      notes: null,
+    const newSet = ActivitySet.create({
       weight,
       repCount,
       status: ActivityStatus.Unattempted,
-    };
+    });
     try {
       activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayUnion(newSet),
@@ -529,19 +525,18 @@ const ActivitySetView = forwardRef<
   const duplicateSet = useCallback(() => {
     menu.close();
     try {
-      const duplicateSet = {
-        ...sets[index],
-        uuid: uuid(),
-        notes: null,
+      const duplicateSet = ActivitySet.create({
         status: ActivityStatus.Unattempted,
-      };
+        weight: set.weight,
+        repCount: set.repCount,
+      });
       activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayUnion(duplicateSet),
       });
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument, index, sets, menu]);
+  }, [activityDocument, set, menu]);
 
   const deleteSet = useCallback(() => {
     menu.close();

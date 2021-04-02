@@ -1,5 +1,6 @@
 import { formatDuration, intervalToDuration } from 'date-fns';
 import firebase from 'firebase';
+import { v4 as uuid } from 'uuid';
 
 interface FirestoreDocument {
   id: string;
@@ -181,4 +182,16 @@ export const TrainingLog = {
   },
   isTemplate: (log: TrainingLog | TrainingTemplate): log is TrainingTemplate =>
     Object.prototype.hasOwnProperty.call(log, 'logIds'),
+};
+
+// eslint-disable-next-line
+export const ActivitySet = {
+  create: (
+    data: Pick<ActivitySet, 'status' | 'weight' | 'repCount'>
+  ): ActivitySet => ({
+    ...data,
+    uuid: uuid(),
+    name: '',
+    notes: null,
+  }),
 };
