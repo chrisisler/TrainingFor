@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { ChatBubbleOutline, MoreHoriz } from '@material-ui/icons';
+import { Add, ChatBubbleOutline, MoreHoriz } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -259,18 +259,37 @@ export const ActivityView = forwardRef<
           width: min-content;
         `}
       >
-        <Columns onClick={addActivitySet}>
-          <p
-            className={css`
-              color: ${Color.FontPrimary};
-              font-size: ${Font.Medium};
-              font-weight: 500;
-            `}
-          >
-            {activity.name}
-          </p>
-          <TallyMarks marks={activity.sets.length} />
-        </Columns>
+        <Rows pad={Pad.Small}>
+          {editable && (
+            <button
+              onClick={addActivitySet}
+              className={css`
+                color: ${Color.ActionPrimaryBlue};
+                background-color: transparent;
+                border: none;
+                border-radius: 50%;
+                height: min-content;
+                padding: ${Pad.XSmall};
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+                outline: none;
+              `}
+            >
+              <Add fontSize="small" />
+            </button>
+          )}
+          <Columns onClick={renameActivity}>
+            <p
+              className={css`
+                color: ${Color.FontPrimary};
+                font-size: ${Font.Medium};
+                font-weight: 500;
+              `}
+            >
+              {activity.name}
+            </p>
+            <TallyMarks marks={activity.sets.length} />
+          </Columns>
+        </Rows>
         <Rows
           center
           className={css`
@@ -329,7 +348,6 @@ export const ActivityView = forwardRef<
                   >
                     Move down
                   </MenuItem>
-                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
                   <MenuItem onClick={deleteActivity}>
                     <b>Delete activity</b>
                   </MenuItem>

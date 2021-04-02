@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { IconButton, Link } from '@material-ui/core';
-import { Add, Forum, Person } from '@material-ui/icons';
+import { Create, Forum, Person } from '@material-ui/icons';
 import React, { FC, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -63,7 +63,7 @@ const NavBar: FC = () => {
           className={linkStyle(Paths.newTraining)}
           to={Paths.newTraining}
         >
-          <Add />
+          <Create />
         </Link>
       </IconButton>
       <IconButton aria-label="Navigate to account">
