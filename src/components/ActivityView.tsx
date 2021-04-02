@@ -317,10 +317,10 @@ export const ActivityView = forwardRef<
                   >
                     Move down
                   </MenuItem>
+                  <MenuItem onClick={renameActivity}>Edit name</MenuItem>
                   <MenuItem onClick={showActivityCommentInput}>
                     Add comment
                   </MenuItem>
-                  <MenuItem onClick={renameActivity}>Edit name</MenuItem>
                   <MenuItem onClick={deleteActivity}>
                     <b>Delete activity</b>
                   </MenuItem>
@@ -710,7 +710,7 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
         height: 100%;
         margin-right: 5px;
         width: 4px;
-        background-color: ${Color.ActionSecondaryRed} !important;
+        background-color: ${Color.ActionPrimaryRed} !important;
         border-radius: 5px;
 
         &:nth-child(5n) {
@@ -724,7 +724,7 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
 
         &.hollow {
           background-color: transparent !important;
-          border: 1px solid ${Color.ActionSecondaryRed};
+          border: 1px solid ${Color.ActionPrimaryRed};
         }
       }
     `}

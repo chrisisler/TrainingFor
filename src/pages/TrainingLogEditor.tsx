@@ -277,6 +277,7 @@ export const TrainingLogEditor: FC = () => {
                         color="textPrimary"
                         className={css`
                           line-height: 1.2 !important;
+                          text-align: left;
                         `}
                       >
                         {log.title}
@@ -289,6 +290,7 @@ export const TrainingLogEditor: FC = () => {
                       onClose={menu.close}
                       MenuListProps={{ dense: true }}
                     >
+                      <MenuItem onClick={renameLog}>Edit name</MenuItem>
                       {window.navigator.share && (
                         <MenuItem
                           onClick={() => {
@@ -307,7 +309,6 @@ export const TrainingLogEditor: FC = () => {
                           Create Template
                         </MenuItem>
                       )}
-                      <MenuItem onClick={renameLog}>Edit name</MenuItem>
                       <MenuItem onClick={deleteLog}>
                         <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
                       </MenuItem>
