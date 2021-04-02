@@ -7,14 +7,13 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { MoreHoriz } from '@material-ui/icons';
+import { MoreHoriz, NavigateNext } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { TrainingLogMenuButton } from '../components/TrainingLogMenuButton';
 import { Format, Milliseconds, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
@@ -384,7 +383,6 @@ const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
 
 const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
   const history = useHistory();
-  const location = useLocation();
 
   /** If this userId exists, then we are viewing someone elses account.  */
   const { userId } = useParams<{ userId?: string }>();
@@ -406,14 +404,13 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
       `}
       between
       center
+      onClick={
+        userId
+          ? () => history.push(Paths.logView(userId, log.id))
+          : () => history.push(Paths.logEditor(log.id))
+      }
     >
-      <Columns
-        onClick={
-          userId
-            ? () => history.push(Paths.logView(userId, log.id))
-            : () => history.push(Paths.logEditor(log.id), { from: location })
-        }
-      >
+      <Columns>
         <Typography variant="body1" color="textPrimary">
           {log.title}
         </Typography>
@@ -423,7 +420,11 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
           </Typography>
         )}
       </Columns>
-      {!userId && <TrainingLogMenuButton log={log} />}
+      <NavigateNext
+        className={css`
+          color: ${Color.ActionSecondaryGray};
+        `}
+      />
     </Rows>
   );
 };

@@ -320,7 +320,7 @@ export const ActivityView = forwardRef<
                   <MenuItem onClick={showActivityCommentInput}>
                     Add comment
                   </MenuItem>
-                  <MenuItem onClick={renameActivity}>Rename activity</MenuItem>
+                  <MenuItem onClick={renameActivity}>Edit name</MenuItem>
                   <MenuItem onClick={deleteActivity}>
                     <b>Delete activity</b>
                   </MenuItem>

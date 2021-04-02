@@ -1,15 +1,21 @@
 import { css } from '@emotion/css';
-import { IconButton, Typography } from '@material-ui/core';
+import {
+  ClickAwayListener,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@material-ui/core';
 import {
   ArrowBackIosRounded,
   ArrowForwardIosRounded,
   ChatBubbleOutline,
 } from '@material-ui/icons';
+import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { TrainingLogMenuButton } from '../components/TrainingLogMenuButton';
 import {
   TrainingLogDateView,
   TrainingLogEditorView,
@@ -17,8 +23,13 @@ import {
 import { Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { useUser } from '../hooks';
-import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
+import { useMaterialMenu, useUser } from '../hooks';
+import {
+  Activity,
+  ActivityStatus,
+  TrainingLog,
+  TrainingTemplate,
+} from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
@@ -30,6 +41,7 @@ export const TrainingLogEditor: FC = () => {
   );
   const [logNotes, setLogNotes] = useState<DataState<string>>(DataState.Empty);
 
+  const menu = useMaterialMenu();
   const history = useHistory();
   const user = useUser();
   const { logId, templateId } = useParams<{
@@ -62,7 +74,6 @@ export const TrainingLogEditor: FC = () => {
       );
   }, [user.uid, logId, templateId]);
 
-  // TODO Use border-less input for title
   const renameLog = useCallback(() => {
     if (!DataState.isReady(log)) return;
     const title = window.prompt('Update title', log.title);
@@ -165,6 +176,71 @@ export const TrainingLogEditor: FC = () => {
     }
   }, [user.uid, log, logNotes, isTemplate]);
 
+  const createTemplate = useCallback(async () => {
+    if (isTemplate) return;
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm('Create a Template from this log?')) return;
+    try {
+      const newTemplate: TrainingTemplate = {
+        ...log,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        logIds: [],
+      };
+      const templateRefP = db
+        .user(user.uid)
+        .collection(DbPath.UserTemplates)
+        .add(newTemplate);
+      const logDoc = db.user(user.uid).collection(DbPath.UserLogs).doc(log.id);
+      const activitiesP = logDoc
+        .collection(DbPath.UserLogActivities)
+        .withConverter(DbConverter.Activity)
+        .get()
+        .then(snapshot =>
+          snapshot.docs.map(doc => {
+            const activity = doc.data();
+            activity.sets.forEach(set => {
+              set.status = ActivityStatus.Unattempted;
+            });
+            return activity;
+          })
+        );
+      const [templateRef, logActivities] = await Promise.all([
+        templateRefP,
+        activitiesP,
+      ]);
+      const templateActivities = templateRef.collection(
+        DbPath.UserLogActivities
+      );
+      const batch = db.batch();
+      logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
+      await batch.commit();
+      if (window.confirm('Delete original log?')) {
+        await logDoc.delete();
+        toast.info('Deleted original log.');
+      }
+      history.push(Paths.template(templateRef.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [log, user.uid, history, isTemplate]);
+
+  const deleteLog = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm(`Delete "${log.title}" forever?`)) return;
+    menu.close();
+    try {
+      await db
+        .user(log.authorId)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+        .doc(log.id)
+        .delete();
+      history.push(Paths.account);
+      toast.info('Deleted successfully!');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [log, history, isTemplate, menu]);
+
   return (
     <DataStateView data={log}>
       {log => (
@@ -182,21 +258,79 @@ export const TrainingLogEditor: FC = () => {
             `}
             pad={Pad.Medium}
           >
-            <Rows center maxWidth between>
+            <Rows center between>
               <Columns>
                 <TrainingLogDateView log={log} />
-                <Typography
-                  variant="h6"
-                  color="textPrimary"
-                  onClick={renameLog}
-                  className={css`
-                    line-height: 1.2 !important;
-                  `}
-                >
-                  {log.title}
-                </Typography>
+                <ClickAwayListener onClickAway={menu.close}>
+                  <div>
+                    <IconButton
+                      aria-label="Open log menu"
+                      aria-controls="log-menu"
+                      aria-haspopup="true"
+                      onClick={menu.open}
+                      className={css`
+                        padding: 0 !important;
+                      `}
+                    >
+                      <Typography
+                        variant="h6"
+                        color="textPrimary"
+                        className={css`
+                          line-height: 1.2 !important;
+                        `}
+                      >
+                        {log.title}
+                      </Typography>
+                    </IconButton>
+                    <Menu
+                      id="log-menu"
+                      anchorEl={menu.ref}
+                      open={!!menu.ref}
+                      onClose={menu.close}
+                      MenuListProps={{ dense: true }}
+                    >
+                      {window.navigator.share && (
+                        <MenuItem
+                          onClick={() => {
+                            menu.close();
+                            const url = isTemplate
+                              ? Paths.templateView(log.authorId, log.id)
+                              : Paths.logView(log.authorId, log.id);
+                            window.navigator.share({ url });
+                          }}
+                        >
+                          Share link
+                        </MenuItem>
+                      )}
+                      {!isTemplate && (
+                        <MenuItem onClick={createTemplate}>
+                          Create Template
+                        </MenuItem>
+                      )}
+                      <MenuItem onClick={renameLog}>Edit name</MenuItem>
+                      <MenuItem onClick={deleteLog}>
+                        <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
+                      </MenuItem>
+                    </Menu>
+                  </div>
+                </ClickAwayListener>
               </Columns>
               <Rows>
+                <IconButton
+                  aria-label="Edit training log notes"
+                  className={css`
+                    color: ${Color.ActionSecondaryGray} !important;
+                    transform: scaleX(-1);
+                  `}
+                  onClick={() => {
+                    if (DataState.isReady(logNotes) && logNotes) return;
+                    // Unhide the notes input
+                    setLogNotes('');
+                    Promise.resolve().then(() => logNotesRef.current?.focus());
+                  }}
+                >
+                  <ChatBubbleOutline fontSize="small" />
+                </IconButton>
                 <IconButton
                   aria-label="Open previous log"
                   size="small"
@@ -216,23 +350,6 @@ export const TrainingLogEditor: FC = () => {
                   onClick={openNextLog}
                 >
                   <ArrowForwardIosRounded fontSize="small" />
-                </IconButton>
-                <TrainingLogMenuButton log={log} />
-                <IconButton
-                  aria-label="Edit training log notes"
-                  size="small"
-                  className={css`
-                    color: ${Color.ActionSecondaryGray} !important;
-                    transform: scaleX(-1);
-                  `}
-                  onClick={() => {
-                    if (DataState.isReady(logNotes) && logNotes) return;
-                    // Unhide the notes input
-                    setLogNotes('');
-                    Promise.resolve().then(() => logNotesRef.current?.focus());
-                  }}
-                >
-                  <ChatBubbleOutline fontSize="small" />
                 </IconButton>
               </Rows>
             </Rows>
