@@ -1,15 +1,24 @@
 import { css } from '@emotion/css';
-import { Typography } from '@material-ui/core';
+import {
+  ClickAwayListener,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@material-ui/core';
 import format from 'date-fns/format';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import FlipMove from 'react-flip-move';
+import { toast } from 'react-toastify';
 
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
+import { useMaterialMenu, useUser } from '../hooks';
 import {
   Activity,
   ActivityRepCountUnit,
+  ActivityStatus,
   ActivityWeightUnit,
   TrainingLog,
   TrainingTemplate,
@@ -27,6 +36,53 @@ const activityViewContainerStyle = css`
     margin-bottom: ${Pad.Medium};
   }
 `;
+
+/**
+ * Create a new Template entry in the authenticated users' templates collection.
+ * Copies activities from the given pre-existing log. The log is created in the provided user ID's
+ * templates collection.
+ *
+ * @returns The ID of the newly created Template.
+ */
+export const createTemplateFromLog = async (
+  /** The log or template from which to copy Activities from. */
+  log: TrainingLog | TrainingTemplate,
+  /** The User for whom this Template will be created for. */
+  toUserId: string
+): Promise<string> => {
+  const newTemplate = TrainingTemplate.create({
+    title: log.title,
+    authorId: toUserId,
+  }) as TrainingTemplate;
+  const isTemplate = TrainingLog.isTemplate(log);
+  const [newTemplateRef, logActivities] = await Promise.all([
+    db.user(toUserId).collection(DbPath.UserTemplates).add(newTemplate),
+    db
+      .user(log.authorId)
+      .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+      .doc(log.id)
+      .collection(DbPath.UserLogActivities)
+      .withConverter(DbConverter.Activity)
+      .get()
+      .then(snapshot =>
+        snapshot.docs.map(doc => {
+          const activity = doc.data();
+          activity.sets.forEach(({ status }) => {
+            if (status === ActivityStatus.Optional) return;
+            status = ActivityStatus.Unattempted;
+          });
+          return activity;
+        })
+      ),
+  ]);
+  const templateActivities = newTemplateRef.collection(
+    DbPath.UserLogActivities
+  );
+  const batch = db.batch();
+  logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
+  await batch.commit();
+  return newTemplateRef.id;
+};
 
 export const TrainingLogEditorView: FC<{
   log: TrainingLog | TrainingTemplate;
@@ -115,6 +171,9 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
   const logDate = TrainingLog.getDate(log);
   const isTemplate = TrainingLog.isTemplate(log);
 
+  const menu = useMaterialMenu();
+  const user = useUser();
+
   const [authorName] = useDataState<string>(
     () =>
       db
@@ -137,6 +196,17 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [log.authorId, log.id]
   );
+
+  const copyTemplate = useCallback(async () => {
+    menu.close();
+    if (!TrainingLog.isTemplate(log)) return;
+    try {
+      await createTemplateFromLog(log, user.uid);
+      toast.info(`Added ${log.title} to your templates.`);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [log, menu, user.uid]);
 
   return (
     <DataStateView data={activities} error={() => null} loading={() => null}>
@@ -161,9 +231,49 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
                 </Typography>
               )}
               {isTemplate && <TrainingLogDateView log={log} />}
-              <Typography variant="body1" color="textPrimary">
-                {log.title}
-              </Typography>
+              <ClickAwayListener onClickAway={menu.close}>
+                <div>
+                  <IconButton
+                    aria-label="Open log menu"
+                    aria-controls="log-menu"
+                    aria-haspopup="true"
+                    onClick={menu.open}
+                    className={css`
+                      padding: 0 !important;
+                    `}
+                  >
+                    <Typography variant="body1" color="textPrimary">
+                      {log.title}
+                    </Typography>
+                  </IconButton>
+                  {window.navigator.share && (
+                    <MenuItem
+                      onClick={() => {
+                        menu.close();
+                        const url = isTemplate
+                          ? Paths.templateView(log.authorId, log.id)
+                          : Paths.logView(log.authorId, log.id);
+                        window.navigator.share({ url });
+                      }}
+                    >
+                      Share link
+                    </MenuItem>
+                  )}
+                  <Menu
+                    id="log-menu"
+                    anchorEl={menu.ref}
+                    open={!!menu.ref}
+                    onClose={menu.close}
+                    MenuListProps={{ dense: true }}
+                  >
+                    {isTemplate && (
+                      <MenuItem onClick={copyTemplate}>
+                        Add to your Templates
+                      </MenuItem>
+                    )}
+                  </Menu>
+                </div>
+              </ClickAwayListener>
             </Rows>
           </Columns>
           <div className={activityViewContainerStyle}>

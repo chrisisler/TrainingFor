@@ -206,3 +206,16 @@ export const Comment = {
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
   }),
 };
+
+// eslint-disable-next-line
+export const TrainingTemplate = {
+  create: (
+    data: Pick<TrainingTemplate, 'authorId' | 'title'>
+  ): Omit<TrainingTemplate, 'id'> => ({
+    title: data.title,
+    authorId: data.authorId,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    notes: '',
+    logIds: [],
+  }),
+};

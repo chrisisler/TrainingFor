@@ -11,12 +11,12 @@ import {
   ArrowForwardIosRounded,
   ChatBubbleOutline,
 } from '@material-ui/icons';
-import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import {
+  createTemplateFromLog,
   TrainingLogDateView,
   TrainingLogEditorView,
 } from '../components/TrainingLogView';
@@ -24,12 +24,7 @@ import { Paths } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import {
-  Activity,
-  ActivityStatus,
-  TrainingLog,
-  TrainingTemplate,
-} from '../interfaces';
+import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
@@ -183,44 +178,17 @@ export const TrainingLogEditor: FC = () => {
     if (!DataState.isReady(log)) return;
     if (!window.confirm('Create a Template from this log?')) return;
     try {
-      const newTemplate: TrainingTemplate = {
-        ...log,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        logIds: [],
-      };
-      const templateRefP = db
-        .user(user.uid)
-        .collection(DbPath.UserTemplates)
-        .add(newTemplate);
-      const logDoc = db.user(user.uid).collection(DbPath.UserLogs).doc(log.id);
-      const activitiesP = logDoc
-        .collection(DbPath.UserLogActivities)
-        .withConverter(DbConverter.Activity)
-        .get()
-        .then(snapshot =>
-          snapshot.docs.map(doc => {
-            const activity = doc.data();
-            activity.sets.forEach(set => {
-              set.status = ActivityStatus.Unattempted;
-            });
-            return activity;
-          })
-        );
-      const [templateRef, logActivities] = await Promise.all([
-        templateRefP,
-        activitiesP,
-      ]);
-      const templateActivities = templateRef.collection(
-        DbPath.UserLogActivities
-      );
-      const batch = db.batch();
-      logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
-      await batch.commit();
+      const newTemplateId = await createTemplateFromLog(log, user.uid);
       if (window.confirm('Delete original log?')) {
+        const logDoc = db
+          .user(user.uid)
+          .collection(DbPath.UserLogs)
+          .withConverter(DbConverter.TrainingLog)
+          .doc(log.id);
         await logDoc.delete();
         toast.info('Deleted original log.');
       }
-      history.push(Paths.template(templateRef.id));
+      history.push(Paths.template(newTemplateId));
     } catch (error) {
       toast.error(error.message);
     }
