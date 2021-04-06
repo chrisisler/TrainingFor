@@ -566,7 +566,7 @@ const ActivitySetView = forwardRef<
       ref={ref}
       className={css`
         border-left: 1px solid ${statusColor};
-        border-bottom: 1px solid ${statusColor};
+        border-right: 1px solid ${statusColor};
         border-radius: 5px;
         margin: 0 ${Pad.Small} ${Pad.XSmall} 0;
         padding: 0 ${Pad.XSmall};
