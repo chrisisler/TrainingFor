@@ -251,81 +251,62 @@ export const ActivityView = forwardRef<
           width: min-content;
         `}
       >
-        <Rows pad={Pad.Small}>
-          {editable && (
-            <button
-              onClick={addActivitySet}
-              className={css`
-                color: ${Color.ActionPrimaryBlue};
-                background-color: transparent;
-                border: none;
-                border-radius: 50%;
-                height: min-content;
-                padding: ${Pad.XSmall};
-                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-                outline: none;
-              `}
-            >
-              <Add fontSize="small" />
-            </button>
-          )}
-          <Columns>
-            <ClickAwayListener onClickAway={menu.close}>
-              <div>
-                <button
-                  disabled={!editable}
-                  aria-label="Open activity menu"
-                  aria-controls="activity-menu"
-                  aria-haspopup="true"
-                  onClick={menu.open}
-                  className={css`
-                    color: ${Color.FontPrimary};
-                    font-size: ${Font.Medium};
-                    font-weight: 500;
-                    padding: 0;
-                    border: none;
-                    background-color: transparent;
-                    font-family: system-ui;
-                    outline: none;
-                    text-align: left;
-                  `}
+        <Columns>
+          <ClickAwayListener onClickAway={menu.close}>
+            <div>
+              <button
+                disabled={!editable}
+                aria-label="Open activity menu"
+                aria-controls="activity-menu"
+                aria-haspopup="true"
+                onClick={menu.open}
+                className={css`
+                  color: ${Color.FontPrimary};
+                  font-size: ${Font.Medium};
+                  font-weight: 500;
+                  padding: 0;
+                  border: none;
+                  background-color: transparent;
+                  font-family: system-ui;
+                  outline: none;
+                  text-align: left;
+                `}
+              >
+                {activity.name}
+              </button>
+              <Menu
+                id="activity-menu"
+                anchorEl={menu.ref}
+                open={!!menu.ref}
+                onClose={menu.close}
+                MenuListProps={{ dense: true }}
+              >
+                <MenuItem
+                  onClick={moveActivityUp}
+                  disabled={activities.length === 1 || index === 0}
                 >
-                  {activity.name}
-                </button>
-                <Menu
-                  id="activity-menu"
-                  anchorEl={menu.ref}
-                  open={!!menu.ref}
-                  onClose={menu.close}
-                  MenuListProps={{ dense: true }}
+                  Move up
+                </MenuItem>
+                <MenuItem
+                  onClick={moveActivityDown}
+                  disabled={
+                    activities.length === 1 || index + 1 === activities.length
+                  }
                 >
-                  <MenuItem
-                    onClick={moveActivityUp}
-                    disabled={activities.length === 1 || index === 0}
-                  >
-                    Move up
-                  </MenuItem>
-                  <MenuItem
-                    onClick={moveActivityDown}
-                    disabled={
-                      activities.length === 1 || index + 1 === activities.length
-                    }
-                  >
-                    Move down
-                  </MenuItem>
-                  <MenuItem onClick={renameActivity}>Edit name</MenuItem>
-                  <MenuItem onClick={showActivityCommentInput}>
-                    Add comment
-                  </MenuItem>
-                  <MenuItem onClick={deleteActivity}>
-                    <b>Delete activity</b>
-                  </MenuItem>
-                </Menu>
-              </div>
-            </ClickAwayListener>
-            <TallyMarks sets={activity.sets} />
-          </Columns>
-        </Rows>
+                  Move down
+                </MenuItem>
+                <MenuItem onClick={renameActivity}>Edit name</MenuItem>
+                <MenuItem onClick={showActivityCommentInput}>
+                  Add comment
+                </MenuItem>
+                <MenuItem onClick={deleteActivity}>
+                  <b>Delete activity</b>
+                </MenuItem>
+              </Menu>
+            </div>
+          </ClickAwayListener>
+          <TallyMarks sets={activity.sets} />
+        </Columns>
         <Rows
           center
           className={css`
@@ -346,6 +327,24 @@ export const ActivityView = forwardRef<
           >
             {activity.repCountUnit}
           </button>
+          {editable && (
+            <button
+              onClick={addActivitySet}
+              className={css`
+                color: ${Color.ActionPrimaryBlue};
+                background-color: transparent;
+                border: none;
+                border-radius: 50%;
+                height: min-content;
+                padding: ${Pad.XSmall};
+                margin-left: ${Pad.Small};
+                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+                outline: none;
+              `}
+            >
+              <Add fontSize="small" />
+            </button>
+          )}
         </Rows>
       </Rows>
       <FlipMove
