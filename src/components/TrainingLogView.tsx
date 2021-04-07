@@ -246,19 +246,6 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
                       {log.title}
                     </Typography>
                   </IconButton>
-                  {window.navigator.share && (
-                    <MenuItem
-                      onClick={() => {
-                        menu.close();
-                        const url = isTemplate
-                          ? Paths.templateView(log.authorId, log.id)
-                          : Paths.logView(log.authorId, log.id);
-                        window.navigator.share({ url });
-                      }}
-                    >
-                      Share link
-                    </MenuItem>
-                  )}
                   <Menu
                     id="log-menu"
                     anchorEl={menu.ref}
@@ -266,6 +253,19 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
                     onClose={menu.close}
                     MenuListProps={{ dense: true }}
                   >
+                    {window.navigator.share && (
+                      <MenuItem
+                        onClick={() => {
+                          menu.close();
+                          const url = isTemplate
+                            ? Paths.templateView(log.authorId, log.id)
+                            : Paths.logView(log.authorId, log.id);
+                          window.navigator.share({ url });
+                        }}
+                      >
+                        Share link
+                      </MenuItem>
+                    )}
                     {isTemplate && (
                       <MenuItem onClick={copyTemplate}>
                         Add to your Templates
