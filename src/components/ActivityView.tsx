@@ -746,7 +746,12 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
     {sets.map(({ status, uuid }) => (
       <li
         key={uuid}
-        className={status === ActivityStatus.Completed ? undefined : 'hollow'}
+        className={
+          status === ActivityStatus.Unattempted ||
+          status === ActivityStatus.Optional
+            ? 'hollow'
+            : undefined
+        }
       />
     ))}
   </ol>
