@@ -335,6 +335,7 @@ export const ActivityView = forwardRef<
                 background-color: transparent;
                 border: none;
                 border-radius: 50%;
+                border: 1px solid ${Color.ActionPrimaryBlue}
                 height: min-content;
                 padding: ${Pad.XSmall};
                 margin-left: ${Pad.Small};
