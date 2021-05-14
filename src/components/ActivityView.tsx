@@ -106,6 +106,15 @@ export const ActivityView = forwardRef<
     }
   }, [activity.sets, activityDocument]);
 
+  const duplicateActivity = useCallback(async () => {
+    menu.close();
+    try {
+      activityDocument.parent.add(activity);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, activity, menu]);
+
   const deleteActivity = useCallback(() => {
     menu.close();
     try {
@@ -298,6 +307,9 @@ export const ActivityView = forwardRef<
                 <MenuItem onClick={renameActivity}>Edit name</MenuItem>
                 <MenuItem onClick={showActivityCommentInput}>
                   Add comment
+                </MenuItem>
+                <MenuItem onClick={duplicateActivity}>
+                  Duplicate activity
                 </MenuItem>
                 <MenuItem onClick={deleteActivity}>
                   <b>Delete activity</b>
