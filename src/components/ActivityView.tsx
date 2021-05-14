@@ -366,6 +366,7 @@ export const ActivityView = forwardRef<
             activity={activity}
             editable={editable}
             activityDocument={activityDocument}
+            isTemplate={isTemplate}
           />
         ))}
       </FlipMove>
@@ -481,8 +482,9 @@ const ActivitySetView = forwardRef<
     activity: Activity;
     editable: boolean;
     activityDocument: firebase.firestore.DocumentReference<Activity>;
+    isTemplate: boolean;
   }
->(({ index, activity, editable, activityDocument }, ref) => {
+>(({ index, activity, editable, activityDocument, isTemplate }, ref) => {
   const { sets, weightUnit, repCountUnit } = activity;
   const set = sets[index];
 
@@ -514,13 +516,20 @@ const ActivitySetView = forwardRef<
   );
 
   const cycleSetStatus = useCallback(() => {
-    sets[index].status = ActivitySet.cycleStatus(set.status);
+    if (isTemplate) {
+      sets[index].status =
+        set.status === ActivityStatus.Unattempted
+          ? ActivityStatus.Optional
+          : ActivityStatus.Unattempted;
+    } else {
+      sets[index].status = ActivitySet.cycleStatus(set.status);
+    }
     try {
       activityDocument.set({ sets }, { merge: true });
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument, index, set.status, sets]);
+  }, [activityDocument, index, set.status, sets, isTemplate]);
 
   const duplicateSet = useCallback(() => {
     menu.close();

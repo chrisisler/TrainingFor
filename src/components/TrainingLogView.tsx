@@ -38,9 +38,8 @@ const activityViewContainerStyle = css`
 `;
 
 /**
- * Create a new Template entry in the authenticated users' templates collection.
- * Copies activities from the given pre-existing log. The log is created in the provided user ID's
- * templates collection.
+ * Create a new Template entry in the given `toUserId` users' templates
+ * collection. Copies activities from the given pre-existing log.
  *
  * @returns The ID of the newly created Template.
  */
