@@ -108,12 +108,14 @@ export const ActivityView = forwardRef<
 
   const duplicateActivity = useCallback(async () => {
     menu.close();
+    const position = activities[activities.length - 1].position + 1;
+    const duplicate: Activity = { ...activity, position };
     try {
-      activityDocument.parent.add(activity);
+      activityDocument.parent.add(duplicate);
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument, activity, menu]);
+  }, [activityDocument, activity, menu, activities]);
 
   const deleteActivity = useCallback(() => {
     menu.close();
