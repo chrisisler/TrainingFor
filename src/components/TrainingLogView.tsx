@@ -294,25 +294,28 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
 export const TrainingLogDateView: FC<{
   log: TrainingLog | TrainingTemplate;
 }> = ({ log }) => {
-  const isTemplate = TrainingLog.isTemplate(log);
+  if (TrainingLog.isTemplate(log)) {
+    return (
+      <Typography variant="body2" color="textSecondary">
+        <i>
+          <b>Training Template</b>
+        </i>
+      </Typography>
+    );
+  }
+
   const _date = TrainingLog.getDate(log);
   const date = _date ? format(_date, Format.time) : DataState.Empty;
 
   return (
     <Typography variant="body2" color="textSecondary">
-      {isTemplate ? (
-        <i>
-          <b>Training Template</b>
-        </i>
-      ) : (
-        <DataStateView
-          data={date}
-          loading={() => <>Loading...</>}
-          error={() => null}
-        >
-          {date => <>{date}</>}
-        </DataStateView>
-      )}
+      <DataStateView
+        data={date}
+        loading={() => <>Loading...</>}
+        error={() => null}
+      >
+        {date => <>{date}</>}
+      </DataStateView>
     </Typography>
   );
 };
