@@ -348,16 +348,22 @@ export const ActivityView = forwardRef<
                 color: ${Color.ActionPrimaryBlue};
                 background-color: transparent;
                 border: none;
+                border: 1px solid ${Color.ActionPrimaryBlue};
                 border-radius: 50%;
-                border: 1px solid ${Color.ActionPrimaryBlue}
                 height: min-content;
                 padding: ${Pad.XSmall};
                 margin-left: ${Pad.Small};
-                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+                box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
                 outline: none;
               `}
             >
-              <Add fontSize="small" />
+              <Add
+                fontSize="small"
+                /** Border 50% does NOT make A Perfect Circle without this. */
+                className={css`
+                  margin-bottom: -2px;
+                `}
+              />
             </button>
           )}
         </Rows>
