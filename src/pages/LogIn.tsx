@@ -3,10 +3,11 @@ import { Button, TextField, Typography } from '@material-ui/core';
 import React, { FC, useCallback, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { v4 as uuid } from 'uuid';
 
 import { Paths } from '../constants';
 import { auth } from '../firebase';
-import { Color, Columns, Font, Pad } from '../style';
+import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const LogIn: FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -39,6 +40,20 @@ export const LogIn: FC = () => {
     }
   }, []);
 
+  // How is the Account page able to work when we aren't adding the user.id as
+  // a Users firestore collection entry?
+  const signInAnonymously = useCallback(async () => {
+    if (!window.confirm('Sign in anonymously?')) return;
+    try {
+      const { user } = await auth.signInAnonymously();
+      if (!user) throw Error('No user found');
+      const displayName = `Anon-${uuid().slice(0, 5)}`;
+      await user.updateProfile({ displayName });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, []);
+
   return (
     <div
       className={css`
@@ -66,33 +81,16 @@ export const LogIn: FC = () => {
           value={email}
           onChange={event => setEmail(event.target.value)}
         />
-        <Columns pad={Pad.XSmall}>
-          <form onSubmit={logIn}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              label="Password"
-              type="password"
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-            />
-          </form>
-          <button
-            className={css`
-              border: 0;
-              background-color: inherit;
-              max-width: fit-content;
-              margin: 0;
-              padding: 0;
-              color: ${Color.ActionPrimaryGray};
-              font-size: ${Font.Small};
-              margin-left: auto;
-            `}
-            onClick={resetPassword}
-          >
-            Reset Password
-          </button>
-        </Columns>
+        <form onSubmit={logIn}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+          />
+        </form>
         <Button variant="contained" color="primary" onClick={logIn}>
           Start Training
         </Button>
@@ -104,6 +102,36 @@ export const LogIn: FC = () => {
         >
           Sign Up
         </Button>
+        <Rows between>
+          <button
+            className={css`
+              border: 0;
+              background-color: inherit;
+              max-width: fit-content;
+              margin: 0;
+              padding: 0;
+              color: ${Color.ActionPrimaryGray};
+              font-size: ${Font.Small};
+            `}
+            onClick={signInAnonymously}
+          >
+            Sign In Anonymously
+          </button>
+          <button
+            className={css`
+              border: 0;
+              background-color: inherit;
+              max-width: fit-content;
+              margin: 0;
+              padding: 0;
+              color: ${Color.ActionPrimaryGray};
+              font-size: ${Font.Small};
+            `}
+            onClick={resetPassword}
+          >
+            Reset Password
+          </button>
+        </Rows>
       </Columns>
     </div>
   );
