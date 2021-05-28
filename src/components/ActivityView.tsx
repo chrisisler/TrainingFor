@@ -528,7 +528,9 @@ const ActivitySetView = forwardRef<
       outline: none;
       padding: ${Pad.XSmall};
       font-family: sans-serif;
-      color: ${value === 0 ? Color.ActionSecondaryGray : 'palevioletred'};
+      color: ${value === 0
+        ? Color.ActionSecondaryGray
+        : Color.ActionPrimaryRed};
       font-weight: 400;
       font-size: ${Font.MedLarge};
     `,
@@ -729,7 +731,9 @@ const ActivitySetView = forwardRef<
           border: 0;
           font-weight: 500;
           background-color: transparent;
+          letter-spacing: 0.02em;
           text-transform: uppercase;
+          font-family: system-ui, Verdana, sans-serif;
           outline: none;
           width: 100%;
           text-align: left;
@@ -752,12 +756,12 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
         height: 100%;
         margin-right: 5px;
         width: 4px;
-        background-color: ${Color.ActionPrimaryRed} !important;
+        background-color: ${Color.ActionPrimaryGreen} !important;
         border-radius: 5px;
 
         &:nth-child(5n) {
           transform: rotate(-75deg);
-          height: 260%;
+          height: 280%;
           position: relative;
           left: -22px;
           top: 10px;
@@ -766,7 +770,7 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
 
         &.hollow {
           background-color: transparent !important;
-          border: 1px solid ${Color.ActionPrimaryRed};
+          border: 1px solid ${Color.ActionPrimaryGreen};
         }
       }
     `}
