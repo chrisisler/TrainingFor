@@ -595,9 +595,7 @@ const ActivitySetView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        border-left: 1px solid ${statusColor};
-        border-right: 1px solid ${statusColor};
-        border-radius: 5px;
+        border-bottom: 2px solid ${statusColor};
         margin: 0 ${Pad.Small} ${Pad.XSmall} 0;
         padding: 0 ${Pad.XSmall};
         flex: 0.5;
@@ -725,11 +723,11 @@ const ActivitySetView = forwardRef<
         disabled={!editable}
         onClick={cycleSetStatus}
         className={css`
-          color: ${Color.ActionPrimaryGray};
+          color: ${Color.FontPrimary};
           padding: ${Pad.XSmall};
           font-size: ${Font.Small};
           border: 0;
-          font-weight: 600;
+          font-weight: 500;
           background-color: transparent;
           text-transform: uppercase;
           outline: none;
