@@ -6,11 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import {
-  ArrowBackIosRounded,
-  ArrowForwardIosRounded,
-  ChatBubbleOutline,
-} from '@material-ui/icons';
+import { ChatBubbleOutline } from '@material-ui/icons';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -260,6 +256,10 @@ export const TrainingLogEditor: FC = () => {
                       onClose={menu.close}
                       MenuListProps={{ dense: true }}
                     >
+                      <MenuItem onClick={openPreviousLog}>
+                        Go to previous log
+                      </MenuItem>
+                      <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
                       <MenuItem onClick={renameLog}>Edit name</MenuItem>
                       {window.navigator.share && (
                         <MenuItem
@@ -301,26 +301,6 @@ export const TrainingLogEditor: FC = () => {
                   }}
                 >
                   <ChatBubbleOutline fontSize="small" />
-                </IconButton>
-                <IconButton
-                  aria-label="Open previous log"
-                  size="small"
-                  className={css`
-                    color: ${Color.ActionSecondaryGray} !important;
-                  `}
-                  onClick={openPreviousLog}
-                >
-                  <ArrowBackIosRounded fontSize="small" />
-                </IconButton>
-                <IconButton
-                  aria-label="Open next log"
-                  size="small"
-                  className={css`
-                    color: ${Color.ActionSecondaryGray} !important;
-                  `}
-                  onClick={openNextLog}
-                >
-                  <ArrowForwardIosRounded fontSize="small" />
                 </IconButton>
               </Rows>
             </Rows>
