@@ -262,6 +262,31 @@ export const ActivityView = forwardRef<
           width: min-content;
         `}
       >
+        {editable && (
+          <button
+            onClick={addActivitySet}
+            className={css`
+              color: ${Color.ActionPrimaryBlue};
+              background-color: transparent;
+              border: none;
+              border: 1px solid ${Color.ActionPrimaryBlue};
+              border-radius: 50%;
+              height: min-content;
+              padding: ${Pad.XSmall};
+              margin-right: ${Pad.Small};
+              box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+              outline: none;
+            `}
+          >
+            <Add
+              fontSize="small"
+              /** Border 50% does NOT make A Perfect Circle without this. */
+              className={css`
+                margin-bottom: -2px;
+              `}
+            />
+          </button>
+        )}
         <Columns>
           <ClickAwayListener onClickAway={menu.close}>
             <div>
@@ -341,31 +366,6 @@ export const ActivityView = forwardRef<
           >
             {activity.repCountUnit}
           </button>
-          {editable && (
-            <button
-              onClick={addActivitySet}
-              className={css`
-                color: ${Color.ActionPrimaryBlue};
-                background-color: transparent;
-                border: none;
-                border: 1px solid ${Color.ActionPrimaryBlue};
-                border-radius: 50%;
-                height: min-content;
-                padding: ${Pad.XSmall};
-                margin-left: ${Pad.Small};
-                box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-                outline: none;
-              `}
-            >
-              <Add
-                fontSize="small"
-                /** Border 50% does NOT make A Perfect Circle without this. */
-                className={css`
-                  margin-bottom: -2px;
-                `}
-              />
-            </button>
-          )}
         </Rows>
       </Rows>
       <FlipMove

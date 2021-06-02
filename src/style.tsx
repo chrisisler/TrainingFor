@@ -45,7 +45,8 @@ export const Columns = styled(Div)`
   flex-direction: column;
 
   & > *:not(:last-child) {
-    margin-bottom: ${(props: { pad?: Pad }) => props?.pad ?? Pad.None};
+    ${(props: { pad?: Pad }) =>
+      props.pad ? `margin-bottom: ${props.pad};` : ''}
   }
 `;
 
@@ -53,6 +54,7 @@ export const Rows = styled(Div)`
   display: flex;
 
   & > *:not(:last-child) {
-    margin-right: ${(props: { pad?: Pad }) => props?.pad ?? Pad.None};
+    ${(props: { pad?: Pad }) =>
+      props.pad ? `margin-right: ${props.pad};` : ''}
   }
 `;
