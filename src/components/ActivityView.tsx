@@ -750,18 +750,20 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
     className={css`
       padding: 0;
       height: 12px;
+      /** Align tally marks with activity name. */
+      margin-left: 1px;
 
       & > li {
         display: inline-block;
         height: 100%;
         margin-right: 5px;
         width: 4px;
-        background-color: ${Color.ActionPrimaryGreen} !important;
+        background-color: ${Color.ActionPrimaryRed} !important;
         border-radius: 5px;
 
         &:nth-child(5n) {
           transform: rotate(-75deg);
-          height: 280%;
+          height: 270%;
           position: relative;
           left: -22px;
           top: 10px;
@@ -770,7 +772,7 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
 
         &.hollow {
           background-color: transparent !important;
-          border: 1px solid ${Color.ActionPrimaryGreen};
+          border: 1px solid ${Color.ActionPrimaryBlue};
         }
       }
     `}
