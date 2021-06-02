@@ -239,11 +239,12 @@ export const ActivityView = forwardRef<
 
   const activityUnitButtonStyle = css`
     color: ${Color.ActionPrimaryGray};
-    padding: ${Pad.XSmall};
-    font-size: ${Font.Small};
+    border-radius: 8px;
     border: 0;
+    border-bottom: 1px solid ${Color.ActionSecondaryGray};
+    padding: ${Pad.XSmall} ${Pad.Small};
+    font-size: ${Font.Small};
     background-color: transparent;
-    text-transform: uppercase;
     outline: none;
   `;
 
