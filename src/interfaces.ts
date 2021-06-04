@@ -65,6 +65,7 @@ export enum ActivityRepCountUnit {
   Repetitions = 'rep',
   Seconds = 'sec',
   Minutes = 'min',
+  Meters = 'm',
 }
 
 export enum ActivityWeightUnit {
@@ -115,6 +116,8 @@ export const Activity = {
     if (unit === ActivityRepCountUnit.Seconds)
       return ActivityRepCountUnit.Minutes;
     if (unit === ActivityRepCountUnit.Minutes)
+      return ActivityRepCountUnit.Meters;
+    if (unit === ActivityRepCountUnit.Meters)
       return ActivityRepCountUnit.Repetitions;
     throw Error('Unreachable');
   },

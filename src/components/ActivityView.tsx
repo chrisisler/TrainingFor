@@ -711,6 +711,7 @@ const ActivitySetView = forwardRef<
           />
           {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
           {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
+          {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>}
         </Rows>
       </Rows>
       <button
