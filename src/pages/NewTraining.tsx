@@ -11,7 +11,7 @@ import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { Paths, Weekdays } from '../constants';
+import { Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
@@ -59,11 +59,10 @@ export const NewTraining: FC = () => {
   );
 
   const createTrainingLog = useCallback(async () => {
-    const templateTitle = DataState.isReady(selectedTemplate)
-      ? selectedTemplate.title
-      : '';
+    const { size } = await db.user(user.uid).collection(DbPath.UserLogs).get();
+    const title = `Training Log ${size + 1}`;
     const newLog = TrainingLog.create({
-      title: `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`,
+      title,
       authorId: user.uid,
     });
     try {
@@ -71,7 +70,7 @@ export const NewTraining: FC = () => {
         .user(user.uid)
         .collection(DbPath.UserLogs)
         .add(newLog);
-      // If using a template...
+      // Copy the activites to the new training log if using a template
       if (DataState.isReady(selectedTemplate)) {
         const logActivities = newLogRef.collection(DbPath.UserLogActivities);
         const templateActivities = await db
@@ -82,12 +81,12 @@ export const NewTraining: FC = () => {
           .withConverter(DbConverter.Activity)
           .get()
           .then(snapshot => snapshot.docs.map(doc => doc.data()));
-        // Copy the template activites to the new training log
         const batch = db.batch();
         templateActivities.forEach(a => batch.set(logActivities.doc(a.id), a));
         await batch.commit();
         // Add this log to the list of logs created from the selected template
-        db.user(user.uid)
+        await db
+          .user(user.uid)
           .collection(DbPath.UserTemplates)
           .doc(selectedTemplate.id)
           .update({
