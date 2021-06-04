@@ -633,21 +633,6 @@ const ActivitySetView = forwardRef<
               </Menu>
             </div>
           </ClickAwayListener>
-          {set.side && (
-            <button
-              onClick={() => {
-                sets[index].side = ActivitySet.cycleSide(set.side);
-                updateSets(sets);
-              }}
-              className={css`
-                outline: none;
-                border: none;
-                background-color: transparent;
-                color: ${Color.ActionPrimaryGray};
-                padding: ${Pad.XSmall};
-              `}
-            ></button>
-          )}
         </Rows>
         <Rows
           className={css`
