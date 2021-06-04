@@ -112,6 +112,7 @@ export const TrainingLogEditor: FC = () => {
   const openPreviousLog = useCallback(async () => {
     if (!DataState.isReady(log)) return;
     if (!window.confirm('Open previous log?')) return;
+    menu.close();
     try {
       const { docs } = await db
         .user(user.uid)
@@ -130,11 +131,12 @@ export const TrainingLogEditor: FC = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log, history, templateId]);
+  }, [user.uid, log, history, templateId, menu]);
 
   const openNextLog = useCallback(async () => {
     if (!DataState.isReady(log)) return;
     if (!window.confirm('Open next log?')) return;
+    menu.close();
     try {
       const { docs } = await db
         .user(user.uid)
@@ -153,7 +155,7 @@ export const TrainingLogEditor: FC = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }, [user.uid, log, history, templateId]);
+  }, [user.uid, log, history, templateId, menu]);
 
   const updateLogNotes = useCallback(async () => {
     if (!DataState.isReady(log)) return;
