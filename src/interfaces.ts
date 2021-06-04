@@ -51,7 +51,6 @@ export interface ActivitySet {
   weight: number;
   /** repCount represents either a time value or repetition count */
   repCount: null | number;
-  side: ActivitySetSide;
 }
 
 export enum ActivityStatus {
@@ -72,12 +71,6 @@ export enum ActivityWeightUnit {
   Weightless = '--',
   Kilograms = 'kg',
   Pounds = 'lb',
-}
-
-export enum ActivitySetSide {
-  Both = 'LR',
-  Left = 'L',
-  Right = 'R',
 }
 
 export interface Comment extends FirestoreDocument {
@@ -174,14 +167,7 @@ export const ActivitySet = {
     ...data,
     uuid: uuid(),
     notes: null,
-    side: ActivitySetSide.Both,
   }),
-  cycleSide: (s: ActivitySetSide): ActivitySetSide => {
-    if (s === ActivitySetSide.Both) return ActivitySetSide.Left;
-    if (s === ActivitySetSide.Left) return ActivitySetSide.Right;
-    if (s === ActivitySetSide.Right) return ActivitySetSide.Both;
-    return s;
-  },
   cycleStatus: (s: ActivityStatus): ActivityStatus => {
     if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
     if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;

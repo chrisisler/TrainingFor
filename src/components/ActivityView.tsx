@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, Close, PanToolOutlined } from '@material-ui/icons';
+import { Add, Close } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -27,7 +27,6 @@ import {
   Activity,
   ActivityRepCountUnit,
   ActivitySet,
-  ActivitySetSide,
   ActivityStatus,
   ActivityWeightUnit,
   Comment,
@@ -647,9 +646,7 @@ const ActivitySetView = forwardRef<
                 color: ${Color.ActionPrimaryGray};
                 padding: ${Pad.XSmall};
               `}
-            >
-              <ActivitySetSideView side={set.side} />
-            </button>
+            ></button>
           )}
         </Rows>
         <Rows
@@ -790,29 +787,3 @@ const X: FC = ({ children }) => (
     {children}
   </p>
 );
-
-const ActivitySetSideView: FC<{ side: ActivitySetSide }> = ({ side }) => {
-  const handStyle = css`
-    font-size: ${Font.Small} !important;
-    color: ${Color.ActionSecondaryGray};
-  `;
-  if (side === ActivitySetSide.Right) {
-    return <PanToolOutlined className={handStyle} />;
-  }
-  const reverseXAxisStyle = css`
-    transform: scaleX(-1);
-    ${handStyle}
-  `;
-  if (side === ActivitySetSide.Both) {
-    return (
-      <Rows>
-        <PanToolOutlined className={reverseXAxisStyle} />
-        <PanToolOutlined className={handStyle} />
-      </Rows>
-    );
-  }
-  if (side === ActivitySetSide.Left) {
-    return <PanToolOutlined className={reverseXAxisStyle} />;
-  }
-  return null;
-};
