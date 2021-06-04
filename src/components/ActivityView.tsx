@@ -376,7 +376,7 @@ export const ActivityView = forwardRef<
           display: flex;
           flex-wrap: wrap;
           width: 100%;
-          max-height: 200px;
+          max-height: 300px;
           overflow-y: scroll;
         `}
       >
