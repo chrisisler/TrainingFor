@@ -765,7 +765,6 @@ const X: FC = ({ children }) => (
     className={css`
       color: ${Color.ActionSecondaryGray};
       font-style: italic;
-      font-size: ${Font.Small};
     `}
   >
     {children}
