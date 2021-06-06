@@ -69,7 +69,6 @@ export const Library: FC = () => {
   return (
     <Columns
       pad={Pad.Medium}
-      maxWidth
       className={css`
         height: 100%;
         overflow-y: scroll;
@@ -87,7 +86,13 @@ export const Library: FC = () => {
                 place-items: center;
               `}
             >
-              <Button onClick={createLibraryFromLogs} variant="contained">
+              <Button
+                onClick={createLibraryFromLogs}
+                variant="contained"
+                className={css`
+                  width: 100%;
+                `}
+              >
                 Create Library
               </Button>
             </div>
