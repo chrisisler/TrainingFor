@@ -119,6 +119,8 @@ export const Activity = {
       return ActivityRepCountUnit.Repetitions;
     throw Error('Unreachable');
   },
+  // TODO Remove
+
   abbreviate: (name: string): string => {
     return name
       .split(whitespaceOrDash)

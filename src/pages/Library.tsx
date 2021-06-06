@@ -7,7 +7,7 @@ import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
 import { Activity } from '../interfaces';
-import { Columns, Pad } from '../style';
+import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const Library: FC = () => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
@@ -27,6 +27,7 @@ export const Library: FC = () => {
    * their logs have Activities)
    */
   // TODO New Activities added to a log get added to the Library if not present
+  // TODO DO not add Activitys who's `.id` has already been added
   const createLibraryFromLogs = useCallback(async () => {
     try {
       const logsSnapshot = await db
@@ -43,11 +44,23 @@ export const Library: FC = () => {
           .then(snapshot => snapshot.docs.map(doc => doc.data()))
       );
       const activities = (await Promise.all(promises)).flatMap(a => a);
-      // TODO Add logId and timestamp to Activity during createLibraryFromLogs
-      // Bulk-write the activites to the user Library collection
       const library = db.user(user.uid).collection(DbPath.UserActivityLibrary);
-      const batch = db.batch();
-      activities.forEach(a => batch.set(library.doc(a.id), a));
+      let batch = db.batch();
+      // Bulk-write the activites to the user Library collection
+      activities.forEach((a, index) => {
+        /**
+         * Firebase free tier (lol) allows a maximum of 500 writes (in a db.batch)
+         * for one request.  We make multiple requests if `activities.length` >
+         * 500. My account had 542 activities... :)
+         * @see https://stackoverflow.com/questions/61666244
+         */
+        if (0 === index % 500) {
+          batch.commit();
+          batch = db.batch();
+        }
+        batch.set(library.doc(a.id), a);
+      });
+      // TODO Add logId and timestamp to Activity during createLibraryFromLogs
       await batch.commit();
     } catch (error) {
       toast.error(error.message);
@@ -59,7 +72,8 @@ export const Library: FC = () => {
     db.user(user.uid)
       .collection(DbPath.UserActivityLibrary)
       .withConverter(DbConverter.Activity)
-      .orderBy('name', 'desc')
+      .limit(50)
+      .orderBy('name', 'asc')
       .onSnapshot(
         snapshot => setActivities(snapshot.docs.map(doc => doc.data())),
         err => setActivities(DataState.error(err.message))
@@ -68,14 +82,19 @@ export const Library: FC = () => {
 
   return (
     <Columns
-      pad={Pad.Medium}
       className={css`
         height: 100%;
-        overflow-y: scroll;
-        padding: ${Pad.Medium} ${Pad.Large};
       `}
     >
-      <Typography variant="h6">Activity Library</Typography>
+      <Typography
+        variant="h6"
+        className={css`
+          padding: ${Pad.Medium} ${Pad.Large};
+          border-bottom: 1px solid ${Color.ActionSecondaryGray};
+        `}
+      >
+        Activity Library
+      </Typography>
       <DataStateView data={activities}>
         {activities =>
           activities.length === 0 && DataState.isReady(hasLogs) && hasLogs ? (
@@ -97,9 +116,49 @@ export const Library: FC = () => {
               </Button>
             </div>
           ) : (
-            <div>
-              <p> todo: render 'dem logs </p>
-            </div>
+            <Columns
+              className={css`
+                height: 100%;
+                overflow-y: scroll;
+              `}
+            >
+              {activities.map(activity => (
+                <Rows
+                  key={activity.id}
+                  between
+                  className={css`
+                    padding: ${Pad.Medium};
+                    border-bottom: 1px solid ${Color.ActionSecondaryGray};
+                  `}
+                >
+                  <Rows pad={Pad.Medium}>
+                    <button
+                      className={css`
+                        color: ${Color.FontPrimary};
+                        font-size: ${Font.Medium};
+                        font-weight: 500;
+                        padding: 0;
+                        border: none;
+                        background-color: transparent;
+                        font-family: system-ui;
+                        outline: none;
+                        text-align: left;
+                      `}
+                      onClick={() => {
+                        /** noop */
+                      }}
+                    >
+                      {activity.name}
+                    </button>
+                  </Rows>
+                  <Columns>
+                    <p>{activity.id.slice(0, 5)}</p>
+                    <p>{activity.weightUnit}</p>
+                    <p>{activity.repCountUnit}</p>
+                  </Columns>
+                </Rows>
+              ))}
+            </Columns>
           )
         }
       </DataStateView>
