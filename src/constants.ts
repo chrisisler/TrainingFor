@@ -32,6 +32,7 @@ export const Paths = {
   template: (templateId = ':templateId') => `/template/${templateId}`,
   templateView: (userId = ':userId', templateId = ':templateId') =>
     `/user/${userId}/template/${templateId}`,
+  library: (userId = ':userId') => `/library/${userId}`,
   signUp: '/signup',
   logIn: '/login',
   timeline: '/timeline',

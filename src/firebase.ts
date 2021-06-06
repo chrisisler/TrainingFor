@@ -39,6 +39,8 @@ export enum DbPath {
   Users = 'users',
   UserLogs = 'logs',
   UserTemplates = 'templates',
+  /** Stores the users saved Activities. */
+  UserActivityLibrary = 'library',
   // TODO Delete this and use `export const db = { activities: db.collection('activities') }`
   UserTemplateActivities = 'activities',
   UserLogActivities = 'activities',

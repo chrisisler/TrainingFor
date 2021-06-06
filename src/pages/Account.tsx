@@ -14,6 +14,7 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
+import { AppLink } from '../components/AppLink';
 import { Format, Milliseconds, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
@@ -178,6 +179,7 @@ export const Account: FC = () => {
           </ClickAwayListener>
         )}
       </Rows>
+      <AppLink to={Paths.library(user.uid)}>View your Activity Library</AppLink>
       <Typography variant="body2" color="textSecondary">
         <b>Templates</b>
       </Typography>
