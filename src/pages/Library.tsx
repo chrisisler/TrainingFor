@@ -1,6 +1,7 @@
 import { css } from '@emotion/css';
 import { Button, Typography } from '@material-ui/core';
 import React, { FC, useCallback, useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
@@ -25,9 +26,33 @@ export const Library: FC = () => {
    * if their library has no activities and they have training logs (assumes that
    * their logs have Activities)
    */
-  const createLibraryFromLogs = useCallback(() => {
-    // lmao u thought
-  }, []);
+  // TODO New Activities added to a log get added to the Library if not present
+  const createLibraryFromLogs = useCallback(async () => {
+    try {
+      const logsSnapshot = await db
+        .user(user.uid)
+        .collection(DbPath.UserLogs)
+        .withConverter(DbConverter.TrainingLog)
+        .get();
+      // Fetch the Activity[] list collection from every TrainingLog
+      const promises = logsSnapshot.docs.map(doc =>
+        doc.ref
+          .collection(DbPath.UserLogActivities)
+          .withConverter(DbConverter.Activity)
+          .get()
+          .then(snapshot => snapshot.docs.map(doc => doc.data()))
+      );
+      const activities = (await Promise.all(promises)).flatMap(a => a);
+      // TODO Add logId and timestamp to Activity during createLibraryFromLogs
+      // Bulk-write the activites to the user Library collection
+      const library = db.user(user.uid).collection(DbPath.UserActivityLibrary);
+      const batch = db.batch();
+      activities.forEach(a => batch.set(library.doc(a.id), a));
+      await batch.commit();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid]);
 
   // Load `activities` and maintain up-to-date value
   useEffect(() => {
