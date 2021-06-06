@@ -1,14 +1,24 @@
 import { css } from '@emotion/css';
-import { Button, Typography } from '@material-ui/core';
+import {
+  Button,
+  ClickAwayListener,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@material-ui/core';
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { useUser } from '../hooks';
+import { useMaterialMenu, useUser } from '../hooks';
 import { Activity } from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
+/**
+ * The Activity Library is a curation of saved activities and that activity's
+ * history.
+ */
 export const Library: FC = () => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Loading
@@ -122,46 +132,97 @@ export const Library: FC = () => {
                 overflow-y: scroll;
               `}
             >
-              {activities.map(activity => (
-                <Rows
-                  key={activity.id}
-                  between
-                  className={css`
-                    padding: ${Pad.Medium};
-                    border-bottom: 1px solid ${Color.ActionSecondaryGray};
-                  `}
-                >
-                  <Rows pad={Pad.Medium}>
-                    <button
-                      className={css`
-                        color: ${Color.FontPrimary};
-                        font-size: ${Font.Medium};
-                        font-weight: 500;
-                        padding: 0;
-                        border: none;
-                        background-color: transparent;
-                        font-family: system-ui;
-                        outline: none;
-                        text-align: left;
-                      `}
-                      onClick={() => {
-                        /** noop */
-                      }}
-                    >
-                      {activity.name}
-                    </button>
-                  </Rows>
-                  <Columns>
-                    <p>{activity.id.slice(0, 5)}</p>
-                    <p>{activity.weightUnit}</p>
-                    <p>{activity.repCountUnit}</p>
-                  </Columns>
-                </Rows>
+              {activities.map(a => (
+                <LibraryActivityView key={a.id} activity={a} />
               ))}
             </Columns>
           )
         }
       </DataStateView>
     </Columns>
+  );
+};
+
+const LibraryActivityView: FC<{ activity: Activity }> = ({ activity }) => {
+  const menu = useMaterialMenu();
+  const user = useUser();
+
+  const renameLibraryActivity = useCallback(async () => {
+    menu.close();
+    const newName = window.prompt('Update activity name', activity.name);
+    if (!newName) return;
+    try {
+      await db
+        .user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .doc(activity.id)
+        .update({ name: newName } as Partial<Activity>);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [menu, activity.name, user.uid, activity.id]);
+
+  const removeLibraryActivity = useCallback(async () => {
+    menu.close();
+    try {
+      await db
+        .user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .doc(activity.id)
+        .delete();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, menu, activity.id]);
+
+  return (
+    <Rows
+      key={activity.id}
+      between
+      className={css`
+        padding: ${Pad.Medium};
+        border-bottom: 1px solid ${Color.ActionSecondaryGray};
+      `}
+    >
+      <Rows pad={Pad.Medium}>
+        <ClickAwayListener onClickAway={menu.close}>
+          <div>
+            <button
+              className={css`
+                color: ${Color.FontPrimary};
+                font-size: ${Font.Medium};
+                font-weight: 500;
+                padding: 0;
+                border: none;
+                background-color: transparent;
+                font-family: system-ui;
+                outline: none;
+                text-align: left;
+              `}
+              onClick={menu.open}
+            >
+              {activity.name}
+            </button>
+            <Menu
+              id="activity-menu"
+              anchorEl={menu.ref}
+              open={!!menu.ref}
+              onClose={menu.close}
+              MenuListProps={{ dense: true }}
+            >
+              <MenuItem onClick={() => renameLibraryActivity}>
+                Edit name
+              </MenuItem>
+              <MenuItem onClick={removeLibraryActivity}>
+                <b>Remove from Library</b>
+              </MenuItem>
+            </Menu>
+          </div>
+        </ClickAwayListener>
+        <button onClick={removeLibraryActivity}>
+          <b>Remove</b>
+        </button>
+      </Rows>
+    </Rows>
   );
 };
