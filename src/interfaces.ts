@@ -49,6 +49,16 @@ export interface Activity extends FirestoreDocument {
   // logId: string;
 }
 
+/**
+ * A SavedActivity is an Activity belonging to the Library collection. It
+ * represents activities commonly executed in training logs and powers a data
+ * visualization of the history.
+ */
+export interface SavedActivity extends FirestoreDocument {
+  name: string;
+  history: Activity[];
+}
+
 export interface ActivitySet {
   uuid: string;
   notes: null | string;
@@ -86,6 +96,14 @@ export interface Comment extends FirestoreDocument {
 
 const isNotAlpha = /^[^A-Za-z_]+$/;
 const whitespaceOrDash = /(\s+|-+)/;
+
+// eslint-disable-next-line
+export const SavedActivity = {
+  create: (data: Pick<SavedActivity, 'name'>): Omit<SavedActivity, 'id'> => ({
+    name: data.name,
+    history: [],
+  }),
+};
 
 // eslint-disable-next-line
 export const Activity = {

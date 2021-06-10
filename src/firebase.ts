@@ -5,6 +5,7 @@ import 'firebase/auth';
 import 'firebase/storage';
 
 import {
+  SavedActivity,
   Activity,
   TrainingLog,
   User,
@@ -122,10 +123,26 @@ const trainingTemplateConverter: firebase.firestore.FirestoreDataConverter<Train
   },
 };
 
+const savedActivityConverter: firebase.firestore.FirestoreDataConverter<SavedActivity> = {
+  toFirestore: (
+    savedActivity: SavedActivity
+  ): firebase.firestore.DocumentData => {
+    return savedActivity;
+  },
+  fromFirestore: (
+    doc: firebase.firestore.QueryDocumentSnapshot<SavedActivity>
+  ): SavedActivity => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
 export const DbConverter = {
   TrainingLog: trainingLogConverter,
   TrainingTemplate: trainingTemplateConverter,
   Activity: activityConverter,
+  SavedActivity: savedActivityConverter,
   User: userConverter,
   Comment: commentConverter,
 };
