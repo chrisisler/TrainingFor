@@ -2,14 +2,25 @@ import { css } from '@emotion/css';
 import {
   Button,
   ClickAwayListener,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Menu,
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { toast } from 'react-toastify';
 
-import { DataState, DataStateView, useDataState } from '../DataState';
+import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, SavedActivity } from '../interfaces';
@@ -95,12 +106,12 @@ export const Library: FC = () => {
               type="text"
               ref={inputRef}
               onChange={event => setNewActivityName(event.target.value)}
-              onBlur={event => {
+              onBlur={() => {
                 // Hide the input
                 if (newActivityName === '') setNewActivityName(null);
               }}
               value={newActivityName ?? ''}
-              placeholder="Activity..."
+              placeholder="Activity name..."
               className={css`
                 box-sizing: border-box;
                 background-color: transparent;
@@ -144,6 +155,59 @@ export const Library: FC = () => {
 };
 
 const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
+  const [open, setOpen] = useState(false);
+  const [activities, setActivities] = useState<DataState<Activity[]>>(
+    DataState.Loading
+  );
+
+  const user = useUser();
+  const menu = useMaterialMenu();
+
+  useEffect(() => {
+    if (!open) return;
+    db.user(user.uid)
+      .collection(DbPath.UserLogs)
+      .withConverter(DbConverter.TrainingLog)
+      .limit(20) // TODO DEV
+      .get()
+      .then(logsSnapshot => {
+        // Fetch the Activity[] list collection from every TrainingLog
+        const promises = logsSnapshot.docs.map(async doc => {
+          const timestamp = doc.get('timestamp');
+          const snapshot = await doc.ref
+            .collection(DbPath.UserLogActivities)
+            .withConverter(DbConverter.Activity)
+            .get();
+          return snapshot.docs.map(doc => {
+            const data = doc.data();
+            data.logId = doc.id;
+            data.timestamp = timestamp;
+            return data;
+          });
+        });
+        return Promise.all(promises);
+      })
+      .then(arrays => {
+        const activities = arrays.flatMap(a => a);
+        setActivities(activities);
+      })
+      .catch(error => {
+        toast.error(error.message);
+      });
+  }, [open, user.uid]);
+
+  const deleteSavedActivity = useCallback(() => {
+    if (!window.confirm(`Delete ${activity.name} history forever?`)) return;
+    try {
+      db.user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .doc(activity.id)
+        .delete();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activity.id, activity.name, user.uid]);
+
   return (
     <Rows
       between
@@ -153,61 +217,212 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
         padding: ${Pad.Medium} ${Pad.Large};
       `}
     >
-      <button
-        className={css`
-          color: ${Color.FontPrimary};
-          font-size: ${Font.Medium};
-          font-weight: 500;
-          padding: 0;
-          border: none;
-          background-color: transparent;
-          font-family: system-ui;
-          text-align: left;
-          outline: none;
-        `}
-      >
-        {activity.name}
-      </button>
-      <Columns>
-        <p
-          className={css`
-            font-size: 2.2em;
-            line-height: 1em;
-            color: ${Color.ActionPrimaryBlue};
-          `}
+      <ClickAwayListener onClickAway={menu.close}>
+        <div>
+          <button
+            aria-label="Open saved activity menu"
+            aria-controls="saved-activity-menu"
+            aria-haspopup="true"
+            onClick={menu.open}
+            className={css`
+              color: ${Color.FontPrimary};
+              font-size: ${Font.Medium};
+              font-weight: 500;
+              padding: 0;
+              border: none;
+              background-color: transparent;
+              font-family: system-ui;
+              box-shadow: none;
+              text-align: left;
+              outline: none;
+            `}
+          >
+            {activity.name}
+          </button>
+          <Menu
+            id="saved-activity-menu"
+            anchorEl={menu.ref}
+            open={!!menu.ref}
+            onClose={menu.close}
+            MenuListProps={{ dense: true }}
+          >
+            <MenuItem
+              onClick={() => {
+                /** todo */
+              }}
+            >
+              Edit name
+            </MenuItem>
+            {process.env.NODE_ENV === 'development' && (
+              <MenuItem
+                onClick={() => {
+                  menu.close();
+                  setOpen(true);
+                }}
+              >
+                Add history (!)
+              </MenuItem>
+            )}
+            <MenuItem onClick={deleteSavedActivity}>
+              <b>Delete saved activity</b>
+            </MenuItem>
+          </Menu>
+        </div>
+      </ClickAwayListener>
+      {open && (
+        <Dialog
+          disableEscapeKeyDown
+          fullScreen
+          maxWidth="sm"
+          aria-labelledby="edit-activity-history"
+          open={open}
         >
-          {activity.history.length}
-        </p>
-        <p
-          className={css`
-            font-size: ${Font.Small};
-            color: ${Color.FontSecondary};
-          `}
-        >
-          entries
-        </p>
-      </Columns>
+          <DialogTitle id="edit-activity-history">
+            Add {activity.name} History
+          </DialogTitle>
+          <DialogContent dividers>
+            <AddHistoryForm
+              activities={activities}
+              activity={activity}
+              closeModal={() => setOpen(false)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus onClick={() => setOpen(false)} color="primary">
+              Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Rows>
   );
 };
 
-// const createLibraryFromLogs = useCallback(async () => {
-//   try {
-//     const logsSnapshot = await db
-//       .user(user.uid)
-//       .collection(DbPath.UserLogs)
-//       .withConverter(DbConverter.TrainingLog)
-//       .get();
-//     // Fetch the Activity[] list collection from every TrainingLog
-//     const promises = logsSnapshot.docs.map(doc =>
-//       doc.ref
-//         .collection(DbPath.UserLogActivities)
-//         .withConverter(DbConverter.Activity)
-//         .get()
-//         .then(snapshot => snapshot.docs.map(doc => doc.data()))
-//     );
-//     const activities = (await Promise.all(promises)).flatMap(a => a);
-//   } catch (error) {
-//     toast.error(error.message);
-//   }
-// }, [user.uid]);
+const AddHistoryForm: FC<{
+  activities: DataState<Activity[]>;
+  activity: SavedActivity;
+  closeModal(): void;
+}> = ({ activities, activity, closeModal }) => {
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [selected, setSelected] = useState<Activity[]>([]);
+
+  const filteredActivities: DataState<Activity[]> = useMemo(() => {
+    if (!DataState.isReady(activities)) return activities;
+    if (!historyQuery) return activities;
+    if (historyQuery.length === 1) return activities;
+    return activities.filter(a => a.name.toLowerCase().includes(historyQuery));
+  }, [activities, historyQuery]);
+
+  const user = useUser();
+
+  useEffect(() => {
+    console.log('selected is:', selected);
+  }, [selected]);
+
+  /**
+   * Write the selected log activities in the modal to the
+   * SavedActivity.history in Firebase.
+   */
+  const addSelectedHistory = useCallback(
+    async <E extends React.SyntheticEvent>(event: E) => {
+      event.preventDefault();
+      // Remove duplicates and add `logId` and `timestamp`
+      const nonduped = selected.filter(c =>
+        activity.history.some(a => a.id === c.id)
+      );
+      const diff = selected.length - nonduped.length;
+      console.log('diff is:', diff);
+      if (diff) toast.info(`Skipping ${diff} duplicate(s).`);
+      const history = activity.history.concat(nonduped);
+      try {
+        // TODO Add Activity[] (with logId and timestamp from TrainingLog) to the
+        // UserActivityLibrary collection.
+        await db
+          .user(user.uid)
+          .collection(DbPath.UserActivityLibrary)
+          .doc(activity.id)
+          .set({ history }, { merge: true });
+        // Close modal after success
+        closeModal();
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [activity.history, activity.id, user.uid, selected, closeModal]
+  );
+
+  return (
+    <>
+      {DataState.isReady(activities) && (
+        <input
+          type="text"
+          placeholder="Filter by name..."
+          onChange={event => setHistoryQuery(event.target.value)}
+          value={historyQuery}
+          className={css`
+          border: 1px solid ${Color.ActionSecondaryGray}
+          border-radius: 8px;
+          padding: ${Pad.Small} ${Pad.Medium};
+          width: 100%;
+          box-sizing: border-box;
+          `}
+        />
+      )}
+      <DataStateView data={filteredActivities}>
+        {activities => (
+          <form
+            onSubmit={addSelectedHistory}
+            className={css`
+              width: 100%;
+            `}
+          >
+            <fieldset
+              className={css`
+                border: none;
+                height: 100%;
+                overflow-y: scroll;
+              `}
+            >
+              {activities.length === 0 ? (
+                <h3>Nothing here</h3>
+              ) : (
+                activities.map((activity, i) => (
+                  <Rows
+                    center
+                    key={activity.id + i}
+                    pad={Pad.Medium}
+                    padding={`${Pad.Small} ${Pad.XSmall}`}
+                  >
+                    <input
+                      type="checkbox"
+                      name={activity.id}
+                      id={activity.id + 1}
+                      onChange={event => {
+                        const { checked } = event.target;
+                        if (checked) {
+                          setSelected(selected.concat(activity));
+                          return;
+                        }
+                        setSelected(selected.filter(a => a.id !== activity.id));
+                      }}
+                    />
+                    <label htmlFor={activity.id + 1}>{activity.name} </label>
+                  </Rows>
+                ))
+              )}
+              <div
+                className={css`
+                  margin-top: ${Pad.Medium};
+                `}
+              >
+                <Button fullWidth variant="contained" type="submit">
+                  Add
+                </Button>
+              </div>
+            </fieldset>
+          </form>
+        )}
+      </DataStateView>
+    </>
+  );
+};

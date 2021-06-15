@@ -100,6 +100,8 @@ export const TrainingLogEditor: FC = () => {
           Activity.create({
             name: activityName,
             position: prevMaxPosition + 1,
+            logId: log.id,
+            timestamp: log.timestamp,
           })
         );
       } catch (error) {

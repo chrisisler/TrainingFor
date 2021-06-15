@@ -44,9 +44,9 @@ export interface Activity extends FirestoreDocument {
   weightUnit: ActivityWeightUnit;
   repCountUnit: ActivityRepCountUnit;
   /** A copy of the server timestamp (or null) from the TrainingLog. */
-  // timestamp: FirestoreTimestamp;
+  timestamp: FirestoreTimestamp;
   /** Which TrainingLog was this Activity performed in? */
-  // logId: string;
+  logId: string;
 }
 
 /**
@@ -108,10 +108,12 @@ export const SavedActivity = {
 // eslint-disable-next-line
 export const Activity = {
   create: (
-    data: Pick<Activity, 'name' | 'position'>
+    data: Pick<Activity, 'name' | 'position' | 'logId' | 'timestamp'>
   ): Omit<Activity, 'id'> => ({
     name: data.name,
     position: data.position,
+    logId: data.logId,
+    timestamp: data.timestamp,
     notes: null,
     sets: [],
     attachmentUrl: null,
