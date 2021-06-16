@@ -10,6 +10,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
+import firebase from 'firebase/app';
 import React, {
   FC,
   useCallback,
@@ -20,6 +21,7 @@ import React, {
 } from 'react';
 import { toast } from 'react-toastify';
 
+import { Months } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
@@ -211,6 +213,7 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
   return (
     <Rows
       between
+      center
       className={css`
         border-radius: 8px;
         border: 1px solid ${Color.ActionSecondaryGray};
@@ -294,8 +297,48 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
           </DialogActions>
         </Dialog>
       )}
+      {activity.history.length > 0 && (
+        <Columns
+          className={css`
+            color: ${Color.FontPrimary};
+            text-align: right;
+            font-size: ${Font.Small};
+
+            & > p span {
+              color: ${Color.FontSecondary};
+            }
+          `}
+        >
+          <p>
+            <span>Logs: </span>
+            {activity.history.length}
+          </p>
+          <p>
+            <span>First performed: </span>
+            {displayTimestamp(activity.history[0].timestamp)}
+          </p>
+          <p>
+            <span>Last performed: </span>
+            {displayTimestamp(
+              activity.history[activity.history.length - 1].timestamp
+            )}
+          </p>
+        </Columns>
+      )}
     </Rows>
   );
+};
+
+// TODO NEXT Move from next/last performed to list of completed dates??
+// Or figure out the next/last performed sorting of activity.history.
+const displayTimestamp = (
+  timestamp: null | firebase.firestore.FieldValue
+): string => {
+  if (!timestamp) return '';
+  const date = (timestamp as firebase.firestore.Timestamp)?.toDate();
+  if (!date) return '';
+  const month = Months[date.getMonth()].slice(0, 3);
+  return `${month} ${date.getDate()}`;
 };
 
 const AddHistoryForm: FC<{
@@ -315,10 +358,6 @@ const AddHistoryForm: FC<{
 
   const user = useUser();
 
-  useEffect(() => {
-    console.log('selected is:', selected);
-  }, [selected]);
-
   /**
    * Write the selected log activities in the modal to the
    * SavedActivity.history in Firebase.
@@ -326,12 +365,11 @@ const AddHistoryForm: FC<{
   const addSelectedHistory = useCallback(
     async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
-      // Remove duplicates and add `logId` and `timestamp`
-      const nonduped = selected.filter(c =>
-        activity.history.some(a => a.id === c.id)
+      // Do not add duplicates
+      const nonduped = selected.filter(
+        c => !activity.history.some(a => a.id === c.id)
       );
       const diff = selected.length - nonduped.length;
-      console.log('diff is:', diff);
       if (diff) toast.info(`Skipping ${diff} duplicate(s).`);
       const history = activity.history.concat(nonduped);
       try {

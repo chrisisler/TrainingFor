@@ -18,6 +18,21 @@ export enum Weekdays {
   Saturday,
 }
 
+export enum Months {
+  January,
+  February,
+  March,
+  April,
+  May,
+  June,
+  July,
+  August,
+  September,
+  October,
+  November,
+  December,
+}
+
 export enum Milliseconds {
   Day = 86400000,
 }
