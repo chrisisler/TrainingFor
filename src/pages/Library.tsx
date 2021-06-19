@@ -170,16 +170,19 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
     db.user(user.uid)
       .collection(DbPath.UserLogs)
       .withConverter(DbConverter.TrainingLog)
-      .limit(20) // TODO DEV
+      .limit(80) // TODO DEV
       .get()
       .then(logsSnapshot => {
         // Fetch the Activity[] list collection from every TrainingLog
         const promises = logsSnapshot.docs.map(async doc => {
+          // Grab the log timestamp to attach to each Activity
           const timestamp = doc.get('timestamp');
+          // Get a snapshot of the activities of the current log
           const snapshot = await doc.ref
             .collection(DbPath.UserLogActivities)
             .withConverter(DbConverter.Activity)
             .get();
+          // Attach the logId and log timestamp to the activity
           return snapshot.docs.map(doc => {
             const data = doc.data();
             data.logId = doc.id;
@@ -190,6 +193,7 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
         return Promise.all(promises);
       })
       .then(arrays => {
+        // Activities are grouped by array, flatten them into one array
         const activities = arrays.flatMap(a => a);
         setActivities(activities);
       })
@@ -251,7 +255,17 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
           >
             <MenuItem
               onClick={() => {
-                /** todo */
+                menu.close();
+                const name = window.prompt('Update name', activity.name);
+                if (!name) return;
+                try {
+                  db.user(user.uid)
+                    .collection(DbPath.UserActivityLibrary)
+                    .doc(activity.id)
+                    .update({ name } as Pick<SavedActivity, 'name'>);
+                } catch (error) {
+                  toast.error(error.message);
+                }
               }}
             >
               Edit name
@@ -432,6 +446,7 @@ const AddHistoryForm: FC<{
                     padding={`${Pad.Small} ${Pad.XSmall}`}
                   >
                     <input
+                      autoFocus
                       type="checkbox"
                       name={activity.id}
                       id={activity.id + 1}
@@ -444,7 +459,15 @@ const AddHistoryForm: FC<{
                         setSelected(selected.filter(a => a.id !== activity.id));
                       }}
                     />
-                    <label htmlFor={activity.id + 1}>{activity.name} </label>
+                    <label htmlFor={activity.id + 1}>{activity.name}</label>
+                    <p
+                      className={css`
+                        font-size: ${Font.Small};
+                        color: ${Color.ActionSecondaryGray};
+                      `}
+                    >
+                      {activity.id}
+                    </p>
                   </Rows>
                 ))
               )}
