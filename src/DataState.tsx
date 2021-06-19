@@ -43,7 +43,7 @@ export const DataState = {
     ds: DataState<T>,
     fn: (arg: T) => DataState<U>
   ): DataState<U> => {
-    if (!DataState.isReady(ds)) return ds;
+    if (!DataState.isReady(ds)) return ds as DataState<U>;
     return fn(ds);
   },
   unwrapOr: <T extends unknown, U extends T>(

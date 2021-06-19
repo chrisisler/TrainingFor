@@ -77,7 +77,7 @@ export const createTemplateFromLog = async (
     DbPath.UserLogActivities
   );
   const batch = db.batch();
-  logActivities.forEach(a => batch.set(templateActivities.doc(a.id), a));
+  logActivities.forEach(a => batch.set(templateActivities.doc(), a));
   await batch.commit();
   return newTemplateRef.id;
 };

@@ -82,7 +82,9 @@ export const NewTraining: FC = () => {
           .get()
           .then(snapshot => snapshot.docs.map(doc => doc.data()));
         const batch = db.batch();
-        templateActivities.forEach(a => batch.set(logActivities.doc(a.id), a));
+        // Create new Activity documents with the same data from the Template
+        // but each their own custom ID
+        templateActivities.forEach(a => batch.set(logActivities.doc(), a));
         await batch.commit();
         // Add this log to the list of logs created from the selected template
         await db
