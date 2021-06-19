@@ -512,9 +512,10 @@ const ActivitySetView = forwardRef<
 
   const menu = useMaterialMenu();
 
-  const statusColor = useMemo(() => ActivitySet.getStatusColor(set.status), [
-    set.status,
-  ]);
+  const statusColor = useMemo(
+    () => ActivitySet.getStatusColor(set.status),
+    [set.status]
+  );
 
   const setInputStyle = useCallback(
     (value: number) => css`
