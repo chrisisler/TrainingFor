@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { MoreHoriz, NavigateNext } from '@material-ui/icons';
+import { randomBytes } from 'crypto';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
@@ -121,6 +122,47 @@ export const Account: FC = () => {
       toast.error(error.message);
     }
   }, [user.uid, menu]);
+
+  // useEffect(() => {
+  //   if (!!userId) return;
+  //   db.user(user.uid)
+  //     .collection(DbPath.UserTemplates)
+  //     .withConverter(DbConverter.TrainingTemplate)
+  //     .get()
+  //     .then(templatesSnapshot => {
+  //       // For all templates in the user account
+  //       templatesSnapshot.docs.forEach(templateDoc => {
+  //         // For all logs in the template,
+  //         templateDoc.data().logIds.forEach(async logId => {
+  //           try {
+  //             const activitiesCollRef = db
+  //               .user(user.uid)
+  //               .collection(DbPath.UserLogs)
+  //               .doc(logId)
+  //               .collection(DbPath.UserLogActivities)
+  //               .withConverter(DbConverter.Activity);
+  //             const activitiesSnapshot = await activitiesCollRef.get();
+  //             const batch = db.batch();
+  //             activitiesSnapshot.forEach(doc => {
+  //               batch.delete(doc.ref);
+  //               // Recreate with new ID
+  //               batch.set(activitiesCollRef.doc(), doc.data());
+  //             });
+  //             await batch.commit();
+  //           } catch (error) {
+  //             toast.error(error.message);
+  //           }
+
+  //           // activitiesSnapshot.docs.forEach(activityDoc => {
+  //           //   activityDoc.ref.update({ id: autoId() }).catch(error => {
+  //           //     toast.error(error.message);
+  //           //   });
+  //           // });
+  //         });
+  //       });
+  //     });
+  //   // eslint-disable-next-line
+  // }, []);
 
   return (
     <Columns
@@ -429,4 +471,30 @@ const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
       />
     </Rows>
   );
+};
+
+/**
+ * Generate a unique client-side identifier.
+ *
+ * Used for the creation of new documents.
+ *
+ * @returns {string} A unique 20-character wide identifier.
+ */
+const autoId = (): string => {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let autoId = '';
+  while (autoId.length < 20) {
+    const bytes = randomBytes(40);
+    bytes.forEach(b => {
+      // Length of `chars` is 62. We only take bytes between 0 and 62*4-1
+      // (both inclusive). The value is then evenly mapped to indices of `char`
+      // via a modulo operation.
+      const maxValue = 62 * 4 - 1;
+      if (autoId.length < 20 && b <= maxValue) {
+        autoId += chars.charAt(b % 62);
+      }
+    });
+  }
+  return autoId;
 };

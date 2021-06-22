@@ -448,7 +448,7 @@ const AddHistoryForm: FC<{
                     <input
                       autoFocus
                       type="checkbox"
-                      name={activity.id}
+                      name={activity.name}
                       id={activity.id + 1}
                       onChange={event => {
                         const { checked } = event.target;

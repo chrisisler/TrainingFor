@@ -305,6 +305,7 @@ export const ActivityView = forwardRef<
                 `}
               >
                 {activity.name}
+               {activity.id.slice(0,5)}
               </button>
               <Menu
                 id="activity-menu"
