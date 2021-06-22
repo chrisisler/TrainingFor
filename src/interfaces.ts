@@ -56,7 +56,10 @@ export interface Activity extends FirestoreDocument {
  */
 export interface SavedActivity extends FirestoreDocument {
   name: string;
-  history: Activity[];
+  /**
+   * A list of Activity IDs present in the user's activity library collection.
+   */
+  history: string[];
 }
 
 export interface ActivitySet {

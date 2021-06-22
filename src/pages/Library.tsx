@@ -10,7 +10,6 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import firebase from 'firebase/app';
 import React, {
   FC,
   useCallback,
@@ -21,7 +20,6 @@ import React, {
 } from 'react';
 import { toast } from 'react-toastify';
 
-import { Months } from '../constants';
 import { DataState, DataStateView } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
@@ -74,6 +72,26 @@ export const Library: FC = () => {
         err => setActivities(DataState.error(err.message))
       );
   }, [user.uid]);
+
+  useEffect(() => {
+    db.user(user.uid)
+      .collection(DbPath.UserActivityLibrary)
+      .withConverter(DbConverter.SavedActivity)
+      .get()
+      .then(async snapshot => {
+        const batch = db.batch();
+        snapshot.docs.forEach(async doc => {
+          const savedActivity = doc.data();
+          const history = savedActivity.history.map(x => {
+            if (typeof x === 'string') return x;
+            return (x as Activity).id;
+          });
+          batch.update(doc.ref, { history });
+        });
+        await batch.commit();
+      });
+    // eslint-disable-next-line
+  }, []);
 
   return (
     <Columns
@@ -327,32 +345,10 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
             <span>Logs: </span>
             {activity.history.length}
           </p>
-          <p>
-            <span>First performed: </span>
-            {displayTimestamp(activity.history[0].timestamp)}
-          </p>
-          <p>
-            <span>Last performed: </span>
-            {displayTimestamp(
-              activity.history[activity.history.length - 1].timestamp
-            )}
-          </p>
         </Columns>
       )}
     </Rows>
   );
-};
-
-// TODO NEXT Move from next/last performed to list of completed dates??
-// Or figure out the next/last performed sorting of activity.history.
-const displayTimestamp = (
-  timestamp: null | firebase.firestore.FieldValue
-): string => {
-  if (!timestamp) return '';
-  const date = (timestamp as firebase.firestore.Timestamp)?.toDate();
-  if (!date) return '';
-  const month = Months[date.getMonth()].slice(0, 3);
-  return `${month} ${date.getDate()}`;
 };
 
 const AddHistoryForm: FC<{
@@ -361,7 +357,8 @@ const AddHistoryForm: FC<{
   closeModal(): void;
 }> = ({ activities, activity, closeModal }) => {
   const [historyQuery, setHistoryQuery] = useState('');
-  const [selected, setSelected] = useState<Activity[]>([]);
+  /** The ID's of selected `Activity`s. */
+  const [selected, setSelected] = useState<string[]>([]);
 
   const filteredActivities: DataState<Activity[]> = useMemo(() => {
     if (!DataState.isReady(activities)) return activities;
@@ -381,7 +378,7 @@ const AddHistoryForm: FC<{
       event.preventDefault();
       // Do not add duplicates
       const nonduped = selected.filter(
-        c => !activity.history.some(a => a.id === c.id)
+        s => !activity.history.some(id => id === s)
       );
       const diff = selected.length - nonduped.length;
       if (diff) toast.info(`Skipping ${diff} duplicate(s).`);
@@ -443,10 +440,10 @@ const AddHistoryForm: FC<{
                     onChange={event => {
                       const { checked } = event.target;
                       if (checked) {
-                        setSelected(selected.concat(activity));
+                        setSelected(selected.concat(activity.id));
                         return;
                       }
-                      setSelected(selected.filter(a => a.id !== activity.id));
+                      setSelected(selected.filter(id => id !== activity.id));
                     }}
                   />
                 ))
