@@ -73,26 +73,6 @@ export const Library: FC = () => {
       );
   }, [user.uid]);
 
-  useEffect(() => {
-    db.user(user.uid)
-      .collection(DbPath.UserActivityLibrary)
-      .withConverter(DbConverter.SavedActivity)
-      .get()
-      .then(async snapshot => {
-        const batch = db.batch();
-        snapshot.docs.forEach(async doc => {
-          const savedActivity = doc.data();
-          const history = savedActivity.history.map(x => {
-            if (typeof x === 'string') return x;
-            return (x as Activity).id;
-          });
-          batch.update(doc.ref, { history });
-        });
-        await batch.commit();
-      });
-    // eslint-disable-next-line
-  }, []);
-
   return (
     <Columns
       pad={Pad.Large}
