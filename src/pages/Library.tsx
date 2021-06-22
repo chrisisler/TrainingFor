@@ -170,7 +170,6 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
     db.user(user.uid)
       .collection(DbPath.UserLogs)
       .withConverter(DbConverter.TrainingLog)
-      .limit(80) // TODO DEV
       .get()
       .then(logsSnapshot => {
         // Fetch the Activity[] list collection from every TrainingLog
@@ -295,7 +294,7 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
           open={open}
         >
           <DialogTitle id="edit-activity-history">
-            Add {activity.name} History
+            Add {activity.name} history
           </DialogTitle>
           <DialogContent dividers>
             <AddHistoryForm
@@ -405,21 +404,19 @@ const AddHistoryForm: FC<{
 
   return (
     <>
-      {DataState.isReady(activities) && (
-        <input
-          type="text"
-          placeholder="Filter by name..."
-          onChange={event => setHistoryQuery(event.target.value)}
-          value={historyQuery}
-          className={css`
-          border: 1px solid ${Color.ActionSecondaryGray}
-          border-radius: 8px;
-          padding: ${Pad.Small} ${Pad.Medium};
-          width: 100%;
-          box-sizing: border-box;
+      <input
+        type="text"
+        placeholder="Filter by name..."
+        onChange={event => setHistoryQuery(event.target.value)}
+        value={historyQuery}
+        className={css`
+            border: 1px solid ${Color.ActionSecondaryGray}
+            border-radius: 8px;
+            padding: ${Pad.Small} ${Pad.Medium};
+            width: 100%;
+            box-sizing: border-box;
           `}
-        />
-      )}
+      />
       <DataStateView data={filteredActivities}>
         {activities => (
           <form
@@ -438,37 +435,19 @@ const AddHistoryForm: FC<{
               {activities.length === 0 ? (
                 <h3>Nothing here</h3>
               ) : (
-                activities.map((activity, i) => (
-                  <Rows
-                    center
-                    key={activity.id + i}
-                    pad={Pad.Medium}
-                    padding={`${Pad.Small} ${Pad.XSmall}`}
-                  >
-                    <input
-                      autoFocus
-                      type="checkbox"
-                      name={activity.name}
-                      id={activity.id + 1}
-                      onChange={event => {
-                        const { checked } = event.target;
-                        if (checked) {
-                          setSelected(selected.concat(activity));
-                          return;
-                        }
-                        setSelected(selected.filter(a => a.id !== activity.id));
-                      }}
-                    />
-                    <label htmlFor={activity.id + 1}>{activity.name}</label>
-                    <p
-                      className={css`
-                        font-size: ${Font.Small};
-                        color: ${Color.ActionSecondaryGray};
-                      `}
-                    >
-                      {activity.id}
-                    </p>
-                  </Rows>
+                activities.map(activity => (
+                  <HistoryActivityRow
+                    key={activity.id}
+                    activity={activity}
+                    onChange={event => {
+                      const { checked } = event.target;
+                      if (checked) {
+                        setSelected(selected.concat(activity));
+                        return;
+                      }
+                      setSelected(selected.filter(a => a.id !== activity.id));
+                    }}
+                  />
                 ))
               )}
               <div
@@ -485,5 +464,31 @@ const AddHistoryForm: FC<{
         )}
       </DataStateView>
     </>
+  );
+};
+
+const HistoryActivityRow: FC<{
+  activity: Activity;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+}> = ({ activity, onChange }) => {
+  return (
+    <Rows center pad={Pad.Medium} padding={`${Pad.Small} ${Pad.XSmall}`}>
+      <input
+        autoFocus
+        type="checkbox"
+        name={activity.name}
+        id={activity.id + 1}
+        onChange={onChange}
+      />
+      <label htmlFor={activity.id + 1}>{activity.name}</label>
+      <p
+        className={css`
+          font-size: ${Font.Small};
+          color: ${Color.ActionSecondaryGray};
+        `}
+      >
+        {activity.id}
+      </p>
+    </Rows>
   );
 };
