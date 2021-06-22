@@ -64,7 +64,8 @@ export const Library: FC = () => {
 
   // Load library activities and maintain up-to-date value
   useEffect(() => {
-    db.user(user.uid)
+    return db
+      .user(user.uid)
       .collection(DbPath.UserActivityLibrary)
       .withConverter(DbConverter.SavedActivity)
       .orderBy('name', 'asc')
