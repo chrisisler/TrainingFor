@@ -7,6 +7,10 @@ import {
   Typography,
 } from '@material-ui/core';
 import { ChatBubbleOutline } from '@material-ui/icons';
+import {
+  createPopper,
+  Instance as PopperInstance,
+} from '@popperjs/core/lib/popper-lite';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -25,8 +29,14 @@ import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
+  const [
+    libraryInputRef,
+    libraryMenuRef,
+    showLibraryMenu,
+    activityName,
+    setActivityName,
+  ] = useInputMenu();
 
-  const [activityName, setActivityName] = useState<string>('');
   const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(
     DataState.Loading
   );
@@ -338,8 +348,8 @@ export const TrainingLogEditor: FC = () => {
               <input
                 type="text"
                 placeholder="Add activity..."
+                ref={libraryInputRef}
                 value={activityName}
-                onChange={event => setActivityName(event.target.value)}
                 className={css`
                   box-sizing: content-box;
                   width: 100%;
@@ -374,10 +384,89 @@ export const TrainingLogEditor: FC = () => {
                 </button>
               )}
             </Rows>
+            {showLibraryMenu && (
+              <div
+                ref={libraryMenuRef}
+                className={css`
+                  width: 85%;
+                  background-color: #fff;
+                  border-radius: 5px;
+                  z-index: 100;
+                `}
+              >
+                <h4> We in here 'doe. </h4>
+              </div>
+            )}
           </Columns>
           <TrainingLogEditorView log={log} />
         </Columns>
       )}
     </DataStateView>
   );
+};
+
+/**
+ * Get an input ref, div ref (for the menu container), and a boolean
+ * containing the open/closed value for the menu.
+ */
+const useInputMenu = (): [
+  React.MutableRefObject<HTMLInputElement | null>,
+  React.MutableRefObject<HTMLDivElement | null>,
+  boolean,
+  string,
+  React.Dispatch<React.SetStateAction<string>>
+] => {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const popperRef = useRef<PopperInstance | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [value, setValue] = useState('');
+
+  const openMenu = () => {
+    setMenuOpen(true);
+    menuRef.current?.setAttribute('data-show', '');
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+    menuRef.current?.removeAttribute('data-show');
+  };
+
+  // Handle creating & destroying the popper instance
+  useEffect(() => {
+    if (!inputRef.current || !menuRef.current) return;
+    popperRef.current = createPopper(inputRef.current, menuRef.current);
+    return () => popperRef.current?.destroy();
+  });
+
+  const onBlur = (event: FocusEvent) => {
+    if (menuOpen && !event.relatedTarget) setMenuOpen(false);
+  };
+  const onKeyPress = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') closeMenu();
+  };
+  const onChange = (event: Event) => {
+    // C'mon yo, we know what this is.
+    const e = event as unknown as React.ChangeEvent<HTMLInputElement>;
+    setValue(e.target.value);
+    if (e.target.value === '') closeMenu();
+    else openMenu();
+  };
+
+  // Handle mounting & unmounting event listener logic
+  useEffect(() => {
+    const node = inputRef.current;
+    if (!node) return;
+    node.addEventListener('change', onChange);
+    node.addEventListener('blur', onBlur);
+    node.addEventListener('keypress', onKeyPress);
+    return () => {
+      node.removeEventListener('change', onChange);
+      node.removeEventListener('blur', onBlur);
+      node.removeEventListener('keypress', onKeyPress);
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  return [inputRef, menuRef, menuOpen, value, setValue];
 };

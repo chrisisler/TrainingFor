@@ -41,6 +41,7 @@ export const Timeline: FC = () => {
     popperRef.current = createPopper(inputRef.current, suggestionsRef.current);
     return () => popperRef.current?.destroy();
   });
+  // TODO Remove this
   useEffect(() => {
     const node = inputRef.current;
     if (!node) return;
