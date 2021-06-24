@@ -67,6 +67,7 @@ export const createTemplateFromLog = async (
         snapshot.docs.map(doc => {
           const activity = doc.data();
           activity.sets.forEach(({ status }) => {
+            if (status === ActivityStatus.Optional) return;
             status = ActivityStatus.Unattempted;
           });
           return activity;

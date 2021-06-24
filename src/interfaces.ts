@@ -58,6 +58,7 @@ export enum ActivityStatus {
   Completed = 'completed',
   Injured = 'injured',
   Skipped = 'skipped',
+  Optional = 'optional',
 }
 
 export enum ActivityRepCountUnit {
@@ -172,7 +173,8 @@ export const ActivitySet = {
     if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
     if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;
     if (s === ActivityStatus.Skipped) return ActivityStatus.Injured;
-    if (s === ActivityStatus.Injured) return ActivityStatus.Unattempted;
+    if (s === ActivityStatus.Injured) return ActivityStatus.Optional;
+    if (s === ActivityStatus.Optional) return ActivityStatus.Unattempted;
     throw Error('Unreachable');
   },
   getStatusColor: (s: ActivityStatus): string => {
@@ -181,6 +183,7 @@ export const ActivitySet = {
     // Skipped variant color looks like less emphasized version of Completed
     if (s === ActivityStatus.Skipped) return 'lightblue';
     if (s === ActivityStatus.Injured) return 'red';
+    if (s === ActivityStatus.Optional) return 'yellow';
     return 'transparent';
   },
 };

@@ -91,7 +91,10 @@ export const ActivityView = forwardRef<
     const prevSet = activity.sets[activity.sets.length - 1];
     const weight = prevSet?.weight ?? 0;
     const repCount = prevSet?.repCount ?? null;
-    const status = ActivityStatus.Unattempted;
+    const status =
+      prevSet?.status === ActivityStatus.Optional
+        ? ActivityStatus.Optional
+        : ActivityStatus.Unattempted;
     const newSet = ActivitySet.create({ weight, repCount, status });
     try {
       activityDocument.update({
@@ -535,8 +538,14 @@ const ActivitySetView = forwardRef<
   );
 
   const cycleSetStatus = useCallback(() => {
-    if (isTemplate) return;
-    sets[index].status = ActivitySet.cycleStatus(set.status);
+    if (isTemplate) {
+      sets[index].status =
+        set.status === ActivityStatus.Unattempted
+          ? ActivityStatus.Optional
+          : ActivityStatus.Unattempted;
+    } else {
+      sets[index].status = ActivitySet.cycleStatus(set.status);
+    }
     try {
       activityDocument.set({ sets }, { merge: true });
     } catch (error) {
@@ -755,7 +764,12 @@ const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
     {sets.map(({ status, uuid }) => (
       <li
         key={uuid}
-        className={status === ActivityStatus.Unattempted ? 'hollow' : undefined}
+        className={
+          status === ActivityStatus.Unattempted ||
+          status === ActivityStatus.Optional
+            ? 'hollow'
+            : undefined
+        }
       />
     ))}
   </ol>
