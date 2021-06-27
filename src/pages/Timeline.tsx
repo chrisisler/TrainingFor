@@ -51,9 +51,11 @@ export const Timeline: FC = () => {
 
   useEffect(() => {
     const searchUsers = async () => {
-      if (!search.length) return;
+      if (search.length < 3) return;
       setSearchResults(DataState.Loading);
       try {
+        // TODO Fix
+        // This is impractical. We are refetching ALL users upon ALL keystrokes.
         const { docs } = await db.collection(DbPath.Users).get();
         const users = docs.flatMap<Pick<User, 'id' | 'displayName'>>(doc => {
           const displayName = doc.get('displayName') as string;

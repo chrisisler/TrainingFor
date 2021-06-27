@@ -14,6 +14,7 @@ import {
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import firebase from 'firebase/app';
 
 import {
   createTemplateFromLog,
@@ -21,10 +22,15 @@ import {
   TrainingLogEditorView,
 } from '../components/TrainingLogView';
 import { Paths } from '../constants';
-import { DataState, DataStateView } from '../DataState';
+import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
+import {
+  Activity,
+  SavedActivity,
+  TrainingLog,
+  TrainingTemplate,
+} from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
@@ -363,10 +369,14 @@ export const TrainingLogEditor: FC = () => {
                   }
                 }}
                 onChange={event => {
-                  setActivityName(event.target.value);
-                  if (event.target.value === '') {
+                  const { value } = event.target;
+                  setActivityName(value);
+                  if (value === '') {
                     setLibraryMenuOpen(false);
                     libraryMenuRef.current?.removeAttribute('data-show');
+                  } else if (value.length < 3) {
+                    // Only search after 3
+                    return;
                   } else {
                     setLibraryMenuOpen(true);
                     libraryMenuRef.current?.setAttribute('data-show', '');
@@ -407,23 +417,116 @@ export const TrainingLogEditor: FC = () => {
                 </button>
               )}
             </Rows>
-            {libraryMenuOpen && (
+          </Columns>
+          {libraryMenuOpen && (
+            <div
+              ref={libraryMenuRef}
+              className={css`
+                position: relative;
+                height: 0;
+                width: 85%;
+                margin: 0 auto;
+              `}
+            >
               <div
-                ref={libraryMenuRef}
                 className={css`
-                  width: 85%;
-                  background-color: #fff;
                   border-radius: 5px;
+                  border: 1px solid ${Color.ActionPrimaryGray};
+                  background-color: #fff;
+                  min-height: 150px;
+                  max-height: 200px;
+                  overflow: hidden;
                   z-index: 100;
+                  padding: ${Pad.Medium};
                 `}
               >
-                <h4> We in here 'doe. </h4>
+                <p
+                  className={css`
+                    margin-left: auto;
+                    font-size: ${Font.Small};
+                    color: ${Color.FontSecondary};
+                    font-weight: 800;
+                  `}
+                >
+                  History
+                </p>
+                <LibraryMenu query={activityName.toLowerCase()} />
               </div>
-            )}
-          </Columns>
+            </div>
+          )}
           <TrainingLogEditorView log={log} />
         </Columns>
       )}
     </DataStateView>
+  );
+};
+
+const LibraryMenu: FC<{ query: string }> = ({ query }) => {
+  const user = useUser();
+
+  const [history] = useDataState(
+    () =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .withConverter(DbConverter.SavedActivity)
+        .get()
+        .then(snapshot =>
+          // Skip saved activities that do not match the queried name
+          snapshot.docs.flatMap(doc => {
+            const sa: SavedActivity = doc.data();
+            // Firebase does not give an elegant way to filter this way
+            // TODO Create normalized field on SavedActivity.name so it can
+            // support being searched
+            if (sa.name.toLowerCase().startsWith(query)) return [sa];
+            return [];
+          })
+        ),
+    [query, user.uid]
+  );
+
+  return (
+    /** Display all SavedActivity's matching the search name*/
+    <DataStateView data={history}>
+      {savedActivities =>
+        savedActivities.length ? (
+          <Columns pad={Pad.Small}>
+            {savedActivities.map(sa => (
+              <SavedActivityView activity={sa} key={sa.id} />
+            ))}
+          </Columns>
+        ) : (
+          <Typography variant="body1" color="textSecondary">
+            No results.
+          </Typography>
+        )
+      }
+    </DataStateView>
+  );
+};
+
+const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
+  const user = useUser();
+  // TODO Fetch activity.history activityIds
+
+  const [history] = useDataState(() => {
+    activity.history.map(activityId => {
+      // foo
+      db.collectionGroup(DbPath.UserLogActivities)
+        .where('id', '==', activityId)
+        .get()
+        .then(x => {
+          console.log('x is:', x);
+        });
+    });
+    return Promise.resolve();
+  }, [user.uid, activity.history]);
+  console.log('history is:', history);
+
+  return (
+    <Rows center between>
+      <p>{activity.name}</p>
+      <p>{activity.history.length}</p>
+    </Rows>
   );
 };
