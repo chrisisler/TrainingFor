@@ -351,6 +351,15 @@ export const ActivityView = forwardRef<
             margin-left: auto;
           `}
         >
+          {activity.weightUnit !== ActivityWeightUnit.Weightless && (
+            <p
+              className={css`
+                font-size: ${Font.Small};
+              `}
+            >
+              Volume: {Activity.getVolume(activity)}
+            </p>
+          )}
           <button
             disabled={!editable}
             onClick={cycleWeightUnit}

@@ -65,6 +65,7 @@ export enum ActivityRepCountUnit {
   Repetitions = 'rep',
   Seconds = 'sec',
   Minutes = 'min',
+  // TODO Clarify. Just 'm' could be miles and probably other units.
   Meters = 'm',
 }
 
@@ -124,6 +125,20 @@ export const Activity = {
         return [word[0]];
       })
       .join('');
+  },
+  getVolume: (a: Activity): number => {
+    if (a.weightUnit === ActivityWeightUnit.Weightless) {
+      return 0;
+    }
+    if (a.repCountUnit !== ActivityRepCountUnit.Repetitions) {
+      // idk
+      return 0;
+    }
+    // weightUnit is LB or KG
+    // repCountUnit is Repetitions
+    const totalWeight = a.sets.reduce((sum, s) => sum + s.weight, 0);
+    const totalReps = a.sets.reduce((sum, s) => sum + (s?.repCount ?? 0), 0);
+    return totalWeight * totalReps;
   },
 };
 
