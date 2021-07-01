@@ -11,19 +11,19 @@ import {
   createPopper,
   Instance as PopperInstance,
 } from '@popperjs/core/lib/popper-lite';
+import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import firebase from 'firebase/app';
 
 import {
   createTemplateFromLog,
   TrainingLogDateView,
   TrainingLogEditorView,
 } from '../components/TrainingLogView';
-import { Paths } from '../constants';
+import { Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { db, DbConverter, DbPath, firebaseConfig } from '../firebase';
+import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
 import {
   Activity,
@@ -432,24 +432,15 @@ export const TrainingLogEditor: FC = () => {
               <div
                 className={css`
                   border-radius: 5px;
-                  border: 1px solid ${Color.ActionPrimaryGray};
+                  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
                   background-color: #fff;
                   min-height: 150px;
                   max-height: 250px;
-                  overflow: hidden;
-                  padding: ${Pad.Medium};
+                  overflow-x: hidden;
+                  overflow-y: scroll;
+                  padding: ${Pad.Medium} ${Pad.Large};
                 `}
               >
-                <p
-                  className={css`
-                    margin-left: auto;
-                    font-size: ${Font.Small};
-                    color: ${Color.FontSecondary};
-                    font-weight: 800;
-                  `}
-                >
-                  History
-                </p>
                 <LibraryMenu query={activityName.toLowerCase()} />
               </div>
             </div>
@@ -464,7 +455,8 @@ export const TrainingLogEditor: FC = () => {
 const LibraryMenu: FC<{ query: string }> = ({ query }) => {
   const user = useUser();
 
-  const [history] = useDataState(
+  // SavedActivity's matching the query
+  const [queriedActivites] = useDataState(
     () =>
       db
         .user(user.uid)
@@ -486,13 +478,12 @@ const LibraryMenu: FC<{ query: string }> = ({ query }) => {
   );
 
   return (
-    /** Display all SavedActivity's matching the search name*/
-    <DataStateView data={history}>
+    <DataStateView data={queriedActivites}>
       {savedActivities =>
         savedActivities.length ? (
           <Columns pad={Pad.Small}>
             {savedActivities.map(sa => (
-              <SavedActivityView activity={sa} key={sa.id} />
+              <LibraryMenuSavedActivityView activity={sa} key={sa.id} />
             ))}
           </Columns>
         ) : (
@@ -505,29 +496,58 @@ const LibraryMenu: FC<{ query: string }> = ({ query }) => {
   );
 };
 
-const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
+const LibraryMenuSavedActivityView: FC<{
+  activity: SavedActivity;
+}> = ({ activity }) => {
   const user = useUser();
 
-  // const [history] = useDataState(() => {
-  //   const promises = activity.history.map(activityId => {
-  //     return db
-  //       .user(user.uid)
-  //       .collection(DbPath.UserLogs)
-  //       .withConverter(DbConverter.Activity)
-  //       .where(DbPath.UserLogActivities, 'in', [activityId])
-  //       .get()
-  //       .then(snapshot => snapshot.docs.map(doc => doc.data()));
-  //   });
-  //   return Promise.all(promises).then(activities => {
-  //     console.log('activities is:', activities);
-  //   });
-  // }, [user.uid, activity.history]);
-  // console.log('history is:', history);
+  const [pastActivities] = useDataState(() => {
+    // Fetch all activities for the SavedActivity we're looking at
+    const mapped = activity.history.map(({ activityId, logId }) =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        .doc(activityId)
+        .withConverter(DbConverter.Activity)
+        .get()
+        .then(doc => doc.data())
+    );
+    // Convert Promise<(Activity | undefined)>[] to Activity[]
+    return Promise.all(mapped).then(m => m.filter((a): a is Activity => !!a));
+  }, [user.uid, activity.history]);
+
+  return (
+    <DataStateView data={pastActivities} empty={() => <p>No history!</p>}>
+      {pastActivities => (
+        <Columns pad={Pad.Medium}>
+          {pastActivities.length === 0 ? (
+            <Typography variant="body1" color="textSecondary">
+              No history for {activity.name}
+            </Typography>
+          ) : (
+            pastActivities.map(a => (
+              <PastActivityView activity={a} key={a.id} />
+            ))
+          )}
+        </Columns>
+      )}
+    </DataStateView>
+  );
+};
+
+const PastActivityView: FC<{ activity: Activity }> = ({ activity }) => {
+  const _date = (activity.timestamp as firebase.firestore.Timestamp)?.toDate();
+  const date = DataState.map(_date ?? DataState.Empty, date => {
+    const month = Months[date.getMonth()].slice(0, 3);
+    return `${month} ${date.getDate()}`;
+  });
 
   return (
     <Rows center between>
       <p>{activity.name}</p>
-      <p>{activity.history.length}</p>
+      {DataState.isReady(date) && <p>{date}</p>}
     </Rows>
   );
 };

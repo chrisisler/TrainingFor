@@ -157,48 +157,9 @@ export const Library: FC = () => {
 
 const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
   const [open, setOpen] = useState(false);
-  const [activities, setActivities] = useState<DataState<Activity[]>>(
-    DataState.Loading
-  );
 
   const user = useUser();
   const menu = useMaterialMenu();
-
-  useEffect(() => {
-    if (!open) return;
-    db.user(user.uid)
-      .collection(DbPath.UserLogs)
-      .withConverter(DbConverter.TrainingLog)
-      .get()
-      .then(logsSnapshot => {
-        // Fetch the Activity[] list collection from every TrainingLog
-        const promises = logsSnapshot.docs.map(async doc => {
-          // Grab the log timestamp to attach to each Activity
-          const timestamp = doc.get('timestamp');
-          // Get a snapshot of the activities of the current log
-          const snapshot = await doc.ref
-            .collection(DbPath.UserLogActivities)
-            .withConverter(DbConverter.Activity)
-            .get();
-          // Attach the logId and log timestamp to the activity
-          return snapshot.docs.map(doc => {
-            const data = doc.data();
-            data.logId = doc.id;
-            data.timestamp = timestamp;
-            return data;
-          });
-        });
-        return Promise.all(promises);
-      })
-      .then(arrays => {
-        // Activities are grouped by array, flatten them into one array
-        const activities = arrays.flatMap(a => a);
-        setActivities(activities);
-      })
-      .catch(error => {
-        toast.error(error.message);
-      });
-  }, [open, user.uid]);
 
   const deleteSavedActivity = useCallback(() => {
     if (!window.confirm(`Delete ${activity.name} history forever?`)) return;
@@ -297,7 +258,6 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
           </DialogTitle>
           <DialogContent dividers>
             <AddHistoryForm
-              activities={activities}
               activity={activity}
               closeModal={() => setOpen(false)}
             />
@@ -332,13 +292,15 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
 };
 
 const AddHistoryForm: FC<{
-  activities: DataState<Activity[]>;
   activity: SavedActivity;
   closeModal(): void;
-}> = ({ activities, activity, closeModal }) => {
+}> = ({ activity, closeModal }) => {
   const [historyQuery, setHistoryQuery] = useState('');
-  /** The ID's of selected `Activity`s. */
-  const [selected, setSelected] = useState<string[]>([]);
+  /** The ID's of selected `Activity`s (with the log they belong to). */
+  const [selected, setSelected] = useState<SavedActivity['history']>([]);
+  const [activities, setActivities] = useState<DataState<Activity[]>>(
+    DataState.Loading
+  );
 
   const filteredActivities: DataState<Activity[]> = useMemo(() => {
     if (!DataState.isReady(activities)) return activities;
@@ -358,16 +320,12 @@ const AddHistoryForm: FC<{
       event.preventDefault();
       // Do not add duplicates
       const nonduped = selected.filter(
-        s => !activity.history.some(id => (id as unknown as string) === s)
+        s => !activity.history.some(h => h.activityId === s.activityId)
       );
       const diff = selected.length - nonduped.length;
       if (diff) toast.info(`Skipping ${diff} duplicate(s).`);
-      const history = activity.history.concat(
-        nonduped as unknown as typeof activity.history
-      );
+      const history = activity.history.concat(nonduped);
       try {
-        // TODO Add Activity[] (with logId and timestamp from TrainingLog) to the
-        // UserActivityLibrary collection.
         await db
           .user(user.uid)
           .collection(DbPath.UserActivityLibrary)
@@ -381,6 +339,41 @@ const AddHistoryForm: FC<{
     },
     [activity.history, activity.id, user.uid, selected, closeModal]
   );
+
+  useEffect(() => {
+    db.user(user.uid)
+      .collection(DbPath.UserLogs)
+      .withConverter(DbConverter.TrainingLog)
+      .get()
+      .then(logsSnapshot => {
+        // Fetch the Activity[] list collection from every TrainingLog
+        const promises = logsSnapshot.docs.map(async doc => {
+          // Grab the log timestamp to attach to each Activity
+          const timestamp = doc.get('timestamp');
+          // Get a snapshot of the activities of the current log
+          const snapshot = await doc.ref
+            .collection(DbPath.UserLogActivities)
+            .withConverter(DbConverter.Activity)
+            .get();
+          // Attach the logId and log timestamp to the activity
+          return snapshot.docs.map(doc => {
+            const data = doc.data();
+            data.logId = doc.id;
+            data.timestamp = timestamp;
+            return data;
+          });
+        });
+        return Promise.all(promises);
+      })
+      .then(arrays => {
+        // Activities are grouped by array, flatten them into one array
+        const activities = arrays.flatMap(a => a);
+        setActivities(activities);
+      })
+      .catch(error => {
+        toast.error(error.message);
+      });
+  }, [user.uid]);
 
   return (
     <>
@@ -422,10 +415,16 @@ const AddHistoryForm: FC<{
                     onChange={event => {
                       const { checked } = event.target;
                       if (checked) {
-                        setSelected(selected.concat(activity.id));
+                        const entry = {
+                          activityId: activity.id,
+                          logId: activity.logId,
+                        };
+                        setSelected(selected.concat(entry));
                         return;
                       }
-                      setSelected(selected.filter(id => id !== activity.id));
+                      setSelected(
+                        selected.filter(s => s.activityId !== activity.id)
+                      );
                     }}
                   />
                 ))
