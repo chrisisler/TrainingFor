@@ -19,7 +19,7 @@ import { Format, Milliseconds, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { TrainingLog } from '../interfaces';
+import { SavedActivity, TrainingLog } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 
 const modulo = (n: number, m: number) => ((n % m) + m) % m;
@@ -34,6 +34,59 @@ export const Account: FC = () => {
   const user = useUser();
   const menu = useMaterialMenu();
   const history = useHistory();
+
+  // 1) Attach logId to activityId in each activity.history of SavedActivity's
+  //
+  // 2) Get the logId's from fetching all logs from this user. From the logs
+  //    fetch every activity and store the activityId->logId pair in a map.
+  //    Then do step 1
+  useEffect(() => {
+    const map = {};
+    db.user(user.uid)
+      .collection(DbPath.UserLogs)
+      .withConverter(DbConverter.TrainingLog)
+      .get()
+      .then(logs => {
+        logs.docs.forEach(async logDoc => {
+          await logDoc.ref
+            .collection(DbPath.UserLogActivities)
+            .withConverter(DbConverter.Activity)
+            .get()
+            .then(activities =>
+              activities.docs.forEach(activity => {
+                map[activity.id] = logDoc.id;
+              })
+            )
+            .catch(err => {
+              console.error('failed fetch:', err);
+            });
+        });
+      })
+      .then(() => {
+        db.user(user.uid)
+          .collection(DbPath.UserActivityLibrary)
+          .get()
+          .then(library => {
+            library.docs.forEach(doc => {
+              const sActivity = doc.data();
+              if (typeof sActivity.history[0] !== 'string') return;
+              doc.ref.set(
+                {
+                  history: sActivity.history.map(activityId => ({
+                    activityId: activityId as unknown as string,
+                    logId: map[activityId as unknown as string] ?? 'wtf',
+                  })),
+                } as Partial<SavedActivity>,
+                { merge: true }
+              );
+            });
+          })
+          .catch(err => {
+            console.error('failed to add:', err);
+          });
+      });
+    // eslint-disable-next-line
+  }, []);
 
   const [templates] = useDataState(
     () =>

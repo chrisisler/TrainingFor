@@ -23,7 +23,7 @@ import {
 } from '../components/TrainingLogView';
 import { Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
-import { db, DbConverter, DbPath } from '../firebase';
+import { db, DbConverter, DbPath, firebaseConfig } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
 import {
   Activity,
@@ -424,8 +424,9 @@ export const TrainingLogEditor: FC = () => {
               className={css`
                 position: relative;
                 height: 0;
-                width: 85%;
+                width: 90%;
                 margin: 0 auto;
+                z-index: 100;
               `}
             >
               <div
@@ -434,9 +435,8 @@ export const TrainingLogEditor: FC = () => {
                   border: 1px solid ${Color.ActionPrimaryGray};
                   background-color: #fff;
                   min-height: 150px;
-                  max-height: 200px;
+                  max-height: 250px;
                   overflow: hidden;
-                  z-index: 100;
                   padding: ${Pad.Medium};
                 `}
               >
@@ -507,21 +507,22 @@ const LibraryMenu: FC<{ query: string }> = ({ query }) => {
 
 const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
   const user = useUser();
-  // TODO Fetch activity.history activityIds
 
-  const [history] = useDataState(() => {
-    activity.history.map(activityId => {
-      // foo
-      db.collectionGroup(DbPath.UserLogActivities)
-        .where('id', '==', activityId)
-        .get()
-        .then(x => {
-          console.log('x is:', x);
-        });
-    });
-    return Promise.resolve();
-  }, [user.uid, activity.history]);
-  console.log('history is:', history);
+  // const [history] = useDataState(() => {
+  //   const promises = activity.history.map(activityId => {
+  //     return db
+  //       .user(user.uid)
+  //       .collection(DbPath.UserLogs)
+  //       .withConverter(DbConverter.Activity)
+  //       .where(DbPath.UserLogActivities, 'in', [activityId])
+  //       .get()
+  //       .then(snapshot => snapshot.docs.map(doc => doc.data()));
+  //   });
+  //   return Promise.all(promises).then(activities => {
+  //     console.log('activities is:', activities);
+  //   });
+  // }, [user.uid, activity.history]);
+  // console.log('history is:', history);
 
   return (
     <Rows center between>

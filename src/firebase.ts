@@ -13,7 +13,7 @@ import {
   TrainingTemplate,
 } from './interfaces';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: 'AIzaSyBLnwnJBVUw1SXeK7E1-oL9uCG-ysm1N6w',
   authDomain: 'training-for.firebaseapp.com',
   databaseURL: 'https://training-for.firebaseio.com',
@@ -56,18 +56,19 @@ db.user = (id?: string) =>
 
 export { db, auth, storage };
 
-const trainingLogConverter: firebase.firestore.FirestoreDataConverter<TrainingLog> = {
-  toFirestore: (log: TrainingLog): firebase.firestore.DocumentData => {
-    return log;
-  },
-  fromFirestore: (
-    doc: firebase.firestore.QueryDocumentSnapshot<TrainingLog>
-  ): TrainingLog => {
-    const data = doc.data();
-    data.id = doc.id;
-    return data;
-  },
-};
+const trainingLogConverter: firebase.firestore.FirestoreDataConverter<TrainingLog> =
+  {
+    toFirestore: (log: TrainingLog): firebase.firestore.DocumentData => {
+      return log;
+    },
+    fromFirestore: (
+      doc: firebase.firestore.QueryDocumentSnapshot<TrainingLog>
+    ): TrainingLog => {
+      const data = doc.data();
+      data.id = doc.id;
+      return data;
+    },
+  };
 
 const activityConverter: firebase.firestore.FirestoreDataConverter<Activity> = {
   toFirestore: (activity: Activity): firebase.firestore.DocumentData => {
@@ -108,35 +109,37 @@ const commentConverter: firebase.firestore.FirestoreDataConverter<Comment> = {
   },
 };
 
-const trainingTemplateConverter: firebase.firestore.FirestoreDataConverter<TrainingTemplate> = {
-  toFirestore: (
-    template: TrainingTemplate
-  ): firebase.firestore.DocumentData => {
-    return template;
-  },
-  fromFirestore: (
-    doc: firebase.firestore.QueryDocumentSnapshot<TrainingTemplate>
-  ): TrainingTemplate => {
-    const data = doc.data();
-    data.id = doc.id;
-    return data;
-  },
-};
+const trainingTemplateConverter: firebase.firestore.FirestoreDataConverter<TrainingTemplate> =
+  {
+    toFirestore: (
+      template: TrainingTemplate
+    ): firebase.firestore.DocumentData => {
+      return template;
+    },
+    fromFirestore: (
+      doc: firebase.firestore.QueryDocumentSnapshot<TrainingTemplate>
+    ): TrainingTemplate => {
+      const data = doc.data();
+      data.id = doc.id;
+      return data;
+    },
+  };
 
-const savedActivityConverter: firebase.firestore.FirestoreDataConverter<SavedActivity> = {
-  toFirestore: (
-    savedActivity: SavedActivity
-  ): firebase.firestore.DocumentData => {
-    return savedActivity;
-  },
-  fromFirestore: (
-    doc: firebase.firestore.QueryDocumentSnapshot<SavedActivity>
-  ): SavedActivity => {
-    const data = doc.data();
-    data.id = doc.id;
-    return data;
-  },
-};
+const savedActivityConverter: firebase.firestore.FirestoreDataConverter<SavedActivity> =
+  {
+    toFirestore: (
+      savedActivity: SavedActivity
+    ): firebase.firestore.DocumentData => {
+      return savedActivity;
+    },
+    fromFirestore: (
+      doc: firebase.firestore.QueryDocumentSnapshot<SavedActivity>
+    ): SavedActivity => {
+      const data = doc.data();
+      data.id = doc.id;
+      return data;
+    },
+  };
 
 export const DbConverter = {
   TrainingLog: trainingLogConverter,

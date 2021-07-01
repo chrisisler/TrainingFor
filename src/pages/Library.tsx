@@ -358,11 +358,13 @@ const AddHistoryForm: FC<{
       event.preventDefault();
       // Do not add duplicates
       const nonduped = selected.filter(
-        s => !activity.history.some(id => id === s)
+        s => !activity.history.some(id => (id as unknown as string) === s)
       );
       const diff = selected.length - nonduped.length;
       if (diff) toast.info(`Skipping ${diff} duplicate(s).`);
-      const history = activity.history.concat(nonduped);
+      const history = activity.history.concat(
+        nonduped as unknown as typeof activity.history
+      );
       try {
         // TODO Add Activity[] (with logId and timestamp from TrainingLog) to the
         // UserActivityLibrary collection.
