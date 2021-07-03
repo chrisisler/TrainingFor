@@ -17,6 +17,7 @@ import { DataState, DataStateView } from './DataState';
 import { auth } from './firebase';
 import { UserProvider } from './hooks';
 import { Account } from './pages/Account';
+import { Library } from './pages/Library';
 import { LogIn } from './pages/LogIn';
 import { NewTraining } from './pages/NewTraining';
 import { SignUp } from './pages/SignUp';
@@ -102,6 +103,11 @@ export const App: FC = () => {
                 <Route exact path={[Paths.account, Paths.user()]}>
                   <ViewWithNavBar>
                     <Account />
+                  </ViewWithNavBar>
+                </Route>
+                <Route exact path={Paths.library()}>
+                  <ViewWithNavBar>
+                    <Library />
                   </ViewWithNavBar>
                 </Route>
                 <Route exact path={Paths.newTraining}>

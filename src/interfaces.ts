@@ -39,9 +39,28 @@ export interface Activity extends FirestoreDocument {
   notes: null | string;
   position: number;
   sets: ActivitySet[];
+  // TODO Remove
   attachmentUrl: null | string;
   weightUnit: ActivityWeightUnit;
   repCountUnit: ActivityRepCountUnit;
+  /** A copy of the server timestamp (or null) from the TrainingLog. */
+  timestamp: FirestoreTimestamp;
+  /** Which TrainingLog was this Activity performed in? */
+  logId: string;
+}
+
+/**
+ * A SavedActivity is an Activity belonging to the Library collection. It
+ * represents activities commonly executed in training logs and powers a data
+ * visualization of the history.
+ */
+export interface SavedActivity extends FirestoreDocument {
+  name: string;
+  /**
+   * History represents... a history of the performance of an Activity.
+   * The data tells a story.
+   */
+  history: { activityId: string; logId: string }[];
 }
 
 export interface ActivitySet {
@@ -85,12 +104,22 @@ const isNotAlpha = /^[^A-Za-z_]+$/;
 const whitespaceOrDash = /(\s+|-+)/;
 
 // eslint-disable-next-line
+export const SavedActivity = {
+  create: (data: Pick<SavedActivity, 'name'>): Omit<SavedActivity, 'id'> => ({
+    name: data.name,
+    history: [],
+  }),
+};
+
+// eslint-disable-next-line
 export const Activity = {
   create: (
-    data: Pick<Activity, 'name' | 'position'>
+    data: Pick<Activity, 'name' | 'position' | 'logId' | 'timestamp'>
   ): Omit<Activity, 'id'> => ({
     name: data.name,
     position: data.position,
+    logId: data.logId,
+    timestamp: data.timestamp,
     notes: null,
     sets: [],
     attachmentUrl: null,
@@ -116,6 +145,8 @@ export const Activity = {
       return ActivityRepCountUnit.Repetitions;
     throw Error('Unreachable');
   },
+  // TODO Remove
+
   abbreviate: (name: string): string => {
     return name
       .split(whitespaceOrDash)

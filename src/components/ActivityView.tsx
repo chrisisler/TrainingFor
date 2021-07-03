@@ -107,6 +107,7 @@ export const ActivityView = forwardRef<
 
   const duplicateActivity = useCallback(async () => {
     menu.close();
+    // Guaranteed array position due to existence
     const position = activities[activities.length - 1].position + 1;
     const duplicate: Activity = { ...activity, position };
     try {

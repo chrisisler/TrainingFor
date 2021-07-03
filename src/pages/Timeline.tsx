@@ -41,30 +41,6 @@ export const Timeline: FC = () => {
     popperRef.current = createPopper(inputRef.current, suggestionsRef.current);
     return () => popperRef.current?.destroy();
   });
-  useEffect(() => {
-    const node = inputRef.current;
-    if (!node) return;
-    const onBlur = (event: FocusEvent) => {
-      if (showSuggestions && !event.relatedTarget) setShowSuggestions(false);
-    };
-    const onKeyPress = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeSuggestions();
-    };
-    const onChange = (event: Event) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((event.target as any)?.value === '') closeSuggestions();
-      else openSuggestions();
-    };
-    node.addEventListener('blur', onBlur);
-    node.addEventListener('keypress', onKeyPress);
-    node.addEventListener('change', onChange);
-    return () => {
-      node.removeEventListener('blur', onBlur);
-      node.removeEventListener('keypress', onKeyPress);
-      node.removeEventListener('change', onChange);
-    };
-  }, [showSuggestions]);
-  /** #endregion */
 
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<
@@ -75,9 +51,11 @@ export const Timeline: FC = () => {
 
   useEffect(() => {
     const searchUsers = async () => {
-      if (!search.length) return;
+      if (search.length < 3) return;
       setSearchResults(DataState.Loading);
       try {
+        // TODO Fix
+        // This is impractical. We are refetching ALL users upon ALL keystrokes.
         const { docs } = await db.collection(DbPath.Users).get();
         const users = docs.flatMap<Pick<User, 'id' | 'displayName'>>(doc => {
           const displayName = doc.get('displayName') as string;
@@ -123,7 +101,6 @@ export const Timeline: FC = () => {
             type="text"
             placeholder="Search TrainingFor..."
             value={search}
-            // TODO Move open & closeSuggestions out of this listener
             onChange={event => {
               // Do not flash previous results
               setSearchResults(DataState.Empty);

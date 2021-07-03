@@ -5,6 +5,7 @@ import 'firebase/auth';
 import 'firebase/storage';
 
 import {
+  SavedActivity,
   Activity,
   TrainingLog,
   User,
@@ -12,7 +13,7 @@ import {
   TrainingTemplate,
 } from './interfaces';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: 'AIzaSyBLnwnJBVUw1SXeK7E1-oL9uCG-ysm1N6w',
   authDomain: 'training-for.firebaseapp.com',
   databaseURL: 'https://training-for.firebaseio.com',
@@ -39,6 +40,8 @@ export enum DbPath {
   Users = 'users',
   UserLogs = 'logs',
   UserTemplates = 'templates',
+  /** Stores the users saved Activities. */
+  UserActivityLibrary = 'library',
   // TODO Delete this and use `export const db = { activities: db.collection('activities') }`
   UserTemplateActivities = 'activities',
   UserLogActivities = 'activities',
@@ -53,18 +56,19 @@ db.user = (id?: string) =>
 
 export { db, auth, storage };
 
-const trainingLogConverter: firebase.firestore.FirestoreDataConverter<TrainingLog> = {
-  toFirestore: (log: TrainingLog): firebase.firestore.DocumentData => {
-    return log;
-  },
-  fromFirestore: (
-    doc: firebase.firestore.QueryDocumentSnapshot<TrainingLog>
-  ): TrainingLog => {
-    const data = doc.data();
-    data.id = doc.id;
-    return data;
-  },
-};
+const trainingLogConverter: firebase.firestore.FirestoreDataConverter<TrainingLog> =
+  {
+    toFirestore: (log: TrainingLog): firebase.firestore.DocumentData => {
+      return log;
+    },
+    fromFirestore: (
+      doc: firebase.firestore.QueryDocumentSnapshot<TrainingLog>
+    ): TrainingLog => {
+      const data = doc.data();
+      data.id = doc.id;
+      return data;
+    },
+  };
 
 const activityConverter: firebase.firestore.FirestoreDataConverter<Activity> = {
   toFirestore: (activity: Activity): firebase.firestore.DocumentData => {
@@ -105,25 +109,43 @@ const commentConverter: firebase.firestore.FirestoreDataConverter<Comment> = {
   },
 };
 
-const trainingTemplateConverter: firebase.firestore.FirestoreDataConverter<TrainingTemplate> = {
-  toFirestore: (
-    template: TrainingTemplate
-  ): firebase.firestore.DocumentData => {
-    return template;
-  },
-  fromFirestore: (
-    doc: firebase.firestore.QueryDocumentSnapshot<TrainingTemplate>
-  ): TrainingTemplate => {
-    const data = doc.data();
-    data.id = doc.id;
-    return data;
-  },
-};
+const trainingTemplateConverter: firebase.firestore.FirestoreDataConverter<TrainingTemplate> =
+  {
+    toFirestore: (
+      template: TrainingTemplate
+    ): firebase.firestore.DocumentData => {
+      return template;
+    },
+    fromFirestore: (
+      doc: firebase.firestore.QueryDocumentSnapshot<TrainingTemplate>
+    ): TrainingTemplate => {
+      const data = doc.data();
+      data.id = doc.id;
+      return data;
+    },
+  };
+
+const savedActivityConverter: firebase.firestore.FirestoreDataConverter<SavedActivity> =
+  {
+    toFirestore: (
+      savedActivity: SavedActivity
+    ): firebase.firestore.DocumentData => {
+      return savedActivity;
+    },
+    fromFirestore: (
+      doc: firebase.firestore.QueryDocumentSnapshot<SavedActivity>
+    ): SavedActivity => {
+      const data = doc.data();
+      data.id = doc.id;
+      return data;
+    },
+  };
 
 export const DbConverter = {
   TrainingLog: trainingLogConverter,
   TrainingTemplate: trainingTemplateConverter,
   Activity: activityConverter,
+  SavedActivity: savedActivityConverter,
   User: userConverter,
   Comment: commentConverter,
 };

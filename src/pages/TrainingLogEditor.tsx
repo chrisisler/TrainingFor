@@ -7,30 +7,56 @@ import {
   Typography,
 } from '@material-ui/core';
 import { ChatBubbleOutline } from '@material-ui/icons';
+import {
+  createPopper,
+  Instance as PopperInstance,
+} from '@popperjs/core/lib/popper-lite';
+import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { Bar, BarChart, ResponsiveContainer } from 'recharts';
+import FlipMove from 'react-flip-move';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
+import { ActivityView } from '../components/ActivityView';
 import {
   createTemplateFromLog,
   TrainingLogDateView,
-  TrainingLogEditorView,
+  activityViewContainerStyle,
 } from '../components/TrainingLogView';
-import { Paths } from '../constants';
-import { DataState, DataStateView } from '../DataState';
+import { Months, Paths } from '../constants';
+import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
+import {
+  Activity,
+  ActivityRepCountUnit,
+  ActivityWeightUnit,
+  SavedActivity,
+  TrainingLog,
+  TrainingTemplate,
+} from '../interfaces';
 import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
+  const [activityName, setActivityName] = useState('');
 
-  const [activityName, setActivityName] = useState<string>('');
+  /** For ActivityInput autocomplete. */
+  const libraryMenuRef = useRef<HTMLDivElement | null>(null);
+  const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const popperRef = useRef<PopperInstance | null>(null);
+
   const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(
     DataState.Loading
   );
+  /** Controlled state for `TrainingLog.notes` */
   const [logNotes, setLogNotes] = useState<DataState<string>>(DataState.Empty);
+  /** Live data from DbPath.Activity collection snapshots. */
+  const [activities, setActivities] = useState<DataState<Activity[]>>(
+    DataState.Loading
+  );
 
   const menu = useMaterialMenu();
   const history = useHistory();
@@ -41,6 +67,35 @@ export const TrainingLogEditor: FC = () => {
   }>();
 
   const isTemplate = !!templateId;
+
+  // TrainingLogEditorView useEffect: fetch `activities`
+  useEffect(() => {
+    if (!DataState.isReady(log)) return;
+    return db
+      .user(log.authorId)
+      .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+      .doc(log.id)
+      .collection(DbPath.UserLogActivities)
+      .withConverter(DbConverter.Activity)
+      .orderBy('position', 'asc')
+      .onSnapshot(
+        snapshot =>
+          setActivities(
+            snapshot.docs.map(doc => {
+              const activity = doc.data();
+              // Patch the fields not present in old data
+              if (!activity.repCountUnit) {
+                activity.repCountUnit = ActivityRepCountUnit.Repetitions;
+              }
+              if (!activity.weightUnit) {
+                activity.weightUnit = ActivityWeightUnit.Pounds;
+              }
+              return activity;
+            })
+          ),
+        error => setActivities(DataState.error(error.message))
+      );
+  }, [log, isTemplate]);
 
   // Subscribe to updates to the TrainingLog/Template ID from the URL
   useEffect(() => {
@@ -64,6 +119,13 @@ export const TrainingLogEditor: FC = () => {
         err => setLog(DataState.error(err.message))
       );
   }, [user.uid, logId, templateId]);
+
+  // Handle creating & destroying Popper refs for the activity library menu
+  useEffect(() => {
+    if (!inputRef.current || !libraryMenuRef.current) return;
+    popperRef.current = createPopper(inputRef.current, libraryMenuRef.current);
+    return () => popperRef.current?.destroy();
+  });
 
   const renameLog = useCallback(() => {
     menu.close();
@@ -100,6 +162,8 @@ export const TrainingLogEditor: FC = () => {
           Activity.create({
             name: activityName,
             position: prevMaxPosition + 1,
+            logId: log.id,
+            timestamp: log.timestamp,
           })
         );
       } catch (error) {
@@ -208,6 +272,37 @@ export const TrainingLogEditor: FC = () => {
       toast.error(error.message);
     }
   }, [log, history, isTemplate, menu]);
+
+  const addActivityFromLibrary = useCallback(
+    async (a: Activity) => {
+      if (!DataState.isReady(activities) || !DataState.isReady(log)) {
+        toast.warn('Data not ready - Try again in a few seconds!');
+        return;
+      }
+      setLibraryMenuOpen(false);
+      try {
+        /** Get `position` for `entry` from live `activities` data`. */
+        const prevMaxPosition =
+          activities[activities.length - 1]?.position ?? 0;
+        const entry = Activity.create({
+          name: a.name,
+          position: prevMaxPosition + 1,
+          logId: log.id,
+          timestamp: log.timestamp,
+        });
+        await db
+          .user(user.uid)
+          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+          .doc(log.id)
+          .collection(DbPath.UserLogActivities)
+          .add(entry);
+        setActivityName('');
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [activities, isTemplate, log, user.uid]
+  );
 
   return (
     <DataStateView data={log}>
@@ -337,7 +432,20 @@ export const TrainingLogEditor: FC = () => {
                 type="text"
                 placeholder="Add activity..."
                 value={activityName}
-                onChange={event => setActivityName(event.target.value)}
+                onChange={event => {
+                  const { value } = event.target;
+                  setActivityName(value);
+                  if (value === '') {
+                    setLibraryMenuOpen(false);
+                    libraryMenuRef.current?.removeAttribute('data-show');
+                  } else if (value.length < 3) {
+                    // Only search after 3
+                    return;
+                  } else {
+                    setLibraryMenuOpen(true);
+                    libraryMenuRef.current?.setAttribute('data-show', '');
+                  }
+                }}
                 className={css`
                   box-sizing: content-box;
                   width: 100%;
@@ -373,9 +481,199 @@ export const TrainingLogEditor: FC = () => {
               )}
             </Rows>
           </Columns>
-          <TrainingLogEditorView log={log} />
+          {libraryMenuOpen && (
+            <ClickAwayListener onClickAway={() => setLibraryMenuOpen(false)}>
+              <div
+                ref={libraryMenuRef}
+                className={css`
+                  position: relative;
+                  height: 0;
+                  width: 90%;
+                  margin: 0 auto;
+                  z-index: 100;
+                `}
+              >
+                <div
+                  className={css`
+                    border-radius: 5px;
+                    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
+                    background-color: #fff;
+                    min-height: 150px;
+                    max-height: 250px;
+                    overflow-x: hidden;
+                    overflow-y: scroll;
+                    padding: ${Pad.Medium} ${Pad.Large};
+                  `}
+                >
+                  <LibraryMenu
+                    query={activityName.toLowerCase()}
+                    addActivityFromLibrary={addActivityFromLibrary}
+                  />
+                </div>
+              </div>
+            </ClickAwayListener>
+          )}
+          <DataStateView data={activities}>
+            {activities =>
+              activities.length ? (
+                <FlipMove
+                  enterAnimation="fade"
+                  leaveAnimation="fade"
+                  className={css`
+                    height: 100%;
+                    width: 100%;
+                    overflow-y: scroll;
+                    ${activityViewContainerStyle}
+                  `}
+                >
+                  {activities.map(({ id }, index) => (
+                    <ActivityView
+                      key={id}
+                      editable
+                      activities={activities}
+                      index={index}
+                      log={log}
+                    />
+                  ))}
+                </FlipMove>
+              ) : (
+                <Typography
+                  variant="body1"
+                  color="textSecondary"
+                  className={css`
+                    padding: ${Pad.Large};
+                  `}
+                >
+                  No activities!
+                </Typography>
+              )
+            }
+          </DataStateView>
         </Columns>
       )}
     </DataStateView>
   );
+};
+
+const LibraryMenu: FC<{
+  query: string;
+  addActivityFromLibrary(a: Activity): void;
+}> = ({ query, addActivityFromLibrary }) => {
+  const user = useUser();
+
+  // SavedActivity's matching the query
+  const [queriedActivites] = useDataState(
+    () =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .withConverter(DbConverter.SavedActivity)
+        .get()
+        .then(snapshot =>
+          // Skip saved activities that do not match the queried name
+          snapshot.docs.flatMap(doc => {
+            const sa: SavedActivity = doc.data();
+            // Firebase does not give an elegant way to filter this way
+            // TODO Create normalized field on SavedActivity.name so it can
+            // support being searched
+            if (sa.name.toLowerCase().startsWith(query)) return [sa];
+            return [];
+          })
+        ),
+    [query, user.uid]
+  );
+
+  return (
+    <DataStateView data={queriedActivites}>
+      {savedActivities =>
+        savedActivities.length ? (
+          <Columns pad={Pad.Small}>
+            {savedActivities.map(sa => (
+              <LibraryMenuSavedActivityView
+                activity={sa}
+                key={sa.id}
+                addActivityFromLibrary={addActivityFromLibrary}
+              />
+            ))}
+          </Columns>
+        ) : (
+          <Typography variant="body1" color="textSecondary">
+            No results.
+          </Typography>
+        )
+      }
+    </DataStateView>
+  );
+};
+
+const LibraryMenuSavedActivityView: FC<{
+  activity: SavedActivity;
+  addActivityFromLibrary(a: Activity): void;
+}> = ({ activity, addActivityFromLibrary }) => {
+  const user = useUser();
+
+  const [pastActivities] = useDataState(() => {
+    // Fetch all activities for the SavedActivity we're looking at
+    const mapped = activity.history.map(({ activityId, logId }) =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        .doc(activityId)
+        .withConverter(DbConverter.Activity)
+        .get()
+        .then(doc => doc.data())
+    );
+    // Convert Promise<(Activity | undefined)>[] to Activity[]
+    return Promise.all(mapped).then(m => m.filter((a): a is Activity => !!a));
+  }, [user.uid, activity.history]);
+
+  return (
+    <DataStateView data={pastActivities} empty={() => <p>No history!</p>}>
+      {pastActivities => (
+        <Columns pad={Pad.Medium}>
+          {pastActivities.length === 0 ? (
+            <Typography variant="body1" color="textSecondary">
+              No history for {activity.name}
+            </Typography>
+          ) : (
+            //        <ResponsiveContainer height={200} width="100%">
+            //           <BarChart data={pastActivities}>
+            //              <Bar dataKey="position" fill="#8884d8" />
+            //             </BarChart>
+            //            </ResponsiveContainer>
+            pastActivities.map(a => (
+              <Rows
+                key={a.id}
+                center
+                between
+                onClick={() => addActivityFromLibrary(a)}
+              >
+                <p>{a.name}</p>
+                <DataStateView
+                  data={buildDate(a.timestamp)}
+                  loading={() => null}
+                  error={() => null}
+                >
+                  {date => <p>{date}</p>}
+                </DataStateView>
+              </Rows>
+            ))
+          )}
+        </Columns>
+      )}
+    </DataStateView>
+  );
+};
+
+const buildDate = (
+  timestamp: null | firebase.firestore.FieldValue
+): DataState<string> => {
+  const _date = (timestamp as firebase.firestore.Timestamp)?.toDate();
+  const date = DataState.map(_date ?? DataState.Empty, date => {
+    const month = Months[date.getMonth()].slice(0, 3);
+    return `${month} ${date.getDate()}`;
+  });
+  return date;
 };
