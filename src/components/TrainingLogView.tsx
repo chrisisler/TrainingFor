@@ -7,27 +7,19 @@ import {
   Typography,
 } from '@material-ui/core';
 import format from 'date-fns/format';
-import React, { FC, useCallback, useEffect, useState } from 'react';
-import FlipMove from 'react-flip-move';
+import React, { FC, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import {
-  Activity,
-  ActivityRepCountUnit,
-  ActivityStatus,
-  ActivityWeightUnit,
-  TrainingLog,
-  TrainingTemplate,
-} from '../interfaces';
+import { ActivityStatus, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 import { ActivityView } from './ActivityView';
 import { AppLink } from './AppLink';
 
-const activityViewContainerStyle = css`
+export const activityViewContainerStyle = css`
   display: flex;
   flex-direction: column;
 
@@ -80,82 +72,6 @@ export const createTemplateFromLog = async (
   logActivities.forEach(a => batch.set(templateActivities.doc(), a));
   await batch.commit();
   return newTemplateRef.id;
-};
-
-export const TrainingLogEditorView: FC<{
-  log: TrainingLog | TrainingTemplate;
-}> = ({ log }) => {
-  const [activities, setActivities] = useState<DataState<Activity[]>>(
-    DataState.Loading
-  );
-
-  const isTemplate = TrainingLog.isTemplate(log);
-
-  useEffect(() => {
-    return db
-      .user(log.authorId)
-      .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-      .doc(log.id)
-      .collection(DbPath.UserLogActivities)
-      .withConverter(DbConverter.Activity)
-      .orderBy('position', 'asc')
-      .onSnapshot(
-        snapshot =>
-          setActivities(
-            snapshot.docs.map(doc => {
-              const activity = doc.data();
-              // Patch the fields not present in old data
-              if (!activity.repCountUnit) {
-                activity.repCountUnit = ActivityRepCountUnit.Repetitions;
-              }
-              if (!activity.weightUnit) {
-                activity.weightUnit = ActivityWeightUnit.Pounds;
-              }
-              return activity;
-            })
-          ),
-        error => setActivities(DataState.error(error.message))
-      );
-  }, [log.authorId, log.id, isTemplate]);
-
-  return (
-    <DataStateView data={activities}>
-      {activities =>
-        activities.length ? (
-          <FlipMove
-            enterAnimation="fade"
-            leaveAnimation="fade"
-            className={css`
-              height: 100%;
-              width: 100%;
-              overflow-y: scroll;
-              ${activityViewContainerStyle}
-            `}
-          >
-            {activities.map(({ id }, index) => (
-              <ActivityView
-                key={id}
-                editable
-                activities={activities}
-                index={index}
-                log={log}
-              />
-            ))}
-          </FlipMove>
-        ) : (
-          <Typography
-            variant="body1"
-            color="textSecondary"
-            className={css`
-              padding: ${Pad.Large};
-            `}
-          >
-            No activities!
-          </Typography>
-        )
-      }
-    </DataStateView>
-  );
 };
 
 /**

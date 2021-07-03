@@ -40,7 +40,7 @@ export const Library: FC = () => {
 
   const user = useUser();
 
-  const addActivity = useCallback(
+  const addSavedActivity = useCallback(
     <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       if (!newActivityName) return;
@@ -98,7 +98,7 @@ export const Library: FC = () => {
           </Button>
         ) : (
           <form
-            onSubmit={addActivity}
+            onSubmit={addSavedActivity}
             className={css`
               width: 100%;
             `}
