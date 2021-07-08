@@ -306,10 +306,10 @@ export const TrainingLogEditor: FC = () => {
             {activityName === null ? (
               <>
                 <LogTitle log={log} templateId={templateId} />
-                <Rows pad={Pad.XSmall}>
+                <Rows center pad={Pad.XSmall}>
                   <TrainingLogDateView log={log} />
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     fullWidth
                     color="primary"
                     size="small"
@@ -321,6 +321,10 @@ export const TrainingLogEditor: FC = () => {
                         addActivityInputRef.current?.focus()
                       );
                     }}
+                    className={css`
+                      /** Necessary due to parent height. */
+                      height: min-content;
+                    `}
                   >
                     + Activity
                   </Button>
@@ -542,8 +546,6 @@ const LogTitle: FC<{
 
   const renameLog = useCallback(() => {
     menu.close();
-    // TODO Get rid of datastate checks
-    if (!DataState.isReady(log)) return;
     const title = window.prompt('Update title', log.title);
     if (!title) return;
     try {
@@ -557,7 +559,6 @@ const LogTitle: FC<{
   }, [log, isTemplate, menu]);
 
   const openPreviousLog = useCallback(async () => {
-    if (!DataState.isReady(log)) return;
     if (!window.confirm('Open previous log?')) return;
     menu.close();
     try {
@@ -581,7 +582,6 @@ const LogTitle: FC<{
   }, [user.uid, log, history, templateId, menu]);
 
   const openNextLog = useCallback(async () => {
-    if (!DataState.isReady(log)) return;
     if (!window.confirm('Open next log?')) return;
     menu.close();
     try {
@@ -607,7 +607,6 @@ const LogTitle: FC<{
   const createTemplate = useCallback(async () => {
     menu.close();
     if (isTemplate) return;
-    if (!DataState.isReady(log)) return;
     if (!window.confirm('Create a Template from this log?')) return;
     try {
       const newTemplateId = await createTemplateFromLog(log, user.uid);
@@ -627,7 +626,6 @@ const LogTitle: FC<{
   }, [log, user.uid, history, isTemplate, menu]);
 
   const deleteLog = useCallback(async () => {
-    if (!DataState.isReady(log)) return;
     if (!window.confirm(`Delete "${log.title}" forever?`)) return;
     menu.close();
     try {
@@ -665,7 +663,7 @@ const LogTitle: FC<{
               line-height: 1.2 !important;
             `}
           >
-            {log.title}
+            <b>{log.title}</b>
           </Typography>
         </IconButton>
         <Menu
