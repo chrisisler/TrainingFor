@@ -1,5 +1,6 @@
 import { css } from '@emotion/css';
 import {
+  Button,
   ClickAwayListener,
   IconButton,
   Menu,
@@ -40,7 +41,9 @@ import { Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
-  const [activityName, setActivityName] = useState('');
+  const addActivityInputRef = useRef<HTMLInputElement | null>(null);
+  // Do not show the activity input by default
+  const [activityName, setActivityName] = useState<string | null>(null);
 
   /** For ActivityInput autocomplete. */
   const libraryMenuRef = useRef<HTMLDivElement | null>(null);
@@ -58,8 +61,6 @@ export const TrainingLogEditor: FC = () => {
     DataState.Loading
   );
 
-  const menu = useMaterialMenu();
-  const history = useHistory();
   const user = useUser();
   const { logId, templateId } = useParams<{
     logId?: string;
@@ -127,8 +128,421 @@ export const TrainingLogEditor: FC = () => {
     return () => popperRef.current?.destroy();
   });
 
+  const addActivity = useCallback(
+    async <E extends React.SyntheticEvent>(event: E) => {
+      event.preventDefault();
+      if (!activityName?.length || !DataState.isReady(log)) return;
+      const name = activityName;
+      // Hide the input
+      setActivityName(null);
+      try {
+        const activitiesColl = db
+          .user(user.uid)
+          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+          .doc(log.id)
+          .collection(DbPath.UserLogActivities);
+        const { docs } = await activitiesColl
+          .orderBy('position', 'desc')
+          .limit(1)
+          .get();
+        const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
+        const entry = Activity.create({
+          name,
+          position: prevMaxPosition + 1,
+          logId: log.id,
+          timestamp: log.timestamp,
+        });
+        await activitiesColl.add(entry);
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [activityName, log, user.uid, isTemplate]
+  );
+
+  const updateLogNotes = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (logNotes === '') setLogNotes(DataState.Empty);
+    try {
+      db.user(user.uid)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+        .doc(log.id)
+        .update({ notes: logNotes } as Partial<TrainingLog>);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, logNotes, isTemplate]);
+
+  const addFromLibrary = useCallback(
+    async (a: Activity) => {
+      if (!DataState.isReady(activities) || !DataState.isReady(log)) {
+        toast.warn('Data not ready.');
+        return;
+      }
+      setLibraryMenuOpen(false);
+      // Hide the input
+      setActivityName(null);
+      try {
+        /** Get `position` for `entry` from live `activities` data`. */
+        const prevMaxPosition =
+          activities[activities.length - 1]?.position ?? 0;
+        const entry = Activity.create({
+          name: a.name,
+          position: prevMaxPosition + 1,
+          logId: log.id,
+          timestamp: log.timestamp,
+        });
+        await db
+          .user(user.uid)
+          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+          .doc(log.id)
+          .collection(DbPath.UserLogActivities)
+          .add(entry);
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [activities, isTemplate, log, user.uid]
+  );
+
+  return (
+    <DataStateView data={log}>
+      {log => (
+        <Columns
+          pad={Pad.Small}
+          className={css`
+            height: 100%;
+          `}
+        >
+          <DataStateView data={activities}>
+            {activities => (
+              <FlipMove
+                enterAnimation="fade"
+                leaveAnimation="fade"
+                className={css`
+                  height: 100%;
+                  width: 100%;
+                  overflow-y: scroll;
+                  ${activityViewContainerStyle}
+                `}
+              >
+                {activities.length ? (
+                  activities.map(({ id }, index) => (
+                    <ActivityView
+                      key={id}
+                      editable
+                      activities={activities}
+                      index={index}
+                      log={log}
+                    />
+                  ))
+                ) : (
+                  <Typography
+                    variant="body1"
+                    color="textSecondary"
+                    className={css`
+                      padding: ${Pad.Large};
+                    `}
+                  >
+                    No activities!
+                  </Typography>
+                )}
+              </FlipMove>
+            )}
+          </DataStateView>
+          <Columns
+            className={css`
+              border-top: 1px solid ${Color.ActionSecondaryGray};
+              min-height: fit-content;
+              padding: ${Pad.Small} ${Pad.Medium};
+            `}
+            pad={Pad.Small}
+          >
+            {libraryMenuOpen && activityName && (
+              <ClickAwayListener onClickAway={() => setLibraryMenuOpen(false)}>
+                <div
+                  ref={libraryMenuRef}
+                  className={css`
+                  height: 22vh;
+                  overflow-y: scroll;
+                  border-radius: 8px
+                  border: 1px solid ${Color.ActionPrimaryBlue};
+                  padding: ${Pad.Small} ${Pad.Medium};
+                `}
+                >
+                  <LibraryMenu
+                    query={activityName.toLowerCase()}
+                    addFromLibrary={addFromLibrary}
+                  />
+                </div>
+              </ClickAwayListener>
+            )}
+            {DataState.isReady(logNotes) && (
+              <textarea
+                name="Training log notes"
+                ref={logNotesRef}
+                placeholder="Notes"
+                rows={3}
+                maxLength={500}
+                value={logNotes}
+                onChange={event => setLogNotes(event.target.value)}
+                onBlur={updateLogNotes}
+                className={css`
+                  width: 100%;
+                  color: ${Color.FontSecondary};
+                  border: 0;
+                  border-left: 4px solid ${Color.ActionSecondaryGray};
+                  padding: 0 ${Pad.Small};
+                  border-radius: 0;
+                  outline: none;
+                  resize: vertical;
+                  font-size: ${Font.Small};
+                  font-style: italic;
+                  font-family: inherit;
+                  background-color: transparent;
+                `}
+              />
+            )}
+            {activityName === null ? (
+              <>
+                <LogTitle log={log} templateId={templateId} />
+                <Rows pad={Pad.XSmall}>
+                  <TrainingLogDateView log={log} />
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    color="primary"
+                    size="small"
+                    onClick={() => {
+                      // Set to non-null to render the input
+                      setActivityName('');
+                      // Wait a tick for the input to render so it may be focused
+                      Promise.resolve().then(() =>
+                        addActivityInputRef.current?.focus()
+                      );
+                    }}
+                  >
+                    + Activity
+                  </Button>
+                  <IconButton
+                    aria-label="Edit training log notes"
+                    className={css`
+                      color: ${Color.ActionPrimaryGray} !important;
+                      transform: scaleX(-1);
+                    `}
+                    onClick={() => {
+                      if (DataState.isReady(logNotes) && logNotes) return;
+                      // Unhide the notes input
+                      setLogNotes('');
+                      Promise.resolve().then(() =>
+                        logNotesRef.current?.focus()
+                      );
+                    }}
+                  >
+                    <ChatBubbleOutline fontSize="small" />
+                  </IconButton>
+                </Rows>
+              </>
+            ) : (
+              <Rows maxWidth as="form" onSubmit={addActivity} pad={Pad.Small}>
+                <input
+                  type="text"
+                  ref={addActivityInputRef}
+                  placeholder="Add activity..."
+                  value={activityName}
+                  onBlur={
+                    libraryMenuOpen ? undefined : () => setActivityName(null)
+                  }
+                  onChange={event => {
+                    const { value } = event.target;
+                    setActivityName(value);
+                    if (value === '') {
+                      setLibraryMenuOpen(false);
+                      libraryMenuRef.current?.removeAttribute('data-show');
+                    } else if (value.length < 3) {
+                      // Only search after 3
+                      return;
+                    } else {
+                      setLibraryMenuOpen(true);
+                      libraryMenuRef.current?.setAttribute('data-show', '');
+                    }
+                  }}
+                  className={css`
+                    box-sizing: content-box;
+                    width: 100%;
+                    border: none;
+                    box-shadow: none;
+                    outline: none;
+                    font-weight: 400;
+                    color: #000;
+                    padding: ${Pad.XSmall} 0;
+                    line-height: 1.6;
+
+                    &::placeholder {
+                      font-weight: 600;
+                    }
+                  `}
+                />
+                {activityName.length > 0 && (
+                  <button
+                    className={css`
+                      /** Fat padding for use during training. */
+                      padding: ${Pad.Small} ${Pad.Large};
+                      border-radius: 5px;
+                      border: 1px solid ${Color.ActionSecondaryGray};
+                      background-color: transparent;
+                      text-transform: uppercase;
+                      font-size: ${Font.Small};
+                      font-weight: 600;
+                      color: ${Color.ActionPrimaryBlue};
+                    `}
+                    onClick={addActivity}
+                  >
+                    Add
+                  </button>
+                )}
+              </Rows>
+            )}
+          </Columns>
+        </Columns>
+      )}
+    </DataStateView>
+  );
+};
+
+const LibraryMenu: FC<{
+  query: string;
+  addFromLibrary(a: Activity): void;
+}> = ({ query, addFromLibrary }) => {
+  const user = useUser();
+
+  // SavedActivity's matching the query
+  const [queriedActivites] = useDataState(
+    () =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .withConverter(DbConverter.SavedActivity)
+        .get()
+        .then(snapshot =>
+          // Skip saved activities that do not match the queried name
+          snapshot.docs.flatMap(doc => {
+            const sa: SavedActivity = doc.data();
+            // Firebase does not give an elegant way to filter this way
+            // TODO Create normalized field on SavedActivity.name so it can
+            // support being searched
+            if (sa.name.toLowerCase().startsWith(query)) return [sa];
+            return [];
+          })
+        ),
+    [query, user.uid]
+  );
+
+  return (
+    <DataStateView data={queriedActivites}>
+      {savedActivities =>
+        savedActivities.length ? (
+          <Columns pad={Pad.Small}>
+            {savedActivities.map(sa => (
+              <LibraryMenuSavedActivityView
+                activity={sa}
+                key={sa.id}
+                addFromLibrary={addFromLibrary}
+              />
+            ))}
+          </Columns>
+        ) : (
+          <Typography variant="body1" color="textSecondary">
+            No results.
+          </Typography>
+        )
+      }
+    </DataStateView>
+  );
+};
+
+const LibraryMenuSavedActivityView: FC<{
+  activity: SavedActivity;
+  addFromLibrary(a: Activity): void;
+}> = ({ activity, addFromLibrary }) => {
+  const user = useUser();
+
+  const [pastActivities] = useDataState(() => {
+    // Fetch all activities for the SavedActivity we're looking at
+    const mapped = activity.history.map(({ activityId, logId }) =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .collection(DbPath.UserLogActivities)
+        .doc(activityId)
+        .withConverter(DbConverter.Activity)
+        .get()
+        .then(doc => doc.data())
+    );
+    // Convert Promise<(Activity | undefined)>[] to Activity[]
+    return Promise.all(mapped).then(m => m.filter((a): a is Activity => !!a));
+  }, [user.uid, activity.history]);
+
+  return (
+    <DataStateView data={pastActivities} empty={() => <p>No history!</p>}>
+      {pastActivities => (
+        <Columns pad={Pad.Medium}>
+          {/** TODO Display `activity.name` as title section and use background-color grouping */}
+          {pastActivities.length === 0 ? (
+            <Typography variant="body1" color="textSecondary">
+              No history for {activity.name}
+            </Typography>
+          ) : (
+            //        <ResponsiveContainer height={200} width="100%">
+            //           <BarChart data={pastActivities}>
+            //              <Bar dataKey="position" fill="#8884d8" />
+            //             </BarChart>
+            //            </ResponsiveContainer>
+            pastActivities.map(a => (
+              <Rows key={a.id} center between onClick={() => addFromLibrary(a)}>
+                <p>{a.name}</p>
+                <DataStateView
+                  data={buildDate(a.timestamp)}
+                  loading={() => null}
+                  error={() => null}
+                >
+                  {date => <p>{date}</p>}
+                </DataStateView>
+              </Rows>
+            ))
+          )}
+        </Columns>
+      )}
+    </DataStateView>
+  );
+};
+
+const buildDate = (
+  timestamp: null | firebase.firestore.FieldValue
+): DataState<string> => {
+  const _date = (timestamp as firebase.firestore.Timestamp)?.toDate();
+  const date = DataState.map(_date ?? DataState.Empty, date => {
+    const month = Months[date.getMonth()].slice(0, 3);
+    return `${month} ${date.getDate()}`;
+  });
+  return date;
+};
+
+const LogTitle: FC<{
+  log: TrainingLog | TrainingTemplate;
+  /** Undefined if `log` is a `TrainingTemplate`. */
+  templateId?: string;
+}> = ({ log, templateId }) => {
+  const menu = useMaterialMenu();
+  const user = useUser();
+  const history = useHistory();
+
+  const isTemplate = TrainingLog.isTemplate(log);
+
   const renameLog = useCallback(() => {
     menu.close();
+    // TODO Get rid of datastate checks
     if (!DataState.isReady(log)) return;
     const title = window.prompt('Update title', log.title);
     if (!title) return;
@@ -141,37 +555,6 @@ export const TrainingLogEditor: FC = () => {
       toast.error(error.message);
     }
   }, [log, isTemplate, menu]);
-
-  const addActivity = useCallback(
-    async <E extends React.SyntheticEvent>(event: E) => {
-      event.preventDefault();
-      if (!activityName.length || !DataState.isReady(log)) return;
-      setActivityName('');
-      try {
-        const activitiesColl = db
-          .user(user.uid)
-          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-          .doc(log.id)
-          .collection(DbPath.UserLogActivities);
-        const { docs } = await activitiesColl
-          .orderBy('position', 'desc')
-          .limit(1)
-          .get();
-        const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
-        activitiesColl.add(
-          Activity.create({
-            name: activityName,
-            position: prevMaxPosition + 1,
-            logId: log.id,
-            timestamp: log.timestamp,
-          })
-        );
-      } catch (error) {
-        toast.error(error.message);
-      }
-    },
-    [activityName, log, user.uid, isTemplate]
-  );
 
   const openPreviousLog = useCallback(async () => {
     if (!DataState.isReady(log)) return;
@@ -221,19 +604,6 @@ export const TrainingLogEditor: FC = () => {
     }
   }, [user.uid, log, history, templateId, menu]);
 
-  const updateLogNotes = useCallback(async () => {
-    if (!DataState.isReady(log)) return;
-    if (logNotes === '') setLogNotes(DataState.Empty);
-    try {
-      db.user(user.uid)
-        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-        .doc(log.id)
-        .update({ notes: logNotes } as Partial<TrainingLog>);
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [user.uid, log, logNotes, isTemplate]);
-
   const createTemplate = useCallback(async () => {
     menu.close();
     if (isTemplate) return;
@@ -272,408 +642,63 @@ export const TrainingLogEditor: FC = () => {
       toast.error(error.message);
     }
   }, [log, history, isTemplate, menu]);
-
-  const addActivityFromLibrary = useCallback(
-    async (a: Activity) => {
-      if (!DataState.isReady(activities) || !DataState.isReady(log)) {
-        toast.warn('Data not ready - Try again in a few seconds!');
-        return;
-      }
-      setLibraryMenuOpen(false);
-      try {
-        /** Get `position` for `entry` from live `activities` data`. */
-        const prevMaxPosition =
-          activities[activities.length - 1]?.position ?? 0;
-        const entry = Activity.create({
-          name: a.name,
-          position: prevMaxPosition + 1,
-          logId: log.id,
-          timestamp: log.timestamp,
-        });
-        await db
-          .user(user.uid)
-          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-          .doc(log.id)
-          .collection(DbPath.UserLogActivities)
-          .add(entry);
-        setActivityName('');
-      } catch (error) {
-        toast.error(error.message);
-      }
-    },
-    [activities, isTemplate, log, user.uid]
-  );
-
   return (
-    <DataStateView data={log}>
-      {log => (
-        <Columns
-          pad={Pad.Small}
+    <ClickAwayListener onClickAway={menu.close}>
+      <div
+        className={css`
+          text-align: center;
+        `}
+      >
+        <IconButton
+          aria-label="Open log menu"
+          aria-controls="log-menu"
+          aria-haspopup="true"
+          onClick={menu.open}
           className={css`
-            height: 100%;
+            padding: 0 !important;
           `}
         >
-          <Columns
-            padding={`${Pad.Small} ${Pad.Large} ${Pad.Medium}`}
+          <Typography
+            variant="body1"
+            color="textPrimary"
             className={css`
-              border-bottom: 1px solid ${Color.ActionSecondaryGray};
-              min-height: fit-content;
+              line-height: 1.2 !important;
             `}
-            pad={Pad.Medium}
           >
-            <Rows center between>
-              <Columns>
-                <TrainingLogDateView log={log} />
-                <ClickAwayListener onClickAway={menu.close}>
-                  <div>
-                    <IconButton
-                      aria-label="Open log menu"
-                      aria-controls="log-menu"
-                      aria-haspopup="true"
-                      onClick={menu.open}
-                      className={css`
-                        padding: 0 !important;
-                      `}
-                    >
-                      <Typography
-                        variant="h6"
-                        color="textPrimary"
-                        className={css`
-                          line-height: 1.2 !important;
-                          text-align: left;
-                        `}
-                      >
-                        {log.title}
-                      </Typography>
-                    </IconButton>
-                    <Menu
-                      id="log-menu"
-                      anchorEl={menu.ref}
-                      open={!!menu.ref}
-                      onClose={menu.close}
-                      MenuListProps={{ dense: true }}
-                    >
-                      <MenuItem onClick={openPreviousLog}>
-                        Go to previous log
-                      </MenuItem>
-                      <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
-                      <MenuItem onClick={renameLog}>Edit name</MenuItem>
-                      {window.navigator.share && (
-                        <MenuItem
-                          onClick={() => {
-                            menu.close();
-                            const url = isTemplate
-                              ? Paths.templateView(log.authorId, log.id)
-                              : Paths.logView(log.authorId, log.id);
-                            window.navigator.share({ url });
-                          }}
-                        >
-                          Share link
-                        </MenuItem>
-                      )}
-                      {!isTemplate && (
-                        <MenuItem onClick={createTemplate}>
-                          Create Template
-                        </MenuItem>
-                      )}
-                      <MenuItem onClick={deleteLog}>
-                        <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
-                      </MenuItem>
-                    </Menu>
-                  </div>
-                </ClickAwayListener>
-              </Columns>
-              <Rows>
-                <IconButton
-                  aria-label="Edit training log notes"
-                  className={css`
-                    color: ${Color.ActionSecondaryGray} !important;
-                    transform: scaleX(-1);
-                  `}
-                  onClick={() => {
-                    if (DataState.isReady(logNotes) && logNotes) return;
-                    // Unhide the notes input
-                    setLogNotes('');
-                    Promise.resolve().then(() => logNotesRef.current?.focus());
-                  }}
-                >
-                  <ChatBubbleOutline fontSize="small" />
-                </IconButton>
-              </Rows>
-            </Rows>
-            {DataState.isReady(logNotes) && (
-              <textarea
-                name="Training log notes"
-                ref={logNotesRef}
-                placeholder="Notes"
-                rows={3}
-                maxLength={500}
-                value={logNotes}
-                onChange={event => setLogNotes(event.target.value)}
-                onBlur={updateLogNotes}
-                className={css`
-                  width: 100%;
-                  color: ${Color.FontSecondary};
-                  border: 0;
-                  border-left: 4px solid ${Color.ActionSecondaryGray};
-                  padding: 0 ${Pad.Small};
-                  border-radius: 0;
-                  outline: none;
-                  resize: vertical;
-                  font-size: ${Font.Small};
-                  font-style: italic;
-                  font-family: inherit;
-                  background-color: transparent;
-                `}
-              />
-            )}
-            <Rows maxWidth as="form" onSubmit={addActivity} pad={Pad.Medium}>
-              <input
-                type="text"
-                placeholder="Add activity..."
-                value={activityName}
-                onChange={event => {
-                  const { value } = event.target;
-                  setActivityName(value);
-                  if (value === '') {
-                    setLibraryMenuOpen(false);
-                    libraryMenuRef.current?.removeAttribute('data-show');
-                  } else if (value.length < 3) {
-                    // Only search after 3
-                    return;
-                  } else {
-                    setLibraryMenuOpen(true);
-                    libraryMenuRef.current?.setAttribute('data-show', '');
-                  }
-                }}
-                className={css`
-                  box-sizing: content-box;
-                  width: 100%;
-                  border: none;
-                  box-shadow: none;
-                  outline: none;
-                  font-weight: 400;
-                  color: #000;
-                  padding: ${Pad.XSmall} 0;
-                  line-height: 1.6;
-
-                  &::placeholder {
-                    font-weight: 600;
-                  }
-                `}
-              />
-              {activityName.length > 0 && (
-                <button
-                  className={css`
-                    padding: ${Pad.Small} ${Pad.Large};
-                    border-radius: 5px;
-                    border: 1px solid ${Color.ActionSecondaryGray};
-                    background-color: transparent;
-                    text-transform: uppercase;
-                    font-size: ${Font.Small};
-                    font-weight: 600;
-                    color: ${Color.ActionPrimaryBlue};
-                  `}
-                  onClick={addActivity}
-                >
-                  Add
-                </button>
-              )}
-            </Rows>
-          </Columns>
-          {libraryMenuOpen && (
-            <ClickAwayListener onClickAway={() => setLibraryMenuOpen(false)}>
-              <div
-                ref={libraryMenuRef}
-                className={css`
-                  position: relative;
-                  height: 0;
-                  width: 90%;
-                  margin: 0 auto;
-                  z-index: 100;
-                `}
-              >
-                <div
-                  className={css`
-                    border-radius: 5px;
-                    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
-                    background-color: #fff;
-                    min-height: 150px;
-                    max-height: 250px;
-                    overflow-x: hidden;
-                    overflow-y: scroll;
-                    padding: ${Pad.Medium} ${Pad.Large};
-                  `}
-                >
-                  <LibraryMenu
-                    query={activityName.toLowerCase()}
-                    addActivityFromLibrary={addActivityFromLibrary}
-                  />
-                </div>
-              </div>
-            </ClickAwayListener>
-          )}
-          <DataStateView data={activities}>
-            {activities =>
-              activities.length ? (
-                <FlipMove
-                  enterAnimation="fade"
-                  leaveAnimation="fade"
-                  className={css`
-                    height: 100%;
-                    width: 100%;
-                    overflow-y: scroll;
-                    ${activityViewContainerStyle}
-                  `}
-                >
-                  {activities.map(({ id }, index) => (
-                    <ActivityView
-                      key={id}
-                      editable
-                      activities={activities}
-                      index={index}
-                      log={log}
-                    />
-                  ))}
-                </FlipMove>
-              ) : (
-                <Typography
-                  variant="body1"
-                  color="textSecondary"
-                  className={css`
-                    padding: ${Pad.Large};
-                  `}
-                >
-                  No activities!
-                </Typography>
-              )
-            }
-          </DataStateView>
-        </Columns>
-      )}
-    </DataStateView>
-  );
-};
-
-const LibraryMenu: FC<{
-  query: string;
-  addActivityFromLibrary(a: Activity): void;
-}> = ({ query, addActivityFromLibrary }) => {
-  const user = useUser();
-
-  // SavedActivity's matching the query
-  const [queriedActivites] = useDataState(
-    () =>
-      db
-        .user(user.uid)
-        .collection(DbPath.UserActivityLibrary)
-        .withConverter(DbConverter.SavedActivity)
-        .get()
-        .then(snapshot =>
-          // Skip saved activities that do not match the queried name
-          snapshot.docs.flatMap(doc => {
-            const sa: SavedActivity = doc.data();
-            // Firebase does not give an elegant way to filter this way
-            // TODO Create normalized field on SavedActivity.name so it can
-            // support being searched
-            if (sa.name.toLowerCase().startsWith(query)) return [sa];
-            return [];
-          })
-        ),
-    [query, user.uid]
-  );
-
-  return (
-    <DataStateView data={queriedActivites}>
-      {savedActivities =>
-        savedActivities.length ? (
-          <Columns pad={Pad.Small}>
-            {savedActivities.map(sa => (
-              <LibraryMenuSavedActivityView
-                activity={sa}
-                key={sa.id}
-                addActivityFromLibrary={addActivityFromLibrary}
-              />
-            ))}
-          </Columns>
-        ) : (
-          <Typography variant="body1" color="textSecondary">
-            No results.
+            {log.title}
           </Typography>
-        )
-      }
-    </DataStateView>
-  );
-};
-
-const LibraryMenuSavedActivityView: FC<{
-  activity: SavedActivity;
-  addActivityFromLibrary(a: Activity): void;
-}> = ({ activity, addActivityFromLibrary }) => {
-  const user = useUser();
-
-  const [pastActivities] = useDataState(() => {
-    // Fetch all activities for the SavedActivity we're looking at
-    const mapped = activity.history.map(({ activityId, logId }) =>
-      db
-        .user(user.uid)
-        .collection(DbPath.UserLogs)
-        .doc(logId)
-        .collection(DbPath.UserLogActivities)
-        .doc(activityId)
-        .withConverter(DbConverter.Activity)
-        .get()
-        .then(doc => doc.data())
-    );
-    // Convert Promise<(Activity | undefined)>[] to Activity[]
-    return Promise.all(mapped).then(m => m.filter((a): a is Activity => !!a));
-  }, [user.uid, activity.history]);
-
-  return (
-    <DataStateView data={pastActivities} empty={() => <p>No history!</p>}>
-      {pastActivities => (
-        <Columns pad={Pad.Medium}>
-          {pastActivities.length === 0 ? (
-            <Typography variant="body1" color="textSecondary">
-              No history for {activity.name}
-            </Typography>
-          ) : (
-            //        <ResponsiveContainer height={200} width="100%">
-            //           <BarChart data={pastActivities}>
-            //              <Bar dataKey="position" fill="#8884d8" />
-            //             </BarChart>
-            //            </ResponsiveContainer>
-            pastActivities.map(a => (
-              <Rows
-                key={a.id}
-                center
-                between
-                onClick={() => addActivityFromLibrary(a)}
-              >
-                <p>{a.name}</p>
-                <DataStateView
-                  data={buildDate(a.timestamp)}
-                  loading={() => null}
-                  error={() => null}
-                >
-                  {date => <p>{date}</p>}
-                </DataStateView>
-              </Rows>
-            ))
+        </IconButton>
+        <Menu
+          id="log-menu"
+          anchorEl={menu.ref}
+          open={!!menu.ref}
+          onClose={menu.close}
+          MenuListProps={{ dense: true }}
+        >
+          <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
+          <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
+          <MenuItem onClick={renameLog}>Edit name</MenuItem>
+          {window.navigator.share && (
+            <MenuItem
+              onClick={() => {
+                menu.close();
+                const url = isTemplate
+                  ? Paths.templateView(log.authorId, log.id)
+                  : Paths.logView(log.authorId, log.id);
+                window.navigator.share({ url });
+              }}
+            >
+              Share link
+            </MenuItem>
           )}
-        </Columns>
-      )}
-    </DataStateView>
+          {!isTemplate && (
+            <MenuItem onClick={createTemplate}>Create Template</MenuItem>
+          )}
+          <MenuItem onClick={deleteLog}>
+            <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
+          </MenuItem>
+        </Menu>
+      </div>
+    </ClickAwayListener>
   );
-};
-
-const buildDate = (
-  timestamp: null | firebase.firestore.FieldValue
-): DataState<string> => {
-  const _date = (timestamp as firebase.firestore.Timestamp)?.toDate();
-  const date = DataState.map(_date ?? DataState.Empty, date => {
-    const month = Months[date.getMonth()].slice(0, 3);
-    return `${month} ${date.getDate()}`;
-  });
-  return date;
 };

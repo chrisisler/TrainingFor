@@ -221,17 +221,22 @@ export const TrainingLogDateView: FC<{
   }
 
   const _date = TrainingLog.getDate(log);
-  const date = _date ? format(_date, Format.time) : DataState.Empty;
+  const date: DataState<[string, string]> = _date
+    ? [format(_date, Format.date), format(_date, Format.time)]
+    : DataState.Empty;
 
   return (
-    <Typography variant="body2" color="textSecondary">
-      <DataStateView
-        data={date}
-        loading={() => <>Loading...</>}
-        error={() => null}
-      >
-        {date => <>{date}</>}
-      </DataStateView>
-    </Typography>
+    <DataStateView data={date} loading={() => null} error={() => null}>
+      {([date, time]) => (
+        <Columns>
+          <Typography variant="body2" color="textSecondary">
+            {date}
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            {time}
+          </Typography>
+        </Columns>
+      )}
+    </DataStateView>
   );
 };
