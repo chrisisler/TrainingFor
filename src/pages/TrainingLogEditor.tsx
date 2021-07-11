@@ -373,37 +373,19 @@ export const TrainingLogEditor: FC = () => {
                   className={css`
                     box-sizing: content-box;
                     width: 100%;
-                    border: none;
+                    border: 1px solid ${Color.ActionPrimaryBlue};
                     box-shadow: none;
                     outline: none;
                     font-weight: 400;
                     color: #000;
-                    padding: ${Pad.XSmall} 0;
-                    line-height: 1.6;
+                    padding: ${Pad.Small} ${Pad.Medium};
+                    border-radius: 8px;
 
                     &::placeholder {
                       font-weight: 600;
                     }
                   `}
                 />
-                {activityName.length > 0 && (
-                  <button
-                    className={css`
-                      /** Fat padding for use during training. */
-                      padding: ${Pad.Small} ${Pad.Large};
-                      border-radius: 5px;
-                      border: 1px solid ${Color.ActionSecondaryGray};
-                      background-color: transparent;
-                      text-transform: uppercase;
-                      font-size: ${Font.Small};
-                      font-weight: 600;
-                      color: ${Color.ActionPrimaryBlue};
-                    `}
-                    onClick={addActivity}
-                  >
-                    Add
-                  </button>
-                )}
               </Rows>
             )}
           </Columns>
