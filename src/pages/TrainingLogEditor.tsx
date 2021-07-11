@@ -299,6 +299,10 @@ export const TrainingLogEditor: FC = () => {
                   font-style: italic;
                   font-family: inherit;
                   background-color: transparent;
+
+                  &:focus {
+                    outline: 1px solid ${Color.ActionPrimaryBlue};
+                  }
                 `}
               />
             )}
@@ -334,7 +338,10 @@ export const TrainingLogEditor: FC = () => {
                       transform: scaleX(-1);
                     `}
                     onClick={() => {
-                      if (DataState.isReady(logNotes) && logNotes) return;
+                      if (DataState.isReady(logNotes) && logNotes) {
+                        logNotesRef.current?.focus();
+                        return;
+                      }
                       // Unhide the notes input
                       setLogNotes('');
                       Promise.resolve().then(() =>
