@@ -14,16 +14,15 @@ import {
 } from '@popperjs/core/lib/popper-lite';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { Bar, BarChart, ResponsiveContainer } from 'recharts';
 import FlipMove from 'react-flip-move';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { ActivityView } from '../components/ActivityView';
 import {
+  activityViewContainerStyle,
   createTemplateFromLog,
   TrainingLogDateView,
-  activityViewContainerStyle,
 } from '../components/TrainingLogView';
 import { Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';

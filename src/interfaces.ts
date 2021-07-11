@@ -68,8 +68,8 @@ export interface ActivitySet {
   notes: null | string;
   status: ActivityStatus;
   weight: number;
-  /** repCount represents either a time value or repetition count */
-  repCount: null | number;
+  /** A time value or repetition count. */
+  repCount: number;
 }
 
 export enum ActivityStatus {
@@ -145,31 +145,20 @@ export const Activity = {
       return ActivityRepCountUnit.Repetitions;
     throw Error('Unreachable');
   },
-  // TODO Remove
-
-  abbreviate: (name: string): string => {
-    return name
-      .split(whitespaceOrDash)
-      .flatMap(word => {
-        // Skip tokens that are not words
-        if (isNotAlpha.test(word[0])) return [];
-        return [word[0]];
-      })
-      .join('');
-  },
+  /**
+   * Calculates the total volume for a given Activity's sets.
+   * Volume = [for each rep:] weight * reps
+   */
   getVolume: (a: Activity): number => {
     if (a.weightUnit === ActivityWeightUnit.Weightless) {
       return 0;
     }
     if (a.repCountUnit !== ActivityRepCountUnit.Repetitions) {
-      // idk
+      // Figure out later
       return 0;
     }
-    // weightUnit is LB or KG
-    // repCountUnit is Repetitions
-    const totalWeight = a.sets.reduce((sum, s) => sum + s.weight, 0);
-    const totalReps = a.sets.reduce((sum, s) => sum + (s?.repCount ?? 0), 0);
-    return totalWeight * totalReps;
+    // weightUnit is LB or KG; repCountUnit is Repetitions
+    return a.sets.reduce((sum, set) => sum + set.weight * set.repCount, 0);
   },
 };
 
@@ -204,6 +193,16 @@ export const TrainingLog = {
   },
   isTemplate: (log: TrainingLog | TrainingTemplate): log is TrainingTemplate =>
     Object.prototype.hasOwnProperty.call(log, 'logIds'),
+  abbreviate: (name: string): string => {
+    return name
+      .split(whitespaceOrDash)
+      .flatMap(word => {
+        // Skip tokens that are not words
+        if (isNotAlpha.test(word[0])) return [];
+        return [word[0]];
+      })
+      .join('');
+  },
 };
 
 // eslint-disable-next-line

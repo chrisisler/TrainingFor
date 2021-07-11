@@ -46,7 +46,7 @@ export const DataState = {
     if (!DataState.isReady(ds)) return ds as DataState<U>;
     return fn(ds);
   },
-  unwrapOr: <T extends unknown, U extends T>(
+  unwrapOr: <T extends unknown, U extends unknown>(
     ds: DataState<T>,
     alt: U
   ): T | U => {
@@ -75,6 +75,7 @@ export const useDataState = <T extends unknown>(
         if (!stale) setDataState(data);
       })
       .catch(error => {
+        console.error(error);
         if (!stale) setDataState(DataState.error(error.message));
       });
     return () => {

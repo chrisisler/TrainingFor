@@ -1,28 +1,29 @@
 import { css } from '@emotion/css';
 import {
+  Box,
   Button,
+  CircularProgress,
   ClickAwayListener,
   IconButton,
   Menu,
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { MoreHoriz, NavigateNext } from '@material-ui/icons';
-import format from 'date-fns/format';
+import { ChevronRight } from '@material-ui/icons';
 import firebase from 'firebase/app';
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Line, LineChart } from 'recharts';
 
-import { AppLink } from '../components/AppLink';
-import { Format, Milliseconds, Paths, Weekdays } from '../constants';
+import { Milliseconds, Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { TrainingLog } from '../interfaces';
+import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 
-const modulo = (n: number, m: number) => ((n % m) + m) % m;
+const baseBg = '#f2f2f2';
 
 /**
  * Presents the currently authenticated user and their logs OR presents another
@@ -41,49 +42,21 @@ export const Account: FC = () => {
         .user(userId ?? user.uid)
         .collection(DbPath.UserTemplates)
         .withConverter(DbConverter.TrainingTemplate)
+        .orderBy('timestamp', 'asc')
         .get()
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [userId, user.uid]
   );
 
-  const [logs] = useDataState(
+  const [totalLogCount] = useDataState(
     () =>
       db
         .user(userId ?? user.uid)
         .collection(DbPath.UserLogs)
-        .withConverter(DbConverter.TrainingLog)
-        .orderBy('timestamp', 'desc')
         .get()
-        .then(snapshot => snapshot.docs.map(doc => doc.data())),
+        .then(({ size }) => size),
     [userId, user.uid]
   );
-
-  /**
-   * A list of days of the week as a string and whether a log for that day
-   * exists or not.
-   */
-  const [logsPast7Days] = useDataState(async () => {
-    const past7Days = new Date(Date.now() - Milliseconds.Day * 7);
-    const snapshot = await db
-      .user(userId ?? user.uid)
-      .collection(DbPath.UserLogs)
-      .withConverter(DbConverter.TrainingLog)
-      .where('timestamp', '>', past7Days)
-      .get();
-    const loggedDates = snapshot.docs.flatMap(doc => {
-      const log = doc.data();
-      const date = TrainingLog.getDate(log);
-      return date ? [date.getDate()] : [];
-    });
-    return Array<Date>(7)
-      .fill(new Date())
-      .map((today, index): [string, boolean] => {
-        const date = today.getDate() - index;
-        const dayIndex = modulo(today.getDay() - index, 7);
-        const dayName = Weekdays[dayIndex].slice(0, 2);
-        return [dayName, loggedDates.includes(date)];
-      });
-  }, [userId, user.uid]);
 
   const [logCountPast30Days] = useDataState(() => {
     const past30days = new Date(Date.now() - Milliseconds.Day * 30);
@@ -127,169 +100,143 @@ export const Account: FC = () => {
       pad={Pad.Medium}
       className={css`
         height: 100%;
-        overflow-y: scroll;
-        padding: ${Pad.Medium} ${Pad.Large};
+        padding: ${Pad.Medium} 0;
+        background-color: ${baseBg};
       `}
     >
-      <Rows center pad={Pad.Small}>
-        <Typography variant="h4" color="textPrimary">
-          {userId
-            ? DataState.isReady(selectedUser)
-              ? selectedUser.displayName
-              : null
-            : user.displayName}
-        </Typography>
+      <Rows
+        center
+        className={css`
+          margin-left: auto;
+        `}
+      >
         {userId && <FollowButton />}
-        {!userId && (
-          <ClickAwayListener onClickAway={menu.close}>
-            <div>
-              <IconButton
-                aria-label="Open account menu"
-                aria-controls="account-menu"
-                aria-haspopup="true"
-                onClick={menu.open}
-                size="small"
+        <ClickAwayListener onClickAway={menu.close}>
+          <div>
+            <IconButton
+              disabled={!!userId}
+              aria-label="Open account menu"
+              aria-controls="account-menu"
+              aria-haspopup="true"
+              onClick={menu.open}
+              size="small"
+            >
+              <Typography variant="h6" color="textSecondary">
+                <b>
+                  {userId
+                    ? DataState.isReady(selectedUser)
+                      ? selectedUser.displayName
+                      : null
+                    : user.displayName}
+                </b>
+              </Typography>
+              <ChevronRight fontSize="small" />
+            </IconButton>
+            <Menu
+              id="account-menu"
+              anchorEl={menu.ref}
+              open={!!menu.ref}
+              onClose={menu.close}
+              MenuListProps={{ dense: true }}
+            >
+              <MenuItem
+                onClick={() => {
+                  history.push(Paths.library(user.uid));
+                }}
               >
-                <MoreHoriz
-                  className={css`
-                    color: ${Color.ActionSecondaryGray};
-                  `}
-                />
-              </IconButton>
-              <Menu
-                id="account-menu"
-                anchorEl={menu.ref}
-                open={!!menu.ref}
-                onClose={menu.close}
-                MenuListProps={{ dense: true }}
+                Activity Library
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (!window.confirm('Sign out?')) return;
+                  auth.signOut();
+                }}
               >
-                <MenuItem
-                  onClick={() => {
-                    if (!window.confirm('Sign out?')) return;
-                    auth.signOut();
-                  }}
-                >
-                  Sign out
-                </MenuItem>
-                <MenuItem onClick={deleteAccount}>
-                  <b>Delete account</b>
-                </MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
+                Sign out
+              </MenuItem>
+              <MenuItem onClick={deleteAccount}>
+                <b>Delete account</b>
+              </MenuItem>
+            </Menu>
+          </div>
+        </ClickAwayListener>
+      </Rows>
+      <Columns
+        className={css`
+          text-align: center;
+        `}
+      >
+        <Typography variant="body1" color="textSecondary">
+          Training Logs
+        </Typography>
+        {DataState.isReady(totalLogCount) && (
+          <Typography
+            variant="h1"
+            className={css`
+              line-height: 0.9em !important;
+              color: ${Color.ActionPrimaryBlue};
+            `}
+          >
+            {totalLogCount}
+          </Typography>
+        )}
+      </Columns>
+      <Rows
+        pad={Pad.Small}
+        className={css`
+          height: min-height;
+          padding: 0 ${Pad.Large};
+        `}
+      >
+        {DataState.isReady(logCountPast30Days) && (
+          <Rows
+            center
+            pad={Pad.Medium}
+            className={css`
+              border-radius: 16px;
+              border: 0;
+              padding: ${Pad.Small} ${Pad.Medium};
+              background-color: #fff;
+            `}
+          >
+            <CircularProgressWithLabel
+              value={100 * (logCountPast30Days / 30)}
+            />
+            <Columns center>
+              <Typography variant="subtitle2" color="textSecondary">
+                Past 30 days
+              </Typography>
+              <Typography
+                variant="body1"
+                color="textPrimary"
+                className={css`
+                  font-weight: 800 !important;
+                `}
+              >
+                {logCountPast30Days}
+              </Typography>
+            </Columns>
+          </Rows>
         )}
       </Rows>
-      <AppLink to={Paths.library(user.uid)}>View your Activity Library</AppLink>
-      <Typography variant="body2" color="textSecondary">
-        <b>Templates</b>
-      </Typography>
-      <div>
-        <DataStateView data={templates}>
-          {templates =>
-            templates.length ? (
-              <Rows
-                pad={Pad.Medium}
-                padding={`0 ${Pad.Large}`}
-                className={css`
-                  overflow-x: scroll;
-                `}
-              >
-                {templates.map(template => (
-                  <Columns
-                    key={template.id}
-                    onClick={() => {
-                      const templatePath =
-                        template.authorId === user.uid
-                          ? Paths.template(template.id)
-                          : Paths.templateView(template.authorId, template.id);
-                      history.push(templatePath);
-                    }}
-                    className={css`
-                      border: 1px solid ${Color.ActionPrimaryBlue};
-                      border-radius: 5px;
-                      padding: ${Pad.Small} ${Pad.Medium};
-                    `}
-                    between
-                  >
-                    <Typography variant="body2" color="textPrimary">
-                      {template.title}
-                    </Typography>
-                    <Statistic
-                      text="logs from template"
-                      value={template.logIds.length}
-                    />
-                  </Columns>
-                ))}
-              </Rows>
-            ) : (
-              <Typography variant="body2" color="textSecondary">
-                <i>No templates</i>
-              </Typography>
-            )
-          }
-        </DataStateView>
-      </div>
-      <DataStateView data={logs}>
-        {logs =>
-          logs.length ? (
-            <>
-              <Rows
-                pad={Pad.Small}
-                className={css`
-                  height: min-height;
-                `}
-              >
-                <Statistic text="training logs" value={logs.length} />
-                {DataState.isReady(logCountPast30Days) && (
-                  <Statistic
-                    text="in the past 30 days"
-                    value={logCountPast30Days}
-                  />
-                )}
-              </Rows>
-              <DataStateView data={logsPast7Days}>
-                {past7Days => (
-                  <Columns pad={Pad.Medium}>
-                    <Typography variant="body2" color="textSecondary">
-                      <b>Past 7 Days</b>
-                    </Typography>
-                    <Rows between padding={`0 ${Pad.Large} ${Pad.Small}`}>
-                      {past7Days.map(([dayName, hasLog]) => (
-                        <div key={dayName}>
-                          <p
-                            className={css`
-                              color: ${hasLog
-                                ? Color.FontPrimary
-                                : Color.FontSecondary};
-                              font-weight: ${hasLog ? 600 : 400};
-                            `}
-                          >
-                            {dayName}
-                          </p>
-                          {hasLog && (
-                            <div
-                              className={css`
-                                height: 2px;
-                                width: 100%;
-                                background-color: ${Color.ActionPrimaryBlue};
-                              `}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </Rows>
-                  </Columns>
-                )}
-              </DataStateView>
-              <Columns pad={Pad.Large}>
-                {logs.map(log => (
-                  <TrainingLogPreview log={log} key={log.id} />
-                ))}
-              </Columns>
-            </>
+      <TrainingCalendar />
+      <DataStateView data={templates} loading={() => null}>
+        {templates =>
+          templates.length ? (
+            <Rows
+              pad={Pad.Medium}
+              padding={`0 ${Pad.Large}`}
+              className={css`
+                overflow-x: scroll;
+              `}
+            >
+              {templates.map(t => (
+                <TemplatePreview key={t.id} template={t} />
+              ))}
+            </Rows>
           ) : (
-            <Typography variant="body1" color="textSecondary">
-              <i>No training found.</i>
+            <Typography variant="body2" color="textSecondary">
+              <i>No templates</i>
             </Typography>
           )
         }
@@ -342,91 +289,281 @@ const FollowButton: FC = () => {
   }, [userId, user.uid, isFollowing]);
 
   return (
-    <Button variant="text" onClick={toggleFollow}>
+    <Button variant="text" onClick={toggleFollow} size="small">
       {isFollowing ? 'Following' : 'Follow'}
     </Button>
   );
 };
 
-const Statistic: FC<{ text: string; value: React.ReactNode }> = ({
-  text,
-  value,
-}) => {
+const CircularProgressWithLabel: FC<{ value: number }> = ({ value }) => {
   return (
-    <Rows
-      className={css`
-        align-items: center !important;
-      `}
-    >
-      <p
+    <Box position="relative" display="inline-flex">
+      <CircularProgress
+        variant="determinate"
+        value={100}
+        size={40}
+        thickness={3}
         className={css`
-          font-size: 2.2em;
-          line-height: 1em;
-          color: ${Color.ActionPrimaryBlue};
+          color: #ddd !important;
         `}
-      >
-        {value}
-      </p>
-      <p
+      />
+      <CircularProgress
+        variant="determinate"
+        value={value}
+        size={40}
+        thickness={3}
         className={css`
-          font-size: 0.75em;
-          font-weight: 600;
-          text-transform: uppercase;
-          color: ${Color.FontSecondary};
-          width: 11ch;
-          overflow-x: hidden;
+          position: absolute;
+          left: 0;
+          color: ${Color.ActionPrimaryBlue} !important;
         `}
+      />
+      <Box
+        top={0}
+        left={0}
+        bottom={0}
+        right={0}
+        position="absolute"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
       >
-        {text}
-      </p>
-    </Rows>
+        <Typography
+          variant="caption"
+          component="div"
+          color="textPrimary"
+          className={css`
+            // Nudge to center
+            margin-bottom: 0 !important;
+          `}
+        >
+          <b>{`${Math.round(value)}%`}</b>
+        </Typography>
+      </Box>
+    </Box>
   );
 };
 
-const TrainingLogPreview: FC<{ log: TrainingLog }> = ({ log }) => {
+const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
   const history = useHistory();
+  const user = useUser();
 
-  /** If this userId exists, then we are viewing someone elses account.  */
-  const { userId } = useParams<{ userId?: string }>();
+  const navigateToTemplate = useCallback(() => {
+    const templatePath =
+      template.authorId === user.uid
+        ? Paths.template(template.id)
+        : Paths.templateView(template.authorId, template.id);
+    history.push(templatePath);
+  }, [user.uid, template, history]);
 
-  const logDate = TrainingLog.getDate(log);
-
-  const logDateDistance = useMemo(
-    () => TrainingLog.getDistance(log.timestamp),
-    [log.timestamp]
+  /** Volume from each Log from this Template. */
+  const [templateLogVolumes] = useDataState(
+    () =>
+      Promise.all(
+        template.logIds.map(logId => {
+          return db
+            .user(user.uid)
+            .collection(DbPath.UserLogs)
+            .doc(logId)
+            .collection(DbPath.UserLogActivities)
+            .withConverter(DbConverter.Activity)
+            .get()
+            .then(snapshot => {
+              const volumes = snapshot.docs.map(doc =>
+                Activity.getVolume(doc.data())
+              );
+              return { volume: volumes.reduce((sum, v) => sum + v, 0) };
+            });
+        })
+      ),
+    [user.uid, template]
   );
 
   return (
-    <Rows
+    <Columns
+      pad={Pad.Small}
+      key={template.id}
       className={css`
-        border-radius: 5px;
-        border: 1px solid ${Color.ActionSecondaryGray};
+        border: 0;
+        border-radius: 15px;
         padding: ${Pad.Large};
-        min-height: fit-content;
+        background-color: #fff;
+        min-width: 70vw;
       `}
-      between
-      center
-      onClick={
-        userId
-          ? () => history.push(Paths.logView(userId, log.id))
-          : () => history.push(Paths.logEditor(log.id))
-      }
+      onClick={navigateToTemplate}
     >
-      <Columns>
-        <Typography variant="body1" color="textPrimary">
-          {log.title}
-        </Typography>
-        {logDate && (
+      <Rows center pad={Pad.Medium}>
+        <div
+          className={css`
+            background-color: ${baseBg};
+            border-radius: 20px;
+            padding: ${Pad.Medium};
+          `}
+        >
           <Typography variant="body2" color="textSecondary">
-            {format(logDate, `${Format.time}`)} / {logDateDistance}
+            {TrainingLog.abbreviate(template.title)}
           </Typography>
-        )}
-      </Columns>
-      <NavigateNext
-        className={css`
-          color: ${Color.ActionSecondaryGray};
-        `}
-      />
-    </Rows>
+        </div>
+        <Typography variant="body1" color="textPrimary">
+          {template.title}
+        </Typography>
+      </Rows>
+      <Rows center pad={Pad.Medium}>
+        <DataStateView data={templateLogVolumes}>
+          {templateLogVolumes => (
+            <LineChart height={60} width={80} data={templateLogVolumes}>
+              <Line
+                type="monotone"
+                dot={false}
+                dataKey="volume"
+                strokeWidth={2}
+                stroke="green"
+              />
+            </LineChart>
+          )}
+        </DataStateView>
+        <Rows
+          pad={Pad.Small}
+          className={css`
+            align-items: center !important;
+          `}
+        >
+          <Typography variant="h4" color="textPrimary">
+            {template.logIds.length}
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            <b>logs</b>
+          </Typography>
+        </Rows>
+      </Rows>
+    </Columns>
   );
+};
+
+const TrainingCalendar: FC = () => {
+  const { userId } = useParams<{ userId?: string }>();
+  const user = useUser();
+  const history = useHistory();
+
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const monthLength = getMonthLength(now, thisMonth);
+
+  /** Each TrainingLog.id is bucketed into month and day-of-month. */
+  // Not every month key-value pair exists and same goes for day-of-month
+  const [logs] = useDataState<{
+    [month: number]: { [dayDate: number]: TrainingLog['id'] };
+  }>(
+    () =>
+      db
+        .user(userId ?? user.uid)
+        .collection(DbPath.UserLogs)
+        .withConverter(DbConverter.TrainingLog)
+        .orderBy('timestamp', 'desc')
+        .limit(30) // TODO DEV
+        .get()
+        .then(snapshot => {
+          const logsByMonth = {};
+          snapshot.docs.forEach(doc => {
+            const timestamp = doc.get('timestamp');
+            const date = (timestamp as firebase.firestore.Timestamp).toDate();
+            const month = date.getMonth();
+            if (!logsByMonth[month]) logsByMonth[month] = {};
+            // Add TrainingLog entry for the date it was performed
+            // This assumes only ONE training log per day
+            logsByMonth[month][date.getDate()] = doc.id;
+          });
+          return logsByMonth;
+        }),
+    [userId, user.uid]
+  );
+
+  return (
+    <DataStateView data={logs}>
+      {logs => (
+        <Columns
+          className={css`
+            padding: ${Pad.Small} ${Pad.Medium};
+            background-color: #fff;
+          `}
+        >
+          <Typography variant="subtitle2" color="textSecondary">
+            {Months[thisMonth]}
+          </Typography>
+          <Rows
+            className={css`
+              flex-wrap: wrap;
+            `}
+          >
+            {Array(monthLength)
+              .fill(null)
+              .map((_, dayOfMonth) => (
+                <IconButton
+                  key={dayOfMonth}
+                  size="small"
+                  className={css`
+                    /** Up to seven items per row */
+                    flex-basis: 14.28% !important;
+                  `}
+                  onClick={
+                    logs?.[thisMonth]?.[dayOfMonth]
+                      ? () => {
+                          // TODO Display preview window with summary and actions
+                          const logId = logs[thisMonth][dayOfMonth];
+                          history.push(Paths.logEditor(logId));
+                        }
+                      : undefined
+                  }
+                >
+                  {logs?.[thisMonth]?.[dayOfMonth] ? (
+                    <Typography
+                      variant="body1"
+                      color="textPrimary"
+                      className={css`
+                        color: ${Color.ActionPrimaryBlue} !important;
+                        padding: ${Pad.XSmall} ${Pad.Small};
+                        border-radius: 50%;
+                        background-color: ${baseBg};
+                      `}
+                    >
+                      <b>{dayOfMonth + 1}</b>
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" color="textSecondary">
+                      {dayOfMonth + 1}
+                    </Typography>
+                  )}
+                </IconButton>
+              ))}
+          </Rows>
+        </Columns>
+      )}
+    </DataStateView>
+  );
+};
+
+const isLeapYear = (year: number): boolean =>
+  (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
+/**
+ * @note When passing `monthIndex` remember that January is index 0.
+ * @example const numDaysInFeb = getMonthLength(new Date(), 1)
+ */
+const getMonthLength = (now: Date, monthIndex: number): number => {
+  const year = now.getFullYear();
+  const lengths = [
+    31,
+    isLeapYear(year) ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  return lengths[monthIndex];
 };

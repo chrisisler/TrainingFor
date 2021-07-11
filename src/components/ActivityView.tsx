@@ -257,12 +257,7 @@ export const ActivityView = forwardRef<
       `}
       pad={Pad.Medium}
     >
-      <Rows
-        center
-        className={css`
-          width: min-content;
-        `}
-      >
+      <Rows center>
         {editable && (
           <button
             onClick={addActivitySet}
