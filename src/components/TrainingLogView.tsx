@@ -212,10 +212,14 @@ export const TrainingLogDateView: FC<{
 }> = ({ log }) => {
   if (TrainingLog.isTemplate(log)) {
     return (
-      <Typography variant="body2" color="textSecondary">
-        <i>
-          <b>Training Template</b>
-        </i>
+      <Typography
+        variant="body2"
+        color="textSecondary"
+        className={css`
+          width: min-content;
+        `}
+      >
+        Training Template
       </Typography>
     );
   }
