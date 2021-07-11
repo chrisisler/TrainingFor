@@ -158,7 +158,9 @@ export const Activity = {
       return 0;
     }
     // weightUnit is LB or KG; repCountUnit is Repetitions
-    return a.sets.reduce((sum, set) => sum + set.weight * set.repCount, 0);
+    return a.sets
+      .filter(set => set.status === ActivityStatus.Completed)
+      .reduce((sum, set) => sum + set.weight * set.repCount, 0);
   },
 };
 
