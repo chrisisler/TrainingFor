@@ -39,8 +39,6 @@ export interface Activity extends FirestoreDocument {
   notes: null | string;
   position: number;
   sets: ActivitySet[];
-  // TODO Remove
-  attachmentUrl: null | string;
   weightUnit: ActivityWeightUnit;
   repCountUnit: ActivityRepCountUnit;
   /** A copy of the server timestamp (or null) from the TrainingLog. */
@@ -121,7 +119,6 @@ export const Activity = {
     timestamp: data.timestamp,
     notes: null,
     sets: [],
-    attachmentUrl: null,
     repCountUnit: ActivityRepCountUnit.Repetitions,
     weightUnit: ActivityWeightUnit.Pounds, // 'MURRICA!!
   }),
