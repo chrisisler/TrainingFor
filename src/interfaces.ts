@@ -65,7 +65,6 @@ export interface SavedActivity extends FirestoreDocument {
 
 export interface ActivitySet {
   uuid: string;
-  notes: null | string;
   status: ActivityStatus;
   weight: number;
   /** A time value or repetition count. */
@@ -214,7 +213,6 @@ export const ActivitySet = {
   ): ActivitySet => ({
     ...data,
     uuid: uuid(),
-    notes: null,
   }),
   cycleStatus: (s: ActivityStatus): ActivityStatus => {
     if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
