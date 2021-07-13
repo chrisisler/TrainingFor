@@ -16,8 +16,8 @@ export const Loading: FC = () => {
           position: absolute;
           top: 50%;
           margin: 0 auto;
-          transform: translateY(-50%);
-          max-width: 128px;
+          transform: rotate(90deg);
+          max-width: 16px;
         `}
       />
     </div>
