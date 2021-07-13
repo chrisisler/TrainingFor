@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { ChevronRight } from '@material-ui/icons';
+import { formatDistanceToNowStrict } from 'date-fns';
 import firebase from 'firebase/app';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -35,18 +36,6 @@ export const Account: FC = () => {
   const user = useUser();
   const menu = useMaterialMenu();
   const history = useHistory();
-
-  const [templates] = useDataState(
-    () =>
-      db
-        .user(userId ?? user.uid)
-        .collection(DbPath.UserTemplates)
-        .withConverter(DbConverter.TrainingTemplate)
-        .orderBy('timestamp', 'desc')
-        .get()
-        .then(snapshot => snapshot.docs.map(doc => doc.data())),
-    [userId, user.uid]
-  );
 
   const [totalLogCount] = useDataState(
     () =>
@@ -112,7 +101,14 @@ export const Account: FC = () => {
       >
         {userId && <FollowButton />}
         <ClickAwayListener onClickAway={menu.close}>
-          <div>
+          <div
+            className={css`
+              border-radius: 8px;
+              padding: 0 ${Pad.XSmall};
+              background-color: #fff;
+              margin-right: ${Pad.Medium};
+            `}
+          >
             <IconButton
               disabled={!!userId}
               aria-label="Open account menu"
@@ -121,16 +117,13 @@ export const Account: FC = () => {
               onClick={menu.open}
               size="small"
             >
-              <Rows center>
-                <Typography variant="h6" color="textPrimary">
-                  {userId
-                    ? DataState.isReady(selectedUser)
-                      ? selectedUser.displayName
-                      : null
-                    : user.displayName}
-                </Typography>
-                <ChevronRight fontSize="small" />
-              </Rows>
+              <Typography variant="h6" color="textPrimary">
+                {userId
+                  ? DataState.isReady(selectedUser)
+                    ? selectedUser.displayName
+                    : null
+                  : user.displayName}
+              </Typography>
             </IconButton>
             <Menu
               id="account-menu"
@@ -174,8 +167,6 @@ export const Account: FC = () => {
             variant="h1"
             className={css`
               line-height: 0.9em !important;
-              color: ${Color.ActionPrimaryBlue};
-              font-weight: 400 !important;
             `}
           >
             {totalLogCount}
@@ -215,28 +206,7 @@ export const Account: FC = () => {
         )}
       </Rows>
       <TrainingCalendar />
-      <DataStateView data={templates} loading={() => null}>
-        {templates =>
-          templates.length ? (
-            <Rows
-              pad={Pad.Medium}
-              padding={`0 ${Pad.Large}`}
-              className={css`
-                overflow-x: scroll;
-                overflow-y: hidden;
-              `}
-            >
-              {templates.map(t => (
-                <TemplatePreview key={t.id} template={t} />
-              ))}
-            </Rows>
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              <i>No templates</i>
-            </Typography>
-          )
-        }
-      </DataStateView>
+      <TrainingTemplatesView />
     </Columns>
   );
 };
@@ -297,7 +267,7 @@ const CircularProgressWithLabel: FC<{ value: number }> = ({ value }) => {
       <CircularProgress
         variant="determinate"
         value={100}
-        size={40}
+        size={45}
         thickness={3}
         className={css`
           color: #ddd !important;
@@ -306,7 +276,7 @@ const CircularProgressWithLabel: FC<{ value: number }> = ({ value }) => {
       <CircularProgress
         variant="determinate"
         value={value}
-        size={40}
+        size={45}
         thickness={4}
         className={css`
           position: absolute;
@@ -352,28 +322,51 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
     history.push(templatePath);
   }, [user.uid, template, history]);
 
-  /** Volume from each Log from this Template. */
+  /** Total volume calculated for each log in `template.logIds`. */
   const [templateLogVolumes] = useDataState(
     () =>
       Promise.all(
-        template.logIds.map(logId => {
-          return db
+        template.logIds.map(logId =>
+          db
             .user(user.uid)
             .collection(DbPath.UserLogs)
             .doc(logId)
             .collection(DbPath.UserLogActivities)
             .withConverter(DbConverter.Activity)
             .get()
-            .then(snapshot => {
-              const volumes = snapshot.docs.map(doc =>
-                Activity.getVolume(doc.data())
-              );
-              return { volume: volumes.reduce((sum, v) => sum + v, 0) };
-            });
-        })
+            .then(snapshot => ({
+              volume: snapshot.empty
+                ? 0
+                : snapshot.docs
+                    .map(doc => Activity.getVolume(doc.data()))
+                    .reduce((sum, v) => sum + v, 0),
+            }))
+        )
       ),
     [user.uid, template]
   );
+
+  const [latestLogDate] = useDataState(async () => {
+    if (template.logIds.length === 0) return DataState.Empty;
+    // All the Dates of logs created from this template
+    const promises = template.logIds.map(logId =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserLogs)
+        .doc(logId)
+        .get()
+        .then(doc => {
+          // `t` could be undefined
+          const t: TrainingLog['timestamp'] = doc.get('timestamp');
+          return (t as firebase.firestore.Timestamp)?.toDate();
+        })
+    );
+    const logDates = await Promise.all(promises);
+    // Convert dates to number to please the TypeScript machine
+    const sorted = logDates.filter(_ => _ !== void 0).sort((a, b) => +b - +a);
+    if (sorted.length === 0) return DataState.Empty;
+    return formatDistanceToNowStrict(sorted[0], { addSuffix: true });
+  }, [user.uid, template]);
 
   return (
     <Columns
@@ -400,13 +393,27 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
             {TrainingLog.abbreviate(template.title)}
           </Typography>
         </div>
-        <Typography variant="body1" color="textPrimary">
-          {template.title}
-        </Typography>
+        <Columns>
+          <Typography variant="body1" color="textPrimary">
+            <b>{template.title}</b>
+          </Typography>
+          {DataState.isReady(latestLogDate) && (
+            <Typography variant="caption" color="textSecondary">
+              Latest {latestLogDate}
+            </Typography>
+          )}
+        </Columns>
+        <ChevronRight
+          fontSize="small"
+          className={css`
+            color: ${Color.ActionSecondaryGray} !important;
+            margin-left: auto;
+          `}
+        />
       </Rows>
-      <Rows center pad={Pad.Medium}>
-        <DataStateView data={templateLogVolumes}>
-          {templateLogVolumes => (
+      <DataStateView data={templateLogVolumes}>
+        {templateLogVolumes => (
+          <Rows center pad={Pad.Medium}>
             <LineChart height={60} width={80} data={templateLogVolumes}>
               <Line
                 type="monotone"
@@ -416,22 +423,22 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
                 stroke="green"
               />
             </LineChart>
-          )}
-        </DataStateView>
-        <Rows
-          pad={Pad.Small}
-          className={css`
-            align-items: center !important;
-          `}
-        >
-          <Typography variant="h4" color="textPrimary">
-            {template.logIds.length}
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            <b>logs</b>
-          </Typography>
-        </Rows>
-      </Rows>
+            <Rows
+              pad={Pad.Small}
+              className={css`
+                align-items: center !important;
+              `}
+            >
+              <Typography variant="h5" color="textPrimary">
+                <b>{template.logIds.length}</b>
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Logs
+              </Typography>
+            </Rows>
+          </Rows>
+        )}
+      </DataStateView>
     </Columns>
   );
 };
@@ -483,7 +490,7 @@ const TrainingCalendar: FC = () => {
       {logs => (
         <Columns
           className={css`
-            padding: ${Pad.Small} ${Pad.XSmall} ${Pad.XSmall};
+            padding: ${Pad.Medium} ${Pad.XSmall} ${Pad.Small};
             background-color: #fff;
             border-radius: 20px;
           `}
@@ -525,7 +532,7 @@ const TrainingCalendar: FC = () => {
                       variant="body1"
                       className={css`
                         color: ${Color.ActionPrimaryBlue} !important;
-                        border-bottom: 1px solid ${Color.ActionPrimaryBlue};
+                        border-bottom: 2px solid ${Color.ActionPrimaryBlue};
                         font-weight: 600 !important;
                       `}
                     >
@@ -569,4 +576,47 @@ const getMonthLength = (now: Date, monthIndex: number): number => {
     31,
   ];
   return lengths[monthIndex];
+};
+
+const TrainingTemplatesView: FC = () => {
+  /** The ID of the selected user. Is `undefined` if viewing our own page. */
+  const { userId } = useParams<{ userId?: string }>();
+  const user = useUser();
+
+  const [templates] = useDataState(
+    () =>
+      db
+        .user(userId ?? user.uid)
+        .collection(DbPath.UserTemplates)
+        .withConverter(DbConverter.TrainingTemplate)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => snapshot.docs.map(doc => doc.data())),
+    [userId, user.uid]
+  );
+
+  return (
+    <DataStateView data={templates}>
+      {templates =>
+        templates.length ? (
+          <Rows
+            pad={Pad.Medium}
+            padding={`0 ${Pad.Large}`}
+            className={css`
+              overflow-x: scroll;
+              overflow-y: hidden;
+            `}
+          >
+            {templates.map(t => (
+              <TemplatePreview key={t.id} template={t} />
+            ))}
+          </Rows>
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            <i>No templates</i>
+          </Typography>
+        )
+      }
+    </DataStateView>
+  );
 };
