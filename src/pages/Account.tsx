@@ -23,7 +23,7 @@ import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 
-const baseBg = '#f2f2f2';
+const baseBg = '#f4f4f4';
 
 /**
  * Presents the currently authenticated user and their logs OR presents another
@@ -42,7 +42,7 @@ export const Account: FC = () => {
         .user(userId ?? user.uid)
         .collection(DbPath.UserTemplates)
         .withConverter(DbConverter.TrainingTemplate)
-        .orderBy('timestamp', 'asc')
+        .orderBy('timestamp', 'desc')
         .get()
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [userId, user.uid]
@@ -97,10 +97,10 @@ export const Account: FC = () => {
 
   return (
     <Columns
-      pad={Pad.Medium}
+      pad={Pad.Large}
       className={css`
         height: 100%;
-        padding: ${Pad.Medium} 0;
+        padding: ${Pad.Small} 0;
         background-color: ${baseBg};
       `}
     >
@@ -121,16 +121,16 @@ export const Account: FC = () => {
               onClick={menu.open}
               size="small"
             >
-              <Typography variant="h6" color="textSecondary">
-                <b>
+              <Rows center>
+                <Typography variant="h6" color="textPrimary">
                   {userId
                     ? DataState.isReady(selectedUser)
                       ? selectedUser.displayName
                       : null
                     : user.displayName}
-                </b>
-              </Typography>
-              <ChevronRight fontSize="small" />
+                </Typography>
+                <ChevronRight fontSize="small" />
+              </Rows>
             </IconButton>
             <Menu
               id="account-menu"
@@ -166,7 +166,7 @@ export const Account: FC = () => {
           text-align: center;
         `}
       >
-        <Typography variant="body1" color="textSecondary">
+        <Typography variant="body1" color="textSecondary" gutterBottom>
           Training Logs
         </Typography>
         {DataState.isReady(totalLogCount) && (
@@ -175,6 +175,7 @@ export const Account: FC = () => {
             className={css`
               line-height: 0.9em !important;
               color: ${Color.ActionPrimaryBlue};
+              font-weight: 400 !important;
             `}
           >
             {totalLogCount}
@@ -191,7 +192,7 @@ export const Account: FC = () => {
         {DataState.isReady(logCountPast30Days) && (
           <Rows
             center
-            pad={Pad.Medium}
+            pad={Pad.Small}
             className={css`
               border-radius: 16px;
               border: 0;
@@ -206,13 +207,7 @@ export const Account: FC = () => {
               <Typography variant="subtitle2" color="textSecondary">
                 Past 30 days
               </Typography>
-              <Typography
-                variant="body1"
-                color="textPrimary"
-                className={css`
-                  font-weight: 800 !important;
-                `}
-              >
+              <Typography variant="h6" color="textPrimary">
                 {logCountPast30Days}
               </Typography>
             </Columns>
@@ -228,6 +223,7 @@ export const Account: FC = () => {
               padding={`0 ${Pad.Large}`}
               className={css`
                 overflow-x: scroll;
+                overflow-y: hidden;
               `}
             >
               {templates.map(t => (
@@ -311,7 +307,7 @@ const CircularProgressWithLabel: FC<{ value: number }> = ({ value }) => {
         variant="determinate"
         value={value}
         size={40}
-        thickness={3}
+        thickness={4}
         className={css`
           position: absolute;
           left: 0;
@@ -385,8 +381,8 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
       key={template.id}
       className={css`
         border: 0;
-        border-radius: 15px;
-        padding: ${Pad.Large};
+        border-radius: 20px;
+        padding: ${Pad.Small} ${Pad.Medium};
         background-color: #fff;
         min-width: 70vw;
       `}
@@ -440,6 +436,10 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
   );
 };
 
+/**
+ * Presents the authenticated user's TrainingLog collection projected over a
+ * day-by-day calendar month display.
+ */
 const TrainingCalendar: FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
@@ -483,11 +483,12 @@ const TrainingCalendar: FC = () => {
       {logs => (
         <Columns
           className={css`
-            padding: ${Pad.Small} ${Pad.Medium};
+            padding: ${Pad.Small} ${Pad.XSmall} ${Pad.XSmall};
             background-color: #fff;
+            border-radius: 20px;
           `}
         >
-          <Typography variant="subtitle2" color="textSecondary">
+          <Typography variant="subtitle2" color="textSecondary" align="center">
             {Months[thisMonth]}
           </Typography>
           <Rows
@@ -504,6 +505,10 @@ const TrainingCalendar: FC = () => {
                   className={css`
                     /** Up to seven items per row */
                     flex-basis: 14.28% !important;
+
+                    & p {
+                      padding: ${Pad.XSmall} !important;
+                    }
                   `}
                   onClick={
                     logs?.[thisMonth]?.[dayOfMonth]
@@ -518,18 +523,16 @@ const TrainingCalendar: FC = () => {
                   {logs?.[thisMonth]?.[dayOfMonth] ? (
                     <Typography
                       variant="body1"
-                      color="textPrimary"
                       className={css`
                         color: ${Color.ActionPrimaryBlue} !important;
-                        padding: ${Pad.XSmall} ${Pad.Small};
-                        border-radius: 50%;
-                        background-color: ${baseBg};
+                        border-bottom: 1px solid ${Color.ActionPrimaryBlue};
+                        font-weight: 600 !important;
                       `}
                     >
-                      <b>{dayOfMonth + 1}</b>
+                      {dayOfMonth + 1}
                     </Typography>
                   ) : (
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="body1" color="textSecondary">
                       {dayOfMonth + 1}
                     </Typography>
                   )}
