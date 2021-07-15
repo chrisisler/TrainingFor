@@ -9,10 +9,10 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { ChevronRight } from '@material-ui/icons';
+import { ChevronLeft, ChevronRight } from '@material-ui/icons';
 import { formatDistanceToNowStrict } from 'date-fns';
 import firebase from 'firebase/app';
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Line, LineChart } from 'recharts';
@@ -452,9 +452,11 @@ const TrainingCalendar: FC = () => {
   const user = useUser();
   const history = useHistory();
 
-  const now = new Date();
-  const thisMonth = now.getMonth();
-  const monthLength = getMonthLength(now, thisMonth);
+  const [thisMonth, setThisMonth] = useState(new Date().getMonth());
+  const monthLength = useMemo(
+    () => getMonthLength(new Date(), thisMonth),
+    [thisMonth]
+  );
 
   /** Each TrainingLog.id is bucketed into month and day-of-month. */
   // Not every month key-value pair exists and same goes for day-of-month
@@ -490,14 +492,40 @@ const TrainingCalendar: FC = () => {
       {logs => (
         <Columns
           className={css`
-            padding: ${Pad.Medium} ${Pad.XSmall} ${Pad.Small};
+            padding: ${Pad.Small} ${Pad.XSmall};
             background-color: #fff;
             border-radius: 20px;
           `}
         >
-          <Typography variant="subtitle2" color="textSecondary" align="center">
-            {Months[thisMonth]}
-          </Typography>
+          <Rows
+            center
+            pad={Pad.Medium}
+            className={css`
+              justify-content: center;
+            `}
+          >
+            <IconButton
+              aria-label="View previous month of logs"
+              size="small"
+              onClick={() => {
+                setThisMonth(thisMonth - 1);
+              }}
+            >
+              <ChevronLeft />
+            </IconButton>
+            <Typography variant="body2" color="textSecondary">
+              {Months[thisMonth]}
+            </Typography>
+            <IconButton
+              aria-label="View next month of logs"
+              size="small"
+              onClick={() => {
+                setThisMonth(thisMonth + 1);
+              }}
+            >
+              <ChevronRight />
+            </IconButton>
+          </Rows>
           <Rows
             className={css`
               flex-wrap: wrap;
@@ -514,7 +542,8 @@ const TrainingCalendar: FC = () => {
                     flex-basis: 14.28% !important;
 
                     & p {
-                      padding: ${Pad.XSmall} !important;
+                      padding: ${Pad.XSmall} 0 !important;
+                      width: 4ch;
                     }
                   `}
                   onClick={
@@ -531,9 +560,10 @@ const TrainingCalendar: FC = () => {
                     <Typography
                       variant="body1"
                       className={css`
-                        color: ${Color.ActionPrimaryBlue} !important;
-                        border-bottom: 2px solid ${Color.ActionPrimaryBlue};
+                        color: ${Color.ActionPrimaryBlue};
                         font-weight: 600 !important;
+                        background-color: ${baseBg};
+                        border-radius: 50%;
                       `}
                     >
                       {dayOfMonth + 1}

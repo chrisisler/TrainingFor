@@ -233,7 +233,13 @@ export const TrainingLogDateView: FC<{
     <DataStateView data={date} loading={() => null} error={() => null}>
       {([date, time]) => (
         <Columns>
-          <Typography variant="body2" color="textSecondary">
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            className={css`
+              white-space: nowrap;
+            `}
+          >
             {date}
           </Typography>
           <Typography variant="body2" color="textSecondary">

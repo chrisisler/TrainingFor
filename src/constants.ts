@@ -1,7 +1,7 @@
 /** https://date-fns.org/v2.22.1/docs/format */
 export enum Format {
   /** @example "May 7" */
-  date = 'MMM M',
+  date = 'MMM d',
   /** @example "12:53p" */
   time = 'h:mmaaaaa',
 }
