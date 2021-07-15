@@ -7,6 +7,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Popover,
   Typography,
 } from '@material-ui/core';
 import { ChevronLeft, ChevronRight } from '@material-ui/icons';
@@ -450,7 +451,6 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
 const TrainingCalendar: FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
-  const history = useHistory();
 
   const [thisMonth, setThisMonth] = useState(new Date().getMonth());
   const monthLength = useMemo(
@@ -469,7 +469,6 @@ const TrainingCalendar: FC = () => {
         .collection(DbPath.UserLogs)
         .withConverter(DbConverter.TrainingLog)
         .orderBy('timestamp', 'desc')
-        .limit(30) // TODO DEV
         .get()
         .then(snapshot => {
           const logsByMonth = {};
@@ -534,46 +533,11 @@ const TrainingCalendar: FC = () => {
             {Array(monthLength)
               .fill(null)
               .map((_, dayOfMonth) => (
-                <IconButton
+                <TrainingCalendarLog
                   key={dayOfMonth}
-                  size="small"
-                  className={css`
-                    /** Up to seven items per row */
-                    flex-basis: 14.28% !important;
-
-                    & p {
-                      padding: ${Pad.XSmall} 0 !important;
-                      width: 4ch;
-                    }
-                  `}
-                  onClick={
-                    logs?.[thisMonth]?.[dayOfMonth]
-                      ? () => {
-                          // TODO Display preview window with summary and actions
-                          const logId = logs[thisMonth][dayOfMonth];
-                          history.push(Paths.logEditor(logId));
-                        }
-                      : undefined
-                  }
-                >
-                  {logs?.[thisMonth]?.[dayOfMonth] ? (
-                    <Typography
-                      variant="body1"
-                      className={css`
-                        color: ${Color.ActionPrimaryBlue};
-                        font-weight: 600 !important;
-                        background-color: ${baseBg};
-                        border-radius: 50%;
-                      `}
-                    >
-                      {dayOfMonth + 1}
-                    </Typography>
-                  ) : (
-                    <Typography variant="body1" color="textSecondary">
-                      {dayOfMonth + 1}
-                    </Typography>
-                  )}
-                </IconButton>
+                  dayOfMonth={dayOfMonth}
+                  logId={logs?.[thisMonth]?.[dayOfMonth]}
+                />
               ))}
           </Rows>
         </Columns>
@@ -648,5 +612,148 @@ const TrainingTemplatesView: FC = () => {
         )
       }
     </DataStateView>
+  );
+};
+
+/**
+ * Presents an active, clickable calendar date ("11") if a `logId` prop is
+ * given, otherwise a neutral, non-interactable date display.
+ *
+ * Calendar dates with logs for those days display Popover menus onClick.
+ */
+const TrainingCalendarLog: FC<{
+  dayOfMonth: number;
+  logId?: string;
+}> = ({ dayOfMonth, logId }) => {
+  const history = useHistory();
+  const { userId } = useParams<{ userId?: string }>();
+  const user = useUser();
+
+  /** The ID of the selected user. Is `undefined` if viewing our own page. */
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const open = !!anchorEl;
+  const id = open ? 'training-log-popover' : undefined;
+
+  /**
+   * The TrainingLog data for the log for this data, if it exists.
+   * This is always `DataState.Empty` if the Popover is never opened.
+   */
+  const [log] = useDataState(async () => {
+    // nah
+    if (!open) return DataState.Empty;
+    // fetch the log, the thing is open
+    const data = await db
+      .user(userId ?? user.uid)
+      .collection(DbPath.UserLogs)
+      .withConverter(DbConverter.TrainingLog)
+      .doc(logId)
+      .get()
+      .then(doc => doc.data());
+    if (!data) return DataState.error('Log not found');
+    return data;
+  }, [open, logId, userId, user.uid]);
+
+  // How many times have we done this?
+  const logDate = DataState.map(log, l =>
+    (l.timestamp as firebase.firestore.Timestamp)?.toDate()
+  );
+
+  return (
+    <IconButton
+      size="small"
+      className={css`
+        /** Up to seven items per row */
+        flex-basis: 14.28% !important;
+
+        & p {
+          padding: ${Pad.XSmall} 0 !important;
+          width: 4ch;
+        }
+      `}
+      onClick={logId ? event => setAnchorEl(event.currentTarget) : undefined}
+    >
+      {logId ? (
+        <>
+          <Popover
+            id={id}
+            open={open}
+            anchorEl={anchorEl}
+            onClose={() => setAnchorEl(null)}
+            anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+            transformOrigin={{ vertical: 'center', horizontal: 'center' }}
+          >
+            <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+              <Columns
+                pad={Pad.Small}
+                className={css`
+                  padding: ${Pad.Medium};
+                `}
+              >
+                <DataStateView
+                  data={DataState.all<[TrainingLog, Date]>(log, logDate)}
+                >
+                  {([log, logDate]) => (
+                    <>
+                      <Rows pad={Pad.Medium} center>
+                        <Columns
+                          center
+                          className={css`
+                            background-color: ${baseBg};
+                            border-radius: 20px;
+                            padding: ${Pad.Small} ${Pad.Medium};
+                          `}
+                        >
+                          <Typography variant="overline" color="textSecondary">
+                            {Months[logDate.getMonth()].slice(0, 3)}
+                          </Typography>
+                          <Typography variant="body1" color="textSecondary">
+                            {logDate.getDate() + 1}
+                          </Typography>
+                        </Columns>
+                        <Columns>
+                          <Typography variant="body1" color="textPrimary">
+                            {log.title}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {formatDistanceToNowStrict(logDate, {
+                              addSuffix: true,
+                            })}
+                          </Typography>
+                        </Columns>
+                      </Rows>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => history.push(Paths.logEditor(logId))}
+                        size="large"
+                      >
+                        Go
+                      </Button>
+                    </>
+                  )}
+                </DataStateView>
+              </Columns>
+            </ClickAwayListener>
+          </Popover>
+          <Typography
+            aria-describedby={id}
+            variant="body1"
+            className={css`
+              color: ${Color.ActionPrimaryBlue};
+              font-weight: 600 !important;
+              background-color: ${baseBg};
+              border-radius: 50%;
+            `}
+          >
+            {dayOfMonth + 1}
+          </Typography>
+        </>
+      ) : (
+        <Typography variant="body1" color="textSecondary">
+          {dayOfMonth + 1}
+        </Typography>
+      )}
+    </IconButton>
   );
 };

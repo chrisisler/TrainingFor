@@ -61,6 +61,18 @@ export const DataState = {
     if (DataState.isReady(ds)) return ds;
     throw Error('Called `DataState.unwrap(x)` on not ready data');
   },
+  /**
+   * Converts an array of DataState into a DataState<T[]>.
+   *
+   * @usage DataState.all<[string, number]>(str, num);
+   */
+  all: <T extends readonly unknown[]>(
+    ...dss: readonly DataState<T[number]>[]
+  ): DataState<[...T]> => {
+    const notReady = dss.find(ds => !DataState.isReady(ds));
+    if (notReady) return notReady as Exclude<DataState<T[number]>, T[number]>;
+    return dss as DataState<[...T]>;
+  },
 };
 
 export const useDataState = <T extends unknown>(
