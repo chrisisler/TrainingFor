@@ -622,8 +622,9 @@ const LogTitle: FC<{
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .delete();
+      const logType = isTemplate ? 'Template' : 'Log';
+      toast.info(`${logType} deleted.`);
       history.push(Paths.account);
-      toast.info('Deleted successfully!');
     } catch (error) {
       toast.error(error.message);
     }
