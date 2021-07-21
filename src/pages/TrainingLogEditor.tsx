@@ -665,7 +665,7 @@ const LogTitle: FC<{
           <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
           <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
           <MenuItem onClick={renameLog}>Edit name</MenuItem>
-          {window.navigator.share && (
+          {!!window.navigator.share && (
             <MenuItem
               onClick={() => {
                 menu.close();

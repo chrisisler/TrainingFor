@@ -168,7 +168,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
                     onClose={menu.close}
                     MenuListProps={{ dense: true }}
                   >
-                    {window.navigator.share && (
+                    {!!window.navigator.share && (
                       <MenuItem
                         onClick={() => {
                           menu.close();

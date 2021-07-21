@@ -160,9 +160,7 @@ export const Account: FC = () => {
           text-align: center;
         `}
       >
-        <Typography variant="body2" color="textSecondary">
-          Training Logs
-        </Typography>
+        <Typography variant="body2">Training Logs</Typography>
         {DataState.isReady(totalLogCount) && (
           <Typography
             variant="h2"
@@ -170,7 +168,7 @@ export const Account: FC = () => {
               line-height: 0.9em !important;
             `}
           >
-            <b>{totalLogCount}</b>
+            {totalLogCount}
           </Typography>
         )}
       </Columns>
@@ -190,7 +188,7 @@ export const Account: FC = () => {
               border: 0;
               padding: ${Pad.Small} ${Pad.Medium};
               background-color: #fff;
-              box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05) !important;
+              box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
             `}
           >
             <CircularProgressWithLabel
@@ -207,7 +205,7 @@ export const Account: FC = () => {
           </Rows>
         )}
       </Rows>
-      <TrainingCalendar />
+      <TrainingLogsCalendar />
       <TrainingTemplatesView />
     </Columns>
   );
@@ -312,7 +310,9 @@ const CircularProgressWithLabel: FC<{ value: number }> = ({ value }) => {
   );
 };
 
-const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
+const TrainingTemplatePreview: FC<{
+  template: TrainingTemplate;
+}> = ({ template }) => {
   const history = useHistory();
   const user = useUser();
 
@@ -337,12 +337,9 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
             .withConverter(DbConverter.Activity)
             .get()
             .then(snapshot => ({
-              volume:
-                snapshot.size < 2
-                  ? []
-                  : snapshot.docs
-                      .map(doc => Activity.getVolume(doc.data()))
-                      .reduce((sum, v) => sum + v, 0),
+              volume: snapshot.docs
+                .map(doc => Activity.getVolume(doc.data()))
+                .reduce((sum, v) => sum + v, 0),
             }))
         )
       ),
@@ -377,10 +374,10 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
       className={css`
         border: 0;
         border-radius: 20px;
-        padding: ${Pad.Small} ${Pad.Medium};
+        padding: ${Pad.Medium};
         background-color: #fff;
-        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
-        min-width: 70vw;
+        min-width: 65vw;
+        min-height: 150px;
       `}
       onClick={navigateToTemplate}
     >
@@ -402,33 +399,35 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
           </Typography>
           {DataState.isReady(latestLogDate) && (
             <Typography variant="caption" color="textSecondary">
-              Latest {latestLogDate}
+              {latestLogDate}
             </Typography>
           )}
         </Columns>
         <ChevronRight
           fontSize="small"
           className={css`
-            color: ${Color.ActionSecondaryGray} !important;
+            color: ${Color.ActionPrimaryBlue} !important;
             margin-left: auto;
           `}
         />
       </Rows>
       <Rows center pad={Pad.Medium}>
-        <DataStateView data={templateLogVolumes}>
-          {templateLogVolumes => (
-            <LineChart height={60} width={80} data={templateLogVolumes}>
-              <Line
-                type="monotone"
-                dot={false}
-                dataKey="volume"
-                strokeWidth={2}
-                stroke="green"
-              />
-            </LineChart>
-          )}
-        </DataStateView>
-        {template.logIds.length && (
+        {template.logIds.length > 1 && (
+          <DataStateView data={templateLogVolumes}>
+            {templateLogVolumes => (
+              <LineChart height={60} width={80} data={templateLogVolumes}>
+                <Line
+                  type="monotone"
+                  dot={false}
+                  dataKey="volume"
+                  strokeWidth={2}
+                  stroke="green"
+                />
+              </LineChart>
+            )}
+          </DataStateView>
+        )}
+        {!!template.logIds.length && (
           <Rows
             pad={Pad.Small}
             className={css`
@@ -439,7 +438,7 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
               <b>{template.logIds.length}</b>
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              Logs
+              Log{template.logIds.length === 1 ? '' : 's'}
             </Typography>
           </Rows>
         )}
@@ -452,7 +451,7 @@ const TemplatePreview: FC<{ template: TrainingTemplate }> = ({ template }) => {
  * Presents the authenticated user's TrainingLog collection projected over a
  * day-by-day calendar month display.
  */
-const TrainingCalendar: FC = () => {
+const TrainingLogsCalendar: FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
 
@@ -495,10 +494,10 @@ const TrainingCalendar: FC = () => {
       {logs => (
         <Columns
           className={css`
-            padding: ${Pad.Small} ${Pad.XSmall};
+            padding: ${Pad.Small} 0;
             background-color: #fff;
             border-radius: 20px;
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
           `}
         >
           <Rows
@@ -600,21 +599,24 @@ const TrainingTemplatesView: FC = () => {
         templates.length ? (
           <Rows
             pad={Pad.Medium}
-            padding={`0 ${Pad.Large}`}
             className={css`
               overflow-x: scroll;
               overflow-y: hidden;
+              margin-left: ${Pad.Large};
+              & > *:last-child {
+                margin-right: ${Pad.Large};
+              }
             `}
           >
             <>
-              <CreateTrainingTemplate />
               {templates.map(t => (
-                <TemplatePreview key={t.id} template={t} />
+                <TrainingTemplatePreview key={t.id} template={t} />
               ))}
+              <TrainingTemplateCreate />
             </>
           </Rows>
         ) : (
-          <CreateTrainingTemplate />
+          <TrainingTemplateCreate />
         )
       }
     </DataStateView>
@@ -675,7 +677,6 @@ const TrainingCalendarLog: FC<{
         & p {
           padding: ${Pad.XSmall} 0 !important;
           width: 4ch;
-          font-weight: 600 !important;
         }
       `}
       onClick={logId ? event => setAnchorEl(event.currentTarget) : undefined}
@@ -709,6 +710,7 @@ const TrainingCalendarLog: FC<{
                             background-color: ${baseBg};
                             border-radius: 20px;
                             padding: ${Pad.Small} ${Pad.Medium};
+                            font-weight: 600 !important;
                           `}
                         >
                           <Typography variant="overline" color="textSecondary">
@@ -736,6 +738,7 @@ const TrainingCalendarLog: FC<{
                         size="large"
                       >
                         Go
+                        <ChevronRight fontSize="small" />
                       </Button>
                     </>
                   )}
@@ -764,7 +767,7 @@ const TrainingCalendarLog: FC<{
   );
 };
 
-const CreateTrainingTemplate: FC = () => {
+const TrainingTemplateCreate: FC = () => {
   const user = useUser();
   const history = useHistory();
 
@@ -787,23 +790,21 @@ const CreateTrainingTemplate: FC = () => {
       pad={Pad.Small}
       className={css`
         border: 0;
-        border-radius: 20px;
-        padding: ${Pad.Small} ${Pad.Medium};
         background-color: #fff;
-        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
-        max-width: 35vw;
+        border-radius: 20px;
+        padding: ${Pad.Medium};
       `}
       onClick={createTemplate}
     >
       <Columns center pad={Pad.Medium}>
-        <Rows center pad={Pad.Medium}>
-          <Typography variant="body1" color="textSecondary">
+        <Rows center pad={Pad.Large}>
+          <Typography variant="body2" color="textSecondary">
             New Template
           </Typography>
           <ChevronRight
             fontSize="small"
             className={css`
-              color: ${Color.ActionSecondaryGray} !important;
+              color: ${Color.ActionPrimaryBlue} !important;
               margin-left: auto;
             `}
           />
