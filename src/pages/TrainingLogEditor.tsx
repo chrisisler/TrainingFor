@@ -172,8 +172,12 @@ export const TrainingLogEditor: FC = () => {
     }
   }, [user.uid, log, logNotes, isTemplate]);
 
+  /**
+   * Add SavedActivity.history Activity to TrainingLog activities and
+   * insert the new activity into the history.
+   */
   const addFromLibrary = useCallback(
-    async (a: Activity) => {
+    async ({ name }: Activity, saved: SavedActivity) => {
       if (!DataState.isReady(activities) || !DataState.isReady(log)) {
         toast.warn('Data not ready.');
         return;
@@ -182,21 +186,31 @@ export const TrainingLogEditor: FC = () => {
       // Hide the input
       setActivityName(null);
       try {
-        /** Get `position` for `entry` from live `activities` data`. */
         const prevMaxPosition =
           activities[activities.length - 1]?.position ?? 0;
         const entry = Activity.create({
-          name: a.name,
+          name,
           position: prevMaxPosition + 1,
           logId: log.id,
           timestamp: log.timestamp,
         });
-        await db
+        // Add Activity to the current TrainingLog
+        const docRef = await db
           .user(user.uid)
           .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
           .doc(log.id)
           .collection(DbPath.UserLogActivities)
           .add(entry);
+        // Add Activity to SavedActivity.history
+        const history = saved.history.concat({
+          activityId: docRef.id,
+          logId: log.id,
+        });
+        await db
+          .user(user.uid)
+          .collection(DbPath.UserTemplates)
+          .doc(saved.id)
+          .set({ history }, { merge: true });
       } catch (error) {
         toast.error(error.message);
       }
@@ -262,12 +276,12 @@ export const TrainingLogEditor: FC = () => {
                 <div
                   ref={libraryMenuRef}
                   className={css`
-                  height: 22vh;
-                  overflow-y: scroll;
-                  border-radius: 8px
-                  border: 1px solid ${Color.ActionPrimaryBlue};
-                  padding: ${Pad.Small} ${Pad.Medium};
-                `}
+                    height: 22vh;
+                    overflow-y: scroll;
+                    border-radius: 8px;
+                    border: 1px solid ${Color.ActionPrimaryBlue};
+                    padding: ${Pad.Small} ${Pad.Medium};
+                  `}
                 >
                   <LibraryMenu
                     query={activityName.toLowerCase()}
@@ -404,7 +418,7 @@ export const TrainingLogEditor: FC = () => {
 
 const LibraryMenu: FC<{
   query: string;
-  addFromLibrary(a: Activity): void;
+  addFromLibrary(a: Activity, saved: SavedActivity): void;
 }> = ({ query, addFromLibrary }) => {
   const user = useUser();
 
@@ -453,9 +467,13 @@ const LibraryMenu: FC<{
   );
 };
 
+/**
+ * For each SavedActivity that matches the query, render each Activity from the
+ * SavedActivity.history.
+ */
 const LibraryMenuSavedActivityView: FC<{
   activity: SavedActivity;
-  addFromLibrary(a: Activity): void;
+  addFromLibrary(a: Activity, saved: SavedActivity): void;
 }> = ({ activity, addFromLibrary }) => {
   const user = useUser();
 
@@ -483,16 +501,17 @@ const LibraryMenuSavedActivityView: FC<{
           {/** TODO Display `activity.name` as title section and use background-color grouping */}
           {pastActivities.length === 0 ? (
             <Typography variant="body1" color="textSecondary">
+              {/** TODO This displays for things that have history actuall... */}
               No history for {activity.name}
             </Typography>
           ) : (
-            //        <ResponsiveContainer height={200} width="100%">
-            //           <BarChart data={pastActivities}>
-            //              <Bar dataKey="position" fill="#8884d8" />
-            //             </BarChart>
-            //            </ResponsiveContainer>
             pastActivities.map(a => (
-              <Rows key={a.id} center between onClick={() => addFromLibrary(a)}>
+              <Rows
+                key={a.id}
+                center
+                between
+                onClick={() => addFromLibrary(a, activity)}
+              >
                 <p>{a.name}</p>
                 <DataStateView
                   data={buildDate(a.timestamp)}

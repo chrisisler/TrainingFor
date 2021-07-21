@@ -343,7 +343,7 @@ const TrainingTemplatePreview: FC<{
             }))
         )
       ),
-    [user.uid, template]
+    [user.uid, template.logIds]
   );
 
   const [latestLogDate] = useDataState(async () => {
