@@ -482,7 +482,7 @@ const TrainingLogsCalendar: FC = () => {
             if (!logsByMonth[month]) logsByMonth[month] = {};
             // Add TrainingLog entry for the date it was performed
             // This assumes only ONE training log per day
-            logsByMonth[month][date.getDate()] = doc.id;
+            logsByMonth[month][date.getDate() - 1] = doc.id;
           });
           return logsByMonth;
         }),
@@ -717,7 +717,7 @@ const TrainingCalendarLog: FC<{
                             {Months[logDate.getMonth()].slice(0, 3)}
                           </Typography>
                           <Typography variant="body1" color="textSecondary">
-                            {logDate.getDate() + 1}
+                            {logDate.getDate()}
                           </Typography>
                         </Columns>
                         <Columns>
