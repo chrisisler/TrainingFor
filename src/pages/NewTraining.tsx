@@ -11,7 +11,7 @@ import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { Paths } from '../constants';
+import { Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
@@ -36,11 +36,13 @@ export const NewTraining: FC = () => {
         .then(({ empty, docs }) => (empty ? DataState.Empty : docs[0].data())),
     [user.uid]
   );
+
   const prevLogDate = DataState.map<TrainingLog, Date>(
     prevLog,
     log => TrainingLog.getDate(log) ?? DataState.Empty
   );
 
+  // Map of template id's to the template data for each template
   const [templates] = useDataState<Map<string, TrainingTemplate>>(
     () =>
       db
@@ -52,15 +54,19 @@ export const NewTraining: FC = () => {
     [user.uid]
   );
 
-  const selectedTemplate = useMemo(
+  const selectedTemplate: DataState<TrainingTemplate> = useMemo(
     () =>
       DataState.map(templates, map => map.get(templateId) ?? DataState.Empty),
     [templates, templateId]
   );
 
   const createTrainingLog = useCallback(async () => {
-    const { size } = await db.user(user.uid).collection(DbPath.UserLogs).get();
-    const title = `Training Log ${size + 1}`;
+    const templateTitle = DataState.isReady(selectedTemplate)
+      ? selectedTemplate
+      : '';
+    const title = `${Weekdays[new Date().getDay()]} ${
+      templateTitle || 'Training'
+    }`;
     const newLog = TrainingLog.create({
       title,
       authorId: user.uid,
