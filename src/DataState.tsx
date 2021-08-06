@@ -6,11 +6,38 @@ import { Sorry } from './components/Sorry';
 const DataStateEmpty = 'DataState::Empty' as const;
 const DataStateLoading = 'DataState::Loading' as const;
 
+/**
+ * @typedef `DataState.Empty` Represents a data-less state.
+ * @typedef `DataState.Loading` Represents a data-is-loading state.
+ * @typedef `DataState.Error` Representing a failure state has occurred.
+ * @typedef `T` Representing ready data and of the specified type.
+ */
 export type DataState<T> =
   | typeof DataStateEmpty
   | typeof DataStateLoading
   | Error
   | T;
+
+/** Wait for all provided DataStates to be ready. */
+const dataStateAll: DataStateAll = (...dss) => {
+  const notReady = dss.find(ds => !DataState.isReady(ds));
+  if (notReady) return notReady;
+  return dss;
+};
+
+interface DataStateAll {
+  <A>(ds1: DataState<A>): DataState<[A]>;
+  <A, B>(ds1: DataState<A>, ds2: DataState<B>): DataState<[A, B]>;
+  <A, B, C>(ds1: DataState<A>, ds2: DataState<B>, ds3: DataState<C>): DataState<
+    [A, B, C]
+  >;
+  <A, B, C, D>(
+    ds1: DataState<A>,
+    ds2: DataState<B>,
+    ds3: DataState<C>,
+    ds4: DataState<D>
+  ): DataState<[A, B, C, D]>;
+}
 
 // eslint-disable-next-line
 export const DataState = {
@@ -64,15 +91,12 @@ export const DataState = {
   /**
    * Converts an array of DataState into a DataState<T[]>.
    *
-   * @usage DataState.all<[string, number]>(str, num);
+   * Providing generics is required for TypeScript to recognize the ready
+   * result.
+   *
+   * @example DataState.all<[string, number]>(str, num);
    */
-  all: <T extends readonly unknown[]>(
-    ...dss: readonly DataState<T[number]>[]
-  ): DataState<[...T]> => {
-    const notReady = dss.find(ds => !DataState.isReady(ds));
-    if (notReady) return notReady as Exclude<DataState<T[number]>, T[number]>;
-    return dss as DataState<[...T]>;
-  },
+  all: dataStateAll,
 };
 
 export const useDataState = <T extends unknown>(

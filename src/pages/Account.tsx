@@ -32,11 +32,18 @@ const baseBg = '#f4f4f4';
  * user's account and logs with a button to follow/unfollow.
  */
 export const Account: FC = () => {
+  const [thisMonth, setThisMonth] = useState(new Date().getMonth());
+
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
   const menu = useMaterialMenu();
   const history = useHistory();
+
+  const monthLength = useMemo(
+    () => getMonthLength(new Date(), thisMonth),
+    [thisMonth]
+  );
 
   const [totalLogCount] = useDataState(
     () =>
@@ -69,6 +76,46 @@ export const Account: FC = () => {
           return user;
         }),
     [userId]
+  );
+
+  const [templates] = useDataState(
+    () =>
+      db
+        .user(userId ?? user.uid)
+        .collection(DbPath.UserTemplates)
+        .withConverter(DbConverter.TrainingTemplate)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => snapshot.docs.map(doc => doc.data())),
+    [userId, user.uid]
+  );
+
+  /** Each TrainingLog.id is bucketed into month and day-of-month. */
+  // Not every month key-value pair exists and same goes for day-of-month
+  const [logs] = useDataState<{
+    [month: number]: { [dayDate: number]: TrainingLog['id'] };
+  }>(
+    () =>
+      db
+        .user(userId ?? user.uid)
+        .collection(DbPath.UserLogs)
+        .withConverter(DbConverter.TrainingLog)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => {
+          const logsByMonth = {};
+          snapshot.docs.forEach(doc => {
+            const timestamp = doc.get('timestamp');
+            const date = (timestamp as firebase.firestore.Timestamp).toDate();
+            const month = date.getMonth();
+            if (!logsByMonth[month]) logsByMonth[month] = {};
+            // Add TrainingLog entry for the date it was performed
+            // This assumes only ONE training log per day
+            logsByMonth[month][date.getDate() - 1] = doc.id;
+          });
+          return logsByMonth;
+        }),
+    [userId, user.uid]
   );
 
   const deleteAccount = useCallback(async () => {
@@ -155,58 +202,135 @@ export const Account: FC = () => {
           </div>
         </ClickAwayListener>
       </Rows>
-      <Columns
-        className={css`
-          text-align: center;
-        `}
+      <DataStateView
+        data={DataState.all(totalLogCount, logCountPast30Days, logs, templates)}
       >
-        <Typography variant="body2">Training Logs</Typography>
-        {DataState.isReady(totalLogCount) && (
-          <Typography
-            variant="h2"
-            className={css`
-              line-height: 0.9em !important;
-            `}
-          >
-            {totalLogCount}
-          </Typography>
-        )}
-      </Columns>
-      <Rows
-        pad={Pad.Small}
-        className={css`
-          height: min-height;
-          padding: 0 ${Pad.Large};
-        `}
-      >
-        {DataState.isReady(logCountPast30Days) && (
-          <Rows
-            center
-            pad={Pad.Small}
-            className={css`
-              border-radius: 16px;
-              border: 0;
-              padding: ${Pad.Small} ${Pad.Medium};
-              background-color: #fff;
-              box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
-            `}
-          >
-            <CircularProgressWithLabel
-              value={100 * (logCountPast30Days / 30)}
-            />
-            <Columns center>
-              <Typography variant="subtitle2" color="textSecondary">
-                Past 30 days
-              </Typography>
-              <Typography variant="h6" color="textPrimary">
-                {logCountPast30Days}
+        {([totalLogCount, logCountPast30Days, logs, templates]) => (
+          <>
+            <Columns
+              className={css`
+                text-align: center;
+              `}
+            >
+              <Typography variant="body2">Training Logs</Typography>
+              <Typography
+                variant="h2"
+                className={css`
+                  line-height: 0.9em !important;
+                `}
+              >
+                {totalLogCount}
               </Typography>
             </Columns>
-          </Rows>
+            <Rows
+              pad={Pad.Small}
+              className={css`
+                height: min-height;
+                padding: 0 ${Pad.Large};
+              `}
+            >
+              <Rows
+                center
+                pad={Pad.Small}
+                className={css`
+                  border-radius: 16px;
+                  border: 0;
+                  padding: ${Pad.Small} ${Pad.Medium};
+                  background-color: #fff;
+                  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
+                `}
+              >
+                <CircularProgressWithLabel
+                  value={100 * (logCountPast30Days / 30)}
+                />
+                <Columns center>
+                  <Typography variant="subtitle2" color="textSecondary">
+                    Past 30 days
+                  </Typography>
+                  <Typography variant="h6" color="textPrimary">
+                    {logCountPast30Days}
+                  </Typography>
+                </Columns>
+              </Rows>
+            </Rows>
+            <Columns
+              className={css`
+                padding: ${Pad.Small} 0;
+                background-color: #fff;
+                border-radius: 20px;
+                box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
+              `}
+            >
+              <Rows
+                center
+                pad={Pad.Medium}
+                className={css`
+                  justify-content: center;
+                `}
+              >
+                <IconButton
+                  aria-label="View previous month of logs"
+                  size="small"
+                  onClick={() => {
+                    setThisMonth(thisMonth - 1);
+                  }}
+                >
+                  <ChevronLeft />
+                </IconButton>
+                <Typography variant="body2" color="textSecondary">
+                  {Months[thisMonth]}
+                </Typography>
+                <IconButton
+                  aria-label="View next month of logs"
+                  size="small"
+                  onClick={() => {
+                    setThisMonth(thisMonth + 1);
+                  }}
+                >
+                  <ChevronRight />
+                </IconButton>
+              </Rows>
+              <Rows
+                className={css`
+                  flex-wrap: wrap;
+                `}
+              >
+                {Array(monthLength)
+                  .fill(null)
+                  .map((_, dayOfMonth) => (
+                    <TrainingCalendarLog
+                      key={dayOfMonth}
+                      dayOfMonth={dayOfMonth}
+                      logId={logs?.[thisMonth]?.[dayOfMonth]}
+                    />
+                  ))}
+              </Rows>
+            </Columns>
+            {templates.length ? (
+              <Rows
+                pad={Pad.Medium}
+                className={css`
+                  overflow-x: scroll;
+                  overflow-y: hidden;
+                  margin-left: ${Pad.Large};
+                  & > *:last-child {
+                    margin-right: ${Pad.Large};
+                  }
+                `}
+              >
+                <>
+                  {templates.map(t => (
+                    <TrainingTemplatePreview key={t.id} template={t} />
+                  ))}
+                  <TrainingTemplateCreate />
+                </>
+              </Rows>
+            ) : (
+              <TrainingTemplateCreate />
+            )}
+          </>
         )}
-      </Rows>
-      <TrainingLogsCalendar />
-      <TrainingTemplatesView />
+      </DataStateView>
     </Columns>
   );
 };
@@ -447,109 +571,6 @@ const TrainingTemplatePreview: FC<{
   );
 };
 
-/**
- * Presents the authenticated user's TrainingLog collection projected over a
- * day-by-day calendar month display.
- */
-const TrainingLogsCalendar: FC = () => {
-  const { userId } = useParams<{ userId?: string }>();
-  const user = useUser();
-
-  const [thisMonth, setThisMonth] = useState(new Date().getMonth());
-  const monthLength = useMemo(
-    () => getMonthLength(new Date(), thisMonth),
-    [thisMonth]
-  );
-
-  /** Each TrainingLog.id is bucketed into month and day-of-month. */
-  // Not every month key-value pair exists and same goes for day-of-month
-  const [logs] = useDataState<{
-    [month: number]: { [dayDate: number]: TrainingLog['id'] };
-  }>(
-    () =>
-      db
-        .user(userId ?? user.uid)
-        .collection(DbPath.UserLogs)
-        .withConverter(DbConverter.TrainingLog)
-        .orderBy('timestamp', 'desc')
-        .get()
-        .then(snapshot => {
-          const logsByMonth = {};
-          snapshot.docs.forEach(doc => {
-            const timestamp = doc.get('timestamp');
-            const date = (timestamp as firebase.firestore.Timestamp).toDate();
-            const month = date.getMonth();
-            if (!logsByMonth[month]) logsByMonth[month] = {};
-            // Add TrainingLog entry for the date it was performed
-            // This assumes only ONE training log per day
-            logsByMonth[month][date.getDate() - 1] = doc.id;
-          });
-          return logsByMonth;
-        }),
-    [userId, user.uid]
-  );
-
-  return (
-    <DataStateView data={logs}>
-      {logs => (
-        <Columns
-          className={css`
-            padding: ${Pad.Small} 0;
-            background-color: #fff;
-            border-radius: 20px;
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
-          `}
-        >
-          <Rows
-            center
-            pad={Pad.Medium}
-            className={css`
-              justify-content: center;
-            `}
-          >
-            <IconButton
-              aria-label="View previous month of logs"
-              size="small"
-              onClick={() => {
-                setThisMonth(thisMonth - 1);
-              }}
-            >
-              <ChevronLeft />
-            </IconButton>
-            <Typography variant="body2" color="textSecondary">
-              {Months[thisMonth]}
-            </Typography>
-            <IconButton
-              aria-label="View next month of logs"
-              size="small"
-              onClick={() => {
-                setThisMonth(thisMonth + 1);
-              }}
-            >
-              <ChevronRight />
-            </IconButton>
-          </Rows>
-          <Rows
-            className={css`
-              flex-wrap: wrap;
-            `}
-          >
-            {Array(monthLength)
-              .fill(null)
-              .map((_, dayOfMonth) => (
-                <TrainingCalendarLog
-                  key={dayOfMonth}
-                  dayOfMonth={dayOfMonth}
-                  logId={logs?.[thisMonth]?.[dayOfMonth]}
-                />
-              ))}
-          </Rows>
-        </Columns>
-      )}
-    </DataStateView>
-  );
-};
-
 const isLeapYear = (year: number): boolean =>
   (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 
@@ -574,53 +595,6 @@ const getMonthLength = (now: Date, monthIndex: number): number => {
     31,
   ];
   return lengths[monthIndex];
-};
-
-const TrainingTemplatesView: FC = () => {
-  /** The ID of the selected user. Is `undefined` if viewing our own page. */
-  const { userId } = useParams<{ userId?: string }>();
-  const user = useUser();
-
-  const [templates] = useDataState(
-    () =>
-      db
-        .user(userId ?? user.uid)
-        .collection(DbPath.UserTemplates)
-        .withConverter(DbConverter.TrainingTemplate)
-        .orderBy('timestamp', 'desc')
-        .get()
-        .then(snapshot => snapshot.docs.map(doc => doc.data())),
-    [userId, user.uid]
-  );
-
-  return (
-    <DataStateView data={templates}>
-      {templates =>
-        templates.length ? (
-          <Rows
-            pad={Pad.Medium}
-            className={css`
-              overflow-x: scroll;
-              overflow-y: hidden;
-              margin-left: ${Pad.Large};
-              & > *:last-child {
-                margin-right: ${Pad.Large};
-              }
-            `}
-          >
-            <>
-              {templates.map(t => (
-                <TrainingTemplatePreview key={t.id} template={t} />
-              ))}
-              <TrainingTemplateCreate />
-            </>
-          </Rows>
-        ) : (
-          <TrainingTemplateCreate />
-        )
-      }
-    </DataStateView>
-  );
 };
 
 /**
@@ -698,9 +672,7 @@ const TrainingCalendarLog: FC<{
                   padding: ${Pad.Medium};
                 `}
               >
-                <DataStateView
-                  data={DataState.all<[TrainingLog, Date]>(log, logDate)}
-                >
+                <DataStateView data={DataState.all(log, logDate)}>
                   {([log, logDate]) => (
                     <>
                       <Rows pad={Pad.Medium} center>
