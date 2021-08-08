@@ -32,6 +32,8 @@ interface Props {
   maxWidth?: boolean;
 }
 
+export const baseBg = '#f4f4f4';
+
 const Div = styled.div`
   ${({ maxWidth }: Props) => (maxWidth ? 'width: 100%' : '')};
   padding: ${({ padding }: Props) => padding};

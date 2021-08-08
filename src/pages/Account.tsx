@@ -23,9 +23,7 @@ import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
-import { Color, Columns, Pad, Rows } from '../style';
-
-const baseBg = '#f4f4f4';
+import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
 /**
  * Presents the currently authenticated user and their logs OR presents another

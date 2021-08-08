@@ -6,7 +6,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, Close } from '@material-ui/icons';
+import { Add, ChevronRight, Close } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, {
   FC,
@@ -237,14 +237,16 @@ export const ActivityView = forwardRef<
     }
   }, [activityDocument, activity.repCountUnit]);
 
+  /** Styles used for the buttons which control reps vs time vs etc. */
   const activityUnitButtonStyle = css`
     color: ${Color.ActionPrimaryGray};
     border-radius: 8px;
     border: 0;
     border-bottom: 1px solid ${Color.ActionSecondaryGray};
-    padding: ${Pad.XSmall} ${Pad.Small};
+    padding: ${Pad.XSmall} ${Pad.Medium};
     font-size: ${Font.Small};
     background-color: transparent;
+    min-width: fit-content !important;
     outline: none;
   `;
 
@@ -252,10 +254,12 @@ export const ActivityView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        padding: ${Pad.Medium} 0;
-        margin: 0 ${Pad.Medium};
+        padding: ${Pad.Medium} ${Pad.Small} 0;
+        margin: ${Pad.Small} ${Pad.Medium};
+        border-radius: 20px;
+        background-color: #fff;
       `}
-      pad={Pad.Medium}
+      pad={Pad.Small}
     >
       <Rows center>
         {editable && (
@@ -282,7 +286,7 @@ export const ActivityView = forwardRef<
             />
           </button>
         )}
-        <Columns>
+        <Columns maxWidth>
           <ClickAwayListener onClickAway={menu.close}>
             <div>
               <button
@@ -294,7 +298,7 @@ export const ActivityView = forwardRef<
                 className={css`
                   color: ${Color.FontPrimary};
                   font-size: ${Font.Medium};
-                  font-weight: 500;
+                  font-weight: 400;
                   padding: 0;
                   border: none;
                   background-color: transparent;
@@ -303,7 +307,7 @@ export const ActivityView = forwardRef<
                   text-align: left;
                 `}
               >
-                {activity.name}
+                <ActivityNameBold name={activity.name} />
               </button>
               <Menu
                 id="activity-menu"
@@ -341,59 +345,69 @@ export const ActivityView = forwardRef<
           </ClickAwayListener>
           <TallyMarks sets={activity.sets} />
         </Columns>
-        <Rows
-          center
-          className={css`
-            margin-left: auto;
-          `}
-        >
+      </Rows>
+      <Rows pad={Pad.Medium}>
+        <Columns pad={Pad.Medium}>
+          <Rows
+            className={css`
+              align-items: flex-end;
+            `}
+          >
+            <button
+              disabled={!editable}
+              onClick={cycleWeightUnit}
+              className={activityUnitButtonStyle}
+            >
+              {activity.weightUnit}
+            </button>
+            <button
+              disabled={!editable}
+              onClick={cycleRepCountUnit}
+              className={activityUnitButtonStyle}
+            >
+              {activity.repCountUnit}
+            </button>
+            <ChevronRight
+              fontSize="small"
+              className={css`
+                color: ${Color.ActionSecondaryGray} !important;
+              `}
+            />
+          </Rows>
           {activity.weightUnit !== ActivityWeightUnit.Weightless && (
             <p
               className={css`
                 font-size: ${Font.Small};
+                color: ${Color.FontSecondary};
               `}
             >
               Volume: {Activity.getVolume(activity)}
             </p>
           )}
-          <button
-            disabled={!editable}
-            onClick={cycleWeightUnit}
-            className={activityUnitButtonStyle}
-          >
-            {activity.weightUnit}
-          </button>
-          <button
-            disabled={!editable}
-            onClick={cycleRepCountUnit}
-            className={activityUnitButtonStyle}
-          >
-            {activity.repCountUnit}
-          </button>
-        </Rows>
+        </Columns>
+        <FlipMove
+          enterAnimation="fade"
+          leaveAnimation="fade"
+          className={css`
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: scroll;
+          `}
+        >
+          {activity.sets.map(({ uuid }, index) => (
+            <ActivitySetView
+              key={uuid}
+              index={index}
+              activity={activity}
+              editable={editable}
+              activityDocument={activityDocument}
+              isTemplate={isTemplate}
+            />
+          ))}
+        </FlipMove>
       </Rows>
-      <FlipMove
-        enterAnimation="fade"
-        leaveAnimation="fade"
-        className={css`
-          display: flex;
-          flex-wrap: wrap;
-          width: 100%;
-          max-height: 300px;
-          overflow-y: scroll;
-        `}
-      >
-        {activity.sets.map(({ uuid }, index) => (
-          <ActivitySetView
-            key={uuid}
-            index={index}
-            activity={activity}
-            editable={editable}
-            activityDocument={activityDocument}
-            isTemplate={isTemplate}
-          />
-        ))}
-      </FlipMove>
       <Columns pad={Pad.Small}>
         <DataStateView data={comments} loading={() => null} error={() => null}>
           {comments =>
@@ -599,138 +613,130 @@ const ActivitySetView = forwardRef<
   );
 
   return (
-    <Columns
-      ref={ref}
-      className={css`
-        border-bottom: 2px solid ${statusColor};
-        margin: 0 ${Pad.Small} ${Pad.XSmall} 0;
-        padding: 0 ${Pad.XSmall};
-        flex: 0.5;
-      `}
-    >
-      <Rows center between>
-        <Rows>
-          <ClickAwayListener onClickAway={menu.close}>
-            <div>
-              <IconButton
-                disabled={!editable}
-                size="small"
-                aria-label="Open set menu"
-                aria-controls="set-menu"
-                aria-haspopup="true"
-                onClick={menu.open}
-              >
-                <Typography
-                  variant="subtitle1"
-                  className={css`
-                    color: ${Color.ActionPrimaryBlue};
-                    font-style: italic;
-                    line-height: 1 !important;
-                    width: 2ch;
-                    font-size: ${Font.MedLarge};
-                  `}
-                >
-                  {index + 1}
-                </Typography>
-              </IconButton>
-              <Menu
-                id="set-menu"
-                anchorEl={menu.ref}
-                open={!!menu.ref}
-                onClose={menu.close}
-                MenuListProps={{ dense: true }}
-              >
-                <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
-                <MenuItem onClick={deleteSet}>
-                  <b>Delete set</b>
-                </MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
-        </Rows>
-        <Rows
-          className={css`
-            align-items: baseline;
-          `}
-        >
-          {weightUnit !== ActivityWeightUnit.Weightless && (
-            <>
-              <input
-                disabled={!editable}
-                ref={resizeWeightInput}
-                type="tel"
-                min={0}
-                max={999}
-                name="weight"
-                value={weight}
-                onFocus={event => {
-                  event.currentTarget.select();
-                }}
-                onChange={event => {
-                  if (Number.isNaN(event.target.value)) return;
-                  setWeight(Number(event.target.value));
-                }}
-                onBlur={event => {
-                  sets[index].weight = Number(event.target.value);
-                  updateSets(sets);
-                }}
-                className={css`
-                  ${setInputStyle(weight)}
-                  text-align: end;
-                `}
-              />
-              <X>x</X>
-            </>
-          )}
-          <input
-            disabled={!editable}
-            ref={resizeRepCountInput}
-            type="tel"
-            min={0}
-            max={999}
-            name="repCount"
-            value={repCount ?? 0}
-            onFocus={event => {
-              event.currentTarget.select();
-            }}
-            onChange={event => {
-              if (Number.isNaN(event.target.value)) return;
-              setRepCount(Number(event.target.value));
-            }}
-            onBlur={event => {
-              sets[index].repCount = Number(event.target.value);
-              updateSets(sets);
-            }}
-            className={css`
-              ${setInputStyle(repCount ?? 0)}
-            `}
-          />
-          {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
-          {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
-          {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>}
-        </Rows>
-      </Rows>
-      <button
-        disabled={!editable}
-        onClick={cycleSetStatus}
+    <Rows ref={ref} center between maxWidth>
+      <Rows
         className={css`
-          color: ${Color.FontPrimary};
-          padding: ${Pad.XSmall};
-          font-size: ${Font.Small};
-          border: 0;
-          font-weight: 500;
-          background-color: transparent;
-          letter-spacing: 0.02em;
-          text-transform: uppercase;
-          font-family: system-ui, Verdana, sans-serif;
-          outline: none;
-          width: 100%;
-          text-align: left;
+          align-items: baseline;
         `}
       >
-        {set.status}
-      </button>
-    </Columns>
+        {weightUnit !== ActivityWeightUnit.Weightless && (
+          <>
+            <input
+              disabled={!editable}
+              ref={resizeWeightInput}
+              type="tel"
+              min={0}
+              max={999}
+              name="weight"
+              value={weight}
+              onFocus={event => {
+                event.currentTarget.select();
+              }}
+              onChange={event => {
+                if (Number.isNaN(event.target.value)) return;
+                setWeight(Number(event.target.value));
+              }}
+              onBlur={event => {
+                sets[index].weight = Number(event.target.value);
+                updateSets(sets);
+              }}
+              className={css`
+                ${setInputStyle(weight)}
+                text-align: end;
+              `}
+            />
+            <X>x</X>
+          </>
+        )}
+        <input
+          disabled={!editable}
+          ref={resizeRepCountInput}
+          type="tel"
+          min={0}
+          max={999}
+          name="repCount"
+          value={repCount ?? 0}
+          onFocus={event => {
+            event.currentTarget.select();
+          }}
+          onChange={event => {
+            if (Number.isNaN(event.target.value)) return;
+            setRepCount(Number(event.target.value));
+          }}
+          onBlur={event => {
+            sets[index].repCount = Number(event.target.value);
+            updateSets(sets);
+          }}
+          className={css`
+            ${setInputStyle(repCount ?? 0)}
+          `}
+        />
+        {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
+        {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
+        {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>}
+      </Rows>
+      <div>
+        <button
+          disabled={!editable}
+          onClick={cycleSetStatus}
+          className={css`
+            color: ${Color.FontPrimary};
+            padding: ${Pad.XSmall};
+            font-size: ${Font.Small};
+            border: 0;
+            font-weight: 500;
+            background-color: transparent;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            font-family: system-ui, Verdana, sans-serif;
+            outline: none;
+            width: 100%;
+            text-align: left;
+            color: ${statusColor};
+          `}
+        >
+          {set.status}
+        </button>
+      </div>
+      <ClickAwayListener onClickAway={menu.close}>
+        <div>
+          <IconButton
+            disabled={!editable}
+            size="small"
+            aria-label="Open set menu"
+            aria-controls="set-menu"
+            aria-haspopup="true"
+            onClick={menu.open}
+          >
+            <Typography
+              variant="subtitle1"
+              className={css`
+                color: ${Color.ActionSecondaryGray};
+                font-weight: 600 !important;
+                font-style: italic;
+                line-height: 1 !important;
+                width: 2ch;
+                font-size: ${Font.MedLarge};
+              `}
+            >
+              {index + 1}
+            </Typography>
+          </IconButton>
+          <Menu
+            id="set-menu"
+            anchorEl={menu.ref}
+            open={!!menu.ref}
+            onClose={menu.close}
+            MenuListProps={{ dense: true }}
+          >
+            <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
+            <MenuItem onClick={deleteSet}>
+              <b>Delete set</b>
+            </MenuItem>
+          </Menu>
+        </div>
+      </ClickAwayListener>
+    </Rows>
   );
 });
 
@@ -784,9 +790,46 @@ const X: FC = ({ children }) => (
   <p
     className={css`
       color: ${Color.ActionSecondaryGray};
-      font-style: italic;
+      font-size: ${Font.Small};
     `}
   >
     {children}
   </p>
 );
+
+/**
+ * Displays the given Activity name with several or none parts in
+ * bold based on the number of words.
+ */
+const ActivityNameBold: FC<{ name: string }> = ({ name }) => {
+  const parts = name.split(/\s+/g);
+  const numParts = parts.length;
+  if (numParts === 0) {
+    throw Error('Unreachable');
+  } else if (numParts === 1) {
+    return (
+      <>
+        <b>{name}</b>
+      </>
+    );
+  } else if (numParts === 2) {
+    const [first, ...rest] = parts;
+    return (
+      <>
+        <b>{first}</b> {rest.join(' ')}
+      </>
+    );
+  } else if (numParts >= 3) {
+    const [first, second, ...rest] = parts;
+    return (
+      <>
+        <b>
+          {first} {second}
+        </b>{' '}
+        {rest.join(' ')}
+      </>
+    );
+  } else {
+    throw Error('Unreachable');
+  }
+};

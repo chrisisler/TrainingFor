@@ -36,7 +36,7 @@ import {
   TrainingLog,
   TrainingTemplate,
 } from '../interfaces';
-import { Color, Columns, Font, Pad, Rows } from '../style';
+import { baseBg, Color, Columns, Font, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
@@ -225,6 +225,7 @@ export const TrainingLogEditor: FC = () => {
           pad={Pad.Small}
           className={css`
             height: 100%;
+            background-color: ${baseBg};
           `}
         >
           <DataStateView data={activities}>
@@ -329,7 +330,6 @@ export const TrainingLogEditor: FC = () => {
                     variant="contained"
                     fullWidth
                     color="primary"
-                    size="small"
                     onClick={() => {
                       // Set to non-null to render the input
                       setActivityName('');

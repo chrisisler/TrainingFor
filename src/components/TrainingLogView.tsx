@@ -22,11 +22,6 @@ import { AppLink } from './AppLink';
 export const activityViewContainerStyle = css`
   display: flex;
   flex-direction: column;
-
-  & > :not(:last-child) {
-    border-bottom: 1px solid ${Color.ActionSecondaryGray};
-    margin-bottom: ${Pad.Medium};
-  }
 `;
 
 /**
