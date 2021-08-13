@@ -111,14 +111,14 @@ export const SavedActivity = {
 // eslint-disable-next-line
 export const Activity = {
   create: (
-    data: Pick<Activity, 'name' | 'position' | 'logId' | 'timestamp'>
+    data: Pick<Activity, 'name' | 'position' | 'logId' | 'timestamp' | 'sets'>
   ): Omit<Activity, 'id'> => ({
     name: data.name,
     position: data.position,
     logId: data.logId,
     timestamp: data.timestamp,
     notes: null,
-    sets: [],
+    sets: data.sets,
     repCountUnit: ActivityRepCountUnit.Repetitions,
     weightUnit: ActivityWeightUnit.Pounds, // 'MURRICA!!
   }),

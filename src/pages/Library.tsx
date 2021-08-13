@@ -323,7 +323,7 @@ const AddHistoryForm: FC<{
         s => !activity.history.some(h => h.activityId === s.activityId)
       );
       const diff = selected.length - nonduped.length;
-      if (diff) toast.info(`Skipping ${diff} duplicate(s).`);
+      if (diff) toast.info(`Adding ${selected.length} (${diff} duplicates).`);
       const history = activity.history.concat(nonduped);
       try {
         await db

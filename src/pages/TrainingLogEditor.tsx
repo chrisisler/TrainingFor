@@ -150,6 +150,7 @@ export const TrainingLogEditor: FC = () => {
           position: prevMaxPosition + 1,
           logId: log.id,
           timestamp: log.timestamp,
+          sets: [],
         });
         await activitiesColl.add(entry);
       } catch (error) {
@@ -177,7 +178,7 @@ export const TrainingLogEditor: FC = () => {
    * insert the new activity into the history.
    */
   const addFromLibrary = useCallback(
-    async ({ name }: Activity, saved: SavedActivity) => {
+    async (activity: Activity, saved: SavedActivity) => {
       if (!DataState.isReady(activities) || !DataState.isReady(log)) {
         toast.warn('Data not ready.');
         return;
@@ -189,7 +190,8 @@ export const TrainingLogEditor: FC = () => {
         const prevMaxPosition =
           activities[activities.length - 1]?.position ?? 0;
         const entry = Activity.create({
-          name,
+          name: activity.name,
+          sets: activity.sets,
           position: prevMaxPosition + 1,
           logId: log.id,
           timestamp: log.timestamp,
@@ -206,9 +208,12 @@ export const TrainingLogEditor: FC = () => {
           activityId: docRef.id,
           logId: log.id,
         });
+        // Was saving data in the wrong place previously. Causing title-less
+        // Templates to appear in the NewTraining UI.
         await db
           .user(user.uid)
-          .collection(DbPath.UserTemplates)
+          .collection(DbPath.UserActivityLibrary)
+          .withConverter(DbConverter.SavedActivity)
           .doc(saved.id)
           .set({ history }, { merge: true });
       } catch (error) {
@@ -280,7 +285,7 @@ export const TrainingLogEditor: FC = () => {
                     height: 22vh;
                     overflow-y: scroll;
                     border-radius: 8px;
-                    border: 1px solid ${Color.ActionPrimaryBlue};
+                    background-color: #fff;
                     padding: ${Pad.Small} ${Pad.Medium};
                   `}
                 >
@@ -394,13 +399,13 @@ export const TrainingLogEditor: FC = () => {
                   className={css`
                     box-sizing: content-box;
                     width: 100%;
-                    border: 1px solid ${Color.ActionPrimaryBlue};
+                    border: 0;
                     box-shadow: none;
                     outline: none;
                     font-weight: 400;
                     color: #000;
                     padding: ${Pad.Small} ${Pad.Medium};
-                    border-radius: 8px;
+                    border-radius: 5px;
 
                     &::placeholder {
                       font-weight: 600;
@@ -437,7 +442,7 @@ const LibraryMenu: FC<{
             // Firebase does not give an elegant way to filter this way
             // TODO Create normalized field on SavedActivity.name so it can
             // support being searched
-            if (sa.name.toLowerCase().startsWith(query)) return [sa];
+            if (sa.name.toLowerCase().includes(query)) return [sa];
             return [];
           })
         ),
@@ -451,7 +456,7 @@ const LibraryMenu: FC<{
           <Columns pad={Pad.Small}>
             {savedActivities.map(sa => (
               <LibraryMenuSavedActivityView
-                activity={sa}
+                savedActivity={sa}
                 key={sa.id}
                 addFromLibrary={addFromLibrary}
               />
@@ -467,19 +472,24 @@ const LibraryMenu: FC<{
   );
 };
 
+const smallFont = css`
+  font-size: ${Font.Small};
+  color: ${Color.FontSecondary};
+`;
+
 /**
  * For each SavedActivity that matches the query, render each Activity from the
  * SavedActivity.history.
  */
 const LibraryMenuSavedActivityView: FC<{
-  activity: SavedActivity;
+  savedActivity: SavedActivity;
   addFromLibrary(a: Activity, saved: SavedActivity): void;
-}> = ({ activity, addFromLibrary }) => {
+}> = ({ savedActivity, addFromLibrary }) => {
   const user = useUser();
 
   const [pastActivities] = useDataState(() => {
     // Fetch all activities for the SavedActivity we're looking at
-    const mapped = activity.history.map(({ activityId, logId }) =>
+    const mapped = savedActivity.history.map(({ activityId, logId }) =>
       db
         .user(user.uid)
         .collection(DbPath.UserLogs)
@@ -491,36 +501,59 @@ const LibraryMenuSavedActivityView: FC<{
         .then(doc => doc.data())
     );
     // Convert Promise<(Activity | undefined)>[] to Activity[]
-    return Promise.all(mapped).then(m => m.filter((a): a is Activity => !!a));
-  }, [user.uid, activity.history]);
+    return Promise.all(mapped).then(activities => {
+      const filtered = activities.filter((a): a is Activity => !!a);
+      // Sort activities by date
+      filtered.sort((a, b) => {
+        const dateA = (a.timestamp as firebase.firestore.Timestamp)?.toDate();
+        const dateB = (b.timestamp as firebase.firestore.Timestamp)?.toDate();
+        if (!dateA || !dateB) return NaN;
+        if (dateA === dateB) return 0;
+        return dateA > dateB ? 1 : -1;
+      });
+      return filtered;
+    });
+  }, [user.uid, savedActivity.history]);
 
   return (
-    <DataStateView data={pastActivities} empty={() => <p>No history!</p>}>
+    <DataStateView
+      data={pastActivities}
+      empty={() => <p>No history!</p>}
+      loading={() => null}
+    >
       {pastActivities => (
         <Columns pad={Pad.Medium}>
           {/** TODO Display `activity.name` as title section and use background-color grouping */}
           {pastActivities.length === 0 ? (
             <Typography variant="body1" color="textSecondary">
               {/** TODO This displays for things that have history actuall... */}
-              No history for {activity.name}
+              No history for {savedActivity.name}
             </Typography>
           ) : (
-            pastActivities.map(a => (
-              <Rows
-                key={a.id}
-                center
-                between
-                onClick={() => addFromLibrary(a, activity)}
-              >
-                <p>{a.name}</p>
-                <DataStateView
-                  data={buildDate(a.timestamp)}
-                  loading={() => null}
-                  error={() => null}
+            pastActivities.map(activity => (
+              <Columns key={activity.id}>
+                <Rows
+                  center
+                  between
+                  onClick={() => addFromLibrary(activity, savedActivity)}
                 >
-                  {date => <p>{date}</p>}
-                </DataStateView>
-              </Rows>
+                  <p>{activity.name}</p>
+                  <DataStateView
+                    data={buildDate(activity.timestamp)}
+                    loading={() => null}
+                    error={() => null}
+                  >
+                    {date => <p className={smallFont}>{date}</p>}
+                  </DataStateView>
+                </Rows>
+                <Rows pad={Pad.Small}>
+                  {activity.sets.map(set => (
+                    <p className={smallFont}>
+                      {set.weight}x{set.repCount}
+                    </p>
+                  ))}
+                </Rows>
+              </Columns>
             ))
           )}
         </Columns>
