@@ -117,6 +117,15 @@ export const ActivityView = forwardRef<
     }
   }, [activityDocument, activity, menu, activities]);
 
+  const removeAllSets = useCallback(async () => {
+    menu.close();
+    try {
+      await activityDocument.update({ sets: [] });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, menu]);
+
   const deleteActivity = useCallback(() => {
     menu.close();
     try {
@@ -337,6 +346,16 @@ export const ActivityView = forwardRef<
                 <MenuItem onClick={duplicateActivity}>
                   Duplicate activity
                 </MenuItem>
+                {activity.sets.length > 1 && (
+                  <MenuItem
+                    onClick={() => {
+                      if (!window.confirm('Remove all sets?')) return;
+                      removeAllSets();
+                    }}
+                  >
+                    Remove all sets
+                  </MenuItem>
+                )}
                 <MenuItem onClick={deleteActivity}>
                   <b>Delete activity</b>
                 </MenuItem>
