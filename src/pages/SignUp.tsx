@@ -52,6 +52,7 @@ export const SignUp: FC = () => {
         display: grid;
         place-items: center;
         background-color: #eee;
+        padding: 0 ${Pad.Medium};
       `}
     >
       <Columns
@@ -62,7 +63,7 @@ export const SignUp: FC = () => {
           background-color: #fff;
         `}
       >
-        <Typography variant="h4" color="textPrimary" align="center">
+        <Typography variant="h5" color="textPrimary" align="center">
           TrainingFor
         </Typography>
         <TextField
@@ -87,10 +88,16 @@ export const SignUp: FC = () => {
             onChange={event => setPassword(event.target.value)}
           />
         </form>
-        <Button variant="contained" color="primary" onClick={addUser}>
-          Start Training
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={addUser}
+          disabled={!displayName || !email || !password}
+        >
+          Sign Up
         </Button>
         <Button
+          size="small"
           variant="text"
           color="primary"
           onClick={() => {

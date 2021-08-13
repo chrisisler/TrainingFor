@@ -42,12 +42,12 @@ export const LogIn: FC = () => {
 
   // How is the Account page able to work when we aren't adding the user.id as
   // a Users firestore collection entry?
-  const signInAnonymously = useCallback(async () => {
-    if (!window.confirm('Sign in anonymously?')) return;
+  const continueAsGuest = useCallback(async () => {
+    if (!window.confirm('Continue as guest?')) return;
     try {
       const { user } = await auth.signInAnonymously();
       if (!user) throw Error('No user found');
-      const displayName = `Anon-${uuid().slice(0, 5)}`;
+      const displayName = `Guest-${uuid().slice(0, 5)}`;
       await user.updateProfile({ displayName });
     } catch (error) {
       toast.error(error.message);
@@ -62,6 +62,7 @@ export const LogIn: FC = () => {
         display: grid;
         place-items: center;
         background-color: #eee;
+        padding: 0 ${Pad.Medium};
       `}
     >
       <Columns
@@ -72,7 +73,7 @@ export const LogIn: FC = () => {
           background-color: #fff;
         `}
       >
-        <Typography variant="h4" color="textPrimary" align="center">
+        <Typography variant="h5" color="textPrimary" align="center">
           TrainingFor
         </Typography>
         <TextField
@@ -91,10 +92,16 @@ export const LogIn: FC = () => {
             onChange={event => setPassword(event.target.value)}
           />
         </form>
-        <Button variant="contained" color="primary" onClick={logIn}>
-          Start Training
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={logIn}
+          disabled={!email || !password}
+        >
+          Log In
         </Button>
         <Button
+          size="small"
           variant="text"
           component={NavLink}
           color="primary"
@@ -113,9 +120,9 @@ export const LogIn: FC = () => {
               color: ${Color.ActionPrimaryGray};
               font-size: ${Font.Small};
             `}
-            onClick={signInAnonymously}
+            onClick={continueAsGuest}
           >
-            Sign In Anonymously
+            Continue as Guest
           </button>
           <button
             className={css`
