@@ -784,14 +784,14 @@ const ActivityNameBold: FC<{ name: string }> = ({ name }) => {
         <b>{name}</b>
       </>
     );
-  } else if (numParts === 2) {
+  } else if (numParts === 2 || numParts === 3) {
     const [first, ...rest] = parts;
     return (
       <>
         <b>{first}</b> {rest.join(' ')}
       </>
     );
-  } else if (numParts >= 3) {
+  } else if (numParts >= 4) {
     const [first, second, ...rest] = parts;
     return (
       <>
