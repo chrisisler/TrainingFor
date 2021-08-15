@@ -1,13 +1,13 @@
 import { css } from '@emotion/css';
 import {
-  Button,
   ClickAwayListener,
+  Fab,
   IconButton,
   Menu,
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { LocalHotel } from '@material-ui/icons';
+import { Add, LocalHotel } from '@material-ui/icons';
 import {
   createPopper,
   Instance as PopperInstance,
@@ -342,7 +342,6 @@ export const TrainingLogEditor: FC = () => {
     <DataStateView data={log}>
       {log => (
         <Columns
-          pad={Pad.Small}
           className={css`
             height: 100%;
             background-color: ${baseBg};
@@ -386,9 +385,9 @@ export const TrainingLogEditor: FC = () => {
           </DataStateView>
           <Columns
             className={css`
-              border-top: 1px solid ${Color.ActionSecondaryGray};
               min-height: fit-content;
-              padding: ${Pad.Small} ${Pad.Medium};
+              padding: ${Pad.XSmall} ${Pad.Small};
+              background-color: #fff;
             `}
             pad={Pad.Small}
           >
@@ -442,11 +441,12 @@ export const TrainingLogEditor: FC = () => {
               />
             )}
             {activityName === null ? (
-              <>
+              <Rows center between>
                 <ClickAwayListener onClickAway={menu.close}>
                   <div
                     className={css`
                       text-align: center;
+                      max-width: 140px;
                     `}
                   >
                     <IconButton
@@ -493,7 +493,7 @@ export const TrainingLogEditor: FC = () => {
                           );
                         }}
                       >
-                        Edit name
+                        Add notes
                       </MenuItem>
                       {!!window.navigator.share && (
                         <MenuItem
@@ -519,80 +519,85 @@ export const TrainingLogEditor: FC = () => {
                     </Menu>
                   </div>
                 </ClickAwayListener>
-                <Rows center pad={Pad.XSmall}>
-                  <TrainingLogDateView log={log} />
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    color="primary"
-                    onClick={() => {
-                      // Set to non-null to render the input
-                      setActivityName('');
-                      // Wait a tick for the input to render so it may be focused
-                      Promise.resolve().then(() =>
-                        addActivityInputRef.current?.focus()
-                      );
-                    }}
+                <TrainingLogDateView log={log} />
+                {!TrainingLog.isTemplate(log) && (
+                  <label
                     className={css`
-                      /** Necessary due to parent height. */
-                      height: min-content;
+                      position: relative;
                     `}
                   >
-                    + Activity
-                  </Button>
-                  {!TrainingLog.isTemplate(log) && (
-                    <label
+                    <select
+                      value={log.sleepHours}
+                      ref={selectSleepHoursRef}
+                      onChange={async event => {
+                        try {
+                          // Use unary + operator to convert string to number
+                          const sleepHours = +event.target
+                            .value as typeof SleepHours[keyof typeof SleepHours];
+                          // Update sleepHours for the current TrainingLog
+                          await db
+                            .user(user.uid)
+                            .collection(DbPath.UserLogs)
+                            .withConverter(DbConverter.TrainingLog)
+                            .doc(log.id)
+                            .set({ sleepHours }, { merge: true });
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
                       className={css`
-                        position: relative;
+                        border: none;
+                        background: transparent;
+                        appearance: none;
+                        outline: none;
+                        position: absolute;
+                        /** Ensure that clicks hit this element. */
+                        width: 100%;
+                        height: 100%;
+                        /** Goes on top so it takes clicks. */
+                        z-index: 1;
+                        /** Cannot see it but can click it. */
+                        opacity: 0;
                       `}
                     >
-                      <select
-                        value={log.sleepHours}
-                        ref={selectSleepHoursRef}
-                        onChange={async event => {
-                          try {
-                            // Use unary + operator to convert string to number
-                            const sleepHours = +event.target
-                              .value as typeof SleepHours[keyof typeof SleepHours];
-                            // Update sleepHours for the current TrainingLog
-                            await db
-                              .user(user.uid)
-                              .collection(DbPath.UserLogs)
-                              .withConverter(DbConverter.TrainingLog)
-                              .doc(log.id)
-                              .set({ sleepHours }, { merge: true });
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                        className={css`
-                          border: none;
-                          background: transparent;
-                          appearance: none;
-                          outline: none;
-                          position: absolute;
-                          /** Ensure that clicks hit this element. */
-                          width: 100%;
-                          height: 100%;
-                          /** Goes on top so it takes clicks. */
-                          z-index: 1;
-                          /** Cannot see it but can click it. */
-                          opacity: 0;
-                        `}
-                      >
-                        <option aria-label="None" value="-99" >-</option>
-                        {Object.values(SleepHours).map(opt => (
-                          <option key={opt} aria-label={'' + opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                      <LocalHotel fontSize="small" />
-                      {log.sleepHours !== -99 && <p className={smallFont}>{log.sleepHours}h</p>}
-                    </label>
-                  )}
-                </Rows>
-              </>
+                      <option aria-label="None" value="-99">
+                        -
+                      </option>
+                      {Object.values(SleepHours).map(opt => (
+                        <option key={opt} aria-label={'' + opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    <LocalHotel fontSize="small" />
+                    {log.sleepHours !== -99 && (
+                      <p className={smallFont}>{log.sleepHours}h</p>
+                    )}
+                  </label>
+                )}
+                <Fab
+                  variant="extended"
+                  color="primary"
+                  aria-label="Add activity"
+                  size="small"
+                  disableRipple
+                  onClick={() => {
+                    // Set to non-null to render the input
+                    setActivityName('');
+                    // Wait a tick for the input to render so it may be focused
+                    Promise.resolve().then(() =>
+                      addActivityInputRef.current?.focus()
+                    );
+                  }}
+                >
+                  <Add
+                    className={css`
+                      margin-right: ${Pad.XSmall};
+                    `}
+                  />
+                  Activity
+                </Fab>
+              </Rows>
             ) : (
               <Rows maxWidth as="form" onSubmit={addActivity} pad={Pad.Small}>
                 <input
