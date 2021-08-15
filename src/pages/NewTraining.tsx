@@ -62,7 +62,7 @@ export const NewTraining: FC = () => {
 
   const createTrainingLog = useCallback(async () => {
     const templateTitle = DataState.isReady(selectedTemplate)
-      ? selectedTemplate
+      ? selectedTemplate.title
       : '';
     const title = `${Weekdays[new Date().getDay()]} ${
       templateTitle || 'Training'
