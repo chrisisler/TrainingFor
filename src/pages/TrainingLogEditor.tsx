@@ -7,7 +7,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { ChatBubbleOutline } from '@material-ui/icons';
+import { LocalHotel } from '@material-ui/icons';
 import {
   createPopper,
   Instance as PopperInstance,
@@ -34,12 +34,19 @@ import {
   ActivityStatus,
   ActivityWeightUnit,
   SavedActivity,
+  SleepHours,
   TrainingLog,
   TrainingTemplate,
 } from '../interfaces';
 import { baseBg, Color, Columns, Font, Pad, Rows } from '../style';
 
+const smallFont = css`
+  font-size: ${Font.Small};
+  color: ${Color.FontSecondary};
+`;
+
 export const TrainingLogEditor: FC = () => {
+  const selectSleepHoursRef = useRef<HTMLSelectElement | null>(null);
   const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
   const addActivityInputRef = useRef<HTMLInputElement | null>(null);
   // Do not show the activity input by default
@@ -60,6 +67,9 @@ export const TrainingLogEditor: FC = () => {
   const [activities, setActivities] = useState<DataState<Activity[]>>(
     DataState.Loading
   );
+
+  const menu = useMaterialMenu();
+  const history = useHistory();
 
   const user = useUser();
   const { logId, templateId } = useParams<{
@@ -209,7 +219,7 @@ export const TrainingLogEditor: FC = () => {
           .collection(DbPath.UserLogActivities)
           .add(newActivity);
         // Add new Activity entry to SavedActivity.history
-        const history = saved.history.concat({ activityId, logId: log.id, });
+        const history = saved.history.concat({ activityId, logId: log.id });
         await db
           .user(user.uid)
           .collection(DbPath.UserActivityLibrary)
@@ -222,6 +232,111 @@ export const TrainingLogEditor: FC = () => {
     },
     [activities, isTemplate, log, user.uid]
   );
+
+  /** #region log title menu actions */
+  const renameLog = useCallback(() => {
+    if (!DataState.isReady(log)) return;
+    menu.close();
+    const title = window.prompt('Update title', log.title);
+    if (!title) return;
+    try {
+      db.user(log.authorId)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+        .doc(log.id)
+        .set({ title } as Pick<TrainingLog, 'title'>, { merge: true });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [log, isTemplate, menu]);
+
+  const openPreviousLog = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm('Open previous log?')) return;
+    menu.close();
+    try {
+      const { docs } = await db
+        .user(user.uid)
+        .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        .startAfter(log.timestamp)
+        .get();
+      const doc = docs[0];
+      if (!doc) {
+        toast.warn('No log found');
+        return;
+      }
+      const createPath = templateId ? Paths.template : Paths.logEditor;
+      history.push(createPath(doc.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, history, templateId, menu]);
+
+  const openNextLog = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm('Open next log?')) return;
+    menu.close();
+    try {
+      const { docs } = await db
+        .user(user.uid)
+        .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
+        .orderBy('timestamp', 'asc')
+        .limit(1)
+        .startAfter(log.timestamp)
+        .get();
+      const doc = docs[0];
+      if (!doc) {
+        toast.warn('No log found');
+        return;
+      }
+      const createPath = templateId ? Paths.template : Paths.logEditor;
+      history.push(createPath(doc.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, log, history, templateId, menu]);
+
+  const createTemplate = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    menu.close();
+    if (isTemplate) return;
+    if (!window.confirm('Create a Template from this log?')) return;
+    try {
+      const newTemplateId = await createTemplateFromLog(log, user.uid);
+      if (window.confirm('Delete original log?')) {
+        const logDoc = db
+          .user(user.uid)
+          .collection(DbPath.UserLogs)
+          .withConverter(DbConverter.TrainingLog)
+          .doc(log.id);
+        await logDoc.delete();
+        toast.info('Deleted original log.');
+      }
+      history.push(Paths.template(newTemplateId));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [log, user.uid, history, isTemplate, menu]);
+
+  const deleteLog = useCallback(async () => {
+    if (!DataState.isReady(log)) return;
+    if (!window.confirm(`Delete "${log.title}" forever?`)) return;
+    menu.close();
+    try {
+      await db
+        .user(log.authorId)
+        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+        .doc(log.id)
+        .delete();
+      const logType = isTemplate ? 'Template' : 'Log';
+      toast.info(`${logType} deleted.`);
+      history.push(Paths.account);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [log, history, isTemplate, menu]);
+  /** #endregion */
 
   return (
     <DataStateView data={log}>
@@ -328,7 +443,82 @@ export const TrainingLogEditor: FC = () => {
             )}
             {activityName === null ? (
               <>
-                <LogTitle log={log} templateId={templateId} />
+                <ClickAwayListener onClickAway={menu.close}>
+                  <div
+                    className={css`
+                      text-align: center;
+                    `}
+                  >
+                    <IconButton
+                      aria-label="Open log menu"
+                      aria-controls="log-menu"
+                      aria-haspopup="true"
+                      onClick={menu.open}
+                      className={css`
+                        padding: 0 !important;
+                      `}
+                    >
+                      <Typography
+                        variant="body1"
+                        color="textPrimary"
+                        className={css`
+                          line-height: 1.2 !important;
+                        `}
+                      >
+                        <b>{log.title}</b>
+                      </Typography>
+                    </IconButton>
+                    <Menu
+                      id="log-menu"
+                      anchorEl={menu.ref}
+                      open={!!menu.ref}
+                      onClose={menu.close}
+                      MenuListProps={{ dense: true }}
+                    >
+                      <MenuItem onClick={openPreviousLog}>
+                        Go to previous log
+                      </MenuItem>
+                      <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
+                      <MenuItem onClick={renameLog}>Edit name</MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          if (DataState.isReady(logNotes) && logNotes) {
+                            logNotesRef.current?.focus();
+                            return;
+                          }
+                          // Unhide the notes input
+                          setLogNotes('');
+                          Promise.resolve().then(() =>
+                            logNotesRef.current?.focus()
+                          );
+                        }}
+                      >
+                        Edit name
+                      </MenuItem>
+                      {!!window.navigator.share && (
+                        <MenuItem
+                          onClick={() => {
+                            menu.close();
+                            const url = isTemplate
+                              ? Paths.templateView(log.authorId, log.id)
+                              : Paths.logView(log.authorId, log.id);
+                            window.navigator.share({ url });
+                          }}
+                        >
+                          Share link
+                        </MenuItem>
+                      )}
+                      {!isTemplate && (
+                        <MenuItem onClick={createTemplate}>
+                          Create Template
+                        </MenuItem>
+                      )}
+                      <MenuItem onClick={deleteLog}>
+                        <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
+                      </MenuItem>
+                    </Menu>
+                  </div>
+                </ClickAwayListener>
                 <Rows center pad={Pad.XSmall}>
                   <TrainingLogDateView log={log} />
                   <Button
@@ -350,26 +540,57 @@ export const TrainingLogEditor: FC = () => {
                   >
                     + Activity
                   </Button>
-                  <IconButton
-                    aria-label="Edit training log notes"
-                    className={css`
-                      color: ${Color.ActionPrimaryGray} !important;
-                      transform: scaleX(-1);
-                    `}
-                    onClick={() => {
-                      if (DataState.isReady(logNotes) && logNotes) {
-                        logNotesRef.current?.focus();
-                        return;
-                      }
-                      // Unhide the notes input
-                      setLogNotes('');
-                      Promise.resolve().then(() =>
-                        logNotesRef.current?.focus()
-                      );
-                    }}
-                  >
-                    <ChatBubbleOutline fontSize="small" />
-                  </IconButton>
+                  {!TrainingLog.isTemplate(log) && (
+                    <label
+                      className={css`
+                        position: relative;
+                      `}
+                    >
+                      <select
+                        value={log.sleepHours}
+                        ref={selectSleepHoursRef}
+                        onChange={async event => {
+                          try {
+                            // Use unary + operator to convert string to number
+                            const sleepHours = +event.target
+                              .value as typeof SleepHours[keyof typeof SleepHours];
+                            // Update sleepHours for the current TrainingLog
+                            await db
+                              .user(user.uid)
+                              .collection(DbPath.UserLogs)
+                              .withConverter(DbConverter.TrainingLog)
+                              .doc(log.id)
+                              .set({ sleepHours }, { merge: true });
+                          } catch (error) {
+                            toast.error(error.message);
+                          }
+                        }}
+                        className={css`
+                          border: none;
+                          background: transparent;
+                          appearance: none;
+                          outline: none;
+                          position: absolute;
+                          /** Ensure that clicks hit this element. */
+                          width: 100%;
+                          height: 100%;
+                          /** Goes on top so it takes clicks. */
+                          z-index: 1;
+                          /** Cannot see it but can click it. */
+                          opacity: 0;
+                        `}
+                      >
+                        <option aria-label="None" value="-99" >-</option>
+                        {Object.values(SleepHours).map(opt => (
+                          <option key={opt} aria-label={'' + opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      <LocalHotel fontSize="small" />
+                      {log.sleepHours !== -99 && <p className={smallFont}>{log.sleepHours}h</p>}
+                    </label>
+                  )}
                 </Rows>
               </>
             ) : (
@@ -472,11 +693,6 @@ const LibraryMenu: FC<{
   );
 };
 
-const smallFont = css`
-  font-size: ${Font.Small};
-  color: ${Color.FontSecondary};
-`;
-
 /**
  * For each SavedActivity that matches the query, render each Activity from the
  * SavedActivity.history.
@@ -571,173 +787,4 @@ const buildDate = (
     return `${month} ${date.getDate()}`;
   });
   return date;
-};
-
-const LogTitle: FC<{
-  log: TrainingLog | TrainingTemplate;
-  /** Undefined if `log` is a `TrainingTemplate`. */
-  templateId?: string;
-}> = ({ log, templateId }) => {
-  const menu = useMaterialMenu();
-  const user = useUser();
-  const history = useHistory();
-
-  const isTemplate = TrainingLog.isTemplate(log);
-
-  const renameLog = useCallback(() => {
-    menu.close();
-    const title = window.prompt('Update title', log.title);
-    if (!title) return;
-    try {
-      db.user(log.authorId)
-        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-        .doc(log.id)
-        .set({ title } as Pick<TrainingLog, 'title'>, { merge: true });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [log, isTemplate, menu]);
-
-  const openPreviousLog = useCallback(async () => {
-    if (!window.confirm('Open previous log?')) return;
-    menu.close();
-    try {
-      const { docs } = await db
-        .user(user.uid)
-        .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
-        .orderBy('timestamp', 'desc')
-        .limit(1)
-        .startAfter(log.timestamp)
-        .get();
-      const doc = docs[0];
-      if (!doc) {
-        toast.warn('No log found');
-        return;
-      }
-      const createPath = templateId ? Paths.template : Paths.logEditor;
-      history.push(createPath(doc.id));
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [user.uid, log, history, templateId, menu]);
-
-  const openNextLog = useCallback(async () => {
-    if (!window.confirm('Open next log?')) return;
-    menu.close();
-    try {
-      const { docs } = await db
-        .user(user.uid)
-        .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
-        .orderBy('timestamp', 'asc')
-        .limit(1)
-        .startAfter(log.timestamp)
-        .get();
-      const doc = docs[0];
-      if (!doc) {
-        toast.warn('No log found');
-        return;
-      }
-      const createPath = templateId ? Paths.template : Paths.logEditor;
-      history.push(createPath(doc.id));
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [user.uid, log, history, templateId, menu]);
-
-  const createTemplate = useCallback(async () => {
-    menu.close();
-    if (isTemplate) return;
-    if (!window.confirm('Create a Template from this log?')) return;
-    try {
-      const newTemplateId = await createTemplateFromLog(log, user.uid);
-      if (window.confirm('Delete original log?')) {
-        const logDoc = db
-          .user(user.uid)
-          .collection(DbPath.UserLogs)
-          .withConverter(DbConverter.TrainingLog)
-          .doc(log.id);
-        await logDoc.delete();
-        toast.info('Deleted original log.');
-      }
-      history.push(Paths.template(newTemplateId));
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [log, user.uid, history, isTemplate, menu]);
-
-  const deleteLog = useCallback(async () => {
-    if (!window.confirm(`Delete "${log.title}" forever?`)) return;
-    menu.close();
-    try {
-      await db
-        .user(log.authorId)
-        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-        .doc(log.id)
-        .delete();
-      const logType = isTemplate ? 'Template' : 'Log';
-      toast.info(`${logType} deleted.`);
-      history.push(Paths.account);
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [log, history, isTemplate, menu]);
-  return (
-    <ClickAwayListener onClickAway={menu.close}>
-      <div
-        className={css`
-          text-align: center;
-        `}
-      >
-        <IconButton
-          aria-label="Open log menu"
-          aria-controls="log-menu"
-          aria-haspopup="true"
-          onClick={menu.open}
-          className={css`
-            padding: 0 !important;
-          `}
-        >
-          <Typography
-            variant="body1"
-            color="textPrimary"
-            className={css`
-              line-height: 1.2 !important;
-            `}
-          >
-            <b>{log.title}</b>
-          </Typography>
-        </IconButton>
-        <Menu
-          id="log-menu"
-          anchorEl={menu.ref}
-          open={!!menu.ref}
-          onClose={menu.close}
-          MenuListProps={{ dense: true }}
-        >
-          <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
-          <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
-          <MenuItem onClick={renameLog}>Edit name</MenuItem>
-          {!!window.navigator.share && (
-            <MenuItem
-              onClick={() => {
-                menu.close();
-                const url = isTemplate
-                  ? Paths.templateView(log.authorId, log.id)
-                  : Paths.logView(log.authorId, log.id);
-                window.navigator.share({ url });
-              }}
-            >
-              Share link
-            </MenuItem>
-          )}
-          {!isTemplate && (
-            <MenuItem onClick={createTemplate}>Create Template</MenuItem>
-          )}
-          <MenuItem onClick={deleteLog}>
-            <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
-          </MenuItem>
-        </Menu>
-      </div>
-    </ClickAwayListener>
-  );
 };
