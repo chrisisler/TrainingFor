@@ -31,6 +31,7 @@ import { useMaterialMenu, useUser } from '../hooks';
 import {
   Activity,
   ActivityRepCountUnit,
+  ActivityStatus,
   ActivityWeightUnit,
   SavedActivity,
   TrainingLog,
@@ -189,27 +190,26 @@ export const TrainingLogEditor: FC = () => {
       try {
         const prevMaxPosition =
           activities[activities.length - 1]?.position ?? 0;
-        const entry = Activity.create({
+        const sets = activity.sets.map(s => {
+          s.status = ActivityStatus.Unattempted;
+          return s;
+        });
+        const newActivity = Activity.create({
           name: activity.name,
-          sets: activity.sets,
+          sets,
           position: prevMaxPosition + 1,
           logId: log.id,
           timestamp: log.timestamp,
         });
-        // Add Activity to the current TrainingLog
-        const docRef = await db
+        // Add Activity to the current TrainingLog and get its ID
+        const { id: activityId } = await db
           .user(user.uid)
           .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
           .doc(log.id)
           .collection(DbPath.UserLogActivities)
-          .add(entry);
-        // Add Activity to SavedActivity.history
-        const history = saved.history.concat({
-          activityId: docRef.id,
-          logId: log.id,
-        });
-        // Was saving data in the wrong place previously. Causing title-less
-        // Templates to appear in the NewTraining UI.
+          .add(newActivity);
+        // Add new Activity entry to SavedActivity.history
+        const history = saved.history.concat({ activityId, logId: log.id, });
         await db
           .user(user.uid)
           .collection(DbPath.UserActivityLibrary)
