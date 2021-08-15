@@ -362,7 +362,6 @@ export const ActivityView = forwardRef<
               </Menu>
             </div>
           </ClickAwayListener>
-          <TallyMarks sets={activity.sets} />
         </Columns>
       </Rows>
       <Rows pad={Pad.Medium}>
@@ -758,52 +757,6 @@ const ActivitySetView = forwardRef<
     </Rows>
   );
 });
-
-const TallyMarks: FC<{ sets: ActivitySet[] }> = ({ sets }) => (
-  <ol
-    className={css`
-      padding: 0;
-      height: 12px;
-      /** Align tally marks with activity name. */
-      margin-left: 1px;
-
-      & > li {
-        display: inline-block;
-        height: 100%;
-        margin-right: 5px;
-        width: 4px;
-        background-color: ${Color.ActionPrimaryRed} !important;
-        border-radius: 5px;
-
-        &:nth-child(5n) {
-          transform: rotate(-75deg);
-          height: 270%;
-          position: relative;
-          left: -22px;
-          top: 10px;
-          margin-top: -${Pad.Medium};
-        }
-
-        &.hollow {
-          background-color: transparent !important;
-          border: 1px solid ${Color.ActionPrimaryBlue};
-        }
-      }
-    `}
-  >
-    {sets.map(({ status, uuid }) => (
-      <li
-        key={uuid}
-        className={
-          status === ActivityStatus.Unattempted ||
-          status === ActivityStatus.Optional
-            ? 'hollow'
-            : undefined
-        }
-      />
-    ))}
-  </ol>
-);
 
 const X: FC = ({ children }) => (
   <p
