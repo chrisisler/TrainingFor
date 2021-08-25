@@ -366,7 +366,8 @@ export const ActivityView = forwardRef<
       </Rows>
       <Rows pad={Pad.Medium}>
         <Columns pad={Pad.Medium}>
-          <Rows
+          {!!activity.sets.length && (
+            <Rows
             className={css`
               align-items: flex-end;
             `}
@@ -392,6 +393,7 @@ export const ActivityView = forwardRef<
               `}
             />
           </Rows>
+          )}
           {activity.weightUnit !== ActivityWeightUnit.Weightless && (
             <p
               className={css`
