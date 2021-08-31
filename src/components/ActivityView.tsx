@@ -633,6 +633,7 @@ const ActivitySetView = forwardRef<
     [activityDocument]
   );
   const addSetAfter = useCallback(() => {
+    menu.close();
     try {
       const newSet = ActivitySet.create({ ...activity.sets[index] });
       const { sets } = activity;
@@ -642,7 +643,7 @@ const ActivitySetView = forwardRef<
     } catch (error) {
       toast.error(error.message);
     }
-  }, [activityDocument, activity, index]);
+  }, [activityDocument, activity, index, menu]);
 
   return (
     <Rows ref={ref} center between maxWidth>
