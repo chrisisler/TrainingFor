@@ -368,42 +368,43 @@ export const ActivityView = forwardRef<
         <Columns pad={Pad.Medium}>
           {!!activity.sets.length && (
             <Rows
-            className={css`
-              align-items: flex-end;
-            `}
-          >
-            <button
-              disabled={!editable}
-              onClick={cycleWeightUnit}
-              className={activityUnitButtonStyle}
-            >
-              {activity.weightUnit}
-            </button>
-            <button
-              disabled={!editable}
-              onClick={cycleRepCountUnit}
-              className={activityUnitButtonStyle}
-            >
-              {activity.repCountUnit}
-            </button>
-            <ChevronRight
-              fontSize="small"
               className={css`
-                color: ${Color.ActionSecondaryGray} !important;
-              `}
-            />
-          </Rows>
-          )}
-          {activity.weightUnit !== ActivityWeightUnit.Weightless && (
-            <p
-              className={css`
-                font-size: ${Font.Small};
-                color: ${Color.FontSecondary};
+                align-items: flex-end;
               `}
             >
-              Volume: {Activity.getVolume(activity)}
-            </p>
+              <button
+                disabled={!editable}
+                onClick={cycleWeightUnit}
+                className={activityUnitButtonStyle}
+              >
+                {activity.weightUnit}
+              </button>
+              <button
+                disabled={!editable}
+                onClick={cycleRepCountUnit}
+                className={activityUnitButtonStyle}
+              >
+                {activity.repCountUnit}
+              </button>
+              <ChevronRight
+                fontSize="small"
+                className={css`
+                  color: ${Color.ActionSecondaryGray} !important;
+                `}
+              />
+            </Rows>
           )}
+          {!!activity.sets.length &&
+            activity.weightUnit !== ActivityWeightUnit.Weightless && (
+              <p
+                className={css`
+                  font-size: ${Font.Small};
+                  color: ${Color.FontSecondary};
+                `}
+              >
+                Volume: {Activity.getVolume(activity)}
+              </p>
+            )}
         </Columns>
         <FlipMove
           enterAnimation="fade"
