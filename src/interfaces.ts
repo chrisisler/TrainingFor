@@ -256,7 +256,7 @@ export const ActivitySet = {
     // Skipped variant color looks like less emphasized version of Completed
     if (s === ActivityStatus.Skipped) return 'lightblue';
     if (s === ActivityStatus.Injured) return 'red';
-    if (s === ActivityStatus.Optional) return 'yellow';
+    if (s === ActivityStatus.Optional) return 'orange';
     return 'transparent';
   },
 };
