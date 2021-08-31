@@ -632,6 +632,17 @@ const ActivitySetView = forwardRef<
     },
     [activityDocument]
   );
+  const addSetAfter = useCallback(() => {
+    try {
+      const newSet = ActivitySet.create({ ...activity.sets[index] });
+      const { sets } = activity;
+      // Insert `newSet` item at `index`, deleting 0 items,
+      sets.splice(index + 1, 0, newSet);
+      activityDocument.set({ sets } as Partial<Activity>, { merge: true });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, activity, index]);
 
   return (
     <Rows ref={ref} center between maxWidth>
@@ -750,6 +761,7 @@ const ActivitySetView = forwardRef<
             onClose={menu.close}
             MenuListProps={{ dense: true }}
           >
+            <MenuItem onClick={addSetAfter}>Add set here</MenuItem>
             <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
             <MenuItem onClick={deleteSet}>
               <b>Delete set</b>
