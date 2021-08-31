@@ -730,7 +730,7 @@ const LibraryMenuSavedActivityView: FC<{
         const dateB = (b.timestamp as firebase.firestore.Timestamp)?.toDate();
         if (!dateA || !dateB) return NaN;
         if (dateA === dateB) return 0;
-        return dateA > dateB ? 1 : -1;
+        return dateA > dateB ? -1 : 1;
       });
       return filtered;
     });
