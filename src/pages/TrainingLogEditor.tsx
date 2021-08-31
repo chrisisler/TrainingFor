@@ -162,6 +162,8 @@ export const TrainingLogEditor: FC = () => {
           logId: log.id,
           timestamp: log.timestamp,
           sets: [],
+          weightUnit: ActivityWeightUnit.Pounds,
+          repCountUnit: ActivityRepCountUnit.Repetitions,
         });
         await activitiesColl.add(entry);
       } catch (error) {
@@ -210,6 +212,8 @@ export const TrainingLogEditor: FC = () => {
           position: prevMaxPosition + 1,
           logId: log.id,
           timestamp: log.timestamp,
+          weightUnit: activity.weightUnit,
+          repCountUnit: activity.repCountUnit,
         });
         // Add Activity to the current TrainingLog and get its ID
         const { id: activityId } = await db

@@ -140,17 +140,15 @@ export const SavedActivity = {
 
 // eslint-disable-next-line
 export const Activity = {
-  create: (
-    data: Pick<Activity, 'name' | 'position' | 'logId' | 'timestamp' | 'sets'>
-  ): Omit<Activity, 'id'> => ({
+  create: (data: Omit<Activity, 'notes' | 'id'>): Omit<Activity, 'id'> => ({
     name: data.name,
     position: data.position,
     logId: data.logId,
     timestamp: data.timestamp,
     notes: null,
     sets: data.sets,
-    repCountUnit: ActivityRepCountUnit.Repetitions,
-    weightUnit: ActivityWeightUnit.Pounds, // 'MURRICA!!
+    repCountUnit: data.repCountUnit,
+    weightUnit: data.weightUnit,
   }),
   cycleWeightUnit: (unit: ActivityWeightUnit): ActivityWeightUnit => {
     if (unit === ActivityWeightUnit.Pounds) return ActivityWeightUnit.Kilograms;
