@@ -10,7 +10,7 @@ import {
   Popover,
   Typography,
 } from '@material-ui/core';
-import { ChevronLeft, ChevronRight } from '@material-ui/icons';
+import { Add, ChevronLeft, ChevronRight } from '@material-ui/icons';
 import { formatDistanceToNowStrict } from 'date-fns';
 import firebase from 'firebase/app';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
@@ -235,7 +235,7 @@ export const Account: FC = () => {
                   border: 0;
                   padding: ${Pad.Small} ${Pad.Medium};
                   background-color: #fff;
-                  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
+                  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
                 `}
               >
                 <CircularProgressWithLabel
@@ -256,7 +256,7 @@ export const Account: FC = () => {
                 padding: ${Pad.Small} 0;
                 background-color: #fff;
                 border-radius: 20px;
-                box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
+                box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
               `}
             >
               <Rows
@@ -275,7 +275,7 @@ export const Account: FC = () => {
                 >
                   <ChevronLeft />
                 </IconButton>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body1" color="textSecondary">
                   {Months[thisMonth]}
                 </Typography>
                 <IconButton
@@ -310,10 +310,7 @@ export const Account: FC = () => {
                 className={css`
                   overflow-x: scroll;
                   overflow-y: hidden;
-                  margin-left: ${Pad.Large};
-                  & > *:last-child {
-                    margin-right: ${Pad.Large};
-                  }
+                  padding: 0 ${Pad.Large};
                 `}
               >
                 <>
@@ -551,13 +548,13 @@ const TrainingTemplatePreview: FC<{
         )}
         {!!template.logIds.length && (
           <Rows
-            pad={Pad.Small}
+            pad={Pad.XSmall}
             className={css`
               align-items: center !important;
             `}
           >
-            <Typography variant="h5" color="textPrimary">
-              <b>{template.logIds.length}</b>
+            <Typography variant="h4" color="textPrimary">
+              {template.logIds.length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Log{template.logIds.length === 1 ? '' : 's'}
@@ -615,6 +612,8 @@ const TrainingCalendarLog: FC<{
   const open = !!anchorEl;
   const id = open ? 'training-log-popover' : undefined;
 
+  const nowDay = new Date().getDate() - 1;
+
   /**
    * The TrainingLog data for the log for this data, if it exists.
    * This is always `DataState.Empty` if the Popover is never opened.
@@ -641,15 +640,18 @@ const TrainingCalendarLog: FC<{
 
   return (
     <IconButton
+      disableRipple
       className={css`
         /** Up to seven items per row */
         flex-basis: 14.28% !important;
+        padding: 0 !important;
 
         & p {
           padding: ${Pad.Small} 0 !important;
           width: 5ch;
+          ${dayOfMonth === nowDay &&
+          `text-decoration: underline ${Color.ActionPrimaryGray} 2px;`}
         }
-        padding: 0 !important;
       `}
       onClick={logId ? event => setAnchorEl(event.currentTarget) : undefined}
     >
@@ -723,6 +725,7 @@ const TrainingCalendarLog: FC<{
               color: ${Color.ActionPrimaryBlue};
               background-color: ${baseBg};
               border-radius: 50%;
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             `}
           >
             {dayOfMonth + 1}
@@ -768,8 +771,8 @@ const TrainingTemplateCreate: FC = () => {
     >
       <Columns center pad={Pad.Medium}>
         <Rows center pad={Pad.Large}>
-          <Typography variant="body2" color="textSecondary">
-            New Template
+          <Typography variant="body1" color="textSecondary">
+            Create Template
           </Typography>
           <ChevronRight
             fontSize="small"
@@ -784,10 +787,11 @@ const TrainingTemplateCreate: FC = () => {
             background-color: ${baseBg};
             border-radius: 20px;
             padding: ${Pad.Medium};
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
           `}
         >
           <Typography variant="body1" color="textSecondary">
-            +
+            <Add fontSize="small" htmlColor={Color.ActionPrimaryBlue} />
           </Typography>
         </div>
       </Columns>
