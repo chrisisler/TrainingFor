@@ -610,7 +610,6 @@ const TrainingCalendarLog: FC<{
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
 
-  /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const open = !!anchorEl;
