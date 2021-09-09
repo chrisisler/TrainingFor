@@ -632,7 +632,7 @@ const ActivitySetView = forwardRef<
     },
     [activityDocument]
   );
-  const addSetAfter = useCallback(() => {
+  const insertNewSet = useCallback(() => {
     menu.close();
     try {
       const newSet = ActivitySet.create({ ...activity.sets[index] });
@@ -762,7 +762,7 @@ const ActivitySetView = forwardRef<
             onClose={menu.close}
             MenuListProps={{ dense: true }}
           >
-            <MenuItem onClick={addSetAfter}>Add set here</MenuItem>
+            <MenuItem onClick={insertNewSet}>Insert new set</MenuItem>
             <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
             <MenuItem onClick={deleteSet}>
               <b>Delete set</b>
