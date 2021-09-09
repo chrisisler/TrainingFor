@@ -603,6 +603,7 @@ const getMonthLength = (now: Date, monthIndex: number): number => {
  */
 const TrainingCalendarLog: FC<{
   dayOfMonth: number;
+  /** If present, there is a TrainingLog associated with the given date. */
   logId?: string;
 }> = ({ dayOfMonth, logId }) => {
   const history = useHistory();
@@ -641,15 +642,15 @@ const TrainingCalendarLog: FC<{
 
   return (
     <IconButton
-      size="small"
       className={css`
         /** Up to seven items per row */
         flex-basis: 14.28% !important;
 
         & p {
-          padding: ${Pad.XSmall} 0 !important;
-          width: 4ch;
+          padding: ${Pad.Small} 0 !important;
+          width: 5ch;
         }
+        padding: 0 !important;
       `}
       onClick={logId ? event => setAnchorEl(event.currentTarget) : undefined}
     >
