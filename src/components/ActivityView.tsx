@@ -263,7 +263,7 @@ export const ActivityView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        padding: ${Pad.Medium} ${Pad.Small} 0;
+        padding: ${Pad.Small} ${Pad.Small} 0;
         margin: ${Pad.Small} ${Pad.Medium};
         border-radius: 20px;
         background-color: #fff;
@@ -290,9 +290,10 @@ export const ActivityView = forwardRef<
               fontSize="small"
               /** Border 50% does NOT make A Perfect Circle without this. */
               className={css`
-                margin-bottom: -2px;
+                margin-bottom: -6px;
               `}
             />
+            Set
           </button>
         )}
         <Columns maxWidth>
@@ -430,107 +431,103 @@ export const ActivityView = forwardRef<
           ))}
         </FlipMove>
       </Rows>
-      <Columns pad={Pad.Small}>
-        <DataStateView data={comments} loading={() => null} error={() => null}>
-          {comments =>
-            comments.length === 0 ? null : (
-              <Columns
-                pad={Pad.XSmall}
-                className={css`
-                  font-size: ${Font.Small};
-                  color: ${Color.FontSecondary};
-                `}
-              >
-                {comments.map(comment => (
-                  <Rows pad={Pad.XSmall} key={comment.id}>
-                    <p>
-                      <b>{comment.author.displayName}</b>
-                    </p>
-                    <p>{comment.text}</p>
-                    {(editable || user.uid === comment.author.id) && (
-                      <IconButton
-                        aria-label="Delete comment"
-                        onClick={() => {
-                          activityDocument
-                            .collection(DbPath.UserLogActivityComments)
-                            .doc(comment.id)
-                            .delete()
-                            .catch(error => {
-                              toast.error(error.message);
-                            });
-                        }}
-                        size="small"
+      <DataStateView data={comments} loading={() => null} error={() => null}>
+        {comments =>
+          comments.length === 0 ? null : (
+            <Columns
+              pad={Pad.XSmall}
+              className={css`
+                font-size: ${Font.Small};
+                color: ${Color.FontSecondary};
+              `}
+            >
+              {comments.map(comment => (
+                <Rows pad={Pad.XSmall} key={comment.id}>
+                  <p>
+                    <b>{comment.author.displayName}</b>
+                  </p>
+                  <p>{comment.text}</p>
+                  {(editable || user.uid === comment.author.id) && (
+                    <IconButton
+                      aria-label="Delete comment"
+                      onClick={() => {
+                        activityDocument
+                          .collection(DbPath.UserLogActivityComments)
+                          .doc(comment.id)
+                          .delete()
+                          .catch(error => {
+                            toast.error(error.message);
+                          });
+                      }}
+                      size="small"
+                      className={css`
+                        margin-left: auto !important;
+                      `}
+                    >
+                      <Close
+                        fontSize="small"
                         className={css`
-                          margin-left: auto !important;
+                          color: ${Color.ActionSecondaryGray};
                         `}
-                      >
-                        <Close
-                          fontSize="small"
-                          className={css`
-                            color: ${Color.ActionSecondaryGray};
-                          `}
-                        />
-                      </IconButton>
-                    )}
-                  </Rows>
-                ))}
-              </Columns>
-            )
-          }
-        </DataStateView>
+                      />
+                    </IconButton>
+                  )}
+                </Rows>
+              ))}
+            </Columns>
+          )
+        }
+      </DataStateView>
+      {typeof comment === 'string' && (
         <Rows maxWidth center pad={Pad.XSmall}>
-          {typeof comment === 'string' && (
-            <>
-              <form
-                onSubmit={addActivityComment}
-                className={css`
-                  width: 100%;
-                `}
-              >
-                <input
-                  type="text"
-                  ref={commentRef}
-                  placeholder="Add a comment..."
-                  value={comment ?? ''}
-                  onChange={event => setComment(event.target.value)}
-                  onBlur={() => {
-                    // Hide the comment input
-                    if (comment === '') setComment(null);
-                  }}
-                  className={css`
-                    background-color: transparent;
-                    font-size: ${Font.Small};
-                    color: ${Color.FontPrimary};
-                    border: none;
-                    flex: 1;
-                    width: 100%;
-                    margin: 0;
-                    outline: none;
-                    padding: ${Pad.XSmall} 0;
-                  `}
-                />
-              </form>
-              {comment && comment.length > 0 && (
-                <button
-                  className={css`
-                    border: none;
-                    padding: 0;
-                    background-color: transparent;
-                    text-transform: uppercase;
-                    font-size: ${Font.Small};
-                    font-weight: 600;
-                    outline: none;
-                    color: ${Color.FontSecondary};
-                  `}
-                  onClick={addActivityComment}
-                >
-                  Post
-                </button>
-              )}
-            </>
+          <form
+            onSubmit={addActivityComment}
+            className={css`
+              width: 100%;
+            `}
+          >
+            <input
+              type="text"
+              ref={commentRef}
+              placeholder="Add a comment..."
+              value={comment ?? ''}
+              onChange={event => setComment(event.target.value)}
+              onBlur={() => {
+                // Hide the comment input
+                if (comment === '') setComment(null);
+              }}
+              className={css`
+                background-color: transparent;
+                font-size: ${Font.Small};
+                color: ${Color.FontPrimary};
+                border: none;
+                flex: 1;
+                width: 100%;
+                margin: 0;
+                outline: none;
+                padding: ${Pad.XSmall} 0;
+              `}
+            />
+          </form>
+          {comment && comment.length > 0 && (
+            <button
+              className={css`
+                border: none;
+                padding: 0;
+                background-color: transparent;
+                text-transform: uppercase;
+                font-size: ${Font.Small};
+                font-weight: 600;
+                outline: none;
+                color: ${Color.FontSecondary};
+              `}
+              onClick={addActivityComment}
+            >
+              Post
+            </button>
           )}
         </Rows>
-      </Columns>
+      )}
     </Columns>
   );
 });
