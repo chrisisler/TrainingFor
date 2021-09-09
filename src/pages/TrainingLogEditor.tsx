@@ -694,7 +694,7 @@ const LibraryMenu: FC<{
           </Columns>
         ) : (
           <Typography variant="body1" color="textSecondary">
-            No results.
+            No results for "{query}"
           </Typography>
         )
       }
