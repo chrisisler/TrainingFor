@@ -365,7 +365,7 @@ export const ActivityView = forwardRef<
         </Columns>
       </Rows>
       <Rows pad={Pad.Medium}>
-        <Columns pad={Pad.Medium}>
+        <Columns pad={Pad.Small}>
           {!!activity.sets.length && (
             <Rows
               className={css`
@@ -413,8 +413,9 @@ export const ActivityView = forwardRef<
             display: flex;
             flex-wrap: wrap;
             width: 100%;
-            max-height: 300px;
+            max-height: 360px;
             overflow-y: scroll;
+            height: min-content;
           `}
         >
           {activity.sets.map(({ uuid }, index) => (
