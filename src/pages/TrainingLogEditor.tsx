@@ -594,11 +594,7 @@ export const TrainingLogEditor: FC = () => {
                     );
                   }}
                 >
-                  <Add
-                    className={css`
-                      margin-right: ${Pad.XSmall};
-                    `}
-                  />
+                  <Add />
                   Activity
                 </Fab>
               </Rows>
