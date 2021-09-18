@@ -46,6 +46,7 @@ const NavBar: FC = () => {
         height: ${navBarHeight}px;
         width: 100%;
         border-top: 1px solid ${Color.ActionSecondaryGray};
+        max-width: 512px;
       `}
     >
       <IconButton aria-label="Navigate to timeline">
