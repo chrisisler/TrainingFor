@@ -51,18 +51,17 @@ export const App: FC = () => {
       <ToastContainer
         hideProgressBar
         pauseOnFocusLoss={false}
-        autoClose={4000}
+        autoClose={3000}
         className={css`
-          padding: ${Pad.XSmall};
-
           & > *:not(:last-child) {
             margin-bottom: ${Pad.XSmall};
           }
         `}
         toastClassName={css`
-          border-radius: 5px;
+          border-radius: 8px;
           font-weight: 500;
           text-align: center;
+          word-break: break-word;
         `}
       />
       <Router>
