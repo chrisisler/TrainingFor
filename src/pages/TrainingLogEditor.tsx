@@ -316,6 +316,14 @@ export const TrainingLogEditor: FC = () => {
           .doc(log.id);
         await logDoc.delete();
         toast.info('Deleted original log.');
+      } else {
+        // add log to template history
+        await db
+          .user(user.uid)
+          .collection(DbPath.UserTemplates)
+          .withConverter(DbConverter.TrainingTemplate)
+          .doc(newTemplateId)
+          .update({ logIds: firebase.firestore.FieldValue.arrayUnion(log.id) });
       }
       history.push(Paths.template(newTemplateId));
     } catch (error) {
