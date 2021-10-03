@@ -7,7 +7,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, LocalHotel } from '@material-ui/icons';
+import { Add, ChevronRight, LocalHotel } from '@material-ui/icons';
 import {
   createPopper,
   Instance as PopperInstance,
@@ -398,17 +398,22 @@ export const TrainingLogEditor: FC = () => {
           <Columns
             className={css`
               min-height: fit-content;
-              padding: ${Pad.XSmall} ${Pad.Small};
-              background-color: #fff;
+              padding: ${Pad.Small};
+              background-color: ${baseBg};
             `}
             pad={Pad.Small}
           >
-            {libraryMenuOpen && activityName && (
-              <ClickAwayListener onClickAway={() => setLibraryMenuOpen(false)}>
+            {libraryMenuOpen && typeof activityName === 'string' && (
+              <ClickAwayListener
+                onClickAway={() => {
+                  setActivityName(null);
+                  setLibraryMenuOpen(false);
+                }}
+              >
                 <div
                   ref={libraryMenuRef}
                   className={css`
-                    height: 22vh;
+                    height: 25vh;
                     overflow-y: scroll;
                     border-radius: 8px;
                     background-color: #fff;
@@ -417,6 +422,7 @@ export const TrainingLogEditor: FC = () => {
                 >
                   <LibraryMenu
                     query={activityName.toLowerCase()}
+                    setActivityName={(name: string) => setActivityName(name)}
                     addFromLibrary={addFromLibrary}
                   />
                 </div>
@@ -607,43 +613,40 @@ export const TrainingLogEditor: FC = () => {
                 </Fab>
               </Rows>
             ) : (
-              <Rows maxWidth as="form" onSubmit={addActivity} pad={Pad.Small}>
+              <Rows as="form" onSubmit={addActivity}>
                 <input
                   type="text"
                   ref={addActivityInputRef}
                   placeholder="Add activity..."
                   value={activityName}
                   onBlur={
+                    // Close activity autocomplete
                     libraryMenuOpen ? undefined : () => setActivityName(null)
                   }
-                  onChange={event => {
-                    const { value } = event.target;
-                    setActivityName(value);
-                    if (value === '') {
-                      setLibraryMenuOpen(false);
-                      libraryMenuRef.current?.removeAttribute('data-show');
-                    } else if (value.length < 3) {
-                      // Only search after 3
-                      return;
-                    } else {
+                  onFocus={() => {
+                    // Show activity complete upon initial button click
+                    if (activityName === '') {
                       setLibraryMenuOpen(true);
                       libraryMenuRef.current?.setAttribute('data-show', '');
                     }
                   }}
+                  onChange={event => {
+                    setActivityName(event.target.value);
+                    // Show activity autocomplete
+                    setLibraryMenuOpen(true);
+                    libraryMenuRef.current?.setAttribute('data-show', '');
+                  }}
                   className={css`
                     box-sizing: content-box;
                     width: 100%;
-                    border: 0;
                     box-shadow: none;
+                    letter-spacing: 0.02em;
+                    border: 0;
                     outline: none;
-                    font-weight: 400;
+                    font-weight: 600;
                     color: #000;
                     padding: ${Pad.Small} ${Pad.Medium};
-                    border-radius: 5px;
-
-                    &::placeholder {
-                      font-weight: 600;
-                    }
+                    border-radius: 8px;
                   `}
                 />
               </Rows>
@@ -657,8 +660,9 @@ export const TrainingLogEditor: FC = () => {
 
 const LibraryMenu: FC<{
   query: string;
+  setActivityName(name: string): void;
   addFromLibrary(a: Activity, saved: SavedActivity): void;
-}> = ({ query, addFromLibrary }) => {
+}> = ({ query, setActivityName, addFromLibrary }) => {
   const user = useUser();
 
   // SavedActivity's matching the query
@@ -668,6 +672,7 @@ const LibraryMenu: FC<{
         .user(user.uid)
         .collection(DbPath.UserActivityLibrary)
         .withConverter(DbConverter.SavedActivity)
+        .orderBy('name', 'asc')
         .get()
         .then(snapshot =>
           // Skip saved activities that do not match the queried name
@@ -683,25 +688,52 @@ const LibraryMenu: FC<{
     [query, user.uid]
   );
 
+  // TODO - Add X button to activity input to clear it instantly
   return (
     <DataStateView data={queriedActivites}>
-      {savedActivities =>
-        savedActivities.length ? (
-          <Columns pad={Pad.Small}>
-            {savedActivities.map(sa => (
-              <LibraryMenuSavedActivityView
-                savedActivity={sa}
-                key={sa.id}
-                addFromLibrary={addFromLibrary}
-              />
-            ))}
-          </Columns>
-        ) : (
+      {queriedActivites => {
+        if (queriedActivites.length > 1) {
+          return (
+            <Columns>
+              <Typography variant="overline" color="textSecondary">
+                Activity Library
+              </Typography>
+              {queriedActivites.map(savedActivity => (
+                <Rows
+                  between
+                  key={savedActivity.id}
+                  className={css`
+                    padding: ${Pad.Small} 0;
+                    border-top: 1px solid ${baseBg};
+                  `}
+                  onClick={() => setActivityName(savedActivity.name)}
+                >
+                  <p>{savedActivity.name}</p>
+                  <ChevronRight
+                    fontSize="small"
+                    className={css`
+                      color: ${Color.ActionSecondaryGray} !important;
+                    `}
+                  />
+                </Rows>
+              ))}
+            </Columns>
+          );
+        }
+        if (queriedActivites.length === 1) {
+          return (
+            <LibraryMenuSavedActivityView
+              savedActivity={queriedActivites[0]}
+              addFromLibrary={addFromLibrary}
+            />
+          );
+        }
+        return (
           <Typography variant="body1" color="textSecondary">
             No results for "{query}"
           </Typography>
-        )
-      }
+        );
+      }}
     </DataStateView>
   );
 };
@@ -777,7 +809,7 @@ const LibraryMenuSavedActivityView: FC<{
                 </Rows>
                 <Rows pad={Pad.Small}>
                   {activity.sets.map(set => (
-                    <p className={smallFont}>
+                    <p className={smallFont} key={set.uuid}>
                       {set.weight}x{set.repCount}
                     </p>
                   ))}
