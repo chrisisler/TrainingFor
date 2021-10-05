@@ -461,6 +461,24 @@ export const TrainingLogEditor: FC = () => {
             )}
             {activityName === null ? (
               <Rows center between>
+                <Fab
+                  variant="extended"
+                  color="primary"
+                  aria-label="Add activity"
+                  size="small"
+                  disableRipple
+                  onClick={() => {
+                    // Set to non-null to render the input
+                    setActivityName('');
+                    // Wait a tick for the input to render so it may be focused
+                    Promise.resolve().then(() =>
+                      addActivityInputRef.current?.focus()
+                    );
+                  }}
+                >
+                  <Add />
+                  Activity
+                </Fab>
                 <ClickAwayListener onClickAway={menu.close}>
                   <div
                     className={css`
@@ -538,7 +556,6 @@ export const TrainingLogEditor: FC = () => {
                     </Menu>
                   </div>
                 </ClickAwayListener>
-                <TrainingLogDateView log={log} />
                 {!TrainingLog.isTemplate(log) && (
                   <label
                     className={css`
@@ -588,30 +605,13 @@ export const TrainingLogEditor: FC = () => {
                         </option>
                       ))}
                     </select>
-                    <LocalHotel fontSize="small" />
-                    {log.sleepHours !== -99 && (
+                    <LocalHotel />
+                    {!!log.sleepHours && log.sleepHours !== -99 && (
                       <p className={smallFont}>{log.sleepHours}h</p>
                     )}
                   </label>
                 )}
-                <Fab
-                  variant="extended"
-                  color="primary"
-                  aria-label="Add activity"
-                  size="small"
-                  disableRipple
-                  onClick={() => {
-                    // Set to non-null to render the input
-                    setActivityName('');
-                    // Wait a tick for the input to render so it may be focused
-                    Promise.resolve().then(() =>
-                      addActivityInputRef.current?.focus()
-                    );
-                  }}
-                >
-                  <Add />
-                  Activity
-                </Fab>
+                <TrainingLogDateView log={log} />
               </Rows>
             ) : (
               <Rows as="form" onSubmit={addActivity}>
