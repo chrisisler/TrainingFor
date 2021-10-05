@@ -415,6 +415,7 @@ export const TrainingLogEditor: FC = () => {
                   className={css`
                     height: 25vh;
                     overflow-y: scroll;
+                    overflow-x: hidden;
                     border-radius: 8px;
                     background-color: #fff;
                     padding: ${Pad.Small} ${Pad.Medium};
