@@ -40,14 +40,14 @@ export enum Milliseconds {
   Day = 86400000,
 }
 
+// Valid route locations within the app
 export const Paths = {
   account: '/account',
   logView: (userId = ':userId', logId = ':logId') =>
     `/user/${userId}/log/${logId}`,
   user: (userId = ':userId') => `/user/${userId}`,
   logEditor: (logId = ':logId') => `/log/${logId}`,
-  // TODO Rename 'template' to 'templateEditor'
-  template: (templateId = ':templateId') => `/template/${templateId}`,
+  templateEditor: (templateId = ':templateId') => `/template/${templateId}`,
   templateView: (userId = ':userId', templateId = ':templateId') =>
     `/user/${userId}/template/${templateId}`,
   library: (userId = ':userId') => `/library/${userId}`,

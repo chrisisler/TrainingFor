@@ -438,7 +438,7 @@ const TrainingTemplatePreview: FC<{
   const navigateToTemplate = useCallback(() => {
     const templatePath =
       template.authorId === user.uid
-        ? Paths.template(template.id)
+        ? Paths.templateEditor(template.id)
         : Paths.templateView(template.authorId, template.id);
     history.push(templatePath);
   }, [user.uid, template, history]);
@@ -752,7 +752,7 @@ const TrainingTemplateCreate: FC = () => {
         .user(user.uid)
         .collection(DbPath.UserTemplates)
         .add(TrainingTemplate.create({ authorId: user.uid, title }));
-      history.push(Paths.template(docRef.id));
+      history.push(Paths.templateEditor(docRef.id));
     } catch (error) {
       toast.error(error.message);
     }

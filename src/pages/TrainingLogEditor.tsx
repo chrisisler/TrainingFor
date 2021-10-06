@@ -270,8 +270,10 @@ export const TrainingLogEditor: FC = () => {
         toast.warn('No log found');
         return;
       }
-      const createPath = templateId ? Paths.template : Paths.logEditor;
-      history.push(createPath(doc.id));
+      const path = templateId
+        ? Paths.templateEditor(doc.id)
+        : Paths.logEditor(doc.id);
+      history.push(path);
     } catch (error) {
       toast.error(error.message);
     }
@@ -294,8 +296,10 @@ export const TrainingLogEditor: FC = () => {
         toast.warn('No log found');
         return;
       }
-      const createPath = templateId ? Paths.template : Paths.logEditor;
-      history.push(createPath(doc.id));
+      const path = templateId
+        ? Paths.templateEditor(doc.id)
+        : Paths.logEditor(doc.id);
+      history.push(path);
     } catch (error) {
       toast.error(error.message);
     }
@@ -325,7 +329,7 @@ export const TrainingLogEditor: FC = () => {
           .doc(newTemplateId)
           .update({ logIds: firebase.firestore.FieldValue.arrayUnion(log.id) });
       }
-      history.push(Paths.template(newTemplateId));
+      history.push(Paths.templateEditor(newTemplateId));
     } catch (error) {
       toast.error(error.message);
     }

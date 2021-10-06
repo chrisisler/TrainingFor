@@ -89,7 +89,7 @@ export const App: FC = () => {
                     <TrainingLogViewPage />
                   </ViewWithNavBar>
                 </Route>
-                <Route exact path={[Paths.logEditor(), Paths.template()]}>
+                <Route exact path={[Paths.logEditor(), Paths.templateEditor()]}>
                   <ViewWithNavBar>
                     <TrainingLogEditor />
                   </ViewWithNavBar>
