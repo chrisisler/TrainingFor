@@ -343,7 +343,7 @@ export const TrainingLogEditor: FC = () => {
         .delete();
       const logType = isTemplate ? 'Template' : 'Log';
       toast.info(`${logType} deleted.`);
-      history.push(Paths.account);
+      history.goBack();
     } catch (error) {
       toast.error(error.message);
     }
