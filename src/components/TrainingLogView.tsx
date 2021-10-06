@@ -41,6 +41,7 @@ export const createTemplateFromLog = async (
     authorId: toUserId,
   }) as TrainingTemplate;
   const isTemplate = TrainingLog.isTemplate(log);
+  // Create a new template and get a ref to it, and get all log activities
   const [newTemplateRef, logActivities] = await Promise.all([
     db.user(toUserId).collection(DbPath.UserTemplates).add(newTemplate),
     db
@@ -50,23 +51,25 @@ export const createTemplateFromLog = async (
       .collection(DbPath.UserLogActivities)
       .withConverter(DbConverter.Activity)
       .get()
-      .then(snapshot =>
-        snapshot.docs.map(doc => {
-          const activity = doc.data();
-          activity.sets.forEach(({ status }) => {
-            if (status === ActivityStatus.Optional) return;
-            status = ActivityStatus.Unattempted;
-          });
-          return activity;
-        })
-      ),
+      .then(snapshot => snapshot.docs.map(doc => doc.data())),
   ]);
+  // Get a reference to the activities of the new template
   const templateActivities = newTemplateRef.collection(
     DbPath.UserLogActivities
   );
   const batch = db.batch();
-  logActivities.forEach(a => batch.set(templateActivities.doc(), a));
+  // Reset each set.status of each activity to Unattempted (or Optional)
+  logActivities.forEach(activity => {
+    activity.sets.forEach(activitySet => {
+      if (activitySet.status === ActivityStatus.Optional) return; // Skip
+      activitySet.status = ActivityStatus.Unattempted;
+    });
+    batch.set(templateActivities.doc(), activity);
+  });
+  // Make all changes to the new template activities at once, failing if any
+  // one of them fails
   await batch.commit();
+  // Give the callee the ID of the new template
   return newTemplateRef.id;
 };
 
