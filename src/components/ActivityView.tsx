@@ -744,7 +744,6 @@ const ActivitySetView = forwardRef<
               className={css`
                 color: ${Color.ActionSecondaryGray};
                 font-weight: 600 !important;
-                font-style: italic;
                 line-height: 1 !important;
                 width: 2ch;
                 font-size: ${Font.MedLarge};
