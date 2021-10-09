@@ -93,13 +93,13 @@ export interface SavedActivity extends FirestoreDocument {
 
 export interface ActivitySet {
   uuid: string;
-  status: ActivityStatus;
+  status: ActivitySetStatus;
   weight: number;
   /** A time value or repetition count. */
   repCount: number;
 }
 
-export enum ActivityStatus {
+export enum ActivitySetStatus {
   // Not yet attempted
   Unattempted = 'unattempted',
   // Attempted and successful
@@ -190,7 +190,7 @@ export const Activity = {
     }
     // weightUnit is LB or KG; repCountUnit is Repetitions
     return a.sets
-      .filter(set => set.status === ActivityStatus.Completed)
+      .filter(set => set.status === ActivitySetStatus.Completed)
       .reduce((sum, set) => sum + set.weight * set.repCount, 0);
   },
 };
@@ -247,23 +247,23 @@ export const ActivitySet = {
     ...data,
     uuid: uuid(),
   }),
-  cycleStatus: (s: ActivityStatus): ActivityStatus => {
-    if (s === ActivityStatus.Unattempted) return ActivityStatus.Completed;
-    if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;
-    if (s === ActivityStatus.Skipped) return ActivityStatus.Injured;
-    if (s === ActivityStatus.Injured) return ActivityStatus.Optional;
-    if (s === ActivityStatus.Optional) return ActivityStatus.Missed;
-    if (s === ActivityStatus.Missed) return ActivityStatus.Unattempted;
+  cycleStatus: (s: ActivitySetStatus): ActivitySetStatus => {
+    if (s === ActivitySetStatus.Unattempted) return ActivitySetStatus.Completed;
+    if (s === ActivitySetStatus.Completed) return ActivitySetStatus.Skipped;
+    if (s === ActivitySetStatus.Skipped) return ActivitySetStatus.Injured;
+    if (s === ActivitySetStatus.Injured) return ActivitySetStatus.Optional;
+    if (s === ActivitySetStatus.Optional) return ActivitySetStatus.Missed;
+    if (s === ActivitySetStatus.Missed) return ActivitySetStatus.Unattempted;
     throw Error('Unreachable');
   },
-  getStatusColor: (s: ActivityStatus): string => {
-    if (s === ActivityStatus.Unattempted) return 'lightgray';
-    if (s === ActivityStatus.Completed) return 'deepskyblue';
+  getStatusColor: (s: ActivitySetStatus): string => {
+    if (s === ActivitySetStatus.Unattempted) return 'lightgray';
+    if (s === ActivitySetStatus.Completed) return 'deepskyblue';
     // Skipped variant color looks like less emphasized version of Completed
-    if (s === ActivityStatus.Skipped) return 'lightblue';
-    if (s === ActivityStatus.Injured) return 'red';
-    if (s === ActivityStatus.Optional) return 'orange';
-    if (s === ActivityStatus.Missed) return 'purple';
+    if (s === ActivitySetStatus.Skipped) return 'lightblue';
+    if (s === ActivitySetStatus.Injured) return 'red';
+    if (s === ActivitySetStatus.Optional) return 'orange';
+    if (s === ActivitySetStatus.Missed) return 'purple';
     return 'transparent';
   },
 };

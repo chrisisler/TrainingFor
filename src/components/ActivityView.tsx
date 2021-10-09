@@ -27,7 +27,7 @@ import {
   Activity,
   ActivityRepCountUnit,
   ActivitySet,
-  ActivityStatus,
+  ActivitySetStatus,
   ActivityWeightUnit,
   Comment,
   TrainingLog,
@@ -92,9 +92,9 @@ export const ActivityView = forwardRef<
     const weight = prevSet?.weight ?? 0;
     const repCount = prevSet?.repCount ?? null;
     const status =
-      prevSet?.status === ActivityStatus.Optional
-        ? ActivityStatus.Optional
-        : ActivityStatus.Unattempted;
+      prevSet?.status === ActivitySetStatus.Optional
+        ? ActivitySetStatus.Optional
+        : ActivitySetStatus.Unattempted;
     const newSet = ActivitySet.create({ weight, repCount, status });
     try {
       activityDocument.update({
@@ -577,9 +577,9 @@ const ActivitySetView = forwardRef<
   const cycleSetStatus = useCallback(() => {
     if (isTemplate) {
       sets[index].status =
-        set.status === ActivityStatus.Unattempted
-          ? ActivityStatus.Optional
-          : ActivityStatus.Unattempted;
+        set.status === ActivitySetStatus.Unattempted
+          ? ActivitySetStatus.Optional
+          : ActivitySetStatus.Unattempted;
     } else {
       sets[index].status = ActivitySet.cycleStatus(set.status);
     }
@@ -594,7 +594,7 @@ const ActivitySetView = forwardRef<
     menu.close();
     try {
       const duplicateSet = ActivitySet.create({
-        status: ActivityStatus.Unattempted,
+        status: ActivitySetStatus.Unattempted,
         weight: set.weight,
         repCount: set.repCount,
       });

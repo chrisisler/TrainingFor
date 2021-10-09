@@ -14,7 +14,11 @@ import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { ActivityStatus, TrainingLog, TrainingTemplate } from '../interfaces';
+import {
+  ActivitySetStatus,
+  TrainingLog,
+  TrainingTemplate,
+} from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 import { ActivityView } from './ActivityView';
 import { AppLink } from './AppLink';
@@ -61,8 +65,8 @@ export const createTemplateFromLog = async (
   // Reset each set.status of each activity to Unattempted (or Optional)
   logActivities.forEach(activity => {
     activity.sets.forEach(activitySet => {
-      if (activitySet.status === ActivityStatus.Optional) return; // Skip
-      activitySet.status = ActivityStatus.Unattempted;
+      if (activitySet.status === ActivitySetStatus.Optional) return; // Skip
+      activitySet.status = ActivitySetStatus.Unattempted;
     });
     batch.set(templateActivities.doc(), activity);
   });

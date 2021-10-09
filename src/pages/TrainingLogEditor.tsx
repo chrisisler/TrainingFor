@@ -31,7 +31,7 @@ import { useMaterialMenu, useUser } from '../hooks';
 import {
   Activity,
   ActivityRepCountUnit,
-  ActivityStatus,
+  ActivitySetStatus,
   ActivityWeightUnit,
   SavedActivity,
   SleepHours,
@@ -203,7 +203,7 @@ export const TrainingLogEditor: FC = () => {
         const prevMaxPosition =
           activities[activities.length - 1]?.position ?? 0;
         const sets = activity.sets.map(s => {
-          s.status = ActivityStatus.Unattempted;
+          s.status = ActivitySetStatus.Unattempted;
           return s;
         });
         const newActivity = Activity.create({
