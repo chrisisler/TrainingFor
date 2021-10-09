@@ -100,11 +100,18 @@ export interface ActivitySet {
 }
 
 export enum ActivityStatus {
+  // Not yet attempted
   Unattempted = 'unattempted',
+  // Attempted and successful
   Completed = 'completed',
+  // Attempted
   Injured = 'injured',
+  // Will not attempt
   Skipped = 'skipped',
+  // Not yet chosen to attempt or skip
   Optional = 'optional',
+  // Attempted and unsuccessful
+  Missed = 'missed',
 }
 
 export enum ActivityRepCountUnit {
@@ -245,7 +252,8 @@ export const ActivitySet = {
     if (s === ActivityStatus.Completed) return ActivityStatus.Skipped;
     if (s === ActivityStatus.Skipped) return ActivityStatus.Injured;
     if (s === ActivityStatus.Injured) return ActivityStatus.Optional;
-    if (s === ActivityStatus.Optional) return ActivityStatus.Unattempted;
+    if (s === ActivityStatus.Optional) return ActivityStatus.Missed;
+    if (s === ActivityStatus.Missed) return ActivityStatus.Unattempted;
     throw Error('Unreachable');
   },
   getStatusColor: (s: ActivityStatus): string => {
@@ -255,6 +263,7 @@ export const ActivitySet = {
     if (s === ActivityStatus.Skipped) return 'lightblue';
     if (s === ActivityStatus.Injured) return 'red';
     if (s === ActivityStatus.Optional) return 'orange';
+    if (s === ActivityStatus.Missed) return 'purple';
     return 'transparent';
   },
 };
