@@ -79,18 +79,40 @@ export const NewTraining: FC = () => {
       // Copy the activites to the new training log if using a template
       if (DataState.isReady(selectedTemplate)) {
         const logActivities = newLogRef.collection(DbPath.UserLogActivities);
-        const templateActivities = await db
+        const batch = db.batch();
+        const templateActivitiesSnapshot = await db
           .user(user.uid)
           .collection(DbPath.UserTemplates)
           .doc(selectedTemplate.id)
           .collection(DbPath.UserTemplateActivities)
           .withConverter(DbConverter.Activity)
-          .get()
-          .then(snapshot => snapshot.docs.map(doc => doc.data()));
-        const batch = db.batch();
-        // Create new Activity documents with the same data from the Template
-        // but each their own custom ID
-        templateActivities.forEach(a => batch.set(logActivities.doc(), a));
+          .get();
+        // Create new Activity documents with the same data from the
+        // Template but each their own custom ID
+        templateActivitiesSnapshot.docs.forEach(templateActivityDoc => {
+          const templateActivity = templateActivityDoc.data();
+          const newLogActivityRef = logActivities.doc();
+          const newLogActivityComments = newLogActivityRef
+            .collection(DbPath.UserLogActivityComments)
+            .withConverter(DbConverter.Comment);
+          // Asynchronously copy comments from templateActivity to logActivity
+          templateActivityDoc.ref
+            .collection(DbPath.UserLogActivityComments)
+            .withConverter(DbConverter.Comment)
+            .get()
+            .then(({ empty, docs }) => {
+              if (empty) return; // No comments to copy over
+              docs.forEach(commentDoc => {
+                newLogActivityComments.add(commentDoc.data()).catch(error => {
+                  toast.error(error.message);
+                });
+              });
+            })
+            .catch(error => {
+              toast.error(error.message);
+            });
+          batch.set(newLogActivityRef, templateActivity);
+        });
         await batch.commit();
         // Add this log to the list of logs created from the selected template
         await db
