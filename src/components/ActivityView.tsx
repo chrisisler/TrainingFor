@@ -290,10 +290,9 @@ export const ActivityView = forwardRef<
               fontSize="small"
               /** Border 50% does NOT make A Perfect Circle without this. */
               className={css`
-                margin-bottom: -6px;
+                margin-bottom: -2px;
               `}
             />
-            Set
           </button>
         )}
         <Columns maxWidth>
