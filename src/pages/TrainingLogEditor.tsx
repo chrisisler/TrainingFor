@@ -373,6 +373,7 @@ export const TrainingLogEditor: FC = () => {
                   width: 100%;
                   overflow-y: scroll;
                   ${activityViewContainerStyle}
+                  padding: ${Pad.Small} 0;
                 `}
               >
                 {activities.length ? (
