@@ -1,6 +1,7 @@
 import { css } from '@emotion/css';
 import {
   Button,
+  Chip,
   ClickAwayListener,
   Fab,
   Grid,
@@ -476,7 +477,7 @@ export const TrainingLogEditor: FC = () => {
                 <Fab
                   variant="extended"
                   color="primary"
-                  aria-label="Add Activity"
+                  aria-label="Add activity"
                   size="small"
                   disableRipple
                   onClick={() => {
@@ -631,7 +632,7 @@ export const TrainingLogEditor: FC = () => {
                   fullWidth
                   size="small"
                   inputRef={addActivityInputRef}
-                  label="Add activity..."
+                  label="Add Activity..."
                   value={activityName}
                   onBlur={
                     // Close activity autocomplete
@@ -744,25 +745,16 @@ const LibraryAutocomplete: FC<{
               <Typography variant="overline" color="textSecondary">
                 Activity Library
               </Typography>
-              {queriedActivites.map(savedActivity => (
-                <Rows
-                  between
-                  key={savedActivity.id}
-                  className={css`
-                    padding: ${Pad.Small} 0;
-                    border-top: 1px solid ${baseBg};
-                  `}
-                  onClick={() => setActivityName(savedActivity.name)}
-                >
-                  <p>{savedActivity.name}</p>
-                  <ChevronRight
-                    fontSize="small"
-                    className={css`
-                      color: ${Color.ActionSecondaryGray} !important;
-                    `}
-                  />
-                </Rows>
-              ))}
+              <Grid container spacing={1}>
+                {queriedActivites.map(savedActivity => (
+                  <Grid item key={savedActivity.id}>
+                    <Chip
+                      label={savedActivity.name}
+                      onClick={() => setActivityName(savedActivity.name)}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
             </Columns>
           );
         }
