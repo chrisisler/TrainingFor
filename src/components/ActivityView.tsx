@@ -745,7 +745,7 @@ const ActivitySetView = forwardRef<
                 font-weight: 600 !important;
                 line-height: 1 !important;
                 width: 2ch;
-                font-size: ${Font.MedLarge};
+                font-size: 1.2rem;
               `}
             >
               {index + 1}
