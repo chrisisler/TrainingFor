@@ -7,6 +7,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  TextField,
   Typography,
 } from '@material-ui/core';
 import { Add, ChevronRight, LocalHotel } from '@material-ui/icons';
@@ -409,7 +410,7 @@ export const TrainingLogEditor: FC = () => {
               padding: ${Pad.Small};
               background-color: ${baseBg};
             `}
-            pad={Pad.Small}
+            pad={Pad.Medium}
           >
             {libraryMenuOpen && typeof activityName === 'string' && (
               <ClickAwayListener
@@ -427,9 +428,10 @@ export const TrainingLogEditor: FC = () => {
                     border-radius: 8px;
                     background-color: #fff;
                     padding: ${Pad.Small} ${Pad.Medium};
+                    border: 1px solid ${Color.ActionPrimaryBlue};
                   `}
                 >
-                  <LibraryMenu
+                  <LibraryAutocomplete
                     query={activityName}
                     setActivityName={(name: string | null) =>
                       setActivityName(name)
@@ -474,7 +476,7 @@ export const TrainingLogEditor: FC = () => {
                 <Fab
                   variant="extended"
                   color="primary"
-                  aria-label="Add activity"
+                  aria-label="Add Activity"
                   size="small"
                   disableRipple
                   onClick={() => {
@@ -625,10 +627,11 @@ export const TrainingLogEditor: FC = () => {
               </Rows>
             ) : (
               <Rows as="form" onSubmit={addActivity}>
-                <input
-                  type="text"
-                  ref={addActivityInputRef}
-                  placeholder="Add activity..."
+                <TextField
+                  fullWidth
+                  size="small"
+                  inputRef={addActivityInputRef}
+                  label="Add activity..."
                   value={activityName}
                   onBlur={
                     // Close activity autocomplete
@@ -648,16 +651,7 @@ export const TrainingLogEditor: FC = () => {
                     libraryMenuRef.current?.setAttribute('data-show', '');
                   }}
                   className={css`
-                    box-sizing: content-box;
-                    width: 100%;
-                    box-shadow: none;
-                    letter-spacing: 0.02em;
-                    border: 0;
-                    outline: none;
-                    font-weight: 600;
-                    color: #000;
-                    padding: ${Pad.Small} ${Pad.Medium};
-                    border-radius: 8px;
+                    background-color: #fff !important;
                   `}
                 />
               </Rows>
@@ -669,7 +663,14 @@ export const TrainingLogEditor: FC = () => {
   );
 };
 
-const LibraryMenu: FC<{
+/**
+ * Renders the `SavedActivity` entries from the users Library. Allows the user
+ * to filter entries via `query` and select one to add an Activity with data
+ * (like weightUnit) autocompleted from the selected Library entry. If no
+ * entries match the given `query`, a button is presented to create one with
+ * `query` as the activity name.
+ */
+const LibraryAutocomplete: FC<{
   query: string;
   setActivityName(name: string | null): void;
   addFromLibrary(a: Activity, saved: SavedActivity): void;
