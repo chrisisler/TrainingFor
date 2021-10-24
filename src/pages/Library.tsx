@@ -41,14 +41,15 @@ export const Library: FC = () => {
   const user = useUser();
 
   const addSavedActivity = useCallback(
-    <E extends React.SyntheticEvent>(event: E) => {
+    async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       if (!newActivityName) return;
       try {
         const newActivity = SavedActivity.create({
           name: newActivityName,
         });
-        db.user(user.uid)
+        await db
+          .user(user.uid)
           .collection(DbPath.UserActivityLibrary)
           .add(newActivity);
         // Hide the input

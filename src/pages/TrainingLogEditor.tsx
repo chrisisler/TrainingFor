@@ -1,7 +1,9 @@
 import { css } from '@emotion/css';
 import {
+  Button,
   ClickAwayListener,
   Fab,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -191,6 +193,7 @@ export const TrainingLogEditor: FC = () => {
    * insert the new activity into the history.
    */
   const addFromLibrary = useCallback(
+    /** @param activity Only need valid: sets, name, repCountUnit, weightUnit */
     async (activity: Activity, saved: SavedActivity) => {
       if (!DataState.isReady(activities) || !DataState.isReady(log)) {
         toast.warn('Data not ready.');
@@ -427,8 +430,10 @@ export const TrainingLogEditor: FC = () => {
                   `}
                 >
                   <LibraryMenu
-                    query={activityName.toLowerCase()}
-                    setActivityName={(name: string) => setActivityName(name)}
+                    query={activityName}
+                    setActivityName={(name: string | null) =>
+                      setActivityName(name)
+                    }
                     addFromLibrary={addFromLibrary}
                   />
                 </div>
@@ -666,7 +671,7 @@ export const TrainingLogEditor: FC = () => {
 
 const LibraryMenu: FC<{
   query: string;
-  setActivityName(name: string): void;
+  setActivityName(name: string | null): void;
   addFromLibrary(a: Activity, saved: SavedActivity): void;
 }> = ({ query, setActivityName, addFromLibrary }) => {
   const user = useUser();
@@ -687,12 +692,46 @@ const LibraryMenu: FC<{
             // Firebase does not give an elegant way to filter this way
             // TODO Create normalized field on SavedActivity.name so it can
             // support being searched
-            if (sa.name.toLowerCase().includes(query)) return [sa];
+            if (sa.name.toLowerCase().includes(query.toLowerCase())) {
+              return [sa];
+            }
             return [];
           })
         ),
     [query, user.uid]
   );
+
+  const createSavedActivity = useCallback(async () => {
+    try {
+      // Create the Library entry and get its data.
+      const libraryEntry = await db
+        .user(user.uid)
+        .collection(DbPath.UserActivityLibrary)
+        .withConverter(DbConverter.SavedActivity)
+        .add(SavedActivity.create({ name: query }) as SavedActivity)
+        .then(docRef => docRef.get())
+        .then(docSnapshot => docSnapshot.data());
+      if (!libraryEntry) {
+        throw Error('Unexpected: Could not add to Library.');
+      }
+      const newActivity = Activity.create({
+        name: query,
+        repCountUnit: ActivityRepCountUnit.Repetitions,
+        weightUnit: ActivityWeightUnit.Pounds,
+        sets: [],
+        /**  These fields do not matter. @see addFromLibrary */
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        logId: '',
+        position: 0,
+      }) as Activity;
+      addFromLibrary(newActivity, libraryEntry);
+      // Hide the activity input and autocomplete menu
+      setActivityName(null);
+      toast.success(`Added "${query}" to Activity Library!`);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [user.uid, addFromLibrary, query, setActivityName]);
 
   // TODO - Add X button to activity input to clear it instantly
   return (
@@ -735,9 +774,25 @@ const LibraryMenu: FC<{
           );
         }
         return (
-          <Typography variant="body1" color="textSecondary">
-            No results for "{query}"
-          </Typography>
+          <Grid
+            container
+            direction="column"
+            justifyContent="center"
+            alignItems="center"
+            height="100%"
+            spacing={3}
+          >
+            <Grid item>
+              <Typography variant="body1" color="textSecondary">
+                <b>No results.</b>
+              </Typography>
+            </Grid>
+            <Grid item>
+              <Button variant="outlined" onClick={createSavedActivity}>
+                Add "{query}" to Library
+              </Button>
+            </Grid>
+          </Grid>
         );
       }}
     </DataStateView>
