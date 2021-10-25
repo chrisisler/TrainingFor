@@ -649,8 +649,7 @@ const TrainingCalendarLog: FC<{
         & p {
           padding: ${Pad.Small} 0 !important;
           width: 5ch;
-          ${dayOfMonth === nowDay &&
-          `text-decoration: underline ${Color.ActionPrimaryGray} 2px;`}
+          ${dayOfMonth === nowDay && `text-decoration: underline;`}
         }
       `}
       onClick={logId ? event => setAnchorEl(event.currentTarget) : undefined}

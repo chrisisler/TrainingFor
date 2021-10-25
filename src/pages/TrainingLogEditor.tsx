@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { Add, ChevronRight, LocalHotel } from '@material-ui/icons';
+import { Add, LocalHotel } from '@material-ui/icons';
 import {
   createPopper,
   Instance as PopperInstance,
