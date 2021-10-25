@@ -3,7 +3,6 @@ import {
   Button,
   Chip,
   ClickAwayListener,
-  Fab,
   Grid,
   IconButton,
   Menu,
@@ -16,6 +15,7 @@ import {
   createPopper,
   Instance as PopperInstance,
 } from '@popperjs/core/lib/popper-lite';
+import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
@@ -23,12 +23,12 @@ import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { ActivityView } from '../components/ActivityView';
+import { navBarHeight } from '../components/NavBar';
 import {
   activityViewContainerStyle,
   createTemplateFromLog,
-  TrainingLogDateView,
 } from '../components/TrainingLogView';
-import { Months, Paths } from '../constants';
+import { Format, Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
@@ -47,6 +47,11 @@ import { baseBg, Color, Columns, Font, Pad, Rows } from '../style';
 const smallFont = css`
   font-size: ${Font.Small};
   color: ${Color.FontSecondary};
+`;
+
+const controlsFont = css`
+  color: white !important;
+  text-shadow: 0 0 4px black;
 `;
 
 export const TrainingLogEditor: FC = () => {
@@ -400,16 +405,30 @@ export const TrainingLogEditor: FC = () => {
                     `}
                   >
                     No activities!
+                    {/**
+                     * TODO After refactoring and migrating all Activities
+                     * Database to a separate Firestore table, fetch them by
+                     * recency, limited to 10 or so. Show a list of recent
+                     * activities to add to this TrainingLog from. Like the
+                     * Activity Library autocomplete menu.
+                     */}
                   </Typography>
                 )}
               </FlipMove>
             )}
           </DataStateView>
+          {/** EDITOR CONTROLS CONTAINER */}
           <Columns
             className={css`
-              min-height: fit-content;
-              padding: ${Pad.Small};
-              background-color: ${baseBg};
+              position: absolute;
+              width: 100%;
+              bottom: ${navBarHeight}px;
+              padding: ${Pad.Medium} ${Pad.Small};
+              background-image: linear-gradient(
+                rgba(0, 0, 0, 0),
+                rgba(0, 0, 0, 0.4),
+                #171717
+              );
             `}
             pad={Pad.Medium}
           >
@@ -473,158 +492,183 @@ export const TrainingLogEditor: FC = () => {
               />
             )}
             {activityName === null ? (
-              <Rows center between>
-                <Fab
-                  variant="extended"
-                  color="primary"
-                  aria-label="Add activity"
-                  size="small"
-                  disableRipple
-                  onClick={() => {
-                    // Set to non-null to render the input
-                    setActivityName('');
-                    // Wait a tick for the input to render so it may be focused
-                    Promise.resolve().then(() =>
-                      addActivityInputRef.current?.focus()
-                    );
-                  }}
-                >
-                  <Add />
-                  Activity
-                </Fab>
-                <ClickAwayListener onClickAway={menu.close}>
-                  <div
-                    className={css`
-                      text-align: center;
-                      max-width: 140px;
-                    `}
-                  >
-                    <IconButton
-                      aria-label="Open log menu"
-                      aria-controls="log-menu"
-                      aria-haspopup="true"
-                      onClick={menu.open}
-                      className={css`
-                        padding: 0 !important;
-                      `}
-                    >
-                      <Typography
-                        variant="body1"
-                        color="textPrimary"
+              <Rows between>
+                <Columns pad={Pad.XSmall} maxWidth>
+                  <ClickAwayListener onClickAway={menu.close}>
+                    <div>
+                      <IconButton
+                        aria-label="Open log menu"
+                        aria-controls="log-menu"
+                        aria-haspopup="true"
+                        onClick={menu.open}
                         className={css`
-                          line-height: 1.2 !important;
+                          padding: 0 !important;
                         `}
                       >
-                        <b>{log.title}</b>
-                      </Typography>
-                    </IconButton>
-                    <Menu
-                      id="log-menu"
-                      anchorEl={menu.ref}
-                      open={!!menu.ref}
-                      onClose={menu.close}
-                      MenuListProps={{ dense: true }}
-                    >
-                      <MenuItem onClick={openPreviousLog}>
-                        Go to previous log
-                      </MenuItem>
-                      <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
-                      <MenuItem onClick={renameLog}>Edit name</MenuItem>
-                      <MenuItem
-                        onClick={() => {
-                          if (DataState.isReady(logNotes) && logNotes) {
-                            logNotesRef.current?.focus();
-                            return;
-                          }
-                          // Unhide the notes input
-                          setLogNotes('');
-                          Promise.resolve().then(() =>
-                            logNotesRef.current?.focus()
-                          );
-                        }}
+                        <Typography
+                          variant="h6"
+                          className={css`
+                            line-height: 1.2 !important;
+                            ${controlsFont}
+                          `}
+                          textAlign="left"
+                        >
+                          {log.title}
+                        </Typography>
+                      </IconButton>
+                      <Menu
+                        id="log-menu"
+                        anchorEl={menu.ref}
+                        open={!!menu.ref}
+                        onClose={menu.close}
+                        MenuListProps={{ dense: true }}
                       >
-                        Add notes
-                      </MenuItem>
-                      {!!window.navigator.share && (
+                        <MenuItem onClick={openPreviousLog}>
+                          Go to previous log
+                        </MenuItem>
+                        <MenuItem onClick={openNextLog}>
+                          Go to next log
+                        </MenuItem>
+                        <MenuItem onClick={renameLog}>Edit name</MenuItem>
                         <MenuItem
                           onClick={() => {
-                            menu.close();
-                            const url = isTemplate
-                              ? Paths.templateView(log.authorId, log.id)
-                              : Paths.logView(log.authorId, log.id);
-                            window.navigator.share({ url });
+                            if (DataState.isReady(logNotes) && logNotes) {
+                              logNotesRef.current?.focus();
+                              return;
+                            }
+                            // Unhide the notes input
+                            setLogNotes('');
+                            Promise.resolve().then(() =>
+                              logNotesRef.current?.focus()
+                            );
                           }}
                         >
-                          Share link
+                          Add notes
                         </MenuItem>
-                      )}
-                      {!isTemplate && (
-                        <MenuItem onClick={createTemplate}>
-                          Create Template
+                        {!!window.navigator.share && (
+                          <MenuItem
+                            onClick={() => {
+                              menu.close();
+                              const url = isTemplate
+                                ? Paths.templateView(log.authorId, log.id)
+                                : Paths.logView(log.authorId, log.id);
+                              window.navigator.share({ url });
+                            }}
+                          >
+                            Share link
+                          </MenuItem>
+                        )}
+                        {!isTemplate && (
+                          <MenuItem onClick={createTemplate}>
+                            Create Template
+                          </MenuItem>
+                        )}
+                        <MenuItem onClick={deleteLog}>
+                          <b>
+                            Delete Training {isTemplate ? 'Template' : 'Log'}
+                          </b>
                         </MenuItem>
-                      )}
-                      <MenuItem onClick={deleteLog}>
-                        <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
-                      </MenuItem>
-                    </Menu>
-                  </div>
-                </ClickAwayListener>
-                {!TrainingLog.isTemplate(log) && (
-                  <label
+                      </Menu>
+                    </div>
+                  </ClickAwayListener>
+                  <button
+                    onClick={() => {
+                      // Set to non-null to render the input
+                      setActivityName('');
+                      // Wait a tick for the input to render so it may be focused
+                      Promise.resolve().then(() =>
+                        addActivityInputRef.current?.focus()
+                      );
+                    }}
                     className={css`
-                      position: relative;
+                      border: 2px solid white;
+                      background-color: transparent;
+                      border-radius: 5px;
+                      display: flex;
+                      letter-spacing: 0.04em;
+                      text-transform: uppercase;
+                      align-items: center;
+                      padding: 0 10px 0 ${Pad.XSmall};
+                      width: min-content;
+                      font-size: 0.9rem;
+                      ${controlsFont}
                     `}
                   >
-                    <select
-                      value={log.sleepHours}
-                      ref={selectSleepHoursRef}
-                      onChange={async event => {
-                        try {
-                          // Use unary + operator to convert string to number
-                          const sleepHours = +event.target
-                            .value as typeof SleepHours[keyof typeof SleepHours];
-                          // Update sleepHours for the current TrainingLog
-                          await db
-                            .user(user.uid)
-                            .collection(DbPath.UserLogs)
-                            .withConverter(DbConverter.TrainingLog)
-                            .doc(log.id)
-                            .set({ sleepHours }, { merge: true });
-                        } catch (error) {
-                          toast.error(error.message);
-                        }
-                      }}
+                    <Add />
+                    <b>Activity</b>
+                  </button>
+                </Columns>
+                {/** RIGHT-SIDE CONTROLS COLUMN */}
+                <Columns
+                  className={css`
+                    justify-content: end;
+                  `}
+                >
+                  {!TrainingLog.isTemplate(log) && (
+                    <label
                       className={css`
-                        border: none;
-                        background: transparent;
-                        appearance: none;
-                        outline: none;
-                        position: absolute;
-                        /** Ensure that clicks hit this element. */
-                        width: 100%;
-                        height: 100%;
-                        /** Goes on top so it takes clicks. */
-                        z-index: 1;
-                        /** Cannot see it but can click it. */
-                        opacity: 0;
+                        position: relative;
+                        ${controlsFont}
                       `}
                     >
-                      <option aria-label="None" value="-99">
-                        -
-                      </option>
-                      {Object.values(SleepHours).map(opt => (
-                        <option key={opt} aria-label={'' + opt} value={opt}>
-                          {opt}
+                      <select
+                        value={log.sleepHours}
+                        ref={selectSleepHoursRef}
+                        onChange={async event => {
+                          try {
+                            // Use unary + operator to convert string to number
+                            const sleepHours = +event.target
+                              .value as typeof SleepHours[keyof typeof SleepHours];
+                            // Update sleepHours for the current TrainingLog
+                            await db
+                              .user(user.uid)
+                              .collection(DbPath.UserLogs)
+                              .withConverter(DbConverter.TrainingLog)
+                              .doc(log.id)
+                              .set({ sleepHours }, { merge: true });
+                          } catch (error) {
+                            toast.error(error.message);
+                          }
+                        }}
+                        className={css`
+                          border: none;
+                          background: transparent;
+                          appearance: none;
+                          outline: none;
+                          position: absolute;
+                          /** Ensure that clicks hit this element. */
+                          width: 100%;
+                          height: 100%;
+                          /** Goes on top so it takes clicks. */
+                          z-index: 1;
+                          /** Cannot see it but can click it. */
+                          opacity: 0;
+                        `}
+                      >
+                        <option aria-label="None" value="-99">
+                          -
                         </option>
-                      ))}
-                    </select>
-                    <LocalHotel />
-                    {!!log.sleepHours && log.sleepHours !== -99 && (
-                      <p className={smallFont}>{log.sleepHours}h</p>
-                    )}
-                  </label>
-                )}
-                <TrainingLogDateView log={log} />
+                        {Object.values(SleepHours).map(opt => (
+                          <option key={opt} aria-label={'' + opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      {/** SLEEP HOURS AND SLEEP ICON */}
+                      <Grid container spacing={1} alignItems="center">
+                        <Grid item marginLeft="auto">
+                          <LocalHotel />
+                        </Grid>
+                        {!!log.sleepHours && log.sleepHours !== -99 && (
+                          <Grid item>
+                            <p className={controlsFont}>{log.sleepHours}h</p>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </label>
+                  )}
+                  <EditorControlsDateView log={log} />
+                </Columns>
               </Rows>
             ) : (
               <Rows as="form" onSubmit={addActivity}>
@@ -632,7 +676,7 @@ export const TrainingLogEditor: FC = () => {
                   fullWidth
                   size="small"
                   inputRef={addActivityInputRef}
-                  label="Add Activity..."
+                  placeholder="Add Activity..."
                   value={activityName}
                   onBlur={
                     // Close activity autocomplete
@@ -886,4 +930,45 @@ const buildDate = (
     return `${month} ${date.getDate()}`;
   });
   return date;
+};
+
+const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
+  log,
+}) => {
+  if (TrainingLog.isTemplate(log)) {
+    return (
+      <Typography
+        variant="body2"
+        color="textSecondary"
+        className={css`
+          width: min-content;
+        `}
+      >
+        Training Template
+      </Typography>
+    );
+  }
+
+  const _date = TrainingLog.getDate(log);
+  const date: DataState<[string, string]> = _date
+    ? [format(_date, Format.date), format(_date, Format.time)]
+    : DataState.Empty;
+
+  return (
+    <DataStateView data={date} loading={() => null} error={() => null}>
+      {([date, time]) => (
+        <Typography
+          variant="body2"
+          className={css`
+            white-space: nowrap;
+            ${controlsFont}
+          `}
+        >
+          {time}
+          &nbsp;
+          {date}
+        </Typography>
+      )}
+    </DataStateView>
+  );
 };

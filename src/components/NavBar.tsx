@@ -5,9 +5,9 @@ import React, { FC, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { Paths } from '../constants';
-import { Color, Pad } from '../style';
+import { Pad } from '../style';
 
-const navBarHeight = 65;
+export const navBarHeight = 70;
 
 export const ViewWithNavBar: FC<{
   children: React.ReactNode;
@@ -29,7 +29,7 @@ const NavBar: FC = () => {
   const linkStyle = useCallback(
     (path: string) =>
       css`
-        color: ${pathname === path ? '#222' : 'darkgray'} !important;
+        color: ${pathname === path ? '#eee' : '#777'} !important;
       `,
     [pathname]
   );
@@ -40,12 +40,11 @@ const NavBar: FC = () => {
         display: flex;
         justify-content: space-between;
         position: fixed;
-        background-color: #fff;
+        background-color: #111;
         bottom: 0;
         padding: 0 ${Pad.Large} ${Pad.Medium};
         height: ${navBarHeight}px;
         width: 100%;
-        border-top: 1px solid ${Color.ActionSecondaryGray};
         max-width: 512px;
       `}
     >

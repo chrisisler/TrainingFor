@@ -209,6 +209,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
   );
 };
 
+// TODO Get rid of this
 export const TrainingLogDateView: FC<{
   log: TrainingLog | TrainingTemplate;
 }> = ({ log }) => {
