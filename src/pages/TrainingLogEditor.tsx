@@ -384,6 +384,7 @@ export const TrainingLogEditor: FC = () => {
                   overflow-y: scroll;
                   ${activityViewContainerStyle}
                   padding: ${Pad.Small} 0;
+                  padding-bottom: ${navBarHeight}px;
                 `}
               >
                 {activities.length ? (
@@ -942,6 +943,7 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
         color="textSecondary"
         className={css`
           width: min-content;
+          ${controlsFont}
         `}
       >
         Training Template
