@@ -25,9 +25,7 @@ export const TrainingLogViewPage: FC = () => {
       db
         .user(userId)
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-        .withConverter(
-          isTemplate ? DbConverter.TrainingTemplate : DbConverter.TrainingLog
-        )
+        .withConverter(isTemplate ? DbConverter.TrainingTemplate : DbConverter.TrainingLog)
         .doc(templateId ?? logId)
         .get()
         .then(doc => doc.data() ?? DataState.Empty),
@@ -42,9 +40,7 @@ export const TrainingLogViewPage: FC = () => {
         overflow-y: scroll;
       `}
     >
-      <DataStateView data={log}>
-        {log => <TrainingLogView log={log} />}
-      </DataStateView>
+      <DataStateView data={log}>{log => <TrainingLogView log={log} />}</DataStateView>
     </div>
   );
 };

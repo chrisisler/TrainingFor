@@ -27,9 +27,7 @@ export const LogIn: FC = () => {
   );
 
   const resetPassword = useCallback(() => {
-    const email = window.prompt(
-      'Please provide the email address associated with the account.'
-    );
+    const email = window.prompt('Please provide the email address associated with the account.');
     if (!email) return;
     try {
       auth.sendPasswordResetEmail(email);
@@ -92,21 +90,10 @@ export const LogIn: FC = () => {
             onChange={event => setPassword(event.target.value)}
           />
         </form>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={logIn}
-          disabled={!email || !password}
-        >
+        <Button variant="contained" color="primary" onClick={logIn} disabled={!email || !password}>
           Log In
         </Button>
-        <Button
-          size="small"
-          variant="text"
-          component={NavLink}
-          color="primary"
-          to={Paths.signUp}
-        >
+        <Button size="small" variant="text" component={NavLink} color="primary" to={Paths.signUp}>
           Sign Up
         </Button>
         <Rows between>

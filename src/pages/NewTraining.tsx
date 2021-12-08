@@ -1,10 +1,5 @@
 import { css } from '@emotion/css';
-import {
-  Button,
-  FormControl,
-  InputLabel,
-  NativeSelect,
-} from '@material-ui/core';
+import { Button, FormControl, InputLabel, NativeSelect } from '@material-ui/core';
 import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useMemo, useState } from 'react';
@@ -55,27 +50,19 @@ export const NewTraining: FC = () => {
   );
 
   const selectedTemplate: DataState<TrainingTemplate> = useMemo(
-    () =>
-      DataState.map(templates, map => map.get(templateId) ?? DataState.Empty),
+    () => DataState.map(templates, map => map.get(templateId) ?? DataState.Empty),
     [templates, templateId]
   );
 
   const createTrainingLog = useCallback(async () => {
-    const templateTitle = DataState.isReady(selectedTemplate)
-      ? selectedTemplate.title
-      : '';
-    const title = `${Weekdays[new Date().getDay()]} ${
-      templateTitle || 'Training'
-    }`;
+    const templateTitle = DataState.isReady(selectedTemplate) ? selectedTemplate.title : '';
+    const title = `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`;
     const newLog = TrainingLog.create({
       title,
       authorId: user.uid,
     });
     try {
-      const newLogRef = await db
-        .user(user.uid)
-        .collection(DbPath.UserLogs)
-        .add(newLog);
+      const newLogRef = await db.user(user.uid).collection(DbPath.UserLogs).add(newLog);
       // Copy the activites to the new training log if using a template
       if (DataState.isReady(selectedTemplate)) {
         const logActivities = newLogRef.collection(DbPath.UserLogActivities);
@@ -157,11 +144,7 @@ export const NewTraining: FC = () => {
             }}
           >
             <option aria-label="None" value="" />
-            <DataStateView
-              data={templates}
-              error={() => null}
-              loading={() => null}
-            >
+            <DataStateView data={templates} error={() => null} loading={() => null}>
               {templates =>
                 templates.size ? (
                   <>
@@ -180,12 +163,7 @@ export const NewTraining: FC = () => {
             </DataStateView>
           </NativeSelect>
         </FormControl>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={createTrainingLog}
-          size="large"
-        >
+        <Button variant="contained" color="primary" onClick={createTrainingLog} size="large">
           New Training
         </Button>
         <Button

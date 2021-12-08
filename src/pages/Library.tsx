@@ -10,14 +10,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import React, {
-  FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { DataState, DataStateView } from '../DataState';
@@ -34,9 +27,7 @@ export const Library: FC = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [newActivityName, setNewActivityName] = useState<string | null>(null);
 
-  const [activities, setActivities] = useState<DataState<SavedActivity[]>>(
-    DataState.Loading
-  );
+  const [activities, setActivities] = useState<DataState<SavedActivity[]>>(DataState.Loading);
 
   const user = useUser();
 
@@ -48,10 +39,7 @@ export const Library: FC = () => {
         const newActivity = SavedActivity.create({
           name: newActivityName,
         });
-        await db
-          .user(user.uid)
-          .collection(DbPath.UserActivityLibrary)
-          .add(newActivity);
+        await db.user(user.uid).collection(DbPath.UserActivityLibrary).add(newActivity);
         // Hide the input
         setNewActivityName(null);
       } catch (error) {
@@ -165,10 +153,7 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
   const deleteSavedActivity = useCallback(() => {
     if (!window.confirm(`Delete ${activity.name} history forever?`)) return;
     try {
-      db.user(user.uid)
-        .collection(DbPath.UserActivityLibrary)
-        .doc(activity.id)
-        .delete();
+      db.user(user.uid).collection(DbPath.UserActivityLibrary).doc(activity.id).delete();
     } catch (error) {
       toast.error(error.message);
     }
@@ -254,14 +239,9 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
           aria-labelledby="edit-activity-history"
           open={open}
         >
-          <DialogTitle id="edit-activity-history">
-            Add {activity.name} history
-          </DialogTitle>
+          <DialogTitle id="edit-activity-history">Add {activity.name} history</DialogTitle>
           <DialogContent dividers>
-            <AddHistoryForm
-              activity={activity}
-              closeModal={() => setOpen(false)}
-            />
+            <AddHistoryForm activity={activity} closeModal={() => setOpen(false)} />
           </DialogContent>
           <DialogActions>
             <Button autoFocus onClick={() => setOpen(false)} color="primary">
@@ -299,9 +279,7 @@ const AddHistoryForm: FC<{
   const [historyQuery, setHistoryQuery] = useState('');
   /** The ID's of selected `Activity`s (with the log they belong to). */
   const [selected, setSelected] = useState<SavedActivity['history']>([]);
-  const [activities, setActivities] = useState<DataState<Activity[]>>(
-    DataState.Loading
-  );
+  const [activities, setActivities] = useState<DataState<Activity[]>>(DataState.Loading);
 
   const filteredActivities: DataState<Activity[]> = useMemo(() => {
     if (!DataState.isReady(activities)) return activities;
@@ -423,9 +401,7 @@ const AddHistoryForm: FC<{
                         setSelected(selected.concat(entry));
                         return;
                       }
-                      setSelected(
-                        selected.filter(s => s.activityId !== activity.id)
-                      );
+                      setSelected(selected.filter(s => s.activityId !== activity.id));
                     }}
                   />
                 ))

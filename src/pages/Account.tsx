@@ -209,13 +209,9 @@ export const Account: FC = () => {
           </div>
         </ClickAwayListener>
       </Rows>
-      <DataStateView
-        data={DataState.all(totalLogCount, logCountPast30Days, logs, templates)}
-      >
+      <DataStateView data={DataState.all(totalLogCount, logCountPast30Days, logs, templates)}>
         {([totalLogCount, logCountPast30Days, logs, templates]) => {
-          const monthLogCount = Object.keys(
-            logs?.[createMonthBucket(selectedMonth)] ?? {}
-          ).length;
+          const monthLogCount = Object.keys(logs?.[createMonthBucket(selectedMonth)] ?? {}).length;
           return (
             <>
               <Columns
@@ -305,9 +301,7 @@ export const Account: FC = () => {
                       <TrainingCalendarLog
                         key={dayOfMonth}
                         dayOfMonth={dayOfMonth}
-                        logId={
-                          logs?.[createMonthBucket(selectedMonth)]?.[dayOfMonth]
-                        }
+                        logId={logs?.[createMonthBucket(selectedMonth)]?.[dayOfMonth]}
                       />
                     ))}
                 </Rows>
@@ -374,9 +368,7 @@ const FollowButton: FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
 
-  const [isFollowing, setIsFollowing] = useState<DataState<boolean>>(
-    DataState.Empty
-  );
+  const [isFollowing, setIsFollowing] = useState<DataState<boolean>>(DataState.Empty);
 
   // Define `isFollowing` and keep its value up-to-date
   useEffect(() => {
@@ -574,13 +566,7 @@ const TrainingTemplatePreview: FC<{
           <DataStateView data={templateLogVolumes}>
             {templateLogVolumes => (
               <LineChart height={60} width={80} data={templateLogVolumes}>
-                <Line
-                  type="monotone"
-                  dot={false}
-                  dataKey="volume"
-                  strokeWidth={2}
-                  stroke="green"
-                />
+                <Line type="monotone" dot={false} dataKey="volume" strokeWidth={2} stroke="green" />
               </LineChart>
             )}
           </DataStateView>
@@ -614,20 +600,7 @@ const isLeapYear = (year: number): boolean =>
  */
 const getMonthLength = (now: Date, monthIndex: number): number => {
   const year = now.getFullYear();
-  const lengths = [
-    31,
-    isLeapYear(year) ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31,
-  ];
+  const lengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return lengths[monthIndex];
 };
 
@@ -673,9 +646,7 @@ const TrainingCalendarLog: FC<{
   }, [open, logId, userId, user.uid]);
 
   // How many times have we done this?
-  const logDate = DataState.map(log, l =>
-    (l.timestamp as firebase.firestore.Timestamp)?.toDate()
-  );
+  const logDate = DataState.map(log, l => (l.timestamp as firebase.firestore.Timestamp)?.toDate());
 
   return (
     <IconButton

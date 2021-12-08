@@ -1,9 +1,6 @@
 import { css } from '@emotion/css';
 import { SearchOutlined } from '@material-ui/icons';
-import {
-  createPopper,
-  Instance as PopperInstance,
-} from '@popperjs/core/lib/popper-lite';
+import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import React, { FC, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -43,9 +40,9 @@ export const Timeline: FC = () => {
   });
 
   const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<
-    DataState<Pick<User, 'id' | 'displayName'>[]>
-  >(DataState.Empty);
+  const [searchResults, setSearchResults] = useState<DataState<Pick<User, 'id' | 'displayName'>[]>>(
+    DataState.Empty
+  );
 
   const history = useHistory();
 
@@ -166,10 +163,7 @@ export const Timeline: FC = () => {
                     </li>
                   ))
                 ) : (
-                  <li
-                    className={listItemStyle}
-                    tabIndex={TabIndex.NotFocusable}
-                  >
+                  <li className={listItemStyle} tabIndex={TabIndex.NotFocusable}>
                     No results
                   </li>
                 )}

@@ -3,12 +3,7 @@ import 'react-toastify/dist/ReactToastify.min.css';
 import { css } from '@emotion/css';
 import firebase from 'firebase/app';
 import React, { FC, useEffect, useState } from 'react';
-import {
-  BrowserRouter as Router,
-  Redirect,
-  Route,
-  Switch,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Redirect, Route, Switch } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
 import { ViewWithNavBar } from './components/NavBar';

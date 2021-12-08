@@ -82,6 +82,7 @@
   "prettier": {
     "singleQuote": true,
     "arrowParens": "avoid",
+    "printWidth": 100,
     "semi": true,
     "bracketSpacing": true,
     "parser": "typescript"

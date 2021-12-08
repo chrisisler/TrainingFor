@@ -21,10 +21,7 @@ export const SignUp: FC = () => {
     async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       try {
-        const userPromise = auth.createUserWithEmailAndPassword(
-          email,
-          password
-        );
+        const userPromise = auth.createUserWithEmailAndPassword(email, password);
         setPassword('');
         const userCredential = await userPromise;
         if (!userCredential.user) throw Error('Unreachable');

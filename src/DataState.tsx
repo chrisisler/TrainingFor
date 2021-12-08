@@ -12,11 +12,7 @@ const DataStateLoading = 'DataState::Loading' as const;
  * @typedef `DataState.Error` Representing a failure state has occurred.
  * @typedef `T` Representing ready data and of the specified type.
  */
-export type DataState<T> =
-  | typeof DataStateEmpty
-  | typeof DataStateLoading
-  | Error
-  | T;
+export type DataState<T> = typeof DataStateEmpty | typeof DataStateLoading | Error | T;
 
 /** Wait for all provided DataStates to be ready. */
 const dataStateAll: DataStateAll = (...dss) => {
@@ -28,9 +24,7 @@ const dataStateAll: DataStateAll = (...dss) => {
 interface DataStateAll {
   <A>(ds1: DataState<A>): DataState<[A]>;
   <A, B>(ds1: DataState<A>, ds2: DataState<B>): DataState<[A, B]>;
-  <A, B, C>(ds1: DataState<A>, ds2: DataState<B>, ds3: DataState<C>): DataState<
-    [A, B, C]
-  >;
+  <A, B, C>(ds1: DataState<A>, ds2: DataState<B>, ds3: DataState<C>): DataState<[A, B, C]>;
   <A, B, C, D>(
     ds1: DataState<A>,
     ds2: DataState<B>,
@@ -46,25 +40,17 @@ export const DataState = {
   error: (message?: string): Error => {
     return Error(message ?? 'Something went wrong.');
   },
-  isEmpty: <T extends unknown>(
-    ds: DataState<T>
-  ): ds is typeof DataStateEmpty => {
+  isEmpty: <T extends unknown>(ds: DataState<T>): ds is typeof DataStateEmpty => {
     return ds === DataStateEmpty;
   },
-  isLoading: <T extends unknown>(
-    ds: DataState<T>
-  ): ds is typeof DataStateLoading => {
+  isLoading: <T extends unknown>(ds: DataState<T>): ds is typeof DataStateLoading => {
     return ds === DataStateLoading;
   },
   isError: <T extends unknown>(ds: DataState<T>): ds is Error => {
     return ds instanceof Error;
   },
   isReady: <T extends unknown>(ds: DataState<T>): ds is T => {
-    return (
-      !DataState.isError(ds) &&
-      !DataState.isLoading(ds) &&
-      ds !== DataStateEmpty
-    );
+    return !DataState.isError(ds) && !DataState.isLoading(ds) && ds !== DataStateEmpty;
   },
   map: <T extends unknown, U extends unknown>(
     ds: DataState<T>,
@@ -73,10 +59,7 @@ export const DataState = {
     if (!DataState.isReady(ds)) return ds as DataState<U>;
     return fn(ds);
   },
-  unwrapOr: <T extends unknown, U extends unknown>(
-    ds: DataState<T>,
-    alt: U
-  ): T | U => {
+  unwrapOr: <T extends unknown, U extends unknown>(ds: DataState<T>, alt: U): T | U => {
     if (DataState.isReady(ds)) return ds;
     return alt;
   },

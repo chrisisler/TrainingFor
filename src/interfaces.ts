@@ -159,21 +159,15 @@ export const Activity = {
   }),
   cycleWeightUnit: (unit: ActivityWeightUnit): ActivityWeightUnit => {
     if (unit === ActivityWeightUnit.Pounds) return ActivityWeightUnit.Kilograms;
-    if (unit === ActivityWeightUnit.Kilograms)
-      return ActivityWeightUnit.Weightless;
-    if (unit === ActivityWeightUnit.Weightless)
-      return ActivityWeightUnit.Pounds;
+    if (unit === ActivityWeightUnit.Kilograms) return ActivityWeightUnit.Weightless;
+    if (unit === ActivityWeightUnit.Weightless) return ActivityWeightUnit.Pounds;
     throw Error('Unreachable');
   },
   cycleRepCountUnit: (unit: ActivityRepCountUnit): ActivityRepCountUnit => {
-    if (unit === ActivityRepCountUnit.Repetitions)
-      return ActivityRepCountUnit.Seconds;
-    if (unit === ActivityRepCountUnit.Seconds)
-      return ActivityRepCountUnit.Minutes;
-    if (unit === ActivityRepCountUnit.Minutes)
-      return ActivityRepCountUnit.Meters;
-    if (unit === ActivityRepCountUnit.Meters)
-      return ActivityRepCountUnit.Repetitions;
+    if (unit === ActivityRepCountUnit.Repetitions) return ActivityRepCountUnit.Seconds;
+    if (unit === ActivityRepCountUnit.Seconds) return ActivityRepCountUnit.Minutes;
+    if (unit === ActivityRepCountUnit.Minutes) return ActivityRepCountUnit.Meters;
+    if (unit === ActivityRepCountUnit.Meters) return ActivityRepCountUnit.Repetitions;
     throw Error('Unreachable');
   },
   /**
@@ -199,9 +193,7 @@ const durationRegEx = /\d+\s+\w/;
 
 // eslint-disable-next-line
 export const TrainingLog = {
-  create: (
-    data: Pick<TrainingLog, 'title' | 'authorId'>
-  ): Omit<TrainingLog, 'id'> => ({
+  create: (data: Pick<TrainingLog, 'title' | 'authorId'>): Omit<TrainingLog, 'id'> => ({
     title: data.title,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     notes: '',
@@ -241,9 +233,7 @@ export const TrainingLog = {
 
 // eslint-disable-next-line
 export const ActivitySet = {
-  create: (
-    data: Pick<ActivitySet, 'status' | 'weight' | 'repCount'>
-  ): ActivitySet => ({
+  create: (data: Pick<ActivitySet, 'status' | 'weight' | 'repCount'>): ActivitySet => ({
     ...data,
     uuid: uuid(),
   }),
@@ -278,9 +268,7 @@ export const Comment = {
 
 // eslint-disable-next-line
 export const TrainingTemplate = {
-  create: (
-    data: Pick<TrainingTemplate, 'authorId' | 'title'>
-  ): Omit<TrainingTemplate, 'id'> => ({
+  create: (data: Pick<TrainingTemplate, 'authorId' | 'title'>): Omit<TrainingTemplate, 'id'> => ({
     title: data.title,
     authorId: data.authorId,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),

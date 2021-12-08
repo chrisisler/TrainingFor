@@ -1,22 +1,8 @@
 import { css } from '@emotion/css';
-import {
-  ClickAwayListener,
-  IconButton,
-  Menu,
-  MenuItem,
-  Typography,
-} from '@material-ui/core';
+import { ClickAwayListener, IconButton, Menu, MenuItem, Typography } from '@material-ui/core';
 import { Add, ChevronRight, Close } from '@material-ui/icons';
 import firebase from 'firebase/app';
-import React, {
-  FC,
-  forwardRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
 import { toast } from 'react-toastify';
 
@@ -55,9 +41,7 @@ export const ActivityView = forwardRef<
   const commentRef = useRef<HTMLInputElement | null>(null);
 
   const [comment, setComment] = useState<null | string>(null);
-  const [comments, setComments] = useState<DataState<Comment[]>>(
-    DataState.Empty
-  );
+  const [comments, setComments] = useState<DataState<Comment[]>>(DataState.Empty);
 
   const menu = useMaterialMenu();
   const user = useUser();
@@ -152,12 +136,8 @@ export const ActivityView = forwardRef<
     if (activities.length === 1 || index === 0) return;
     try {
       const batch = db.batch();
-      const otherActivityDocument = activityDocument.parent.doc(
-        activities[index - 1].id
-      );
-      const swapped = (await otherActivityDocument.get()).get(
-        'position'
-      ) as number;
+      const otherActivityDocument = activityDocument.parent.doc(activities[index - 1].id);
+      const swapped = (await otherActivityDocument.get()).get('position') as number;
       batch.update(activityDocument, {
         position: swapped,
       } as Partial<Activity>);
@@ -174,12 +154,8 @@ export const ActivityView = forwardRef<
     if (activities.length === 1 || index + 1 === activities.length) return;
     try {
       const batch = db.batch();
-      const otherActivityDocument = activityDocument.parent.doc(
-        activities[index + 1].id
-      );
-      const swapped = (await otherActivityDocument.get()).get(
-        'position'
-      ) as number;
+      const otherActivityDocument = activityDocument.parent.doc(activities[index + 1].id);
+      const swapped = (await otherActivityDocument.get()).get('position') as number;
       batch.update(activityDocument, {
         position: swapped,
       } as Partial<Activity>);
@@ -214,9 +190,7 @@ export const ActivityView = forwardRef<
         });
         // Hide (and unfocus) the comment input.
         setComment(null);
-        activityDocument
-          .collection(DbPath.UserLogActivityComments)
-          .add(newComment);
+        activityDocument.collection(DbPath.UserLogActivityComments).add(newComment);
       } catch (error) {
         toast.error(error.message);
       }
@@ -333,19 +307,13 @@ export const ActivityView = forwardRef<
                 </MenuItem>
                 <MenuItem
                   onClick={moveActivityDown}
-                  disabled={
-                    activities.length === 1 || index + 1 === activities.length
-                  }
+                  disabled={activities.length === 1 || index + 1 === activities.length}
                 >
                   Move down
                 </MenuItem>
                 <MenuItem onClick={renameActivity}>Edit name</MenuItem>
-                <MenuItem onClick={showActivityCommentInput}>
-                  Add comment
-                </MenuItem>
-                <MenuItem onClick={duplicateActivity}>
-                  Duplicate activity
-                </MenuItem>
+                <MenuItem onClick={showActivityCommentInput}>Add comment</MenuItem>
+                <MenuItem onClick={duplicateActivity}>Duplicate activity</MenuItem>
                 {activity.sets.length > 1 && (
                   <MenuItem
                     onClick={() => {
@@ -394,17 +362,16 @@ export const ActivityView = forwardRef<
               />
             </Rows>
           )}
-          {!!activity.sets.length &&
-            activity.weightUnit !== ActivityWeightUnit.Weightless && (
-              <p
-                className={css`
-                  font-size: ${Font.Small};
-                  color: ${Color.FontSecondary};
-                `}
-              >
-                Volume: {Activity.getVolume(activity)}
-              </p>
-            )}
+          {!!activity.sets.length && activity.weightUnit !== ActivityWeightUnit.Weightless && (
+            <p
+              className={css`
+                font-size: ${Font.Small};
+                color: ${Color.FontSecondary};
+              `}
+            >
+              Volume: {Activity.getVolume(activity)}
+            </p>
+          )}
         </Columns>
         <FlipMove
           enterAnimation="fade"
@@ -552,10 +519,7 @@ const ActivitySetView = forwardRef<
 
   const menu = useMaterialMenu();
 
-  const statusColor = useMemo(
-    () => ActivitySet.getStatusColor(set.status),
-    [set.status]
-  );
+  const statusColor = useMemo(() => ActivitySet.getStatusColor(set.status), [set.status]);
 
   const setInputStyle = useCallback(
     (value: number) => css`
@@ -565,9 +529,7 @@ const ActivitySetView = forwardRef<
       outline: none;
       padding: ${Pad.XSmall};
       font-family: sans-serif;
-      color: ${value === 0
-        ? Color.ActionSecondaryGray
-        : Color.ActionPrimaryRed};
+      color: ${value === 0 ? Color.ActionSecondaryGray : Color.ActionPrimaryRed};
       font-weight: 400;
       font-size: 1.2rem;
     `,

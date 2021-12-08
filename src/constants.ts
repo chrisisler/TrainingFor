@@ -43,12 +43,10 @@ export enum Milliseconds {
 // Valid route locations within the app
 export const Paths = {
   account: '/account',
-  logView: (userId = ':userId', logId = ':logId') =>
-    `/user/${userId}/log/${logId}`,
+  logView: (userId = ':userId', logId = ':logId') => `/user/${userId}/log/${logId}`,
   user: (userId = ':userId') => `/user/${userId}`,
   logEditor: (logId = ':logId') => `${Paths.training}/log/${logId}`,
-  templateEditor: (templateId = ':templateId') =>
-    `${Paths.training}/template/${templateId}`,
+  templateEditor: (templateId = ':templateId') => `${Paths.training}/template/${templateId}`,
   templateView: (userId = ':userId', templateId = ':templateId') =>
     `/user/${userId}/template/${templateId}`,
   library: (userId = ':userId') => `/library/${userId}`,

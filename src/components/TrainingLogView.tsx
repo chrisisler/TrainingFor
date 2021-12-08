@@ -1,11 +1,5 @@
 import { css } from '@emotion/css';
-import {
-  ClickAwayListener,
-  IconButton,
-  Menu,
-  MenuItem,
-  Typography,
-} from '@material-ui/core';
+import { ClickAwayListener, IconButton, Menu, MenuItem, Typography } from '@material-ui/core';
 import format from 'date-fns/format';
 import React, { FC, useCallback } from 'react';
 import { toast } from 'react-toastify';
@@ -14,11 +8,7 @@ import { Format, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import {
-  ActivitySetStatus,
-  TrainingLog,
-  TrainingTemplate,
-} from '../interfaces';
+import { ActivitySetStatus, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Color, Columns, Pad, Rows } from '../style';
 import { ActivityView } from './ActivityView';
 import { AppLink } from './AppLink';
@@ -58,9 +48,7 @@ export const createTemplateFromLog = async (
       .then(snapshot => snapshot.docs.map(doc => doc.data())),
   ]);
   // Get a reference to the activities of the new template
-  const templateActivities = newTemplateRef.collection(
-    DbPath.UserLogActivities
-  );
+  const templateActivities = newTemplateRef.collection(DbPath.UserLogActivities);
   const batch = db.batch();
   // Reset each set.status of each activity to Unattempted (or Optional)
   logActivities.forEach(activity => {
@@ -82,9 +70,7 @@ export const createTemplateFromLog = async (
  * This component is for viewing logs not authored by the authenticated user.
  */
 // TODO Update to look like the Editor
-export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
-  log,
-}) => {
+export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ log }) => {
   const logDate = TrainingLog.getDate(log);
   const isTemplate = TrainingLog.isTemplate(log);
 
@@ -184,9 +170,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
                       </MenuItem>
                     )}
                     {isTemplate && (
-                      <MenuItem onClick={copyTemplate}>
-                        Add to your Templates
-                      </MenuItem>
+                      <MenuItem onClick={copyTemplate}>Add to your Templates</MenuItem>
                     )}
                   </Menu>
                 </div>
@@ -195,12 +179,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
           </Columns>
           <div className={activityViewContainerStyle}>
             {activities.map(({ id }, index) => (
-              <ActivityView
-                key={id}
-                activities={activities}
-                index={index}
-                log={log}
-              />
+              <ActivityView key={id} activities={activities} index={index} log={log} />
             ))}
           </div>
         </div>

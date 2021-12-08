@@ -49,29 +49,17 @@ const NavBar: FC = () => {
       `}
     >
       <IconButton aria-label="Navigate to timeline">
-        <Link
-          component={NavLink}
-          className={linkStyle(Paths.timeline)}
-          to={Paths.timeline}
-        >
+        <Link component={NavLink} className={linkStyle(Paths.timeline)} to={Paths.timeline}>
           <Forum />
         </Link>
       </IconButton>
       <IconButton aria-label="Start Training">
-        <Link
-          component={NavLink}
-          className={linkStyle(Paths.training)}
-          to={Paths.training}
-        >
+        <Link component={NavLink} className={linkStyle(Paths.training)} to={Paths.training}>
           <Create />
         </Link>
       </IconButton>
       <IconButton aria-label="Navigate to account">
-        <Link
-          component={NavLink}
-          className={linkStyle(Paths.account)}
-          to={Paths.account}
-        >
+        <Link component={NavLink} className={linkStyle(Paths.account)} to={Paths.account}>
           <Person />
         </Link>
       </IconButton>

@@ -11,10 +11,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { Add, LocalHotel } from '@material-ui/icons';
-import {
-  createPopper,
-  Instance as PopperInstance,
-} from '@popperjs/core/lib/popper-lite';
+import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
@@ -24,10 +21,7 @@ import { toast } from 'react-toastify';
 
 import { ActivityView } from '../components/ActivityView';
 import { navBarHeight } from '../components/NavBar';
-import {
-  activityViewContainerStyle,
-  createTemplateFromLog,
-} from '../components/TrainingLogView';
+import { activityViewContainerStyle, createTemplateFromLog } from '../components/TrainingLogView';
 import { Format, Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
@@ -67,15 +61,11 @@ export const TrainingLogEditor: FC = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const popperRef = useRef<PopperInstance | null>(null);
 
-  const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(
-    DataState.Loading
-  );
+  const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(DataState.Loading);
   /** Controlled state for `TrainingLog.notes` */
   const [logNotes, setLogNotes] = useState<DataState<string>>(DataState.Empty);
   /** Live data from DbPath.Activity collection snapshots. */
-  const [activities, setActivities] = useState<DataState<Activity[]>>(
-    DataState.Loading
-  );
+  const [activities, setActivities] = useState<DataState<Activity[]>>(DataState.Loading);
 
   const menu = useMaterialMenu();
   const history = useHistory();
@@ -126,9 +116,7 @@ export const TrainingLogEditor: FC = () => {
     return db
       .user(user.uid)
       .collection(templateId ? DbPath.UserTemplates : DbPath.UserLogs)
-      .withConverter(
-        templateId ? DbConverter.TrainingTemplate : DbConverter.TrainingLog
-      )
+      .withConverter(templateId ? DbConverter.TrainingTemplate : DbConverter.TrainingLog)
       .doc(templateId ?? logId)
       .onSnapshot(
         doc => {
@@ -160,10 +148,7 @@ export const TrainingLogEditor: FC = () => {
           .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
           .doc(log.id)
           .collection(DbPath.UserLogActivities);
-        const { docs } = await activitiesColl
-          .orderBy('position', 'desc')
-          .limit(1)
-          .get();
+        const { docs } = await activitiesColl.orderBy('position', 'desc').limit(1).get();
         const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
         const entry = Activity.create({
           name,
@@ -210,8 +195,7 @@ export const TrainingLogEditor: FC = () => {
       // Hide the input
       setActivityName(null);
       try {
-        const prevMaxPosition =
-          activities[activities.length - 1]?.position ?? 0;
+        const prevMaxPosition = activities[activities.length - 1]?.position ?? 0;
         const sets = activity.sets.map(s => {
           s.status = ActivitySetStatus.Unattempted;
           return s;
@@ -280,9 +264,7 @@ export const TrainingLogEditor: FC = () => {
         toast.warn('No log found');
         return;
       }
-      const path = templateId
-        ? Paths.templateEditor(doc.id)
-        : Paths.logEditor(doc.id);
+      const path = templateId ? Paths.templateEditor(doc.id) : Paths.logEditor(doc.id);
       history.push(path);
     } catch (error) {
       toast.error(error.message);
@@ -306,9 +288,7 @@ export const TrainingLogEditor: FC = () => {
         toast.warn('No log found');
         return;
       }
-      const path = templateId
-        ? Paths.templateEditor(doc.id)
-        : Paths.logEditor(doc.id);
+      const path = templateId ? Paths.templateEditor(doc.id) : Paths.logEditor(doc.id);
       history.push(path);
     } catch (error) {
       toast.error(error.message);
@@ -425,11 +405,7 @@ export const TrainingLogEditor: FC = () => {
               width: 100%;
               bottom: ${navBarHeight}px;
               padding: ${Pad.Medium} ${Pad.Small};
-              background-image: linear-gradient(
-                rgba(0, 0, 0, 0),
-                rgba(0, 0, 0, 0.4),
-                #171717
-              );
+              background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4), #171717);
             `}
             pad={Pad.Medium}
           >
@@ -454,9 +430,7 @@ export const TrainingLogEditor: FC = () => {
                 >
                   <LibraryAutocomplete
                     query={activityName}
-                    setActivityName={(name: string | null) =>
-                      setActivityName(name)
-                    }
+                    setActivityName={(name: string | null) => setActivityName(name)}
                     addFromLibrary={addFromLibrary}
                   />
                 </div>
@@ -524,12 +498,8 @@ export const TrainingLogEditor: FC = () => {
                         onClose={menu.close}
                         MenuListProps={{ dense: true }}
                       >
-                        <MenuItem onClick={openPreviousLog}>
-                          Go to previous log
-                        </MenuItem>
-                        <MenuItem onClick={openNextLog}>
-                          Go to next log
-                        </MenuItem>
+                        <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
+                        <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
                         <MenuItem onClick={renameLog}>Edit name</MenuItem>
                         <MenuItem
                           onClick={() => {
@@ -539,9 +509,7 @@ export const TrainingLogEditor: FC = () => {
                             }
                             // Unhide the notes input
                             setLogNotes('');
-                            Promise.resolve().then(() =>
-                              logNotesRef.current?.focus()
-                            );
+                            Promise.resolve().then(() => logNotesRef.current?.focus());
                           }}
                         >
                           Add notes
@@ -560,14 +528,10 @@ export const TrainingLogEditor: FC = () => {
                           </MenuItem>
                         )}
                         {!isTemplate && (
-                          <MenuItem onClick={createTemplate}>
-                            Create Template
-                          </MenuItem>
+                          <MenuItem onClick={createTemplate}>Create Template</MenuItem>
                         )}
                         <MenuItem onClick={deleteLog}>
-                          <b>
-                            Delete Training {isTemplate ? 'Template' : 'Log'}
-                          </b>
+                          <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
                         </MenuItem>
                       </Menu>
                     </div>
@@ -577,9 +541,7 @@ export const TrainingLogEditor: FC = () => {
                       // Set to non-null to render the input
                       setActivityName('');
                       // Wait a tick for the input to render so it may be focused
-                      Promise.resolve().then(() =>
-                        addActivityInputRef.current?.focus()
-                      );
+                      Promise.resolve().then(() => addActivityInputRef.current?.focus());
                     }}
                     className={css`
                       border: 2px solid white;
@@ -876,11 +838,7 @@ const LibraryMenuSavedActivityView: FC<{
   }, [user.uid, savedActivity.history]);
 
   return (
-    <DataStateView
-      data={pastActivities}
-      empty={() => <p>No history!</p>}
-      loading={() => null}
-    >
+    <DataStateView data={pastActivities} empty={() => <p>No history!</p>} loading={() => null}>
       {pastActivities => (
         <Columns pad={Pad.Medium}>
           {/** TODO Display `activity.name` as title section and use background-color grouping */}
@@ -892,11 +850,7 @@ const LibraryMenuSavedActivityView: FC<{
           ) : (
             pastActivities.map(activity => (
               <Columns key={activity.id}>
-                <Rows
-                  center
-                  between
-                  onClick={() => addFromLibrary(activity, savedActivity)}
-                >
+                <Rows center between onClick={() => addFromLibrary(activity, savedActivity)}>
                   <p>{activity.name}</p>
                   <DataStateView
                     data={buildDate(activity.timestamp)}
@@ -922,9 +876,7 @@ const LibraryMenuSavedActivityView: FC<{
   );
 };
 
-const buildDate = (
-  timestamp: null | firebase.firestore.FieldValue
-): DataState<string> => {
+const buildDate = (timestamp: null | firebase.firestore.FieldValue): DataState<string> => {
   const _date = (timestamp as firebase.firestore.Timestamp)?.toDate();
   const date = DataState.map(_date ?? DataState.Empty, date => {
     const month = Months[date.getMonth()].slice(0, 3);
@@ -933,9 +885,7 @@ const buildDate = (
   return date;
 };
 
-const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({
-  log,
-}) => {
+const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ log }) => {
   if (TrainingLog.isTemplate(log)) {
     return (
       <Typography
