@@ -25,6 +25,11 @@ import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
+/**
+ * Create a month that is unique from the same of other years, AKA `"12-21" `and
+ * `"12-20"` from Dec 2020 and Dec 2021 respectively. A unique version of
+ * `date.getMonth()`.
+ */
 const createMonthBucket = (d: Date): string => `${d.getMonth()}-${d.getFullYear()}`;
 
 /**
@@ -108,11 +113,11 @@ export const Account: FC = () => {
           snapshot.docs.forEach(doc => {
             const timestamp = doc.get('timestamp');
             const date = (timestamp as firebase.firestore.Timestamp).toDate();
-            const month = createMonthBucket(date);
-            if (!logsByMonth[month]) logsByMonth[month] = {};
+            const monthBucket = createMonthBucket(date);
+            if (!logsByMonth[monthBucket]) logsByMonth[monthBucket] = {};
             // Add TrainingLog entry for the date it was performed
             // This assumes only ONE training log per day
-            logsByMonth[month][date.getDate() - 1] = doc.id;
+            logsByMonth[monthBucket][date.getDate() - 1] = doc.id;
           });
           return logsByMonth;
         }),
@@ -207,136 +212,160 @@ export const Account: FC = () => {
       <DataStateView
         data={DataState.all(totalLogCount, logCountPast30Days, logs, templates)}
       >
-        {([totalLogCount, logCountPast30Days, logs, templates]) => (
-          <>
-            <Columns
-              className={css`
-                text-align: center;
-              `}
-            >
-              <Typography variant="body2">Training Logs</Typography>
-              <Typography
-                variant="h2"
+        {([totalLogCount, logCountPast30Days, logs, templates]) => {
+          const monthLogCount = Object.keys(
+            logs?.[createMonthBucket(selectedMonth)] ?? {}
+          ).length;
+          return (
+            <>
+              <Columns
                 className={css`
-                  line-height: 0.9em !important;
+                  text-align: center;
                 `}
               >
-                {totalLogCount}
-              </Typography>
-            </Columns>
-            <Rows
-              pad={Pad.Small}
-              className={css`
-                height: min-height;
-                padding: 0 ${Pad.Large};
-              `}
-            >
+                <Typography variant="body2">Training Logs</Typography>
+                <Typography
+                  variant="h2"
+                  className={css`
+                    line-height: 0.9em !important;
+                  `}
+                >
+                  {totalLogCount}
+                </Typography>
+              </Columns>
+              {/** Row of stats */}
               <Rows
-                center
                 pad={Pad.Small}
+                between
                 className={css`
-                  border-radius: 16px;
-                  border: 0;
-                  padding: ${Pad.Small} ${Pad.Medium};
+                  height: min-height;
+                  padding: 0 ${Pad.Medium};
+                `}
+              >
+                <AccountStat
+                  progressValue={100 * (logCountPast30Days / 30)}
+                  title="Past 30 days"
+                  text={logCountPast30Days}
+                />
+                <AccountStat
+                  progressValue={100 * (monthLogCount / monthLength)}
+                  title={Months[selectedMonth.getMonth()]}
+                  text={monthLogCount}
+                />
+              </Rows>
+
+              {/** Calendar */}
+              <Columns
+                className={css`
+                  padding: ${Pad.Small} 0;
                   background-color: #fff;
+                  border-radius: 20px;
                   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
                 `}
               >
-                <CircularProgressWithLabel
-                  value={100 * (logCountPast30Days / 30)}
-                />
-                <Columns center>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Past 30 days
-                  </Typography>
-                  <Typography variant="h6" color="textPrimary">
-                    {logCountPast30Days}
-                  </Typography>
-                </Columns>
-              </Rows>
-            </Rows>
-
-            {/** Calendar */}
-            <Columns
-              className={css`
-                padding: ${Pad.Small} 0;
-                background-color: #fff;
-                border-radius: 20px;
-                box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
-              `}
-            >
-              <Rows
-                center
-                pad={Pad.Medium}
-                className={css`
-                  justify-content: center;
-                `}
-              >
-                <IconButton
-                  aria-label="View previous month of logs"
-                  size="small"
-                  onClick={() => {
-                    setSelectedMonth(subMonths(selectedMonth, 1));
-                  }}
+                <Rows
+                  center
+                  pad={Pad.Medium}
+                  className={css`
+                    justify-content: center;
+                  `}
                 >
-                  <ChevronLeft />
-                </IconButton>
-                {/** Month name display */}
-                <Typography variant="body1" color="textSecondary">
-                  {Months[selectedMonth.getMonth()]}{' '}
-                  '{selectedMonth.getFullYear().toString().slice(2)}
-                </Typography>
-                <IconButton
-                  aria-label="View next month of logs"
-                  size="small"
-                  onClick={() => {
-                    setSelectedMonth(addMonths(selectedMonth, 1));
-                  }}
+                  <IconButton
+                    aria-label="View previous month of logs"
+                    size="small"
+                    onClick={() => {
+                      setSelectedMonth(subMonths(selectedMonth, 1));
+                    }}
+                  >
+                    <ChevronLeft />
+                  </IconButton>
+                  {/** Month name display */}
+                  <Typography variant="body1" color="textSecondary">
+                    {Months[selectedMonth.getMonth()]} '
+                    {selectedMonth.getFullYear().toString().slice(2)}
+                  </Typography>
+                  <IconButton
+                    aria-label="View next month of logs"
+                    size="small"
+                    onClick={() => {
+                      setSelectedMonth(addMonths(selectedMonth, 1));
+                    }}
+                  >
+                    <ChevronRight />
+                  </IconButton>
+                </Rows>
+                <Rows
+                  className={css`
+                    flex-wrap: wrap;
+                  `}
                 >
-                  <ChevronRight />
-                </IconButton>
-              </Rows>
-              <Rows
-                className={css`
-                  flex-wrap: wrap;
-                `}
-              >
-                {Array(monthLength)
-                  .fill(null)
-                  .map((_, dayOfMonth) => (
-                    <TrainingCalendarLog
-                      key={dayOfMonth}
-                      dayOfMonth={dayOfMonth}
-                      logId={
-                        logs?.[createMonthBucket(selectedMonth)]?.[dayOfMonth]
-                      }
-                    />
-                  ))}
-              </Rows>
-            </Columns>
-            {templates.length ? (
-              <Rows
-                pad={Pad.Medium}
-                className={css`
-                  overflow-x: scroll;
-                  overflow-y: hidden;
-                  padding: 0 ${Pad.Large};
-                `}
-              >
-                <>
-                  {templates.map(t => (
-                    <TrainingTemplatePreview key={t.id} template={t} />
-                  ))}
-                  <TrainingTemplateCreate />
-                </>
-              </Rows>
-            ) : (
-              <TrainingTemplateCreate />
-            )}
-          </>
-        )}
+                  {Array(monthLength)
+                    .fill(null)
+                    .map((_, dayOfMonth) => (
+                      <TrainingCalendarLog
+                        key={dayOfMonth}
+                        dayOfMonth={dayOfMonth}
+                        logId={
+                          logs?.[createMonthBucket(selectedMonth)]?.[dayOfMonth]
+                        }
+                      />
+                    ))}
+                </Rows>
+              </Columns>
+              {templates.length ? (
+                <Rows
+                  pad={Pad.Medium}
+                  className={css`
+                    overflow-x: scroll;
+                    overflow-y: hidden;
+                    padding: 0 ${Pad.Large};
+                  `}
+                >
+                  <>
+                    {templates.map(t => (
+                      <TrainingTemplatePreview key={t.id} template={t} />
+                    ))}
+                    <TrainingTemplateCreate />
+                  </>
+                </Rows>
+              ) : (
+                <TrainingTemplateCreate />
+              )}
+            </>
+          );
+        }}
       </DataStateView>
     </Columns>
+  );
+};
+
+const AccountStat: FC<{
+  progressValue: number;
+  title: string;
+  text: React.ReactNode;
+}> = ({ progressValue, title, text }) => {
+  return (
+    <Rows
+      center
+      pad={Pad.Small}
+      className={css`
+        border-radius: 16px;
+        border: 0;
+        padding: ${Pad.Small} ${Pad.Medium};
+        background-color: #fff;
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+      `}
+    >
+      <CircularProgressWithLabel value={progressValue} />
+      <Columns center>
+        <Typography variant="subtitle2" color="textSecondary">
+          {title}
+        </Typography>
+        <Typography variant="h6" color="textPrimary">
+          {text}
+        </Typography>
+      </Columns>
+    </Rows>
   );
 };
 
@@ -581,7 +610,7 @@ const isLeapYear = (year: number): boolean =>
 
 /**
  * @note When passing `monthIndex` remember that January is index 0.
- * @example const numDaysInFeb = getMonthLength(new Date(), 1)
+ * @example const februaryDaysCount = getMonthLength(new Date(), 1)
  */
 const getMonthLength = (now: Date, monthIndex: number): number => {
   const year = now.getFullYear();
