@@ -5,7 +5,7 @@ import React, { FC, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { TrainingLogView } from '../components/TrainingLogView';
+import { TrainingLogView } from '../components';
 import { Paths, TabIndex } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';

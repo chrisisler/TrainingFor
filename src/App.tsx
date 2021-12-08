@@ -6,19 +6,21 @@ import React, { FC, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Redirect, Route, Switch } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
-import { ViewWithNavBar } from './components/NavBar';
+import { ViewWithNavBar } from './components';
 import { Paths } from './constants';
 import { DataState, DataStateView } from './DataState';
 import { auth } from './firebase';
 import { UserProvider } from './hooks';
-import { Account } from './pages/Account';
-import { Library } from './pages/Library';
-import { LogIn } from './pages/LogIn';
-import { NewTraining } from './pages/NewTraining';
-import { SignUp } from './pages/SignUp';
-import { Timeline } from './pages/Timeline';
-import { TrainingLogEditor } from './pages/TrainingLogEditor';
-import { TrainingLogViewPage } from './pages/TrainingLogViewPage';
+import {
+  Account,
+  Library,
+  LogIn,
+  NewTraining,
+  SignUp,
+  Timeline,
+  TrainingLogEditor,
+  TrainingLogViewPage,
+} from './pages';
 import { Pad } from './style';
 
 export const App: FC = () => {

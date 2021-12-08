@@ -19,9 +19,12 @@ import FlipMove from 'react-flip-move';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { ActivityView } from '../components/ActivityView';
-import { navBarHeight } from '../components/NavBar';
-import { activityViewContainerStyle, createTemplateFromLog } from '../components/TrainingLogView';
+import {
+  ActivityView,
+  activityViewContainerStyle,
+  createTemplateFromLog,
+  navBarHeight,
+} from '../components';
 import { Format, Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';

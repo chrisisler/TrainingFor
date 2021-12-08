@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { Loading } from './components/Loading';
-import { Sorry } from './components/Sorry';
+import { Loading, Sorry } from './components';
 
 const DataStateEmpty = 'DataState::Empty' as const;
 const DataStateLoading = 'DataState::Loading' as const;

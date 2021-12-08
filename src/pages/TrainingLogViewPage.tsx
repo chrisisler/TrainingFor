@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import React, { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { TrainingLogView } from '../components/TrainingLogView';
+import { TrainingLogView } from '../components';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 
