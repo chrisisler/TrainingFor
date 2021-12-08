@@ -109,13 +109,13 @@ export const App: FC = () => {
                     <Library />
                   </ViewWithNavBar>
                 </Route>
-                <Route exact path={Paths.newTraining}>
+                <Route exact path={Paths.training}>
                   <ViewWithNavBar>
                     <NewTraining />
                   </ViewWithNavBar>
                 </Route>
                 <Route path="/">
-                  <Redirect to={Paths.newTraining} />
+                  <Redirect to={Paths.training} />
                 </Route>
               </Switch>
             </UserProvider>

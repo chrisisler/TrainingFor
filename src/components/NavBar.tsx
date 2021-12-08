@@ -29,7 +29,7 @@ const NavBar: FC = () => {
   const linkStyle = useCallback(
     (path: string) =>
       css`
-        color: ${pathname === path ? '#eee' : '#777'} !important;
+        color: ${pathname.includes(path) ? '#eee' : '#777'} !important;
       `,
     [pathname]
   );
@@ -60,8 +60,8 @@ const NavBar: FC = () => {
       <IconButton aria-label="Start Training">
         <Link
           component={NavLink}
-          className={linkStyle(Paths.newTraining)}
-          to={Paths.newTraining}
+          className={linkStyle(Paths.training)}
+          to={Paths.training}
         >
           <Create />
         </Link>

@@ -46,13 +46,14 @@ export const Paths = {
   logView: (userId = ':userId', logId = ':logId') =>
     `/user/${userId}/log/${logId}`,
   user: (userId = ':userId') => `/user/${userId}`,
-  logEditor: (logId = ':logId') => `/log/${logId}`,
-  templateEditor: (templateId = ':templateId') => `/template/${templateId}`,
+  logEditor: (logId = ':logId') => `${Paths.training}/log/${logId}`,
+  templateEditor: (templateId = ':templateId') =>
+    `${Paths.training}/template/${templateId}`,
   templateView: (userId = ':userId', templateId = ':templateId') =>
     `/user/${userId}/template/${templateId}`,
   library: (userId = ':userId') => `/library/${userId}`,
   signUp: '/signup',
   logIn: '/login',
   timeline: '/timeline',
-  newTraining: '/',
-};
+  training: '/training',
+} as const;
