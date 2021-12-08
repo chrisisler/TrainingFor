@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { Add, ChevronLeft, ChevronRight } from '@material-ui/icons';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { addMonths, formatDistanceToNowStrict, subMonths } from 'date-fns';
 import firebase from 'firebase/app';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -25,12 +25,15 @@ import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
+const createMonthBucket = (d: Date): string => `${d.getMonth()}-${d.getFullYear()}`;
+
 /**
  * Presents the currently authenticated user and their logs OR presents another
  * user's account and logs with a button to follow/unfollow.
  */
 export const Account: FC = () => {
-  const [thisMonth, setThisMonth] = useState(new Date().getMonth());
+  const date = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(date);
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
@@ -39,8 +42,8 @@ export const Account: FC = () => {
   const history = useHistory();
 
   const monthLength = useMemo(
-    () => getMonthLength(new Date(), thisMonth),
-    [thisMonth]
+    () => getMonthLength(new Date(), selectedMonth.getMonth()),
+    [selectedMonth]
   );
 
   const [totalLogCount] = useDataState(
@@ -91,7 +94,7 @@ export const Account: FC = () => {
   /** Each TrainingLog.id is bucketed into month and day-of-month. */
   // Not every month key-value pair exists and same goes for day-of-month
   const [logs] = useDataState<{
-    [month: number]: { [dayDate: number]: TrainingLog['id'] };
+    [monthAndYear: string]: { [dayDate: number]: TrainingLog['id'] };
   }>(
     () =>
       db
@@ -105,7 +108,7 @@ export const Account: FC = () => {
           snapshot.docs.forEach(doc => {
             const timestamp = doc.get('timestamp');
             const date = (timestamp as firebase.firestore.Timestamp).toDate();
-            const month = date.getMonth();
+            const month = createMonthBucket(date);
             if (!logsByMonth[month]) logsByMonth[month] = {};
             // Add TrainingLog entry for the date it was performed
             // This assumes only ONE training log per day
@@ -121,6 +124,7 @@ export const Account: FC = () => {
     const text = window.prompt('Type "delete" to delete account');
     if (!!text && text?.toLowerCase() !== 'delete') return;
     try {
+      // TODO Promise.all awaits
       await db.user(user.uid).delete();
       if (!auth.currentUser) throw Error('Unreachable');
       await auth.currentUser.delete();
@@ -251,6 +255,8 @@ export const Account: FC = () => {
                 </Columns>
               </Rows>
             </Rows>
+
+            {/** Calendar */}
             <Columns
               className={css`
                 padding: ${Pad.Small} 0;
@@ -270,19 +276,21 @@ export const Account: FC = () => {
                   aria-label="View previous month of logs"
                   size="small"
                   onClick={() => {
-                    setThisMonth(thisMonth - 1);
+                    setSelectedMonth(subMonths(selectedMonth, 1));
                   }}
                 >
                   <ChevronLeft />
                 </IconButton>
+                {/** Month name display */}
                 <Typography variant="body1" color="textSecondary">
-                  {Months[thisMonth]}
+                  {Months[selectedMonth.getMonth()]}{' '}
+                  '{selectedMonth.getFullYear().toString().slice(2)}
                 </Typography>
                 <IconButton
                   aria-label="View next month of logs"
                   size="small"
                   onClick={() => {
-                    setThisMonth(thisMonth + 1);
+                    setSelectedMonth(addMonths(selectedMonth, 1));
                   }}
                 >
                   <ChevronRight />
@@ -299,7 +307,9 @@ export const Account: FC = () => {
                     <TrainingCalendarLog
                       key={dayOfMonth}
                       dayOfMonth={dayOfMonth}
-                      logId={logs?.[thisMonth]?.[dayOfMonth]}
+                      logId={
+                        logs?.[createMonthBucket(selectedMonth)]?.[dayOfMonth]
+                      }
                     />
                   ))}
               </Rows>
