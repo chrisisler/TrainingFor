@@ -59,8 +59,8 @@ export const TrainingLogEditor: FC = () => {
   const [activityName, setActivityName] = useState<string | null>(null);
 
   /** For ActivityInput autocomplete. */
-  const libraryMenuRef = useRef<HTMLDivElement | null>(null);
   const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
+  const libraryMenuRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const popperRef = useRef<PopperInstance | null>(null);
 
@@ -81,32 +81,7 @@ export const TrainingLogEditor: FC = () => {
 
   const isTemplate = !!templateId;
 
-  // MIGRATION
-  // Migrate Activity interface to add isFavorite boolean field
-  // useEffect(() => {
-  //   [DbPath.UserTemplates].forEach(async dbPath => {
-  //     try {
-  //       const logsSnapshot = await db
-  //         .user(user.uid)
-  //         .collection(DbPath.UserTemplates)
-  //         .withConverter(DbConverter.TrainingLog)
-  //         .get();
-  //       logsSnapshot.docs.forEach(async logDoc => {
-  //         const activitiesSnapshot = await logDoc.ref.collection(DbPath.UserLogActivities).get();
-  //         activitiesSnapshot.docs.forEach(activityDoc => {
-  //           activityDoc.ref.parent
-  //             .doc(activityDoc.id)
-  //             .withConverter(DbConverter.Activity)
-  //             .set({ isFavorite: false }, { merge: true });
-  //         });
-  //       });
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   })
-  // }, [user.uid])
-
-  // TrainingLogEditorView useEffect: fetch `activities`
+  // Fetch activities and observe live updates
   useEffect(() => {
     if (!DataState.isReady(log)) return;
     return db
@@ -122,12 +97,9 @@ export const TrainingLogEditor: FC = () => {
             snapshot.docs.map(doc => {
               const activity = doc.data();
               // Patch the fields not present in old data
-              if (!activity.repCountUnit) {
-                activity.repCountUnit = ActivityRepCountUnit.Repetitions;
-              }
-              if (!activity.weightUnit) {
-                activity.weightUnit = ActivityWeightUnit.Pounds;
-              }
+              if (!activity?.repCountUnit) activity.repCountUnit = ActivityRepCountUnit.Repetitions;
+              if (!activity?.weightUnit) activity.weightUnit = ActivityWeightUnit.Pounds;
+              if (!activity?.isFavorite) activity.isFavorite = false;
               return activity;
             })
           ),
@@ -149,7 +121,7 @@ export const TrainingLogEditor: FC = () => {
       .onSnapshot(
         doc => {
           const log = doc.data();
-          setLog(log ?? DataState.Empty);
+          setLog(log ?? DataState.error('Unexpected: Log not found.'));
           if (log?.notes?.length) setLogNotes(log.notes);
         },
         err => setLog(DataState.error(err.message))

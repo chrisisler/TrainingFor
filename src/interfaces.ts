@@ -87,8 +87,7 @@ export interface Activity extends FirestoreDocument {
 export interface SavedActivity extends FirestoreDocument {
   name: string;
   /**
-   * History represents... a history of the performance of an Activity.
-   * The data tells a story.
+   * The list of occurrences of an Activity.
    */
   history: { activityId: string; logId: string }[];
 }

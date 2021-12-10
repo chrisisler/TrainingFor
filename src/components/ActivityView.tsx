@@ -46,6 +46,12 @@ export const ActivityView = forwardRef<
   const menu = useMaterialMenu();
   const user = useUser();
 
+  /** The ID of the <3'ed Activity. */
+  const favoritedActivity = useMemo(
+    () => activities.find(_ => _.isFavorite)?.id ?? null,
+    [activities]
+  );
+
   const activityDocument = useMemo(
     () =>
       db
@@ -233,6 +239,21 @@ export const ActivityView = forwardRef<
     outline: none;
   `;
 
+  /** Favorite the current Activity and unfavorite others */
+  const toggleFavorite = useCallback(async () => {
+    try {
+      // Has one been favorited? Is it the current one?
+      if (favoritedActivity && favoritedActivity !== activity.id) {
+        activityDocument.parent
+          .doc(favoritedActivity)
+          .set({ isFavorite: false }, { merge: true });
+      }
+      await activityDocument.set({ isFavorite: !activity.isFavorite }, { merge: true });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activity.id, activity.isFavorite, activityDocument, favoritedActivity]);
+
   return (
     <Columns
       ref={ref}
@@ -331,7 +352,42 @@ export const ActivityView = forwardRef<
             </div>
           </ClickAwayListener>
         </Columns>
+
+        {/** Favorite icon */}
+        {!isTemplate && (
+          <IconButton
+            size="small"
+            onClick={toggleFavorite}
+            className={css`
+              color: ${activity.isFavorite ? '#cc0000' : Color.ActionSecondaryGray} !important;
+
+              // https://www.w3schools.com/howto/howto_css_shake_image.asp
+              :active {
+                animation: shake 0.5s;
+                animation-iteration-count: 1;
+              }
+              // prettier-ignore
+              @keyframes shake {
+                0% { transform: translate(1px, 1px) rotate(0deg); }
+                10% { transform: translate(-1px, -2px) rotate(-1deg); }
+                20% { transform: translate(-3px, 0px) rotate(1deg); }
+                30% { transform: translate(3px, 2px) rotate(0deg); }
+                40% { transform: translate(1px, -1px) rotate(1deg); }
+                50% { transform: translate(-1px, 2px) rotate(-1deg); }
+                60% { transform: translate(-3px, 1px) rotate(0deg); }
+                70% { transform: translate(3px, 1px) rotate(-1deg); }
+                80% { transform: translate(-1px, -1px) rotate(1deg); }
+                90% { transform: translate(1px, 2px) rotate(0deg); }
+                100% { transform: translate(1px, -2px) rotate(-1deg); }
+              }
+            `}
+          >
+            {activity.isFavorite ? <Favorite /> : <FavoriteBorder />}
+          </IconButton>
+        )}
       </Rows>
+
+      {/** LB and REP unit buttons */}
       <Rows pad={Pad.Medium}>
         <Columns pad={Pad.Small}>
           {!!activity.sets.length && (
@@ -362,6 +418,8 @@ export const ActivityView = forwardRef<
               />
             </Rows>
           )}
+
+          {/** Volume indicator */}
           {!!activity.sets.length && activity.weightUnit !== ActivityWeightUnit.Weightless && (
             <p
               className={css`
@@ -372,15 +430,9 @@ export const ActivityView = forwardRef<
               Volume: {Activity.getVolume(activity)}
             </p>
           )}
-          <IconButton
-            className={css`
-              color: ${1 ? '#cc0000' : Color.ActionSecondaryGray} !important;
-              width: fit-content;
-            `}
-          >
-            {/** todo */ activity?.isFavorite ? <Favorite /> : <FavoriteBorder />}
-          </IconButton>
         </Columns>
+
+        {/** Activity Sets */}
         <FlipMove
           enterAnimation="fade"
           leaveAnimation="fade"
@@ -405,6 +457,7 @@ export const ActivityView = forwardRef<
           ))}
         </FlipMove>
       </Rows>
+      {/** Comments */}
       <DataStateView data={comments} loading={() => null} error={() => null}>
         {comments =>
           comments.length === 0 ? null : (
@@ -452,6 +505,8 @@ export const ActivityView = forwardRef<
           )
         }
       </DataStateView>
+
+      {/** Commenting */}
       {typeof comment === 'string' && (
         <Rows maxWidth center pad={Pad.XSmall}>
           <form
