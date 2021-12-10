@@ -81,6 +81,31 @@ export const TrainingLogEditor: FC = () => {
 
   const isTemplate = !!templateId;
 
+  // MIGRATION
+  // Migrate Activity interface to add isFavorite boolean field
+  // useEffect(() => {
+  //   [DbPath.UserTemplates].forEach(async dbPath => {
+  //     try {
+  //       const logsSnapshot = await db
+  //         .user(user.uid)
+  //         .collection(DbPath.UserTemplates)
+  //         .withConverter(DbConverter.TrainingLog)
+  //         .get();
+  //       logsSnapshot.docs.forEach(async logDoc => {
+  //         const activitiesSnapshot = await logDoc.ref.collection(DbPath.UserLogActivities).get();
+  //         activitiesSnapshot.docs.forEach(activityDoc => {
+  //           activityDoc.ref.parent
+  //             .doc(activityDoc.id)
+  //             .withConverter(DbConverter.Activity)
+  //             .set({ isFavorite: false }, { merge: true });
+  //         });
+  //       });
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   })
+  // }, [user.uid])
+
   // TrainingLogEditorView useEffect: fetch `activities`
   useEffect(() => {
     if (!DataState.isReady(log)) return;
@@ -731,7 +756,7 @@ const LibraryAutocomplete: FC<{
         repCountUnit: ActivityRepCountUnit.Repetitions,
         weightUnit: ActivityWeightUnit.Pounds,
         sets: [],
-        /**  These fields do not matter. @see addFromLibrary */
+        /**  In this case, these fields do not matter. @see addFromLibrary */
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         logId: '',
         position: 0,

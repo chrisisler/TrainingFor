@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { ClickAwayListener, IconButton, Menu, MenuItem, Typography } from '@material-ui/core';
-import { Add, ChevronRight, Close } from '@material-ui/icons';
+import { Add, ChevronRight, Close, Favorite, FavoriteBorder } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
@@ -372,6 +372,14 @@ export const ActivityView = forwardRef<
               Volume: {Activity.getVolume(activity)}
             </p>
           )}
+          <IconButton
+            className={css`
+              color: ${1 ? '#cc0000' : Color.ActionSecondaryGray} !important;
+              width: fit-content;
+            `}
+          >
+            {/** todo */ activity?.isFavorite ? <Favorite /> : <FavoriteBorder />}
+          </IconButton>
         </Columns>
         <FlipMove
           enterAnimation="fade"

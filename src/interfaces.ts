@@ -75,6 +75,8 @@ export interface Activity extends FirestoreDocument {
   timestamp: FirestoreTimestamp;
   /** Which TrainingLog was this Activity performed in? */
   logId: string;
+  /** Chosen by the user as the best of all of them. */
+  isFavorite: boolean;
 }
 
 /**
@@ -140,22 +142,17 @@ const whitespaceOrDash = /(\s+|-+)/;
 // eslint-disable-next-line
 export const SavedActivity = {
   create: (data: Pick<SavedActivity, 'name'>): Omit<SavedActivity, 'id'> => ({
-    name: data.name,
+    ...data,
     history: [],
   }),
 };
 
 // eslint-disable-next-line
 export const Activity = {
-  create: (data: Omit<Activity, 'notes' | 'id'>): Omit<Activity, 'id'> => ({
-    name: data.name,
-    position: data.position,
-    logId: data.logId,
-    timestamp: data.timestamp,
+  create: (data: Omit<Activity, 'notes' | 'id' | 'isFavorite'>): Omit<Activity, 'id'> => ({
+    ...data,
     notes: null,
-    sets: data.sets,
-    repCountUnit: data.repCountUnit,
-    weightUnit: data.weightUnit,
+    isFavorite: false,
   }),
   cycleWeightUnit: (unit: ActivityWeightUnit): ActivityWeightUnit => {
     if (unit === ActivityWeightUnit.Pounds) return ActivityWeightUnit.Kilograms;
@@ -194,10 +191,9 @@ const durationRegEx = /\d+\s+\w/;
 // eslint-disable-next-line
 export const TrainingLog = {
   create: (data: Pick<TrainingLog, 'title' | 'authorId'>): Omit<TrainingLog, 'id'> => ({
-    title: data.title,
+    ...data,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     notes: '',
-    authorId: data.authorId,
     sleepHours: -99,
   }),
   getDate: (log: TrainingLog): Date | null => {
@@ -269,8 +265,7 @@ export const Comment = {
 // eslint-disable-next-line
 export const TrainingTemplate = {
   create: (data: Pick<TrainingTemplate, 'authorId' | 'title'>): Omit<TrainingTemplate, 'id'> => ({
-    title: data.title,
-    authorId: data.authorId,
+    ...data,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     notes: '',
     logIds: [],
