@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { ClickAwayListener, IconButton, Menu, MenuItem, Typography } from '@material-ui/core';
-import { Add, ChevronRight, Close, Favorite, FavoriteBorder } from '@material-ui/icons';
+import { Add, Close, Favorite, FavoriteBorder } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FlipMove from 'react-flip-move';
@@ -392,6 +392,7 @@ export const ActivityView = forwardRef<
         <Columns pad={Pad.Small}>
           {!!activity.sets.length && (
             <Rows
+              pad={Pad.XSmall}
               className={css`
                 align-items: flex-end;
               `}
@@ -410,12 +411,6 @@ export const ActivityView = forwardRef<
               >
                 {activity.repCountUnit}
               </button>
-              <ChevronRight
-                fontSize="small"
-                className={css`
-                  color: ${Color.ActionSecondaryGray} !important;
-                `}
-              />
             </Rows>
           )}
 
