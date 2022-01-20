@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import { ClickAwayListener, IconButton, Menu, MenuItem, Typography } from '@material-ui/core';
+import { ClickAwayListener, Grid, IconButton, Menu, MenuItem, NativeSelect, Typography } from '@material-ui/core';
 import { Add, Close, Favorite, FavoriteBorder } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -42,6 +42,7 @@ export const ActivityView = forwardRef<
 
   const [comment, setComment] = useState<null | string>(null);
   const [comments, setComments] = useState<DataState<Comment[]>>(DataState.Empty);
+  const [selectedSet, setSelectedSet] = useState<null | ActivitySet>(activity.sets[0] ?? null);
 
   const menu = useMaterialMenu();
   const user = useUser();
@@ -77,7 +78,7 @@ export const ActivityView = forwardRef<
       );
   }, [activityDocument]);
 
-  const addActivitySet = useCallback(() => {
+  const addActivitySet = useCallback(async (): Promise<ActivitySet> => {
     const prevSet = activity.sets[activity.sets.length - 1];
     const weight = prevSet?.weight ?? 0;
     const repCount = prevSet?.repCount ?? null;
@@ -87,11 +88,13 @@ export const ActivityView = forwardRef<
         : ActivitySetStatus.Unattempted;
     const newSet = ActivitySet.create({ weight, repCount, status });
     try {
-      activityDocument.update({
+      await activityDocument.update({
         sets: firebase.firestore.FieldValue.arrayUnion(newSet),
       });
+      return newSet;
     } catch (error) {
       toast.error(error.message);
+      return Promise.reject();
     }
   }, [activity.sets, activityDocument]);
 
@@ -101,7 +104,7 @@ export const ActivityView = forwardRef<
     const position = activities[activities.length - 1].position + 1;
     const duplicate: Activity = { ...activity, position };
     try {
-      activityDocument.parent.add(duplicate);
+      await activityDocument.parent.add(duplicate);
     } catch (error) {
       toast.error(error.message);
     }
@@ -116,21 +119,21 @@ export const ActivityView = forwardRef<
     }
   }, [activityDocument, menu]);
 
-  const deleteActivity = useCallback(() => {
+  const deleteActivity = useCallback(async () => {
     menu.close();
     try {
-      activityDocument.delete();
+      await activityDocument.delete();
     } catch (error) {
       toast.error(error.message);
     }
   }, [activityDocument, menu]);
 
-  const renameActivity = useCallback(() => {
+  const renameActivity = useCallback(async () => {
     menu.close();
     const newName = window.prompt('Update activity name', activity.name);
     if (!newName) return;
     try {
-      activityDocument.set({ name: newName } as Partial<Activity>, {
+      await activityDocument.set({ name: newName } as Partial<Activity>, {
         merge: true,
       });
     } catch (error) {
@@ -183,7 +186,7 @@ export const ActivityView = forwardRef<
   }, [comment, menu]);
 
   const addActivityComment = useCallback(
-    <E extends React.SyntheticEvent>(event: E) => {
+    async <E extends React.SyntheticEvent>(event: E) => {
       event.preventDefault();
       if (!user.displayName || !comment) return;
       try {
@@ -196,7 +199,7 @@ export const ActivityView = forwardRef<
         });
         // Hide (and unfocus) the comment input.
         setComment(null);
-        activityDocument.collection(DbPath.UserLogActivityComments).add(newComment);
+        await activityDocument.collection(DbPath.UserLogActivityComments).add(newComment);
       } catch (error) {
         toast.error(error.message);
       }
@@ -206,7 +209,7 @@ export const ActivityView = forwardRef<
 
   const cycleWeightUnit = useCallback(async () => {
     try {
-      activityDocument.set(
+      await activityDocument.set(
         { weightUnit: Activity.cycleWeightUnit(activity.weightUnit) },
         { merge: true }
       );
@@ -217,7 +220,7 @@ export const ActivityView = forwardRef<
 
   const cycleRepCountUnit = useCallback(async () => {
     try {
-      activityDocument.set(
+      await activityDocument.set(
         { repCountUnit: Activity.cycleRepCountUnit(activity.repCountUnit) },
         { merge: true }
       );
@@ -258,39 +261,16 @@ export const ActivityView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        padding: ${Pad.Small} ${Pad.Small} 0;
-        margin: ${Pad.Small} ${Pad.Medium};
+        padding: ${Pad.Medium} ${Pad.Medium} ${Pad.Small};
+        margin: ${Pad.Small} ${Pad.Small};
         border-radius: 20px;
         background-color: #fff;
       `}
       pad={Pad.Small}
     >
       <Rows center>
-        {editable && (
-          <button
-            onClick={addActivitySet}
-            className={css`
-              color: ${Color.ActionPrimaryBlue};
-              background-color: transparent;
-              border: none;
-              border: 1px solid ${Color.ActionPrimaryBlue};
-              border-radius: 50%;
-              height: min-content;
-              padding: ${Pad.XSmall};
-              margin-right: ${Pad.Small};
-              outline: none;
-            `}
-          >
-            <Add
-              fontSize="small"
-              /** Border 50% does NOT make A Perfect Circle without this. */
-              className={css`
-                margin-bottom: -2px;
-              `}
-            />
-          </button>
-        )}
         <Columns maxWidth>
+          {/** Activity Name & Button */}
           <ClickAwayListener onClickAway={menu.close}>
             <div>
               <button
@@ -301,7 +281,7 @@ export const ActivityView = forwardRef<
                 onClick={menu.open}
                 className={css`
                   color: ${Color.FontPrimary};
-                  font-size: ${Font.Medium};
+                  font-size: ${Font.MedLarge};
                   font-weight: 400;
                   padding: 0;
                   border: none;
@@ -353,7 +333,7 @@ export const ActivityView = forwardRef<
           </ClickAwayListener>
         </Columns>
 
-        {/** Favorite icon */}
+        {/** Favorite Icon */}
         {!isTemplate && (
           <IconButton
             size="small"
@@ -386,72 +366,156 @@ export const ActivityView = forwardRef<
           </IconButton>
         )}
       </Rows>
+      {/** TODO */}
+      {/** Selected Set Menu Button - Attach to Set index button after isSelectedSet=true */}
 
-      {/** LB and REP unit buttons */}
-      <Rows pad={Pad.Medium}>
-        <Columns pad={Pad.Small}>
-          {!!activity.sets.length && (
-            <Rows
-              pad={Pad.XSmall}
-              className={css`
-                align-items: flex-end;
-              `}
-            >
-              <button
+      {/** Container for Selected Set Editor */}
+      <Rows>
+        {selectedSet && (
+          <button
+            // onClick={editable ? cycleSetStatus : () => {}} // TODO
+            className={css`
+              padding: ${Pad.XSmall};
+              padding-left: 0;
+              font-size: 1.1rem;
+              border: 0;
+              font-weight: 200;
+              background-color: transparent;
+              letter-spacing: 0.02em;
+              text-transform: uppercase;
+              font-family: system-ui, Verdana, sans-serif;
+              outline: none;
+              width: 100%;
+              text-align: left;
+              color: ${ActivitySet.getStatusColor(selectedSet.status)};
+            `}
+          >
+            {selectedSet.status}
+          </button>
+        )}
+        {/** Selected Set Status Button */}
+
+        {/** Selected Set Value Controls */}
+        {activity.sets.length > 0 && (
+          <Grid container justifyContent="end" alignItems="end">
+            {/** Weight Value */}
+            {/** TODO: Input-ify */}
+            {activity.weightUnit !== ActivityWeightUnit.Weightless && (
+              <Grid item>
+                <Typography
+                  variant="h4"
+                  color={selectedSet ? Color.ActionPrimaryBlue : Color.ActionSecondaryGray}
+                  className={css`
+                    line-height: 1 !important;
+                    padding: 0 ${Pad.XSmall} !important;
+                  `}
+                >
+                  {selectedSet?.weight ?? 0}
+                </Typography>
+              </Grid>
+            )}
+            {/** Weight Unit */}
+            {/** TODO: NativeSelect-ify */}
+            <Grid item>
+              <IconButton
                 disabled={!editable}
                 onClick={cycleWeightUnit}
-                className={activityUnitButtonStyle}
+                size="small"
+                className={css`
+                  font-size: 1rem !important;
+                `}
               >
-                {activity.weightUnit}
-              </button>
-              <button
+                {activity.weightUnit.toUpperCase()}
+              </IconButton>
+            </Grid>
+            {/** Rep Value */}
+            {/** TODO: Input-ify */}
+            <Grid item>
+              <Typography
+                variant="h4"
+                color={selectedSet ? Color.ActionPrimaryRed : Color.ActionSecondaryGray}
+                className={css`
+                  line-height: 1 !important;
+                  padding: 0 ${Pad.XSmall} !important;
+                `}
+              >
+                {selectedSet?.repCount ?? 0}
+              </Typography>
+            </Grid>
+            {/** Rep Unit */}
+            {/** TODO: NativeSelect-ify */}
+            <Grid item>
+              <IconButton
                 disabled={!editable}
                 onClick={cycleRepCountUnit}
-                className={activityUnitButtonStyle}
+                size="small"
+                className={css`
+                  font-size: 1rem !important;
+                `}
               >
-                {activity.repCountUnit}
-              </button>
-            </Rows>
-          )}
+                {activity.repCountUnit.toUpperCase()}
+              </IconButton>
+            </Grid>
+          </Grid>
+        )}
+      </Rows>
 
-          {/** Volume indicator */}
-          {!!activity.sets.length && activity.weightUnit !== ActivityWeightUnit.Weightless && (
-            <p
+      {/** New Horizontal ActivitySet List */}
+      <Grid container alignItems="baseline">
+        {/** Add Set Button */}
+        {editable && (
+          <Grid
+            item
+            onClick={async () => {
+              const set = await addActivitySet();
+              setSelectedSet(set);
+            }}
+          >
+            <IconButton
               className={css`
-                font-size: ${Font.Small};
-                color: ${Color.FontSecondary};
+                padding: ${Pad.XSmall} !important;
+                color: ${Color.ActionPrimaryBlue} !important;
+                // border-bottom: 1px solid ${Color.ActionPrimaryBlue} !important;
+                // border-radius: 0 !important;
+                margin-bottom: 3px !important;
               `}
             >
-              Volume: {Activity.getVolume(activity)}
-            </p>
-          )}
-        </Columns>
+              <Add fontSize="small" />
+            </IconButton>
+          </Grid>
+        )}
+        {/** Scrolling list of sets */}
+        {activity.sets.map((set, index) => {
+          const isSelectedSet = selectedSet?.uuid === set.uuid;
+          return (
+            <Grid
+              item
+              key={set.uuid}
+              onClick={() => {
+                setSelectedSet(isSelectedSet ? null : set);
+              }}
+            >
+              <Typography
+                variant="body1"
+                color="textSecondary"
+                className={css`
+                  margin-left: ${Pad.Medium} !important;
+                  padding: ${Pad.XSmall} ${Pad.Small} !important;
+                  line-height: 1 !important;
+                  font-weight: ${isSelectedSet ? '600' : '400'} !important;
+                  border-bottom: 1px solid ${ActivitySet.getStatusColor(set.status)};
+                  ${isSelectedSet && `border: 2px solid ${ActivitySet.getStatusColor(set.status)};`}
+                  ${isSelectedSet && 'border-radius: 8px;'}
+                `}
+              >
+                {index + 1} - {set.weight || ''}x{set.repCount}
+              </Typography>
+              
+            </Grid>
+          );
+        })}
+      </Grid>
 
-        {/** Activity Sets */}
-        <FlipMove
-          enterAnimation="fade"
-          leaveAnimation="fade"
-          className={css`
-            display: flex;
-            flex-wrap: wrap;
-            width: 100%;
-            max-height: 360px;
-            overflow-y: scroll;
-            height: min-content;
-          `}
-        >
-          {activity.sets.map(({ uuid }, index) => (
-            <ActivitySetView
-              key={uuid}
-              index={index}
-              activity={activity}
-              editable={editable}
-              activityDocument={activityDocument}
-              isTemplate={isTemplate}
-            />
-          ))}
-        </FlipMove>
-      </Rows>
       {/** Comments */}
       <DataStateView data={comments} loading={() => null} error={() => null}>
         {comments =>
@@ -790,7 +854,7 @@ const ActivitySetView = forwardRef<
   );
 });
 
-const X: FC = ({ children }) => (
+const X: FC<{ children: React.ReactNode }> = ({ children }) => (
   <p
     className={css`
       color: ${Color.ActionSecondaryGray};
