@@ -45,22 +45,6 @@ export const App: FC = () => {
         max-width: 512px;
       `}
     >
-      <ToastContainer
-        hideProgressBar
-        pauseOnFocusLoss={false}
-        autoClose={3000}
-        className={css`
-          & > *:not(:last-child) {
-            margin-bottom: ${Pad.XSmall};
-          }
-        `}
-        toastClassName={css`
-          border-radius: 8px;
-          font-weight: 500;
-          text-align: center;
-          word-break: break-word;
-        `}
-      />
       <Router>
         <DataStateView
           data={user}
@@ -112,13 +96,29 @@ export const App: FC = () => {
                   </ViewWithNavBar>
                 </Route>
                 <Route path="/">
-                  <Redirect to={Paths.training} />
+                  <Redirect to={Paths.account} />
                 </Route>
               </Switch>
             </UserProvider>
           )}
         </DataStateView>
       </Router>
+      <ToastContainer
+        hideProgressBar
+        pauseOnFocusLoss={false}
+        autoClose={3000}
+        className={css`
+          & > *:not(:last-child) {
+            margin-bottom: ${Pad.XSmall};
+          }
+        `}
+        toastClassName={css`
+          border-radius: 8px;
+          font-weight: 500;
+          text-align: center;
+          word-break: break-word;
+        `}
+      />
     </div>
   );
 };
