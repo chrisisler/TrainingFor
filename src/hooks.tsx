@@ -39,7 +39,7 @@ export const useMaterialMenu = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const openMenu = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget),
+    (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget),
     []
   );
   const closeMenu = useCallback(() => setAnchorEl(null), []);

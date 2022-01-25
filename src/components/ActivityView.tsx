@@ -42,9 +42,15 @@ export const ActivityView = forwardRef<
 
   const [comment, setComment] = useState<null | string>(null);
   const [comments, setComments] = useState<DataState<Comment[]>>(DataState.Empty);
-  const [selectedSet, setSelectedSet] = useState<null | ActivitySet>(activity.sets[0] ?? null);
+  const [selectedSet, setSelectedSet] = useState<undefined | ActivitySet>(
+    activity.sets.find(_ => _.status !== ActivitySetStatus.Completed) ??
+      activity.sets?.[0] ??
+      undefined
+  );
 
+  /** Activity menu. */
   const menu = useMaterialMenu();
+  const selectedSetMenu = useMaterialMenu();
   const user = useUser();
 
   /** The ID of the <3'ed Activity. */
@@ -257,6 +263,108 @@ export const ActivityView = forwardRef<
     }
   }, [activity.id, activity.isFavorite, activityDocument, favoritedActivity]);
 
+  ///
+  ///
+  ///
+  /// #region Selected Set Display and Controls/Actions Logic
+  ///
+  ///
+  ///
+
+  const setInputStyle = useCallback(
+    (value: number) => css`
+      background-color: transparent;
+      width: 3ch;
+      border: none;
+      outline: none;
+      padding: ${Pad.XSmall};
+      font-family: sans-serif;
+      color: ${value === 0 ? Color.ActionSecondaryGray : Color.ActionPrimaryRed};
+      font-weight: 400;
+      font-size: 1.2rem;
+    `,
+    []
+  );
+
+  // TODO This does not work
+  const cycleSetStatus = useCallback(async () => {
+    if (!selectedSet) return;
+    if (isTemplate) {
+      selectedSet.status =
+        selectedSet.status === ActivitySetStatus.Unattempted
+          ? ActivitySetStatus.Optional
+          : ActivitySetStatus.Unattempted;
+    } else {
+      selectedSet.status = ActivitySet.cycleStatus(selectedSet.status);
+    }
+    const selectedSetIndex = activity.sets.findIndex(_ => _.uuid === selectedSet.uuid);
+    console.log("🚀 ~ file: ActivityView.tsx ~ line 301 ~ cycleSetStatus ~ selectedSetIndex", selectedSetIndex)
+    // activity.sets[selectedSetIndex].status = selectedSet.status;
+    try {
+      await activityDocument.set({ sets: activity.sets }, { merge: true });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activity.sets, activityDocument, isTemplate, selectedSet]);
+
+  // TODO 
+  const duplicateSet = useCallback(async () => {
+    if (!selectedSet) return;
+    try {
+      const newSet = ActivitySet.create({
+        status: ActivitySetStatus.Unattempted,
+        weight: selectedSet.weight,
+        repCount: selectedSet.repCount,
+      });
+      await activityDocument.update({
+        sets: firebase.firestore.FieldValue.arrayUnion(newSet),
+      });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, selectedSet]);
+
+  // TODO 
+  const deleteSet = useCallback(async () => {
+    try {
+      await activityDocument.update({
+        sets: firebase.firestore.FieldValue.arrayRemove(selectedSet),
+      });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activityDocument, selectedSet]);
+
+  // TODO 
+  const updateSets = useCallback(
+    async (sets: ActivitySet[]) => {
+      try {
+        await activityDocument.set({ sets } as Partial<Activity>, {
+          merge: true,
+        });
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [activityDocument]
+  );
+
+  // TODO 
+  const insertNewSet = useCallback(() => {
+    if (!selectedSet) return;
+    try {
+      const newSet = ActivitySet.create({ ...selectedSet });
+      const { sets } = activity;
+      // Insert `newSet` item at `index`, deleting 0 items.
+      sets.splice(index + 1, 0, newSet);
+      activityDocument.set({ sets } as Partial<Activity>, { merge: true });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [activity, activityDocument, index, selectedSet]);
+
+  /// #endregion
+
   return (
     <Columns
       ref={ref}
@@ -270,7 +378,7 @@ export const ActivityView = forwardRef<
     >
       <Rows center>
         <Columns maxWidth>
-          {/** Activity Name & Button */}
+          {/** ACTIVITY NAME & BUTTON */}
           <ClickAwayListener onClickAway={menu.close}>
             <div>
               <button
@@ -333,7 +441,7 @@ export const ActivityView = forwardRef<
           </ClickAwayListener>
         </Columns>
 
-        {/** Favorite Icon */}
+        {/** FAVORITE ICON */}
         {!isTemplate && (
           <IconButton
             size="small"
@@ -366,39 +474,40 @@ export const ActivityView = forwardRef<
           </IconButton>
         )}
       </Rows>
-      {/** TODO */}
-      {/** Selected Set Menu Button - Attach to Set index button after isSelectedSet=true */}
 
-      {/** Container for Selected Set Editor */}
+      {/** SELECTED SET CONTROLS */}
       <Rows>
+        {/** SELECTED SET STATUS BUTTON */}
         {selectedSet && (
-          <button
-            // onClick={editable ? cycleSetStatus : () => {}} // TODO
-            className={css`
-              padding: ${Pad.XSmall};
-              padding-left: 0;
-              font-size: 1.1rem;
-              border: 0;
-              font-weight: 200;
-              background-color: transparent;
-              letter-spacing: 0.02em;
-              text-transform: uppercase;
-              font-family: system-ui, Verdana, sans-serif;
-              outline: none;
-              width: 100%;
-              text-align: left;
-              color: ${ActivitySet.getStatusColor(selectedSet.status)};
-            `}
-          >
-            {selectedSet.status}
-          </button>
+            <button
+              onClick={() => {
+                if (!editable) return;
+                cycleSetStatus();
+              }}
+              className={css`
+                padding: ${Pad.XSmall};
+                padding-left: 0;
+                font-size: 1.2rem;
+                border: 0;
+                font-weight: 200;
+                background-color: transparent;
+                letter-spacing: 0.02em;
+                text-transform: uppercase;
+                font-family: system-ui, Verdana, sans-serif;
+                outline: none;
+                width: 100%;
+                text-align: left;
+                color: ${ActivitySet.getStatusColor(selectedSet.status)};
+              `}
+            >
+              {selectedSet.status}
+            </button>
         )}
-        {/** Selected Set Status Button */}
 
-        {/** Selected Set Value Controls */}
+        {/** SELECTED SET VALUE CONTROLS */}
         {activity.sets.length > 0 && (
-          <Grid container justifyContent="end" alignItems="end">
-            {/** Weight Value */}
+          <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
+            {/** WEIGHT VALUE */}
             {/** TODO: Input-ify */}
             {activity.weightUnit !== ActivityWeightUnit.Weightless && (
               <Grid item>
@@ -414,7 +523,7 @@ export const ActivityView = forwardRef<
                 </Typography>
               </Grid>
             )}
-            {/** Weight Unit */}
+            {/** WEIGHT UNIT */}
             {/** TODO: NativeSelect-ify */}
             <Grid item>
               <IconButton
@@ -428,7 +537,7 @@ export const ActivityView = forwardRef<
                 {activity.weightUnit.toUpperCase()}
               </IconButton>
             </Grid>
-            {/** Rep Value */}
+            {/** REP VALUE */}
             {/** TODO: Input-ify */}
             <Grid item>
               <Typography
@@ -442,7 +551,7 @@ export const ActivityView = forwardRef<
                 {selectedSet?.repCount ?? 0}
               </Typography>
             </Grid>
-            {/** Rep Unit */}
+            {/** REP UNIT */}
             {/** TODO: NativeSelect-ify */}
             <Grid item>
               <IconButton
@@ -460,63 +569,123 @@ export const ActivityView = forwardRef<
         )}
       </Rows>
 
-      {/** New Horizontal ActivitySet List */}
-      <Grid container alignItems="baseline">
-        {/** Add Set Button */}
-        {editable && (
-          <Grid
-            item
-            onClick={async () => {
-              const set = await addActivitySet();
-              setSelectedSet(set);
-            }}
-          >
-            <IconButton
-              className={css`
-                padding: ${Pad.XSmall} !important;
-                color: ${Color.ActionPrimaryBlue} !important;
-                // border-bottom: 1px solid ${Color.ActionPrimaryBlue} !important;
-                // border-radius: 0 !important;
-                margin-bottom: 3px !important;
-              `}
-            >
-              <Add fontSize="small" />
-            </IconButton>
-          </Grid>
-        )}
-        {/** Scrolling list of sets */}
-        {activity.sets.map((set, index) => {
-          const isSelectedSet = selectedSet?.uuid === set.uuid;
-          return (
+      {/** ACTIVITY SET MENU */}
+      <ClickAwayListener onClickAway={selectedSetMenu.close}>
+        <div>
+          {/** HORIZONTAL SET LIST */}
+          <Grid container alignItems="center" wrap="nowrap">
+            {/** ADD SET BUTTON */}
+            {editable && (
+              <Grid
+                item
+                onClick={() => {
+                  addActivitySet().then(setSelectedSet);
+                }}
+                // To avoid scrollbar/height clashing
+                paddingBottom={Pad.Small}
+              >
+                <IconButton
+                  className={css`
+                    padding: ${Pad.XSmall} !important;
+                    padding-right: ${Pad.Small} !important;
+                    color: ${Color.ActionPrimaryBlue} !important;
+                    margin-bottom: 2px !important;
+                  `}
+                >
+                  <Add />
+                </IconButton>
+              </Grid>
+            )}
+
+            {/** SCROLLING LIST OF SETS */}
             <Grid
               item
-              key={set.uuid}
+              container
+              spacing={2.0}
+              overflow="scroll"
+              wrap="nowrap"
+              // To avoid scrollbar/height clashing
+              paddingBottom={Pad.Small}
+            >
+              {activity.sets.map((set, index) => {
+                const isSelectedSet = selectedSet?.uuid === set.uuid;
+                const Text: FC<{ children: React.ReactNode }> = isSelectedSet
+                  ? ({ children }) => <b>{children}</b>
+                  : ({ children }) => <>{children}</>;
+                return (
+                  <Grid
+                    item
+                    whiteSpace="nowrap"
+                    key={set.uuid}
+                    onClick={event => {
+                      if (isSelectedSet) selectedSetMenu.open(event);
+                      else setSelectedSet(set);
+                    }}
+                  >
+                    <Typography
+                      variant="body1"
+                      color={isSelectedSet ? 'textPrimary' : 'textSecondary'}
+                      className={css`
+                        padding: ${Pad.XSmall} ${Pad.Small} !important;
+                        line-height: 1 !important;
+                        border-bottom: 1px solid ${ActivitySet.getStatusColor(set.status)};
+                        ${isSelectedSet &&
+                        `border: 1px solid ${ActivitySet.getStatusColor(set.status)};`}
+                        ${isSelectedSet && 'border-radius: 5px;'}
+                      `}
+                    >
+                      {set.weight === 0 ? (
+                        <>
+                          x<b>{set.repCount}</b>
+                        </>
+                      ) : (
+                        <>
+                          <b>{set.weight}</b>x{set.repCount}
+                        </>
+                      )}
+                    </Typography>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Grid>
+
+          <Menu
+            id="activity-set-menu"
+            anchorEl={selectedSetMenu.ref}
+            open={!!selectedSetMenu.ref}
+            onClose={selectedSetMenu.close}
+            MenuListProps={{ dense: true }}
+          >
+            <MenuItem
               onClick={() => {
-                setSelectedSet(isSelectedSet ? null : set);
+                selectedSetMenu.close();
+                insertNewSet();
               }}
             >
-              <Typography
-                variant="body1"
-                color="textSecondary"
-                className={css`
-                  margin-left: ${Pad.Medium} !important;
-                  padding: ${Pad.XSmall} ${Pad.Small} !important;
-                  line-height: 1 !important;
-                  font-weight: ${isSelectedSet ? '600' : '400'} !important;
-                  border-bottom: 1px solid ${ActivitySet.getStatusColor(set.status)};
-                  ${isSelectedSet && `border: 2px solid ${ActivitySet.getStatusColor(set.status)};`}
-                  ${isSelectedSet && 'border-radius: 8px;'}
-                `}
-              >
-                {index + 1} - {set.weight || ''}x{set.repCount}
-              </Typography>
-              
-            </Grid>
-          );
-        })}
-      </Grid>
+              Insert new set
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                selectedSetMenu.close();
+                duplicateSet();
+              }}
+            >
+              Duplicate set
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                selectedSetMenu.close();
+                deleteSet();
+              }}
+            >
+              <b>Delete set</b>
+            </MenuItem>
+          </Menu>
+        </div>
+      </ClickAwayListener>
 
-      {/** Comments */}
+      {/** COMMENTS */}
       <DataStateView data={comments} loading={() => null} error={() => null}>
         {comments =>
           comments.length === 0 ? null : (
@@ -565,7 +734,7 @@ export const ActivityView = forwardRef<
         }
       </DataStateView>
 
-      {/** Commenting */}
+      {/** COMMENTING */}
       {typeof comment === 'string' && (
         <Rows maxWidth center pad={Pad.XSmall}>
           <form
@@ -620,239 +789,173 @@ export const ActivityView = forwardRef<
   );
 });
 
-const ActivitySetView = forwardRef<
-  HTMLDivElement,
-  {
-    index: number;
-    activity: Activity;
-    editable: boolean;
-    activityDocument: firebase.firestore.DocumentReference<Activity>;
-    isTemplate: boolean;
-  }
->(({ index, activity, editable, activityDocument, isTemplate }, ref) => {
-  const { sets, weightUnit, repCountUnit } = activity;
-  const set = sets[index];
+// const ActivitySetView = forwardRef<
+//   HTMLDivElement,
+//   {
+//     index: number;
+//     activity: Activity;
+//     editable: boolean;
+//     activityDocument: firebase.firestore.DocumentReference<Activity>;
+//     isTemplate: boolean;
+//   }
+// >(({ index, activity, editable, activityDocument, isTemplate }, ref) => {
+//   const { sets, weightUnit, repCountUnit } = activity;
+//   const set = sets[index];
 
-  const resizeWeightInput = useResizableInputRef();
-  const resizeRepCountInput = useResizableInputRef();
+//   const resizeWeightInput = useResizableInputRef();
+//   const resizeRepCountInput = useResizableInputRef();
 
-  const [weight, setWeight] = useState(set.weight);
-  const [repCount, setRepCount] = useState(set.repCount);
+//   const [weight, setWeight] = useState(set.weight);
+//   const [repCount, setRepCount] = useState(set.repCount);
 
-  const menu = useMaterialMenu();
+//   const statusColor = useMemo(() => ActivitySet.getStatusColor(set.status), [set.status]);
 
-  const statusColor = useMemo(() => ActivitySet.getStatusColor(set.status), [set.status]);
-
-  const setInputStyle = useCallback(
-    (value: number) => css`
-      background-color: transparent;
-      width: 3ch;
-      border: none;
-      outline: none;
-      padding: ${Pad.XSmall};
-      font-family: sans-serif;
-      color: ${value === 0 ? Color.ActionSecondaryGray : Color.ActionPrimaryRed};
-      font-weight: 400;
-      font-size: 1.2rem;
-    `,
-    []
-  );
-
-  const cycleSetStatus = useCallback(() => {
-    if (isTemplate) {
-      sets[index].status =
-        set.status === ActivitySetStatus.Unattempted
-          ? ActivitySetStatus.Optional
-          : ActivitySetStatus.Unattempted;
-    } else {
-      sets[index].status = ActivitySet.cycleStatus(set.status);
-    }
-    try {
-      activityDocument.set({ sets }, { merge: true });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [activityDocument, index, set.status, sets, isTemplate]);
-
-  const duplicateSet = useCallback(() => {
-    menu.close();
-    try {
-      const duplicateSet = ActivitySet.create({
-        status: ActivitySetStatus.Unattempted,
-        weight: set.weight,
-        repCount: set.repCount,
-      });
-      activityDocument.update({
-        sets: firebase.firestore.FieldValue.arrayUnion(duplicateSet),
-      });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [activityDocument, set, menu]);
-
-  const deleteSet = useCallback(() => {
-    menu.close();
-    try {
-      activityDocument.update({
-        sets: firebase.firestore.FieldValue.arrayRemove(set),
-      });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [activityDocument, set, menu]);
-
-  const updateSets = useCallback(
-    (sets: ActivitySet[]) => {
-      try {
-        activityDocument.set({ sets } as Partial<Activity>, {
-          merge: true,
-        });
-      } catch (error) {
-        toast.error(error.message);
-      }
-    },
-    [activityDocument]
-  );
-  const insertNewSet = useCallback(() => {
-    menu.close();
-    try {
-      const newSet = ActivitySet.create({ ...activity.sets[index] });
-      const { sets } = activity;
-      // Insert `newSet` item at `index`, deleting 0 items,
-      sets.splice(index + 1, 0, newSet);
-      activityDocument.set({ sets } as Partial<Activity>, { merge: true });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [activityDocument, activity, index, menu]);
-
-  return (
-    <Rows ref={ref} center between maxWidth>
-      <Rows
-        className={css`
-          align-items: baseline;
-        `}
-      >
-        {weightUnit !== ActivityWeightUnit.Weightless && (
-          <>
-            <input
-              disabled={!editable}
-              ref={resizeWeightInput}
-              type="tel"
-              min={0}
-              max={999}
-              name="weight"
-              value={weight}
-              onFocus={event => {
-                event.currentTarget.select();
-              }}
-              onChange={event => {
-                if (Number.isNaN(event.target.value)) return;
-                setWeight(Number(event.target.value));
-              }}
-              onBlur={event => {
-                sets[index].weight = Number(event.target.value);
-                updateSets(sets);
-              }}
-              className={css`
-                ${setInputStyle(weight)}
-                text-align: end;
-              `}
-            />
-            <X>x</X>
-          </>
-        )}
-        <input
-          disabled={!editable}
-          ref={resizeRepCountInput}
-          type="tel"
-          min={0}
-          max={999}
-          name="repCount"
-          value={repCount ?? 0}
-          onFocus={event => {
-            event.currentTarget.select();
-          }}
-          onChange={event => {
-            if (Number.isNaN(event.target.value)) return;
-            setRepCount(Number(event.target.value));
-          }}
-          onBlur={event => {
-            sets[index].repCount = Number(event.target.value);
-            updateSets(sets);
-          }}
-          className={css`
-            ${setInputStyle(repCount ?? 0)}
-          `}
-        />
-        {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
-        {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
-        {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>}
-      </Rows>
-      <div>
-        <button
-          disabled={!editable}
-          onClick={cycleSetStatus}
-          className={css`
-            color: ${Color.FontPrimary};
-            padding: ${Pad.XSmall};
-            font-size: ${Font.Small};
-            border: 0;
-            font-weight: 500;
-            background-color: transparent;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            font-family: system-ui, Verdana, sans-serif;
-            outline: none;
-            width: 100%;
-            text-align: left;
-            color: ${statusColor};
-          `}
-        >
-          {set.status}
-        </button>
-      </div>
-      <ClickAwayListener onClickAway={menu.close}>
-        <div>
-          <IconButton
-            disabled={!editable}
-            size="small"
-            aria-label="Open set menu"
-            aria-controls="set-menu"
-            aria-haspopup="true"
-            onClick={menu.open}
-          >
-            <Typography
-              variant="subtitle1"
-              className={css`
-                color: ${Color.ActionSecondaryGray};
-                font-weight: 600 !important;
-                line-height: 1 !important;
-                width: 2ch;
-                font-size: 1.2rem;
-              `}
-            >
-              {index + 1}
-            </Typography>
-          </IconButton>
-          <Menu
-            id="set-menu"
-            anchorEl={menu.ref}
-            open={!!menu.ref}
-            onClose={menu.close}
-            MenuListProps={{ dense: true }}
-          >
-            <MenuItem onClick={insertNewSet}>Insert new set</MenuItem>
-            <MenuItem onClick={duplicateSet}>Duplicate set</MenuItem>
-            <MenuItem onClick={deleteSet}>
-              <b>Delete set</b>
-            </MenuItem>
-          </Menu>
-        </div>
-      </ClickAwayListener>
-    </Rows>
-  );
-});
+//   return (
+//     <Rows ref={ref} center between maxWidth>
+//       <Rows
+//         className={css`
+//           align-items: baseline;
+//         `}
+//       >
+//         {weightUnit !== ActivityWeightUnit.Weightless && (
+//           <>
+//             <input
+//               disabled={!editable}
+//               ref={resizeWeightInput}
+//               type="tel"
+//               min={0}
+//               max={999}
+//               name="weight"
+//               value={weight}
+//               onFocus={event => {
+//                 event.currentTarget.select();
+//               }}
+//               onChange={event => {
+//                 if (Number.isNaN(event.target.value)) return;
+//                 setWeight(Number(event.target.value));
+//               }}
+//               onBlur={event => {
+//                 sets[index].weight = Number(event.target.value);
+//                 updateSets(sets);
+//               }}
+//               className={css`
+//                 ${setInputStyle(weight)}
+//                 text-align: end;
+//               `}
+//             />
+//             <X>x</X>
+//           </>
+//         )}
+//         <input
+//           disabled={!editable}
+//           ref={resizeRepCountInput}
+//           type="tel"
+//           min={0}
+//           max={999}
+//           name="repCount"
+//           value={repCount ?? 0}
+//           onFocus={event => {
+//             event.currentTarget.select();
+//           }}
+//           onChange={event => {
+//             if (Number.isNaN(event.target.value)) return;
+//             setRepCount(Number(event.target.value));
+//           }}
+//           onBlur={event => {
+//             sets[index].repCount = Number(event.target.value);
+//             updateSets(sets);
+//           }}
+//           className={css`
+//             ${setInputStyle(repCount ?? 0)}
+//           `}
+//         />
+//         {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
+//         {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
+//         {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>}
+//       </Rows>
+//       <div>
+//         <button
+//           disabled={!editable}
+//           onClick={cycleSetStatus}
+//           className={css`
+//             color: ${Color.FontPrimary};
+//             padding: ${Pad.XSmall};
+//             font-size: ${Font.Small};
+//             border: 0;
+//             font-weight: 500;
+//             background-color: transparent;
+//             letter-spacing: 0.02em;
+//             text-transform: uppercase;
+//             font-family: system-ui, Verdana, sans-serif;
+//             outline: none;
+//             width: 100%;
+//             text-align: left;
+//             color: ${statusColor};
+//           `}
+//         >
+//           {set.status}
+//         </button>
+//       </div>
+//       <ClickAwayListener onClickAway={seletedSetMenu.close}>
+//         <div>
+//           <IconButton
+//             disabled={!editable}
+//             size="small"
+//             aria-label="Open set menu"
+//             aria-controls="set-menu"
+//             aria-haspopup="true"
+//             onClick={seletedSetMenu.open}
+//           >
+//             <Typography
+//               variant="subtitle1"
+//               className={css`
+//                 color: ${Color.ActionSecondaryGray};
+//                 font-weight: 600 !important;
+//                 line-height: 1 !important;
+//                 width: 2ch;
+//                 font-size: 1.2rem;
+//               `}
+//             >
+//               {index + 1}
+//             </Typography>
+//           </IconButton>
+//           <Menu
+//             id="set-menu"
+//             anchorEl={seletedSetMenu.ref}
+//             open={!!seletedSetMenu.ref}
+//             onClose={seletedSetMenu.close}
+//             MenuListProps={{ dense: true }}
+//           >
+//             <MenuItem
+//               onClick={() => {
+//                 seletedSetMenu.close();
+//                 insertNewSet();
+//               }}
+//             >
+//               Insert new set
+//             </MenuItem>
+//             <MenuItem
+//               onClick={() => {
+//                 seletedSetMenu.close();
+//                 duplicateSet();
+//               }}
+//             >
+//               Duplicate set
+//             </MenuItem>
+//             <MenuItem
+//               onClick={() => {
+//                 seletedSetMenu.close();
+//                 deleteSet();
+//               }}
+//             >
+//               <b>Delete set</b>
+//             </MenuItem>
+//           </Menu>
+//         </div>
+//       </ClickAwayListener>
+//     </Rows>
+//   );
+// });
 
 const X: FC<{ children: React.ReactNode }> = ({ children }) => (
   <p
