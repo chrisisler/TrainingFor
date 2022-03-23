@@ -39,26 +39,23 @@ export const DataState = {
   error: (message?: string): Error => {
     return Error(message ?? 'Something went wrong.');
   },
-  isEmpty: <T extends unknown>(ds: DataState<T>): ds is typeof DataStateEmpty => {
+  isEmpty<T>(ds: DataState<T>): ds is typeof DataStateEmpty {
     return ds === DataStateEmpty;
   },
-  isLoading: <T extends unknown>(ds: DataState<T>): ds is typeof DataStateLoading => {
+  isLoading<T>(ds: DataState<T>): ds is typeof DataStateLoading {
     return ds === DataStateLoading;
   },
-  isError: <T extends unknown>(ds: DataState<T>): ds is Error => {
+  isError<T>(ds: DataState<T>): ds is Error {
     return ds instanceof Error;
   },
-  isReady: <T extends unknown>(ds: DataState<T>): ds is T => {
+  isReady<T>(ds: DataState<T>): ds is T {
     return !DataState.isError(ds) && !DataState.isLoading(ds) && ds !== DataStateEmpty;
   },
-  map: <T extends unknown, U extends unknown>(
-    ds: DataState<T>,
-    fn: (arg: T) => DataState<U>
-  ): DataState<U> => {
+  map<T, U>(ds: DataState<T>, fn: (arg: T) => DataState<U>): DataState<U> {
     if (!DataState.isReady(ds)) return ds as DataState<U>;
     return fn(ds);
   },
-  unwrapOr: <T extends unknown, U extends unknown>(ds: DataState<T>, alt: U): T | U => {
+  unwrapOr<T, U>(ds: DataState<T>, alt: U): T | U {
     if (DataState.isReady(ds)) return ds;
     return alt;
   },
@@ -66,7 +63,7 @@ export const DataState = {
    * Return the contained value or throw an Error if it is in any non-ready
    * state.
    */
-  unwrap: <T extends unknown>(ds: DataState<T>): T => {
+  unwrap<T>(ds: DataState<T>): T {
     if (DataState.isReady(ds)) return ds;
     throw Error('Called `DataState.unwrap(x)` on not ready data');
   },
@@ -81,10 +78,10 @@ export const DataState = {
   all: dataStateAll,
 };
 
-export const useDataState = <T extends unknown>(
+export function useDataState<T>(
   getData: () => Promise<DataState<T>>,
   deps: readonly unknown[]
-): [DataState<T>, React.Dispatch<React.SetStateAction<DataState<T>>>] => {
+): [DataState<T>, React.Dispatch<React.SetStateAction<DataState<T>>>] {
   const [dataState, setDataState] = useState<DataState<T>>(DataState.Loading);
   useEffect(() => {
     let stale = false;
@@ -102,15 +99,15 @@ export const useDataState = <T extends unknown>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   return [dataState, setDataState];
-};
+}
 
-export const DataStateView = <T extends unknown>(props: {
+export function DataStateView<T>(props: {
   data: DataState<T>;
   children: (data: T) => JSX.Element | null;
   loading?: () => JSX.Element | null;
   error?: () => JSX.Element | null;
   empty?: () => JSX.Element | null;
-}): JSX.Element | null => {
+}): JSX.Element | null {
   if (DataStateEmpty === props.data) {
     if (props.empty) return props.empty();
     return null;
@@ -124,4 +121,4 @@ export const DataStateView = <T extends unknown>(props: {
     return <Sorry />;
   }
   return props.children(props.data);
-};
+}

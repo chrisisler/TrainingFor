@@ -161,6 +161,7 @@ export const TrainingLogEditor: FC = () => {
         });
         await activitiesColl.add(entry);
       } catch (error) {
+        // @ts-ignore
         toast.error(error.message);
       }
     },
@@ -176,6 +177,7 @@ export const TrainingLogEditor: FC = () => {
         .doc(log.id)
         .update({ notes: logNotes } as Partial<TrainingLog>);
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [user.uid, log, logNotes, isTemplate]);
@@ -225,6 +227,7 @@ export const TrainingLogEditor: FC = () => {
           .doc(saved.id)
           .set({ history }, { merge: true });
       } catch (error) {
+        // @ts-ignore
         toast.error(error.message);
       }
     },
@@ -243,6 +246,7 @@ export const TrainingLogEditor: FC = () => {
         .doc(log.id)
         .set({ title } as Pick<TrainingLog, 'title'>, { merge: true });
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [log, isTemplate, menu]);
@@ -267,6 +271,7 @@ export const TrainingLogEditor: FC = () => {
       const path = templateId ? Paths.templateEditor(doc.id) : Paths.logEditor(doc.id);
       history.push(path);
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [user.uid, log, history, templateId, menu]);
@@ -291,6 +296,7 @@ export const TrainingLogEditor: FC = () => {
       const path = templateId ? Paths.templateEditor(doc.id) : Paths.logEditor(doc.id);
       history.push(path);
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [user.uid, log, history, templateId, menu]);
@@ -321,6 +327,7 @@ export const TrainingLogEditor: FC = () => {
       }
       history.push(Paths.templateEditor(newTemplateId));
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [log, user.uid, history, isTemplate, menu]);
@@ -339,6 +346,7 @@ export const TrainingLogEditor: FC = () => {
       toast.info(`${logType} deleted.`);
       history.goBack();
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [log, history, isTemplate, menu]);
@@ -590,6 +598,7 @@ export const TrainingLogEditor: FC = () => {
                               .doc(log.id)
                               .set({ sleepHours }, { merge: true });
                           } catch (error) {
+                            // @ts-ignore
                             toast.error(error.message);
                           }
                         }}
@@ -738,6 +747,7 @@ const LibraryAutocomplete: FC<{
       setActivityName(null);
       toast.success(`Added "${query}" to Activity Library!`);
     } catch (error) {
+      // @ts-ignore
       toast.error(error.message);
     }
   }, [user.uid, addFromLibrary, query, setActivityName]);
