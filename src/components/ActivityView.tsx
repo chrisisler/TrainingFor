@@ -35,6 +35,7 @@ const activitySetInputStyle = css`
   border: none;
   outline: none;
   line-height: 1 !important;
+  text-align: end;
   padding: 0 ${Pad.XSmall};
   font-family: sans-serif;
   color: ${Color.ActionPrimaryBlue};
@@ -461,7 +462,7 @@ export const ActivityView = forwardRef<
                 padding-left: 0;
                 font-size: 1.2rem;
                 border: 0;
-                font-weight: 200;
+                font-weight: 300;
                 background-color: transparent;
                 letter-spacing: 0.02em;
                 text-transform: uppercase;
@@ -567,84 +568,10 @@ export const ActivityView = forwardRef<
               </Grid>
             )}
           </Rows>
+
           {/** ACTIVITY SET MENU */}
           <ClickAwayListener onClickAway={selectedSetMenu.close}>
             <div>
-              {/** HORIZONTAL SET LIST */}
-              <Grid container alignItems="center" wrap="nowrap">
-                {/** ADD SET BUTTON */}
-                {editable && (
-                  <Grid
-                    item
-                    onClick={() => {
-                      addActivitySet().then(setSelectedSet);
-                    }}
-                    // To avoid scrollbar/height clashing
-                    paddingBottom={Pad.Small}
-                  >
-                    <IconButton
-                      className={css`
-                        padding: ${Pad.XSmall} !important;
-                        padding-right: ${Pad.Small} !important;
-                        color: ${Color.ActionPrimaryBlue} !important;
-                        margin-bottom: 2px !important;
-                      `}
-                    >
-                      <Add />
-                    </IconButton>
-                  </Grid>
-                )}
-
-                {/** SCROLLING LIST OF SETS */}
-                <Grid
-                  item
-                  container
-                  spacing={2.0}
-                  overflow="scroll"
-                  wrap="nowrap"
-                  // To avoid scrollbar/height clashing
-                  paddingBottom={Pad.Small}
-                >
-                  {activity.sets.map((set, index) => {
-                    const isSelectedSet = selectedSet?.uuid === set.uuid;
-                    return (
-                      <Grid
-                        item
-                        whiteSpace="nowrap"
-                        key={set.uuid}
-                        onClick={event => {
-                          if (isSelectedSet) selectedSetMenu.open(event);
-                          else setSelectedSet(set);
-                        }}
-                      >
-                        <Typography
-                          variant="body1"
-                          color={isSelectedSet ? 'textPrimary' : 'textSecondary'}
-                          className={css`
-                            padding: ${Pad.XSmall} ${Pad.Small} !important;
-                            line-height: 1 !important;
-                            border-bottom: 1px solid ${ActivitySet.getStatusColor(set.status)};
-                            ${isSelectedSet &&
-                            `border: 1px solid ${ActivitySet.getStatusColor(set.status)};`}
-                            ${isSelectedSet && 'border-radius: 5px;'}
-                          `}
-                        >
-                          {set.weight === 0 ? (
-                            <>
-                              x<b>{set.repCount}</b>
-                            </>
-                          ) : (
-                            <>
-                              <b>{set.weight}</b>x{set.repCount}
-                            </>
-                          )}
-                        </Typography>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </Grid>
-
               <Menu
                 id="activity-set-menu"
                 anchorEl={selectedSetMenu.ref}
@@ -702,6 +629,81 @@ export const ActivityView = forwardRef<
           </ClickAwayListener>
         </>
       )}
+
+      {/** HORIZONTAL SET LIST */}
+      <Grid container alignItems="center" wrap="nowrap">
+        {/** ADD SET BUTTON */}
+        {editable && (
+          <Grid
+            item
+            onClick={() => {
+              addActivitySet().then(setSelectedSet);
+            }}
+            // To avoid scrollbar/height clashing
+            paddingBottom={Pad.Small}
+          >
+            <IconButton
+              className={css`
+                padding: ${Pad.XSmall} !important;
+                padding-right: ${Pad.Small} !important;
+                color: ${Color.ActionPrimaryBlue} !important;
+                margin-bottom: 2px !important;
+              `}
+            >
+              <Add />
+            </IconButton>
+          </Grid>
+        )}
+
+        {/** SCROLLING LIST OF SETS */}
+        <Grid
+          item
+          container
+          spacing={2.0}
+          overflow="scroll"
+          wrap="nowrap"
+          // To avoid scrollbar/height clashing
+          paddingBottom={Pad.Small}
+        >
+          {activity.sets.map(set => {
+            const isSelectedSet = selectedSet?.uuid === set.uuid;
+            return (
+              <Grid
+                item
+                whiteSpace="nowrap"
+                key={set.uuid}
+                onClick={event => {
+                  if (isSelectedSet) selectedSetMenu.open(event);
+                  else setSelectedSet(set);
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  color={isSelectedSet ? 'textPrimary' : 'textSecondary'}
+                  className={css`
+                    padding: ${Pad.XSmall} ${Pad.Small} !important;
+                    line-height: 1 !important;
+                    border-bottom: 1px solid ${ActivitySet.getStatusColor(set.status)};
+                    ${isSelectedSet &&
+                    `background-color: ${ActivitySet.getStatusColor(set.status)};`}
+                    ${isSelectedSet && 'border-radius: 5px;'}
+                  `}
+                >
+                  {set.weight === 0 ? (
+                    <>
+                      x<b>{set.repCount}</b>
+                    </>
+                  ) : (
+                    <>
+                      <b>{set.weight}</b>x{set.repCount}
+                    </>
+                  )}
+                </Typography>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Grid>
 
       {/** COMMENTS */}
       <DataStateView data={comments} loading={() => null} error={() => null}>
