@@ -9,7 +9,6 @@ import {
   Typography,
 } from '@material-ui/core';
 import { Add, Close, DeleteOutlined, Favorite, FavoriteBorder, FileCopyOutlined } from '@material-ui/icons';
-import { Box } from '@material-ui/system';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -289,19 +288,6 @@ export const ActivityView = forwardRef<
     }
   }, [activityDocument, activity.repCountUnit]);
 
-  /** Styles used for the buttons which control reps vs time vs etc. */
-  // const activityUnitButtonStyle = css`
-  //   color: ${Color.ActionPrimaryGray};
-  //   border-radius: 8px;
-  //   border: 0;
-  //   border-bottom: 1px solid ${Color.ActionSecondaryGray};
-  //   padding: ${Pad.XSmall} ${Pad.Medium};
-  //   font-size: ${Font.Small};
-  //   background-color: transparent;
-  //   min-width: fit-content !important;
-  //   outline: none;
-  // `;
-
   /** Favorite the current Activity and unfavorite others */
   const toggleFavorite = useCallback(async () => {
     try {
@@ -315,14 +301,6 @@ export const ActivityView = forwardRef<
       toast.error(error.message);
     }
   }, [activity.id, activity.isFavorite, activityDocument, favoritedActivity]);
-
-  ///
-  ///
-  ///
-  /// #region Selected Set Display and Controls/Actions Logic
-  ///
-  ///
-  ///
 
   // TODO
   const updateSets = useCallback(
@@ -338,7 +316,6 @@ export const ActivityView = forwardRef<
     },
     [activityDocument]
   );
-  /// #endregion
 
   return (
     <Columns

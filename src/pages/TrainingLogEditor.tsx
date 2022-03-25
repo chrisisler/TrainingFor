@@ -4,7 +4,6 @@ import {
   Chip,
   ClickAwayListener,
   Grid,
-  IconButton,
   Menu,
   MenuItem,
   TextField,
@@ -168,19 +167,19 @@ export const TrainingLogEditor: FC = () => {
     [activityName, log, user.uid, isTemplate]
   );
 
-  const updateLogNotes = useCallback(async () => {
-    if (!DataState.isReady(log)) return;
-    if (logNotes === '') setLogNotes(DataState.Empty);
-    try {
-      db.user(user.uid)
-        .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-        .doc(log.id)
-        .update({ notes: logNotes } as Partial<TrainingLog>);
-    } catch (error) {
-      // @ts-ignore
-      toast.error(error.message);
-    }
-  }, [user.uid, log, logNotes, isTemplate]);
+  // const updateLogNotes = useCallback(async () => {
+  //   if (!DataState.isReady(log)) return;
+  //   if (logNotes === '') setLogNotes(DataState.Empty);
+  //   try {
+  //     db.user(user.uid)
+  //       .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+  //       .doc(log.id)
+  //       .update({ notes: logNotes } as Partial<TrainingLog>);
+  //   } catch (error) {
+  //     // @ts-ignore
+  //     toast.error(error.message);
+  //   }
+  // }, [user.uid, log, logNotes, isTemplate]);
 
   /**
    * Add SavedActivity.history Activity to TrainingLog activities and
@@ -361,6 +360,58 @@ export const TrainingLogEditor: FC = () => {
             background-color: ${baseBg};
           `}
         >
+          <Button
+            aria-label="Log title and log menu button"
+            aria-controls="log-menu-button"
+            aria-haspopup="true"
+            onClick={menu.open}
+            variant="text"
+            size="small"
+          >
+            <Typography variant="h6">{log.title}</Typography>
+          </Button>
+          <Menu
+            id="log-menu"
+            anchorEl={menu.ref}
+            open={!!menu.ref}
+            onClose={menu.close}
+            MenuListProps={{ dense: true }}
+          >
+            <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
+            <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
+            <MenuItem onClick={renameLog}>Edit name</MenuItem>
+            <MenuItem
+              onClick={() => {
+                if (DataState.isReady(logNotes) && logNotes) {
+                  logNotesRef.current?.focus();
+                  return;
+                }
+                // Unhide the notes input
+                setLogNotes('');
+                Promise.resolve().then(() => logNotesRef.current?.focus());
+              }}
+            >
+              Add notes
+            </MenuItem>
+            {!!window.navigator.share && (
+              <MenuItem
+                onClick={() => {
+                  menu.close();
+                  const url = isTemplate
+                    ? Paths.templateView(log.authorId, log.id)
+                    : Paths.logView(log.authorId, log.id);
+                  window.navigator.share({ url });
+                }}
+              >
+                Share link
+              </MenuItem>
+            )}
+            {!isTemplate && <MenuItem onClick={createTemplate}>Create Template</MenuItem>}
+            <MenuItem onClick={deleteLog}>
+              <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
+            </MenuItem>
+          </Menu>
+
           <DataStateView data={activities}>
             {activities => (
               <FlipMove
@@ -371,49 +422,37 @@ export const TrainingLogEditor: FC = () => {
                   width: 100%;
                   overflow-y: scroll;
                   ${activityViewContainerStyle}
-                  padding: ${Pad.Small} 0;
-                  padding-bottom: ${navBarHeight}px;
+                  padding: 0;
                 `}
               >
-                {activities.length ? (
-                  activities.map(({ id }, index) => (
-                    <ActivityView
-                      key={id}
-                      editable
-                      activities={activities}
-                      index={index}
-                      log={log}
-                    />
-                  ))
-                ) : (
-                  <Typography
-                    variant="body1"
-                    color="textSecondary"
-                    className={css`
-                      padding: ${Pad.Large};
-                    `}
-                  >
-                    No activities!
-                    {/**
-                     * TODO After refactoring and migrating all Activities
-                     * Database to a separate Firestore table, fetch them by
-                     * recency, limited to 10 or so. Show a list of recent
-                     * activities to add to this TrainingLog from. Like the
-                     * Activity Library autocomplete menu.
-                     */}
-                  </Typography>
-                )}
+                {activities.map(({ id }, index) => (
+                  <ActivityView key={id} editable activities={activities} index={index} log={log} />
+                ))}
+                <Button
+                  fullWidth
+                  disableRipple
+                  startIcon={<Add />}
+                  size={activities.length === 0 ? 'large' : 'small'}
+                  onClick={() => {
+                    // Set to non-null to render the input
+                    setActivityName('');
+                    // Wait a tick for the input to render so it may be focused
+                    Promise.resolve().then(() => addActivityInputRef.current?.focus());
+                  }}
+                >
+                  Activity
+                </Button>
               </FlipMove>
             )}
           </DataStateView>
-          {/** EDITOR CONTROLS CONTAINER */}
+
+          {/** FOOTER CONTAINER */}
           <Columns
             className={css`
               position: absolute;
               width: 100%;
               bottom: ${navBarHeight}px;
-              padding: ${Pad.Medium} ${Pad.Small};
-              background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4), #171717);
+              padding: ${Pad.Small};
             `}
             pad={Pad.Medium}
           >
@@ -427,13 +466,13 @@ export const TrainingLogEditor: FC = () => {
                 <div
                   ref={libraryMenuRef}
                   className={css`
-                    height: 25vh;
+                    height: 30vh;
                     overflow-y: scroll;
                     overflow-x: hidden;
                     border-radius: 8px;
                     background-color: #fff;
                     padding: ${Pad.Small} ${Pad.Medium};
-                    border: 1px solid ${Color.ActionPrimaryBlue};
+                    // border: 1px solid ${Color.ActionPrimaryBlue};
                   `}
                 >
                   <LibraryAutocomplete
@@ -444,7 +483,9 @@ export const TrainingLogEditor: FC = () => {
                 </div>
               </ClickAwayListener>
             )}
-            {DataState.isReady(logNotes) && (
+
+            {/** TODO Fix */}
+            {/* {DataState.isReady(logNotes) && (
               <textarea
                 name="Training log notes"
                 ref={logNotesRef}
@@ -473,180 +514,87 @@ export const TrainingLogEditor: FC = () => {
                   }
                 `}
               />
-            )}
+            )} */}
+
             {activityName === null ? (
-              <Rows between>
-                <Columns pad={Pad.XSmall} maxWidth>
-                  <ClickAwayListener onClickAway={menu.close}>
-                    <div>
-                      <IconButton
-                        aria-label="Open log menu"
-                        aria-controls="log-menu"
-                        aria-haspopup="true"
-                        onClick={menu.open}
-                        className={css`
-                          padding: 0 !important;
-                        `}
-                      >
-                        <Typography
-                          variant="h6"
-                          className={css`
-                            line-height: 1.2 !important;
-                            ${controlsFont}
-                          `}
-                          textAlign="left"
-                        >
-                          {log.title}
-                        </Typography>
-                      </IconButton>
-                      <Menu
-                        id="log-menu"
-                        anchorEl={menu.ref}
-                        open={!!menu.ref}
-                        onClose={menu.close}
-                        MenuListProps={{ dense: true }}
-                      >
-                        <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
-                        <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
-                        <MenuItem onClick={renameLog}>Edit name</MenuItem>
-                        <MenuItem
-                          onClick={() => {
-                            if (DataState.isReady(logNotes) && logNotes) {
-                              logNotesRef.current?.focus();
-                              return;
-                            }
-                            // Unhide the notes input
-                            setLogNotes('');
-                            Promise.resolve().then(() => logNotesRef.current?.focus());
-                          }}
-                        >
-                          Add notes
-                        </MenuItem>
-                        {!!window.navigator.share && (
-                          <MenuItem
-                            onClick={() => {
-                              menu.close();
-                              const url = isTemplate
-                                ? Paths.templateView(log.authorId, log.id)
-                                : Paths.logView(log.authorId, log.id);
-                              window.navigator.share({ url });
-                            }}
-                          >
-                            Share link
-                          </MenuItem>
-                        )}
-                        {!isTemplate && (
-                          <MenuItem onClick={createTemplate}>Create Template</MenuItem>
-                        )}
-                        <MenuItem onClick={deleteLog}>
-                          <b>Delete Training {isTemplate ? 'Template' : 'Log'}</b>
-                        </MenuItem>
-                      </Menu>
-                    </div>
-                  </ClickAwayListener>
-                  <button
-                    onClick={() => {
-                      // Set to non-null to render the input
-                      setActivityName('');
-                      // Wait a tick for the input to render so it may be focused
-                      Promise.resolve().then(() => addActivityInputRef.current?.focus());
-                    }}
+              <Rows
+                pad={Pad.Small}
+                className={css`
+                  justify-content: end;
+                `}
+              >
+                {/** RIGHT-SIDE CONTROLS COLUMN */}
+                <EditorControlsDateView log={log} />
+                {/** SLEEP SELECTOR AND ICON */}
+                {!TrainingLog.isTemplate(log) && (
+                  <label
                     className={css`
-                      border: 2px solid white;
-                      background-color: transparent;
-                      border-radius: 5px;
-                      display: flex;
-                      letter-spacing: 0.04em;
-                      text-transform: uppercase;
-                      align-items: center;
-                      padding: 0 10px 0 ${Pad.XSmall};
-                      width: min-content;
-                      font-size: 0.9rem;
+                      position: relative;
                       ${controlsFont}
                     `}
                   >
-                    <Add />
-                    <b>Activity</b>
-                  </button>
-                </Columns>
-                {/** RIGHT-SIDE CONTROLS COLUMN */}
-                <Columns
-                  className={css`
-                    justify-content: end;
-                  `}
-                >
-                  {!TrainingLog.isTemplate(log) && (
-                    <label
+                    <select
+                      value={log.sleepHours}
+                      ref={selectSleepHoursRef}
+                      onChange={async event => {
+                        try {
+                          // Use unary + operator to convert string to number
+                          const sleepHours = +event.target
+                            .value as typeof SleepHours[keyof typeof SleepHours];
+                          // Update sleepHours for the current TrainingLog
+                          await db
+                            .user(user.uid)
+                            .collection(DbPath.UserLogs)
+                            .withConverter(DbConverter.TrainingLog)
+                            .doc(log.id)
+                            .set({ sleepHours }, { merge: true });
+                        } catch (error) {
+                          // @ts-ignore
+                          toast.error(error.message);
+                        }
+                      }}
                       className={css`
-                        position: relative;
-                        ${controlsFont}
+                        border: none;
+                        background: transparent;
+                        appearance: none;
+                        outline: none;
+                        position: absolute;
+                        /** Ensure that clicks hit this element. */
+                        width: 100%;
+                        height: 100%;
+                        /** Goes on top so it takes clicks. */
+                        z-index: 1;
+                        /** Cannot see it but can click it. */
+                        opacity: 0;
                       `}
                     >
-                      <select
-                        value={log.sleepHours}
-                        ref={selectSleepHoursRef}
-                        onChange={async event => {
-                          try {
-                            // Use unary + operator to convert string to number
-                            const sleepHours = +event.target
-                              .value as typeof SleepHours[keyof typeof SleepHours];
-                            // Update sleepHours for the current TrainingLog
-                            await db
-                              .user(user.uid)
-                              .collection(DbPath.UserLogs)
-                              .withConverter(DbConverter.TrainingLog)
-                              .doc(log.id)
-                              .set({ sleepHours }, { merge: true });
-                          } catch (error) {
-                            // @ts-ignore
-                            toast.error(error.message);
-                          }
-                        }}
-                        className={css`
-                          border: none;
-                          background: transparent;
-                          appearance: none;
-                          outline: none;
-                          position: absolute;
-                          /** Ensure that clicks hit this element. */
-                          width: 100%;
-                          height: 100%;
-                          /** Goes on top so it takes clicks. */
-                          z-index: 1;
-                          /** Cannot see it but can click it. */
-                          opacity: 0;
-                        `}
-                      >
-                        <option aria-label="None" value="-99">
-                          -
+                      <option aria-label="None" value="-99">
+                        -
+                      </option>
+                      {Object.values(SleepHours).map(opt => (
+                        <option key={opt} aria-label={'' + opt} value={opt}>
+                          {opt}
                         </option>
-                        {Object.values(SleepHours).map(opt => (
-                          <option key={opt} aria-label={'' + opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                      {/** SLEEP HOURS AND SLEEP ICON */}
-                      <Grid container spacing={1} alignItems="center">
-                        <Grid item marginLeft="auto">
-                          <LocalHotel />
-                        </Grid>
-                        {!!log.sleepHours && log.sleepHours !== -99 && (
-                          <Grid item>
-                            <p className={controlsFont}>{log.sleepHours}h</p>
-                          </Grid>
-                        )}
+                      ))}
+                    </select>
+                    {/** SLEEP HOURS AND SLEEP ICON */}
+                    <Grid container spacing={1} alignItems="center">
+                      <Grid item marginLeft="auto">
+                        <LocalHotel />
                       </Grid>
-                    </label>
-                  )}
-                  <EditorControlsDateView log={log} />
-                </Columns>
+                      {!!log.sleepHours && log.sleepHours !== -99 && (
+                        <Grid item>
+                          <p className={controlsFont}>{log.sleepHours}h</p>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </label>
+                )}
               </Rows>
             ) : (
               <Rows as="form" onSubmit={addActivity}>
                 <TextField
                   fullWidth
-                  size="small"
                   inputRef={addActivityInputRef}
                   placeholder="Add Activity..."
                   value={activityName}
@@ -667,9 +615,9 @@ export const TrainingLogEditor: FC = () => {
                     setLibraryMenuOpen(true);
                     libraryMenuRef.current?.setAttribute('data-show', '');
                   }}
-                  className={css`
-                    background-color: #fff !important;
-                  `}
+                  // className={css`
+                  //   background-color: #fff !important;
+                  // `}
                 />
               </Rows>
             )}
