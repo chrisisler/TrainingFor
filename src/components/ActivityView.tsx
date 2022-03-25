@@ -8,7 +8,8 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, Close, DeleteOutlined, Favorite, FavoriteBorder } from '@material-ui/icons';
+import { Add, Close, DeleteOutlined, Favorite, FavoriteBorder, FileCopyOutlined } from '@material-ui/icons';
+import { Box } from '@material-ui/system';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -606,9 +607,9 @@ export const ActivityView = forwardRef<
               }}
             >
               <ListItemIcon>
-                <Add />
+                <FileCopyOutlined />
               </ListItemIcon>
-              <Typography>Insert new set</Typography>
+              <Typography>Duplicate set</Typography>
             </MenuItem>
             <MenuItem
               onClick={async () => {
