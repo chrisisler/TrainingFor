@@ -1,6 +1,5 @@
 import { css } from '@emotion/css';
 import {
-  ClickAwayListener,
   Divider,
   Grid,
   IconButton,
@@ -76,7 +75,12 @@ export const ActivityView = forwardRef<
   /**
    * The set being edited.
    */
-  const [selectedSet, setSelectedSet] = useState<undefined | ActivitySet>(undefined);
+  const [selectedSet, setSelectedSet] = useState<undefined | ActivitySet>(
+    () =>
+      activity.sets.find(_ => _.status !== ActivitySetStatus.Completed) ??
+      activity.sets?.[0] ??
+      undefined
+  );
   const [weight, setWeight] = useState(selectedSet?.weight ?? 0);
   const [repCount, setRepCount] = useState(selectedSet?.repCount ?? 0);
 
@@ -102,6 +106,13 @@ export const ActivityView = forwardRef<
         .doc(activity.id),
     [activity, log.authorId, log.id, isTemplate]
   );
+
+  // Update the selected set input controls as other sets are selected
+  useEffect(() => {
+    if (!selectedSet) return;
+    setWeight(selectedSet?.weight ?? 0);
+    setRepCount(selectedSet?.repCount ?? 0);
+  }, [selectedSet]);
 
   // Load `comments` and subscribe to changes to the collection
   useEffect(() => {
@@ -342,66 +353,59 @@ export const ActivityView = forwardRef<
       <Rows center>
         <Columns maxWidth>
           {/** ACTIVITY NAME & BUTTON */}
-          <ClickAwayListener onClickAway={menu.close}>
-            <div>
-              <button
-                disabled={!editable}
-                aria-label="Open activity menu"
-                aria-controls="activity-menu"
-                aria-haspopup="true"
-                onClick={menu.open}
-                className={css`
-                  color: ${Color.FontPrimary};
-                  font-size: ${Font.MedLarge};
-                  font-weight: 400;
-                  padding: 0;
-                  border: none;
-                  background-color: transparent;
-                  font-family: system-ui;
-                  outline: none;
-                  text-align: left;
-                `}
+          <button
+            disabled={!editable}
+            aria-label="Open activity menu"
+            aria-controls="activity-menu"
+            aria-haspopup="true"
+            onClick={menu.open}
+            className={css`
+              color: ${Color.FontPrimary};
+              font-size: ${Font.MedLarge};
+              font-weight: 400;
+              padding: 0;
+              border: none;
+              background-color: transparent;
+              font-family: system-ui;
+              outline: none;
+              text-align: left;
+            `}
+          >
+            <ActivityNameBold name={activity.name} />
+          </button>
+          <Menu
+            id="activity-menu"
+            anchorEl={menu.ref}
+            open={!!menu.ref}
+            onClose={menu.close}
+            MenuListProps={{ dense: true }}
+          >
+            <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
+              Move up
+            </MenuItem>
+            <MenuItem
+              onClick={moveActivityDown}
+              disabled={activities.length === 1 || index + 1 === activities.length}
+            >
+              Move down
+            </MenuItem>
+            <MenuItem onClick={renameActivity}>Edit name</MenuItem>
+            <MenuItem onClick={showActivityCommentInput}>Add comment</MenuItem>
+            <MenuItem onClick={duplicateActivity}>Duplicate activity</MenuItem>
+            {activity.sets.length > 1 && (
+              <MenuItem
+                onClick={() => {
+                  if (!window.confirm('Remove all sets?')) return;
+                  removeAllSets();
+                }}
               >
-                <ActivityNameBold name={activity.name} />
-              </button>
-              <Menu
-                id="activity-menu"
-                anchorEl={menu.ref}
-                open={!!menu.ref}
-                onClose={menu.close}
-                MenuListProps={{ dense: true }}
-              >
-                <MenuItem
-                  onClick={moveActivityUp}
-                  disabled={activities.length === 1 || index === 0}
-                >
-                  Move up
-                </MenuItem>
-                <MenuItem
-                  onClick={moveActivityDown}
-                  disabled={activities.length === 1 || index + 1 === activities.length}
-                >
-                  Move down
-                </MenuItem>
-                <MenuItem onClick={renameActivity}>Edit name</MenuItem>
-                <MenuItem onClick={showActivityCommentInput}>Add comment</MenuItem>
-                <MenuItem onClick={duplicateActivity}>Duplicate activity</MenuItem>
-                {activity.sets.length > 1 && (
-                  <MenuItem
-                    onClick={() => {
-                      if (!window.confirm('Remove all sets?')) return;
-                      removeAllSets();
-                    }}
-                  >
-                    Remove all sets
-                  </MenuItem>
-                )}
-                <MenuItem onClick={deleteActivity}>
-                  <b>Delete activity</b>
-                </MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
+                Remove all sets
+              </MenuItem>
+            )}
+            <MenuItem onClick={deleteActivity}>
+              <b>Delete activity</b>
+            </MenuItem>
+          </Menu>
         </Columns>
 
         {/** FAVORITE ICON */}
@@ -442,15 +446,20 @@ export const ActivityView = forwardRef<
       {!!selectedSet && (
         <>
           <Rows>
+            <Typography variant="overline"></Typography>
             {/** SELECTED SET STATUS BUTTON */}
+            {/** TODO: Add dropdown arrow for a status Select */}
             <button
-              key={JSON.stringify(activity)}
               onClick={async () => {
                 if (!editable) return;
                 if (!selectedSet) return;
                 try {
                   // Update the DB then reflect that change in the FE if successful
                   const set = await API.ActivitySet.cycleStatus(log, activity, selectedSet);
+                  // TODO
+                  // this approach is not scalable at all, every user updating a
+                  // set status hits the network...  just POST the finished log
+                  // state once the log is done!
                   setSelectedSet(set);
                 } catch (error) {
                   // @ts-ignore
@@ -477,156 +486,148 @@ export const ActivityView = forwardRef<
             </button>
 
             {/** SELECTED SET VALUE CONTROLS */}
-            {activity.sets.length > 0 && (
-              <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
-                {/** WEIGHT VALUE */}
-                {/** TODO: Input-ify */}
-                {activity.weightUnit !== ActivityWeightUnit.Weightless && (
-                  <Grid item>
-                    <input
-                      disabled={!editable}
-                      ref={resizeWeightInput}
-                      type="tel"
-                      min={0}
-                      max={9999}
-                      name="weight"
-                      value={weight}
-                      onFocus={event => {
-                        event.currentTarget.select();
-                      }}
-                      onChange={event => {
-                        if (Number.isNaN(event.target.value)) return;
-                        setWeight(Number(event.target.value));
-                      }}
-                      onBlur={event => {
-                        activity.sets[index].weight = Number(event.target.value);
-                        updateSets(activity.sets);
-                      }}
-                      className={activitySetInputStyle}
-                    />
-                  </Grid>
-                )}
-                {/** WEIGHT UNIT */}
-                {/** TODO: NativeSelect-ify */}
-                <Grid item>
-                  <IconButton
-                    disabled={!editable}
-                    onClick={cycleWeightUnit}
-                    size="small"
-                    className={css`
-                      font-size: 1rem !important;
-                    `}
-                  >
-                    {activity.weightUnit.toUpperCase()}
-                  </IconButton>
-                </Grid>
-                {/** REP VALUE */}
-                {/** TODO: Input-ify */}
+            <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
+              {/** WEIGHT VALUE */}
+              {activity.weightUnit !== ActivityWeightUnit.Weightless && (
                 <Grid item>
                   <input
                     disabled={!editable}
-                    ref={resizeRepCountInput}
+                    ref={resizeWeightInput}
                     type="tel"
                     min={0}
                     max={9999}
-                    name="repCount"
-                    value={repCount ?? 0}
+                    name="weight"
+                    value={weight}
                     onFocus={event => {
                       event.currentTarget.select();
                     }}
                     onChange={event => {
                       if (Number.isNaN(event.target.value)) return;
-                      setRepCount(Number(event.target.value));
+                      setWeight(Number(event.target.value));
                     }}
                     onBlur={event => {
-                      activity.sets[index].repCount = Number(event.target.value);
+                      selectedSet.weight = Number(event.target.value);
                       updateSets(activity.sets);
                     }}
-                    className={css`
-                      ${activitySetInputStyle};
-                    `}
+                    className={activitySetInputStyle}
                   />
-                  {/* {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
+                </Grid>
+              )}
+              {/** WEIGHT UNIT */}
+              <Grid item>
+                <IconButton
+                  disabled={!editable}
+                  onClick={cycleWeightUnit}
+                  size="small"
+                  className={css`
+                    font-size: 1rem !important;
+                  `}
+                >
+                  {activity.weightUnit.toUpperCase()}
+                </IconButton>
+              </Grid>
+              {/** REP VALUE */}
+              <Grid item>
+                <input
+                  disabled={!editable}
+                  ref={resizeRepCountInput}
+                  type="tel"
+                  min={0}
+                  max={9999}
+                  name="repCount"
+                  value={repCount ?? 0}
+                  onFocus={event => {
+                    event.currentTarget.select();
+                  }}
+                  onChange={event => {
+                    if (Number.isNaN(event.target.value)) return;
+                    setRepCount(Number(event.target.value));
+                  }}
+                  onBlur={event => {
+                    selectedSet.repCount = Number(event.target.value);
+                    updateSets(activity.sets);
+                  }}
+                  className={css`
+                    ${activitySetInputStyle};
+                  `}
+                />
+                {/* {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
                     {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
                     {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>} */}
-                </Grid>
-
-                {/** REP UNIT */}
-                {/** TODO: NativeSelect-ify */}
-                <Grid item>
-                  <IconButton
-                    disabled={!editable}
-                    onClick={cycleRepCountUnit}
-                    size="small"
-                    className={css`
-                      font-size: 1rem !important;
-                    `}
-                  >
-                    {activity.repCountUnit.toUpperCase()}
-                  </IconButton>
-                </Grid>
               </Grid>
-            )}
+
+              {/** REP UNIT */}
+              {/** TODO: NativeSelect-ify */}
+              <Grid item>
+                <IconButton
+                  disabled={!editable}
+                  onClick={cycleRepCountUnit}
+                  size="small"
+                  className={css`
+                    font-size: 1rem !important;
+                  `}
+                >
+                  {activity.repCountUnit.toUpperCase()}
+                </IconButton>
+              </Grid>
+            </Grid>
           </Rows>
-
           {/** ACTIVITY SET MENU */}
-          <ClickAwayListener onClickAway={selectedSetMenu.close}>
-            <div>
-              <Menu
-                id="activity-set-menu"
-                anchorEl={selectedSetMenu.ref}
-                open={!!selectedSetMenu.ref}
-                onClose={selectedSetMenu.close}
-              >
-                <MenuItem dense>
-                  <Typography color="textSecondary">
-                    Set #
-                    {
-                      activity.sets.flatMap((_, index) =>
-                        _.uuid === selectedSet.uuid ? index + 1 : []
-                      )[0]
-                    }
-                  </Typography>
-                </MenuItem>
+          <Menu
+            id="activity-set-menu"
+            anchorEl={selectedSetMenu.ref}
+            open={!!selectedSetMenu.ref}
+            onClose={selectedSetMenu.close}
+          >
+            <MenuItem dense>
+              {/** Display the set index as menu title */}
+              <Typography color="textSecondary">
+                Set #
+                {
+                  activity.sets.flatMap((_, index) =>
+                    _.uuid === selectedSet?.uuid ? index + 1 : []
+                  )[0]
+                }
+              </Typography>
+            </MenuItem>
 
-                <Divider />
+            <Divider />
 
-                <MenuItem
-                  onClick={async () => {
-                    selectedSetMenu.close();
-                    try {
-                      await API.ActivitySet.insertNew(log, activities, index, selectedSet);
-                    } catch (error) {
-                      // @ts-ignore
-                      toast.error(error.message);
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <Add />
-                  </ListItemIcon>
-                  <Typography>Insert new set</Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={async () => {
-                    selectedSetMenu.close();
-                    // deleteSet();
-                    try {
-                      await API.ActivitySet.deleteSet(log, activity, selectedSet);
-                    } catch (error) {
-                      // @ts-ignore
-                      toast.error(error.message);
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <DeleteOutlined color="error" />
-                  </ListItemIcon>
-                  <Typography color="error">Delete set</Typography>
-                </MenuItem>
-              </Menu>
-            </div>
-          </ClickAwayListener>
+            <MenuItem
+              onClick={async () => {
+                selectedSetMenu.close();
+                if (!selectedSet) return;
+                try {
+                  await API.ActivitySet.insertNew(log, activities, index, selectedSet);
+                } catch (error) {
+                  // @ts-ignore
+                  toast.error(error.message);
+                }
+              }}
+            >
+              <ListItemIcon>
+                <Add />
+              </ListItemIcon>
+              <Typography>Insert new set</Typography>
+            </MenuItem>
+            <MenuItem
+              onClick={async () => {
+                selectedSetMenu.close();
+                if (!selectedSet) return;
+                try {
+                  await API.ActivitySet.deleteSet(log, activity, selectedSet);
+                } catch (error) {
+                  // @ts-ignore
+                  toast.error(error.message);
+                }
+              }}
+            >
+              <ListItemIcon>
+                <DeleteOutlined color="error" />
+              </ListItemIcon>
+              <Typography color="error">Delete set</Typography>
+            </MenuItem>
+          </Menu>
         </>
       )}
 
@@ -659,11 +660,15 @@ export const ActivityView = forwardRef<
         <Grid
           item
           container
-          spacing={2.0}
           overflow="scroll"
           wrap="nowrap"
           // To avoid scrollbar/height clashing
           paddingBottom={Pad.Small}
+          className={css`
+            & > *:not(:last-child) {
+              margin-right: ${Pad.Medium};
+            }
+          `}
         >
           {activity.sets.map(set => {
             const isSelectedSet = selectedSet?.uuid === set.uuid;
@@ -673,8 +678,11 @@ export const ActivityView = forwardRef<
                 whiteSpace="nowrap"
                 key={set.uuid}
                 onClick={event => {
-                  if (isSelectedSet) selectedSetMenu.open(event);
-                  else setSelectedSet(set);
+                  if (isSelectedSet) {
+                    selectedSetMenu.open(event);
+                  } else {
+                    setSelectedSet(set);
+                  }
                 }}
               >
                 <Typography
@@ -683,10 +691,11 @@ export const ActivityView = forwardRef<
                   className={css`
                     padding: ${Pad.XSmall} ${Pad.Small} !important;
                     line-height: 1 !important;
-                    border-bottom: 1px solid ${ActivitySet.getStatusColor(set.status)};
+                    border-bottom: 2px solid ${ActivitySet.getStatusColor(set.status)};
                     ${isSelectedSet &&
-                    `background-color: ${ActivitySet.getStatusColor(set.status)};`}
-                    ${isSelectedSet && 'border-radius: 5px;'}
+                    `
+                      border-bottom: 5px solid ${ActivitySet.getStatusColor(set.status)};
+                    `}
                   `}
                 >
                   {set.weight === 0 ? (
@@ -695,7 +704,7 @@ export const ActivityView = forwardRef<
                     </>
                   ) : (
                     <>
-                      <b>{set.weight}</b>x{set.repCount}
+                      {set.weight}x<b>{set.repCount}</b>
                     </>
                   )}
                 </Typography>
@@ -808,186 +817,6 @@ export const ActivityView = forwardRef<
     </Columns>
   );
 });
-
-// const ActivitySetView = forwardRef<
-//   HTMLDivElement,
-//   {
-//     index: number;
-//     activity: Activity;
-//     editable: boolean;
-//     activityDocument: firebase.firestore.DocumentReference<Activity>;
-//     isTemplate: boolean;
-//   }
-// >(({ index, activity, editable, activityDocument, isTemplate }, ref) => {
-//   const { sets, weightUnit, repCountUnit } = activity;
-//   const set = sets[index];
-
-//   const resizeWeightInput = useResizableInputRef();
-//   const resizeRepCountInput = useResizableInputRef();
-
-//   const { sets, weightUnit, repCountUnit } = activity;
-//   const [weight, setWeight] = useState(set.weight);
-//   const [repCount, setRepCount] = useState(set.repCount);
-
-//   const statusColor = useMemo(() => ActivitySet.getStatusColor(set.status), [set.status]);
-
-//   return (
-//     <Rows ref={ref} center between maxWidth>
-//       <Rows
-//         className={css`
-//           align-items: baseline;
-//         `}
-//       >
-//         {weightUnit !== ActivityWeightUnit.Weightless && (
-//           <>
-//             <input
-//               disabled={!editable}
-//               ref={resizeWeightInput}
-//               type="tel"
-//               min={0}
-//               max={999}
-//               name="weight"
-//               value={weight}
-//               onFocus={event => {
-//                 event.currentTarget.select();
-//               }}
-//               onChange={event => {
-//                 if (Number.isNaN(event.target.value)) return;
-//                 setWeight(Number(event.target.value));
-//               }}
-//               onBlur={event => {
-//                 sets[index].weight = Number(event.target.value);
-//                 updateSets(sets);
-//               }}
-//               className={css`
-//                 ${setInputStyle(weight)}
-//                 text-align: end;
-//               `}
-//             />
-//             <X>x</X>
-//           </>
-//         )}
-//         <input
-//           disabled={!editable}
-//           ref={resizeRepCountInput}
-//           type="tel"
-//           min={0}
-//           max={999}
-//           name="repCount"
-//           value={repCount ?? 0}
-//           onFocus={event => {
-//             event.currentTarget.select();
-//           }}
-//           onChange={event => {
-//             if (Number.isNaN(event.target.value)) return;
-//             setRepCount(Number(event.target.value));
-//           }}
-//           onBlur={event => {
-//             sets[index].repCount = Number(event.target.value);
-//             updateSets(sets);
-//           }}
-//           className={css`
-//             ${setInputStyle(repCount ?? 0)}
-//           `}
-//         />
-//         {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
-//         {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
-//         {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>}
-//       </Rows>
-//       <div>
-//         <button
-//           disabled={!editable}
-//           onClick={cycleSetStatus}
-//           className={css`
-//             color: ${Color.FontPrimary};
-//             padding: ${Pad.XSmall};
-//             font-size: ${Font.Small};
-//             border: 0;
-//             font-weight: 500;
-//             background-color: transparent;
-//             letter-spacing: 0.02em;
-//             text-transform: uppercase;
-//             font-family: system-ui, Verdana, sans-serif;
-//             outline: none;
-//             width: 100%;
-//             text-align: left;
-//             color: ${statusColor};
-//           `}
-//         >
-//           {set.status}
-//         </button>
-//       </div>
-//       <ClickAwayListener onClickAway={seletedSetMenu.close}>
-//         <div>
-//           <IconButton
-//             disabled={!editable}
-//             size="small"
-//             aria-label="Open set menu"
-//             aria-controls="set-menu"
-//             aria-haspopup="true"
-//             onClick={seletedSetMenu.open}
-//           >
-//             <Typography
-//               variant="subtitle1"
-//               className={css`
-//                 color: ${Color.ActionSecondaryGray};
-//                 font-weight: 600 !important;
-//                 line-height: 1 !important;
-//                 width: 2ch;
-//                 font-size: 1.2rem;
-//               `}
-//             >
-//               {index + 1}
-//             </Typography>
-//           </IconButton>
-//           <Menu
-//             id="set-menu"
-//             anchorEl={seletedSetMenu.ref}
-//             open={!!seletedSetMenu.ref}
-//             onClose={seletedSetMenu.close}
-//             MenuListProps={{ dense: true }}
-//           >
-//             <MenuItem
-//               onClick={() => {
-//                 seletedSetMenu.close();
-//                 insertNewSet();
-//               }}
-//             >
-//               Insert new set
-//             </MenuItem>
-//             <MenuItem
-//               onClick={() => {
-//                 seletedSetMenu.close();
-//                 duplicateSet();
-//               }}
-//             >
-//               Duplicate set
-//             </MenuItem>
-//             <MenuItem
-//               onClick={() => {
-//                 seletedSetMenu.close();
-//                 deleteSet();
-//               }}
-//             >
-//               <b>Delete set</b>
-//             </MenuItem>
-//           </Menu>
-//         </div>
-//       </ClickAwayListener>
-//     </Rows>
-//   );
-// });
-
-// const X: FC<{ children: React.ReactNode }> = ({ children }) => (
-//   <p
-//     className={css`
-//       color: ${Color.ActionSecondaryGray};
-//       font-size: ${Font.Small};
-//     `}
-//   >
-//     {children}
-//   </p>
-// );
 
 /**
  * Displays the given Activity name with several or none parts in
