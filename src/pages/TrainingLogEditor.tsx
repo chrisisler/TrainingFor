@@ -45,7 +45,7 @@ const smallFont = css`
 `;
 
 export const TrainingLogEditor: FC = () => {
-  const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
+  // const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
   const addActivityInputRef = useRef<HTMLInputElement | null>(null);
   // Do not show the activity input by default
   const [activityName, setActivityName] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export const TrainingLogEditor: FC = () => {
 
   const [log, setLog] = useState<DataState<TrainingLog | TrainingTemplate>>(DataState.Loading);
   /** Controlled state for `TrainingLog.notes` */
-  const [logNotes, setLogNotes] = useState<DataState<string>>(DataState.Empty);
+  // const [logNotes, setLogNotes] = useState<DataState<string>>(DataState.Empty);
   /** Live data from DbPath.Activity collection snapshots. */
   const [activities, setActivities] = useState<DataState<Activity[]>>(DataState.Loading);
 
@@ -114,7 +114,7 @@ export const TrainingLogEditor: FC = () => {
         doc => {
           const log = doc.data();
           setLog(log ?? DataState.error('Unexpected: Log not found.'));
-          if (log?.notes?.length) setLogNotes(log.notes);
+          // if (log?.notes?.length) setLogNotes(log.notes);
         },
         err => setLog(DataState.error(err.message))
       );
