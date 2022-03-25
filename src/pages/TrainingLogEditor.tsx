@@ -9,7 +9,7 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { Add, LocalHotel } from '@material-ui/icons';
+import { Add, ChevronRight } from '@material-ui/icons';
 import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
@@ -34,7 +34,6 @@ import {
   ActivitySetStatus,
   ActivityWeightUnit,
   SavedActivity,
-  SleepHours,
   TrainingLog,
   TrainingTemplate,
 } from '../interfaces';
@@ -45,13 +44,7 @@ const smallFont = css`
   color: ${Color.FontSecondary};
 `;
 
-const controlsFont = css`
-  color: white !important;
-  text-shadow: 0 0 4px black;
-`;
-
 export const TrainingLogEditor: FC = () => {
-  const selectSleepHoursRef = useRef<HTMLSelectElement | null>(null);
   const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
   const addActivityInputRef = useRef<HTMLInputElement | null>(null);
   // Do not show the activity input by default
@@ -360,16 +353,24 @@ export const TrainingLogEditor: FC = () => {
             background-color: ${baseBg};
           `}
         >
+          {/** LOG TITLE MENU BUTTON */}
           <Button
+            disableRipple
             aria-label="Log title and log menu button"
             aria-controls="log-menu-button"
             aria-haspopup="true"
             onClick={menu.open}
             variant="text"
-            size="small"
+            size="large"
+            startIcon={<ChevronRight />}
+            className={css`
+              color: ${Color.FontPrimary} !imporant;
+            `}
           >
-            <Typography variant="h6">{log.title}</Typography>
+            {log.title}
           </Button>
+
+          {/** LOG TITLE MENU ACTIONS */}
           <Menu
             id="log-menu"
             anchorEl={menu.ref}
@@ -412,6 +413,23 @@ export const TrainingLogEditor: FC = () => {
             </MenuItem>
           </Menu>
 
+          {/** ADD ACTIVITY BUTTON */}
+          <Button
+            // fullWidth
+            disableRipple
+            startIcon={<Add />}
+            size="small"
+            onClick={() => {
+              // Set to non-null to render the input
+              setActivityName('');
+              // Wait a tick for the input to render so it may be focused
+              Promise.resolve().then(() => addActivityInputRef.current?.focus());
+            }}
+          >
+            Activity
+          </Button>
+
+          {/** LIST OF ACTIVITIES */}
           <DataStateView data={activities}>
             {activities => (
               <FlipMove
@@ -428,20 +446,6 @@ export const TrainingLogEditor: FC = () => {
                 {activities.map(({ id }, index) => (
                   <ActivityView key={id} editable activities={activities} index={index} log={log} />
                 ))}
-                <Button
-                  fullWidth
-                  disableRipple
-                  startIcon={<Add />}
-                  size={activities.length === 0 ? 'large' : 'small'}
-                  onClick={() => {
-                    // Set to non-null to render the input
-                    setActivityName('');
-                    // Wait a tick for the input to render so it may be focused
-                    Promise.resolve().then(() => addActivityInputRef.current?.focus());
-                  }}
-                >
-                  Activity
-                </Button>
               </FlipMove>
             )}
           </DataStateView>
@@ -452,9 +456,8 @@ export const TrainingLogEditor: FC = () => {
               position: absolute;
               width: 100%;
               bottom: ${navBarHeight}px;
-              padding: ${Pad.Small};
+              padding: 0;
             `}
-            pad={Pad.Medium}
           >
             {libraryMenuOpen && typeof activityName === 'string' && (
               <ClickAwayListener
@@ -518,81 +521,14 @@ export const TrainingLogEditor: FC = () => {
 
             {activityName === null ? (
               <Rows
-                pad={Pad.Small}
                 className={css`
                   justify-content: end;
                 `}
               >
-                {/** RIGHT-SIDE CONTROLS COLUMN */}
                 <EditorControlsDateView log={log} />
-                {/** SLEEP SELECTOR AND ICON */}
-                {!TrainingLog.isTemplate(log) && (
-                  <label
-                    className={css`
-                      position: relative;
-                      ${controlsFont}
-                    `}
-                  >
-                    <select
-                      value={log.sleepHours}
-                      ref={selectSleepHoursRef}
-                      onChange={async event => {
-                        try {
-                          // Use unary + operator to convert string to number
-                          const sleepHours = +event.target
-                            .value as typeof SleepHours[keyof typeof SleepHours];
-                          // Update sleepHours for the current TrainingLog
-                          await db
-                            .user(user.uid)
-                            .collection(DbPath.UserLogs)
-                            .withConverter(DbConverter.TrainingLog)
-                            .doc(log.id)
-                            .set({ sleepHours }, { merge: true });
-                        } catch (error) {
-                          // @ts-ignore
-                          toast.error(error.message);
-                        }
-                      }}
-                      className={css`
-                        border: none;
-                        background: transparent;
-                        appearance: none;
-                        outline: none;
-                        position: absolute;
-                        /** Ensure that clicks hit this element. */
-                        width: 100%;
-                        height: 100%;
-                        /** Goes on top so it takes clicks. */
-                        z-index: 1;
-                        /** Cannot see it but can click it. */
-                        opacity: 0;
-                      `}
-                    >
-                      <option aria-label="None" value="-99">
-                        -
-                      </option>
-                      {Object.values(SleepHours).map(opt => (
-                        <option key={opt} aria-label={'' + opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                    {/** SLEEP HOURS AND SLEEP ICON */}
-                    <Grid container spacing={1} alignItems="center">
-                      <Grid item marginLeft="auto">
-                        <LocalHotel />
-                      </Grid>
-                      {!!log.sleepHours && log.sleepHours !== -99 && (
-                        <Grid item>
-                          <p className={controlsFont}>{log.sleepHours}h</p>
-                        </Grid>
-                      )}
-                    </Grid>
-                  </label>
-                )}
               </Rows>
             ) : (
-              <Rows as="form" onSubmit={addActivity}>
+              <form onSubmit={addActivity}>
                 <TextField
                   fullWidth
                   inputRef={addActivityInputRef}
@@ -615,11 +551,11 @@ export const TrainingLogEditor: FC = () => {
                     setLibraryMenuOpen(true);
                     libraryMenuRef.current?.setAttribute('data-show', '');
                   }}
-                  // className={css`
-                  //   background-color: #fff !important;
-                  // `}
+                  className={css`
+                    padding: ${Pad.Medium} !important;
+                  `}
                 />
-              </Rows>
+              </form>
             )}
           </Columns>
         </Columns>
@@ -847,11 +783,11 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
   if (TrainingLog.isTemplate(log)) {
     return (
       <Typography
-        variant="body2"
+        variant="overline"
         color="textSecondary"
         className={css`
           width: min-content;
-          ${controlsFont}
+          padding: 0 !important;
         `}
       >
         Training Template
@@ -868,10 +804,11 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
     <DataStateView data={date} loading={() => null} error={() => null}>
       {([date, time]) => (
         <Typography
-          variant="body2"
+          variant="overline"
+          color="textSecondary"
           className={css`
             white-space: nowrap;
-            ${controlsFont}
+            padding: 0 !important;
           `}
         >
           {time}
