@@ -381,7 +381,7 @@ export const TrainingLogEditor: FC = () => {
             <MenuItem onClick={openPreviousLog}>Go to previous log</MenuItem>
             <MenuItem onClick={openNextLog}>Go to next log</MenuItem>
             <MenuItem onClick={renameLog}>Edit name</MenuItem>
-            <MenuItem
+            {/* <MenuItem
               onClick={() => {
                 if (DataState.isReady(logNotes) && logNotes) {
                   logNotesRef.current?.focus();
@@ -393,7 +393,7 @@ export const TrainingLogEditor: FC = () => {
               }}
             >
               Add notes
-            </MenuItem>
+            </MenuItem> */}
             {!!window.navigator.share && (
               <MenuItem
                 onClick={() => {
