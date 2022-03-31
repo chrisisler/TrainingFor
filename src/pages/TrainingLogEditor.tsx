@@ -363,9 +363,9 @@ export const TrainingLogEditor: FC = () => {
             variant="text"
             size="large"
             startIcon={<ChevronRight />}
-            className={css`
-              color: ${Color.FontPrimary} !imporant;
-            `}
+            sx={{
+              borderBottom: `1px solid ${Color.ActionSecondaryGray}`
+            }}
           >
             {log.title}
           </Button>
@@ -413,22 +413,6 @@ export const TrainingLogEditor: FC = () => {
             </MenuItem>
           </Menu>
 
-          {/** ADD ACTIVITY BUTTON */}
-          <Button
-            // fullWidth
-            disableRipple
-            startIcon={<Add />}
-            size="small"
-            onClick={() => {
-              // Set to non-null to render the input
-              setActivityName('');
-              // Wait a tick for the input to render so it may be focused
-              Promise.resolve().then(() => addActivityInputRef.current?.focus());
-            }}
-          >
-            Activity
-          </Button>
-
           {/** LIST OF ACTIVITIES */}
           <DataStateView data={activities}>
             {activities => (
@@ -450,6 +434,24 @@ export const TrainingLogEditor: FC = () => {
             )}
           </DataStateView>
 
+          {/** ADD ACTIVITY BUTTON */}
+          <Button
+            disableRipple
+            startIcon={<Add />}
+            size="large"
+            sx={{
+              borderTop: `1px solid ${Color.ActionSecondaryGray}`
+            }}
+            onClick={() => {
+              // Set to non-null to render the input
+              setActivityName('');
+              // Wait a tick for the input to render so it may be focused
+              Promise.resolve().then(() => addActivityInputRef.current?.focus());
+            }}
+          >
+            Activity
+          </Button>
+
           {/** FOOTER CONTAINER */}
           <Columns
             className={css`
@@ -457,8 +459,10 @@ export const TrainingLogEditor: FC = () => {
               width: 100%;
               bottom: ${navBarHeight}px;
               padding: 0;
+              ${libraryMenuOpen && 'background-color: #fff;'}
             `}
           >
+            {/** ACTIVITY LIBRARY */}
             {libraryMenuOpen && typeof activityName === 'string' && (
               <ClickAwayListener
                 onClickAway={() => {
@@ -472,10 +476,8 @@ export const TrainingLogEditor: FC = () => {
                     height: 30vh;
                     overflow-y: scroll;
                     overflow-x: hidden;
-                    border-radius: 8px;
-                    background-color: #fff;
                     padding: ${Pad.Small} ${Pad.Medium};
-                    // border: 1px solid ${Color.ActionPrimaryBlue};
+                    border-top: 1px solid ${Color.ActionPrimaryBlue};
                   `}
                 >
                   <LibraryAutocomplete
@@ -520,13 +522,7 @@ export const TrainingLogEditor: FC = () => {
             )} */}
 
             {activityName === null ? (
-              <Rows
-                className={css`
-                  justify-content: end;
-                `}
-              >
-                <EditorControlsDateView log={log} />
-              </Rows>
+              <EditorControlsDateView log={log} />
             ) : (
               <form onSubmit={addActivity}>
                 <TextField
@@ -551,9 +547,9 @@ export const TrainingLogEditor: FC = () => {
                     setLibraryMenuOpen(true);
                     libraryMenuRef.current?.setAttribute('data-show', '');
                   }}
-                  className={css`
-                    padding: ${Pad.Medium} !important;
-                  `}
+                  sx={{
+                    padding: Pad.Small
+                  }}
                 />
               </form>
             )}
@@ -643,7 +639,7 @@ const LibraryAutocomplete: FC<{
         if (queriedActivites.length > 1) {
           return (
             <Columns>
-              <Typography variant="overline" color="textSecondary">
+              <Typography variant="overline">
                 Activity Library
               </Typography>
               <Grid container spacing={1}>
@@ -785,10 +781,12 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
       <Typography
         variant="overline"
         color="textSecondary"
-        className={css`
-          width: min-content;
-          padding: 0 !important;
-        `}
+        sx={{
+          lineHeight: 1,
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+        }}
       >
         Training Template
       </Typography>
@@ -806,10 +804,12 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
         <Typography
           variant="overline"
           color="textSecondary"
-          className={css`
-            white-space: nowrap;
-            padding: 0 !important;
-          `}
+          sx={{
+            lineHeight: 1,
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+          }}
         >
           {time}
           &nbsp;
