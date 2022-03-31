@@ -330,14 +330,16 @@ export const ActivityView = forwardRef<
       pad={Pad.Small}
     >
       <Rows center maxWidth between>
-        <Rows center pad={Pad.XSmall}>
+        <Rows
+          center
+          pad={Pad.XSmall}
+          aria-label="Open activity menu"
+          aria-controls="activity-menu"
+          aria-haspopup="true"
+          onClick={editable ? menu.open : undefined}
+        >
           {/** ACTIVITY NAME & BUTTON */}
           <button
-            disabled={!editable}
-            aria-label="Open activity menu"
-            aria-controls="activity-menu"
-            aria-haspopup="true"
-            onClick={menu.open}
             className={css`
               color: ${Color.FontPrimary};
               font-size: ${Font.MedLarge};
