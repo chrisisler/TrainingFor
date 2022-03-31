@@ -329,99 +329,104 @@ export const ActivityView = forwardRef<
       `}
       pad={Pad.Small}
     >
-      <Rows center>
-        <Columns maxWidth>
-          <Rows center pad={Pad.XSmall}>
-            {/** ACTIVITY NAME & BUTTON */}
-            <button
-              disabled={!editable}
-              aria-label="Open activity menu"
-              aria-controls="activity-menu"
-              aria-haspopup="true"
-              onClick={menu.open}
-              className={css`
-                color: ${Color.FontPrimary};
-                font-size: ${Font.MedLarge};
-                font-weight: 400;
-                padding: 0;
-                border: none;
-                background-color: transparent;
-                font-family: system-ui;
-                outline: none;
-                text-align: left;
-              `}
-            >
-              <ActivityNameBold name={activity.name} />
-            </button>
-            <ExpandMore sx={{ color: Color.ActionSecondaryGray }} fontSize="small" />
-          </Rows>
-          <Menu
-            id="activity-menu"
-            anchorEl={menu.ref}
-            open={!!menu.ref}
-            onClose={menu.close}
-            MenuListProps={{ dense: true }}
+      <Rows center maxWidth between>
+        <Rows center pad={Pad.XSmall}>
+          {/** ACTIVITY NAME & BUTTON */}
+          <button
+            disabled={!editable}
+            aria-label="Open activity menu"
+            aria-controls="activity-menu"
+            aria-haspopup="true"
+            onClick={menu.open}
+            className={css`
+              color: ${Color.FontPrimary};
+              font-size: ${Font.MedLarge};
+              font-weight: 400;
+              padding: 0;
+              border: none;
+              background-color: transparent;
+              font-family: system-ui;
+              outline: none;
+              text-align: left;
+            `}
           >
-            <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
-              Move up
-            </MenuItem>
+            <ActivityNameBold name={activity.name} />
+          </button>
+          <ExpandMore sx={{ color: Color.ActionSecondaryGray }} fontSize="small" />
+        </Rows>
+        <Menu
+          id="activity-menu"
+          anchorEl={menu.ref}
+          open={!!menu.ref}
+          onClose={menu.close}
+          MenuListProps={{ dense: true }}
+        >
+          <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
+            Move up
+          </MenuItem>
+          <MenuItem
+            onClick={moveActivityDown}
+            disabled={activities.length === 1 || index + 1 === activities.length}
+          >
+            Move down
+          </MenuItem>
+          <MenuItem onClick={renameActivity}>Edit name</MenuItem>
+          <MenuItem onClick={showActivityCommentInput}>Add comment</MenuItem>
+          <MenuItem onClick={duplicateActivity}>Duplicate activity</MenuItem>
+          {activity.sets.length > 1 && (
             <MenuItem
-              onClick={moveActivityDown}
-              disabled={activities.length === 1 || index + 1 === activities.length}
+              onClick={() => {
+                if (!window.confirm('Remove all sets?')) return;
+                removeAllSets();
+              }}
             >
-              Move down
+              Remove all sets
             </MenuItem>
-            <MenuItem onClick={renameActivity}>Edit name</MenuItem>
-            <MenuItem onClick={showActivityCommentInput}>Add comment</MenuItem>
-            <MenuItem onClick={duplicateActivity}>Duplicate activity</MenuItem>
-            {activity.sets.length > 1 && (
-              <MenuItem
-                onClick={() => {
-                  if (!window.confirm('Remove all sets?')) return;
-                  removeAllSets();
-                }}
-              >
-                Remove all sets
-              </MenuItem>
-            )}
-            <MenuItem onClick={deleteActivity}>
-              <b>Delete activity</b>
-            </MenuItem>
-          </Menu>
-        </Columns>
+          )}
+          <MenuItem onClick={deleteActivity}>
+            <b>Delete activity</b>
+          </MenuItem>
+        </Menu>
 
         {/** FAVORITE ICON */}
         {!isTemplate && (
-          <IconButton
-            size="small"
-            onClick={toggleFavorite}
-            // TODO Fix animation on safari
-            className={css`
-              color: ${activity.isFavorite ? '#cc0000' : Color.ActionSecondaryGray} !important;
+          <Rows center>
+            {activity.sets.length > 1 && (
+              <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }} noWrap>
+                Vol: {Activity.getVolume(activity)}
+              </Typography>
+            )}
+            <IconButton
+              size="small"
+              onClick={toggleFavorite}
+              // TODO Fix animation on safari
+              className={css`
+                color: ${activity.isFavorite ? '#cc0000' : Color.ActionSecondaryGray} !important;
 
-              // https://www.w3schools.com/howto/howto_css_shake_image.asp
-              :active {
-                animation: shake 0.5s;
-                animation-iteration-count: 1;
-              }
-              // prettier-ignore
-              @keyframes shake {
-                0% { transform: translate(1px, 1px) rotate(0deg); }
-                10% { transform: translate(-1px, -2px) rotate(-1deg); }
-                20% { transform: translate(-3px, 0px) rotate(1deg); }
-                30% { transform: translate(3px, 2px) rotate(0deg); }
-                40% { transform: translate(1px, -1px) rotate(1deg); }
-                50% { transform: translate(-1px, 2px) rotate(-1deg); }
-                60% { transform: translate(-3px, 1px) rotate(0deg); }
-                70% { transform: translate(3px, 1px) rotate(-1deg); }
-                80% { transform: translate(-1px, -1px) rotate(1deg); }
-                90% { transform: translate(1px, 2px) rotate(0deg); }
-                100% { transform: translate(1px, -2px) rotate(-1deg); }
-              }
-            `}
-          >
-            {activity.isFavorite ? <Favorite /> : <FavoriteBorder />}
-          </IconButton>
+                // https://www.w3schools.com/howto/howto_css_shake_image.asp
+                :active {
+                  animation: shake 0.5s;
+                  animation-iteration-count: 1;
+                }
+                // prettier-ignore
+                @keyframes shake {
+                  0% { transform: translate(1px, 1px) rotate(0deg); }
+                  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+                  20% { transform: translate(-3px, 0px) rotate(1deg); }
+                  30% { transform: translate(3px, 2px) rotate(0deg); }
+                  40% { transform: translate(1px, -1px) rotate(1deg); }
+                  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+                  60% { transform: translate(-3px, 1px) rotate(0deg); }
+                  70% { transform: translate(3px, 1px) rotate(-1deg); }
+                  80% { transform: translate(-1px, -1px) rotate(1deg); }
+                  90% { transform: translate(1px, 2px) rotate(0deg); }
+                  100% { transform: translate(1px, -2px) rotate(-1deg); }
+                }
+              `}
+            >
+              {activity.isFavorite ? <Favorite /> : <FavoriteBorder />}
+            </IconButton>
+          </Rows>
         )}
       </Rows>
 
@@ -429,7 +434,7 @@ export const ActivityView = forwardRef<
       {!!selectedSet && (
         <>
           <Rows>
-            <Columns>
+            <Columns maxWidth>
               {activity.sets.length > 1 && (
                 <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }}>
                   Set {(activity.sets.findIndex(_ => _.uuid === selectedSet.uuid) ?? 0) + 1}
@@ -571,7 +576,7 @@ export const ActivityView = forwardRef<
             <MenuItem dense>
               {/** Display the set index as menu title */}
               <Typography color="textSecondary">
-                Set #
+                Set
                 {
                   activity.sets.flatMap((_, index) =>
                     _.uuid === selectedSet?.uuid ? index + 1 : []
