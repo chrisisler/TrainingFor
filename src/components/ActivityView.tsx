@@ -594,6 +594,8 @@ export const ActivityView = forwardRef<
                 if (!selectedSet) return;
                 try {
                   await API.ActivitySet.deleteSet(log, activity, selectedSet);
+                  // Select the previous set
+                  setSelectedSet(activity.sets[activity.sets.length - 1]);
                 } catch (error) {
                   // @ts-ignore
                   toast.error(error.message);
