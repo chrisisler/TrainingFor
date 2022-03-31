@@ -321,7 +321,8 @@ export const ActivityView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        padding: ${Pad.Medium} ${Pad.Medium} ${Pad.Small};
+        padding: ${Pad.Small} ${Pad.Medium};
+        padding-bottom: ${Pad.XSmall};
         margin: ${Pad.Small} ${Pad.Small};
         border-radius: 20px;
         background-color: #fff;
@@ -631,12 +632,10 @@ export const ActivityView = forwardRef<
             paddingBottom={Pad.Small}
           >
             <IconButton
-              className={css`
-                padding: ${Pad.XSmall} !important;
-                padding-right: ${Pad.Small} !important;
-                color: ${Color.ActionPrimaryBlue} !important;
-                margin-bottom: 2px !important;
-              `}
+              sx={{
+                marginLeft: '-16px',
+                color: Color.ActionPrimaryBlue,
+              }}
             >
               <Add />
             </IconButton>
