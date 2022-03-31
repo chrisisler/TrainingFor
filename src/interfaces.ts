@@ -169,17 +169,24 @@ export const Activity = {
   /**
    * Calculates the total volume for a given Activity's sets.
    * Volume = [for each rep:] weight * reps
+   * 
+   * Returns total volume in pounds.
    */
   getVolume: (a: Activity): number => {
+    let sets = a.sets;
+    if (a.weightUnit === ActivityWeightUnit.Kilograms) {
+      sets = sets.map(s => ({ ...s, weight: Math.round(s.weight * 2.205) }));
+    }
+    // Skip weightless
     if (a.weightUnit === ActivityWeightUnit.Weightless) {
       return 0;
     }
+    // TODO Figure out later
     if (a.repCountUnit !== ActivityRepCountUnit.Repetitions) {
-      // Figure out later
       return 0;
     }
     // weightUnit is LB or KG; repCountUnit is Repetitions
-    return a.sets
+    return sets
       .filter(set => set.status === ActivitySetStatus.Completed)
       .reduce((sum, set) => sum + set.weight * set.repCount, 0);
   },

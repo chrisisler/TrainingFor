@@ -522,7 +522,24 @@ export const TrainingLogEditor: FC = () => {
             )} */}
 
             {activityName === null ? (
-              <EditorControlsDateView log={log} />
+              <>
+                <EditorControlsDateView log={log} />
+                {DataState.isReady(activities) && activities.length > 1 && (
+                  <Typography
+                    variant="overline"
+                    color="textSecondary"
+                    sx={{ lineHeight: 1, position: 'absolute', bottom: 0, left: 0 }}
+                  >
+                    Reps:{' '}
+                    {activities.reduce(
+                      (sum, a) => sum + a.sets.reduce((sum, s) => sum + s.repCount, 0),
+                      0
+                    )}
+                    <br />
+                    Total Vol: {activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)}
+                  </Typography>
+                )}
+              </>
             ) : (
               <form onSubmit={addActivity}>
                 <TextField
