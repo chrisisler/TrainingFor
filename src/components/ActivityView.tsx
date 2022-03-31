@@ -302,7 +302,7 @@ export const ActivityView = forwardRef<
     }
   }, [activity.id, activity.isFavorite, activityDocument, favoritedActivity]);
 
-  // TODO
+  // TODO Put in ActivityAPI.updateSets
   const updateSets = useCallback(
     async (sets: ActivitySet[]) => {
       try {
@@ -388,14 +388,20 @@ export const ActivityView = forwardRef<
           </MenuItem>
         </Menu>
 
-        {/** FAVORITE ICON */}
         {!isTemplate && (
           <Rows center>
+            {/** VOLUME/REPS DISPLAY */}
             {activity.sets.length > 1 && (
               <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }} noWrap>
-                Vol: {Activity.getVolume(activity)}
+                {activity.weightUnit === ActivityWeightUnit.Weightless ? (
+                  <>Reps: {activity.sets.reduce((sum, s) => sum + s.repCount, 0)}</>
+                ) : (
+                  <>Vol: {Intl.NumberFormat().format(Activity.getVolume(activity))}</>
+                )}
               </Typography>
             )}
+
+            {/** FAVORITE ICON */}
             <IconButton
               size="small"
               onClick={toggleFavorite}
