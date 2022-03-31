@@ -461,7 +461,7 @@ export const ActivityView = forwardRef<
                   text-transform: uppercase;
                   font-family: system-ui, Verdana, sans-serif;
                   outline: none;
-                  // width: 100%;
+                  width: 100%;
                   text-align: left;
                   color: ${ActivitySet.getStatusColor(selectedSet.status)};
                 `}
@@ -471,7 +471,7 @@ export const ActivityView = forwardRef<
             </Columns>
 
             {/** SELECTED SET VALUE CONTROLS */}
-            <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
+            <Grid container justifyContent="end" alignItems="flex-end" wrap="nowrap">
               {/** WEIGHT VALUE */}
               {activity.weightUnit !== ActivityWeightUnit.Weightless && (
                 <Grid item>
