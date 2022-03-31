@@ -78,7 +78,7 @@ export const ActivityView = forwardRef<
   const [selectedSet, setSelectedSet] = useState<undefined | ActivitySet>(
     () =>
       activity.sets.find(_ => _.status !== ActivitySetStatus.Completed) ??
-      activity.sets?.[0] ??
+      activity.sets?.[activity.sets.length - 1] ??
       undefined
   );
   const [weight, setWeight] = useState(selectedSet?.weight ?? 0);
@@ -391,6 +391,7 @@ export const ActivityView = forwardRef<
           <IconButton
             size="small"
             onClick={toggleFavorite}
+            // TODO Fix animation on safari
             className={css`
               color: ${activity.isFavorite ? '#cc0000' : Color.ActionSecondaryGray} !important;
 
@@ -424,44 +425,50 @@ export const ActivityView = forwardRef<
       {!!selectedSet && (
         <>
           <Rows>
-            <Typography variant="overline"></Typography>
-            {/** SELECTED SET STATUS BUTTON */}
-            {/** TODO: Add dropdown arrow for a status Select */}
-            <button
-              onClick={async () => {
-                if (!editable) return;
-                if (!selectedSet) return;
-                try {
-                  // Update the DB then reflect that change in the FE if successful
-                  const set = await API.ActivitySet.cycleStatus(log, activity, selectedSet);
-                  // TODO
-                  // this approach is not scalable at all, every user updating a
-                  // set status hits the network...  just POST the finished log
-                  // state once the log is done!
-                  setSelectedSet(set);
-                } catch (error) {
-                  // @ts-ignore
-                  toast.error(error.message);
-                }
-              }}
-              className={css`
-                padding: ${Pad.XSmall};
-                padding-left: 0;
-                font-size: 1.2rem;
-                border: 0;
-                font-weight: 300;
-                background-color: transparent;
-                letter-spacing: 0.02em;
-                text-transform: uppercase;
-                font-family: system-ui, Verdana, sans-serif;
-                outline: none;
-                width: 100%;
-                text-align: left;
-                color: ${ActivitySet.getStatusColor(selectedSet.status)};
-              `}
-            >
-              {selectedSet.status}
-            </button>
+            <Columns>
+              {activity.sets.length > 1 && (
+                <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }}>
+                  Set {(activity.sets.findIndex(_ => _.uuid === selectedSet.uuid) ?? 0) + 1}
+                </Typography>
+              )}
+              {/** SELECTED SET STATUS BUTTON */}
+              {/** TODO: Add dropdown arrow for a status Select */}
+              <button
+                onClick={async () => {
+                  if (!editable) return;
+                  if (!selectedSet) return;
+                  try {
+                    // Update the DB then reflect that change in the FE if successful
+                    const set = await API.ActivitySet.cycleStatus(log, activity, selectedSet);
+                    // TODO
+                    // this approach is not scalable at all, every user updating a
+                    // set status hits the network...  just POST the finished log
+                    // state once the log is done!
+                    setSelectedSet(set);
+                  } catch (error) {
+                    // @ts-ignore
+                    toast.error(error.message);
+                  }
+                }}
+                className={css`
+                  padding: ${Pad.XSmall};
+                  padding-left: 0;
+                  font-size: 1.2rem;
+                  border: 0;
+                  font-weight: 300;
+                  background-color: transparent;
+                  letter-spacing: 0.02em;
+                  text-transform: uppercase;
+                  font-family: system-ui, Verdana, sans-serif;
+                  outline: none;
+                  // width: 100%;
+                  text-align: left;
+                  color: ${ActivitySet.getStatusColor(selectedSet.status)};
+                `}
+              >
+                {selectedSet.status}
+              </button>
+            </Columns>
 
             {/** SELECTED SET VALUE CONTROLS */}
             <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
