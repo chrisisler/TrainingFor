@@ -435,7 +435,7 @@ export const ActivityView = forwardRef<
         <>
           <Rows>
             <Columns maxWidth>
-              {activity.sets.length > 1 && (
+              {activity.sets.length > 0 && (
                 <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }}>
                   Set {(activity.sets.findIndex(_ => _.uuid === selectedSet.uuid) ?? 0) + 1}
                 </Typography>
@@ -500,7 +500,9 @@ export const ActivityView = forwardRef<
                       setWeight(Number(event.target.value));
                     }}
                     onBlur={event => {
-                      selectedSet.weight = Number(event.target.value);
+                      const index = activity.sets.findIndex(_ => _.uuid === selectedSet.uuid);
+                      if (index === -1) return toast.error('Could not find selected set index.');
+                      activity.sets[index].weight = Number(event.target.value);
                       updateSets(activity.sets);
                     }}
                     className={activitySetInputStyle}
@@ -538,20 +540,18 @@ export const ActivityView = forwardRef<
                     setRepCount(Number(event.target.value));
                   }}
                   onBlur={event => {
-                    selectedSet.repCount = Number(event.target.value);
+                    const index = activity.sets.findIndex(_ => _.uuid === selectedSet.uuid);
+                    if (index === -1) return toast.error('Could not find selected set index.');
+                    activity.sets[index].repCount = Number(event.target.value);
                     updateSets(activity.sets);
                   }}
                   className={css`
                     ${activitySetInputStyle};
                   `}
                 />
-                {/* {repCountUnit === ActivityRepCountUnit.Seconds && <X>s</X>}
-                    {repCountUnit === ActivityRepCountUnit.Minutes && <X>m</X>}
-                    {repCountUnit === ActivityRepCountUnit.Meters && <X>m</X>} */}
               </Grid>
 
               {/** REP UNIT */}
-              {/** TODO: NativeSelect-ify */}
               <Grid item>
                 <IconButton
                   disabled={!editable}
@@ -576,7 +576,7 @@ export const ActivityView = forwardRef<
             <MenuItem dense>
               {/** Display the set index as menu title */}
               <Typography color="textSecondary">
-                Set
+                Set{' '}
                 {
                   activity.sets.flatMap((_, index) =>
                     _.uuid === selectedSet?.uuid ? index + 1 : []
@@ -611,7 +611,7 @@ export const ActivityView = forwardRef<
                 try {
                   await API.ActivitySet.deleteSet(log, activity, selectedSet);
                   // Select the previous set
-                  setSelectedSet(activity.sets[activity.sets.length - 1]);
+                  setSelectedSet(activity.sets[activity.sets.length - 2]);
                 } catch (error) {
                   // @ts-ignore
                   toast.error(error.message);
@@ -628,16 +628,20 @@ export const ActivityView = forwardRef<
       )}
 
       {/** HORIZONTAL SET LIST */}
-      <Grid container alignItems="center" wrap="nowrap">
+      <Grid container alignItems="center" wrap="nowrap" marginTop={`-${Pad.Small}`}>
         {/** ADD SET BUTTON */}
         {editable && (
           <Grid
             item
-            onClick={() => {
-              addActivitySet().then(setSelectedSet);
+            onClick={async () => {
+              const setCount = activity.sets.length;
+              const set = await addActivitySet();
+              setSelectedSet(set);
+              // If this is the first set of the activity, focus the data input
+              if (setCount === 0) {
+                resizeWeightInput.current?.focus();
+              }
             }}
-            // To avoid scrollbar/height clashing
-            paddingBottom={Pad.Small}
           >
             <IconButton
               sx={{
@@ -658,6 +662,7 @@ export const ActivityView = forwardRef<
           wrap="nowrap"
           // To avoid scrollbar/height clashing
           paddingBottom={Pad.Small}
+          marginTop={`${Pad.Small}`}
           className={css`
             & > *:not(:last-child) {
               margin-right: ${Pad.Medium};
