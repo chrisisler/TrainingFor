@@ -8,7 +8,7 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, Close, DeleteOutlined, Favorite, FavoriteBorder, FileCopyOutlined } from '@material-ui/icons';
+import { Add, Close, DeleteOutlined, ExpandMore, Favorite, FavoriteBorder, FileCopyOutlined } from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -331,27 +331,30 @@ export const ActivityView = forwardRef<
     >
       <Rows center>
         <Columns maxWidth>
-          {/** ACTIVITY NAME & BUTTON */}
-          <button
-            disabled={!editable}
-            aria-label="Open activity menu"
-            aria-controls="activity-menu"
-            aria-haspopup="true"
-            onClick={menu.open}
-            className={css`
-              color: ${Color.FontPrimary};
-              font-size: ${Font.MedLarge};
-              font-weight: 400;
-              padding: 0;
-              border: none;
-              background-color: transparent;
-              font-family: system-ui;
-              outline: none;
-              text-align: left;
-            `}
-          >
-            <ActivityNameBold name={activity.name} />
-          </button>
+          <Rows center pad={Pad.XSmall}>
+            {/** ACTIVITY NAME & BUTTON */}
+            <button
+              disabled={!editable}
+              aria-label="Open activity menu"
+              aria-controls="activity-menu"
+              aria-haspopup="true"
+              onClick={menu.open}
+              className={css`
+                color: ${Color.FontPrimary};
+                font-size: ${Font.MedLarge};
+                font-weight: 400;
+                padding: 0;
+                border: none;
+                background-color: transparent;
+                font-family: system-ui;
+                outline: none;
+                text-align: left;
+              `}
+            >
+              <ActivityNameBold name={activity.name} />
+            </button>
+            <ExpandMore sx={{ color: Color.ActionSecondaryGray }} fontSize="small" />
+          </Rows>
           <Menu
             id="activity-menu"
             anchorEl={menu.ref}

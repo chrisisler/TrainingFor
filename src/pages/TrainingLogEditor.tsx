@@ -9,7 +9,7 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { Add, ChevronRight } from '@material-ui/icons';
+import { Add, ExpandMore } from '@material-ui/icons';
 import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
@@ -362,9 +362,9 @@ export const TrainingLogEditor: FC = () => {
             onClick={menu.open}
             variant="text"
             size="large"
-            startIcon={<ChevronRight />}
+            endIcon={<ExpandMore fontSize="small" />}
             sx={{
-              borderBottom: `1px solid ${Color.ActionSecondaryGray}`
+              borderBottom: `1px solid ${Color.ActionSecondaryGray}`,
             }}
           >
             {log.title}
@@ -440,7 +440,7 @@ export const TrainingLogEditor: FC = () => {
             startIcon={<Add />}
             size="large"
             sx={{
-              borderTop: `1px solid ${Color.ActionSecondaryGray}`
+              borderTop: `1px solid ${Color.ActionSecondaryGray}`,
             }}
             onClick={() => {
               // Set to non-null to render the input
@@ -548,7 +548,7 @@ export const TrainingLogEditor: FC = () => {
                     libraryMenuRef.current?.setAttribute('data-show', '');
                   }}
                   sx={{
-                    padding: Pad.Small
+                    padding: Pad.Small,
                   }}
                 />
               </form>
