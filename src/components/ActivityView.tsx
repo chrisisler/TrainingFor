@@ -8,7 +8,20 @@ import {
   MenuItem,
   Typography,
 } from '@material-ui/core';
-import { Add, Close, DeleteOutlined, ExpandMore, Favorite, FavoriteBorder, FileCopyOutlined } from '@material-ui/icons';
+import {
+  Add,
+  ArrowDownward,
+  ArrowUpward,
+  ChatBubbleOutline,
+  Close,
+  DeleteOutlined,
+  DeleteSweepOutlined,
+  Edit,
+  ExpandMore,
+  Favorite,
+  FavoriteBorder,
+  FileCopyOutlined,
+} from '@material-ui/icons';
 import firebase from 'firebase/app';
 import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -356,25 +369,41 @@ export const ActivityView = forwardRef<
           </button>
           <ExpandMore sx={{ color: Color.ActionSecondaryGray }} fontSize="small" />
         </Rows>
-        <Menu
-          id="activity-menu"
-          anchorEl={menu.ref}
-          open={!!menu.ref}
-          onClose={menu.close}
-          MenuListProps={{ dense: true }}
-        >
+        <Menu id="activity-menu" anchorEl={menu.ref} open={!!menu.ref} onClose={menu.close}>
           <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
-            Move up
+            <ListItemIcon>
+              <ArrowUpward />
+            </ListItemIcon>
+            <Typography>Move up</Typography>
           </MenuItem>
           <MenuItem
             onClick={moveActivityDown}
             disabled={activities.length === 1 || index + 1 === activities.length}
           >
-            Move down
+            <ListItemIcon>
+              <ArrowDownward />
+            </ListItemIcon>
+            <Typography>Move down</Typography>
           </MenuItem>
-          <MenuItem onClick={renameActivity}>Edit name</MenuItem>
-          <MenuItem onClick={showActivityCommentInput}>Add comment</MenuItem>
-          <MenuItem onClick={duplicateActivity}>Duplicate activity</MenuItem>
+          <Divider />
+          <MenuItem onClick={renameActivity}>
+            <ListItemIcon>
+              <Edit />
+            </ListItemIcon>
+            <Typography>Edit name</Typography>
+          </MenuItem>
+          <MenuItem onClick={showActivityCommentInput}>
+            <ListItemIcon>
+              <ChatBubbleOutline />
+            </ListItemIcon>
+            <Typography>Add comment</Typography>
+          </MenuItem>
+          <MenuItem onClick={duplicateActivity}>
+            <ListItemIcon>
+              <FileCopyOutlined />
+            </ListItemIcon>
+            <Typography>Duplicate activity</Typography>
+          </MenuItem>
           {activity.sets.length > 1 && (
             <MenuItem
               onClick={() => {
@@ -382,11 +411,17 @@ export const ActivityView = forwardRef<
                 removeAllSets();
               }}
             >
-              Remove all sets
+              <ListItemIcon>
+                <DeleteSweepOutlined />
+              </ListItemIcon>
+              <Typography>Remove all sets</Typography>
             </MenuItem>
           )}
           <MenuItem onClick={deleteActivity}>
-            <b>Delete activity</b>
+            <ListItemIcon>
+              <DeleteOutlined color="error" />
+            </ListItemIcon>
+            <Typography color="error">Delete activity</Typography>
           </MenuItem>
         </Menu>
 
