@@ -1,5 +1,6 @@
 import { css } from '@emotion/css';
 import {
+  Box,
   Divider,
   Grid,
   IconButton,
@@ -367,7 +368,7 @@ export const ActivityView = forwardRef<
           >
             <ActivityNameBold name={activity.name} />
           </button>
-          <ExpandMore sx={{ color: Color.ActionSecondaryGray }} fontSize="small" />
+          <ExpandMore sx={{ color: Color.ActionPrimaryGray }} fontSize="small" />
         </Rows>
         <Menu id="activity-menu" anchorEl={menu.ref} open={!!menu.ref} onClose={menu.close}>
           <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
@@ -428,14 +429,25 @@ export const ActivityView = forwardRef<
         {!isTemplate && (
           <Rows center>
             {/** VOLUME/REPS DISPLAY */}
-            {activity.sets.length > 1 && (
-              <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }} noWrap>
-                {activity.weightUnit === ActivityWeightUnit.Weightless ? (
-                  <>Reps: {activity.sets.reduce((sum, s) => sum + s.repCount, 0)}</>
-                ) : (
-                  <>Vol: {Intl.NumberFormat().format(Activity.getVolume(activity))}</>
-                )}
-              </Typography>
+            {activity.sets.length > 0 && (
+              <Box display="flex" flexDirection="column" alignItems="flex-end">
+                <Typography
+                  noWrap
+                  gutterBottom
+                  variant="overline"
+                  color="textSecondary"
+                  sx={{ lineHeight: 1 }}
+                >
+                  {activity.weightUnit === ActivityWeightUnit.Weightless ? (
+                    <>Reps: {activity.sets.reduce((sum, s) => sum + s.repCount, 0)}</>
+                  ) : (
+                    <>Vol: {Intl.NumberFormat().format(Activity.getVolume(activity))}</>
+                  )}
+                </Typography>
+                <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }}>
+                  Set {(activity.sets.findIndex(_ => _.uuid === selectedSet?.uuid) ?? 0) + 1}
+                </Typography>
+              </Box>
             )}
 
             {/** FAVORITE ICON */}
@@ -448,6 +460,8 @@ export const ActivityView = forwardRef<
 
                 // https://www.w3schools.com/howto/howto_css_shake_image.asp
                 :active {
+                  -webkit-animation: shake 0.5s;
+                  -webkit-animation-iteration-count: 1;
                   animation: shake 0.5s;
                   animation-iteration-count: 1;
                 }
@@ -477,12 +491,7 @@ export const ActivityView = forwardRef<
       {!!selectedSet && (
         <>
           <Rows>
-            <Columns maxWidth>
-              {activity.sets.length > 0 && (
-                <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }}>
-                  Set {(activity.sets.findIndex(_ => _.uuid === selectedSet.uuid) ?? 0) + 1}
-                </Typography>
-              )}
+            <Box display="flex" flex={1}>
               {/** SELECTED SET STATUS BUTTON */}
               {/** TODO: Add dropdown arrow for a status Select */}
               <button
@@ -520,10 +529,10 @@ export const ActivityView = forwardRef<
               >
                 {selectedSet.status}
               </button>
-            </Columns>
+            </Box>
 
             {/** SELECTED SET VALUE CONTROLS */}
-            <Grid container justifyContent="end" alignItems="flex-end" wrap="nowrap">
+            <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
               {/** WEIGHT VALUE */}
               {activity.weightUnit !== ActivityWeightUnit.Weightless && (
                 <Grid item>
@@ -688,7 +697,7 @@ export const ActivityView = forwardRef<
           >
             <IconButton
               sx={{
-                marginLeft: '-16px',
+                marginLeft: '-1rem',
                 color: Color.ActionPrimaryBlue,
               }}
             >

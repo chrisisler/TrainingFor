@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import {
-  Box,
+  // Box,
   Button,
   Chip,
   ClickAwayListener,
@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { Add } from '@material-ui/icons';
+import { Box } from '@material-ui/system'
 import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
@@ -348,11 +349,12 @@ export const TrainingLogEditor: FC = () => {
   return (
     <DataStateView data={log}>
       {log => (
-        <Columns
-          className={css`
-            height: 100%;
-            background-color: ${baseBg};
-          `}
+        <Box
+          sx={{
+            height: '100%',
+            backgroundColor: baseBg,
+            padding: '3.25rem 0',
+          }}
         >
           {/** LOG TITLE MENU BUTTON */}
           <Box
@@ -363,7 +365,7 @@ export const TrainingLogEditor: FC = () => {
               width: '100%',
               zIndex: 999,
               backgroundColor: 'transparent',
-              padding: '1rem',
+              padding: '0.5rem',
             }}
           >
             <Button
@@ -488,7 +490,7 @@ export const TrainingLogEditor: FC = () => {
                   bottom: navBarHeight,
                   backgroundColor: 'transparent',
                   left: 0,
-                  padding: '1rem',
+                  padding: '0.5rem',
                   width: '100%',
                   zIndex: 999,
                 }}
@@ -517,7 +519,7 @@ export const TrainingLogEditor: FC = () => {
                   <Typography
                     variant="overline"
                     color="textSecondary"
-                    sx={{ lineHeight: 1, position: 'absolute', bottom: '1rem', left: '1rem' }}
+                    sx={{ lineHeight: 1, position: 'absolute', bottom: '0.5rem', left: '0.5rem' }}
                   >
                     Total Vol: {activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)}
                   </Typography>
@@ -584,7 +586,7 @@ export const TrainingLogEditor: FC = () => {
               </ClickAwayListener>
             </>
           )}
-        </Columns>
+        </Box>
       )}
     </DataStateView>
   );
@@ -812,8 +814,8 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
         sx={{
           lineHeight: 1,
           position: 'absolute',
-          bottom: '1rem',
-          right: '1rem',
+          bottom: '0.5rem',
+          right: '0.5rem',
         }}
       >
         Training Template
@@ -835,8 +837,8 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
           sx={{
             lineHeight: 1,
             position: 'absolute',
-            bottom: '1rem',
-            right: '1rem',
+            bottom: '0.5rem',
+            right: '0.5rem',
           }}
         >
           {time} {date}
