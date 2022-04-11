@@ -451,22 +451,26 @@ export const ActivityView = forwardRef<
             )}
 
             {/** FAVORITE ICON */}
-            <IconButton
-              size="small"
-              onClick={toggleFavorite}
-              // TODO Fix animation on safari
-              className={css`
-                color: ${activity.isFavorite ? '#cc0000' : Color.ActionSecondaryGray} !important;
-
-                // https://www.w3schools.com/howto/howto_css_shake_image.asp
-                :active {
-                  -webkit-animation: shake 0.5s;
-                  -webkit-animation-iteration-count: 1;
-                  animation: shake 0.5s;
-                  animation-iteration-count: 1;
-                }
-                // prettier-ignore
-                @keyframes shake {
+            {activities.length > 1 && (
+              <IconButton
+                onClick={toggleFavorite}
+                // TODO Fix animation on safari
+                sx={{
+                  color: activity.isFavorite ? '#cc0000' : Color.ActionSecondaryGray,
+                  // Readjust based on size="medium" padding
+                  marginTop: '-0.25rem',
+                  marginRight: '-0.75rem',
+                }}
+                className={css`
+                  // https://www.w3schools.com/howto/howto_css_shake_image.asp
+                  :active {
+                    -webkit-animation: shake 0.5s;
+                    -webkit-animation-iteration-count: 1;
+                    animation: shake 0.5s;
+                    animation-iteration-count: 1;
+                  }
+                  // prettier-ignore
+                  @keyframes shake {
                   0% { transform: translate(1px, 1px) rotate(0deg); }
                   10% { transform: translate(-1px, -2px) rotate(-1deg); }
                   20% { transform: translate(-3px, 0px) rotate(1deg); }
@@ -479,10 +483,11 @@ export const ActivityView = forwardRef<
                   90% { transform: translate(1px, 2px) rotate(0deg); }
                   100% { transform: translate(1px, -2px) rotate(-1deg); }
                 }
-              `}
-            >
-              {activity.isFavorite ? <Favorite /> : <FavoriteBorder />}
-            </IconButton>
+                `}
+              >
+                {activity.isFavorite ? <Favorite /> : <FavoriteBorder />}
+              </IconButton>
+            )}
           </Rows>
         )}
       </Rows>
