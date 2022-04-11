@@ -1,5 +1,6 @@
 import { css } from '@emotion/css';
 import {
+  Box,
   Button,
   Chip,
   ClickAwayListener,
@@ -9,7 +10,7 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { Add, ExpandMore } from '@material-ui/icons';
+import { Add } from '@material-ui/icons';
 import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
@@ -354,21 +355,33 @@ export const TrainingLogEditor: FC = () => {
           `}
         >
           {/** LOG TITLE MENU BUTTON */}
-          <Button
-            disableRipple
-            aria-label="Log title and log menu button"
-            aria-controls="log-menu-button"
-            aria-haspopup="true"
-            onClick={menu.open}
-            variant="text"
-            size="large"
-            endIcon={<ExpandMore fontSize="small" />}
+          <Box
             sx={{
-              borderBottom: `1px solid ${Color.ActionSecondaryGray}`,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              zIndex: 999,
+              backgroundColor: 'transparent',
+              padding: '1rem',
             }}
           >
-            {log.title}
-          </Button>
+            <Button
+              disableRipple
+              fullWidth
+              aria-label="Log title and log menu button"
+              aria-controls="log-menu-button"
+              aria-haspopup="true"
+              onClick={menu.open}
+              variant="outlined"
+              size="large"
+              sx={{
+                backgroundColor: 'white',
+              }}
+            >
+              {log.title}
+            </Button>
+          </Box>
 
           {/** LOG TITLE MENU ACTIONS */}
           <Menu
@@ -434,63 +447,10 @@ export const TrainingLogEditor: FC = () => {
             )}
           </DataStateView>
 
-          {/** ADD ACTIVITY BUTTON */}
-          <Button
-            disableRipple
-            startIcon={<Add />}
-            size="large"
-            sx={{
-              borderTop: `1px solid ${Color.ActionSecondaryGray}`,
-            }}
-            onClick={() => {
-              // Set to non-null to render the input
-              setActivityName('');
-              // Wait a tick for the input to render so it may be focused
-              Promise.resolve().then(() => addActivityInputRef.current?.focus());
-            }}
-          >
-            Activity
-          </Button>
-
           {/** FOOTER CONTAINER */}
-          <Columns
-            className={css`
-              position: absolute;
-              width: 100%;
-              bottom: ${navBarHeight}px;
-              padding: 0;
-              ${libraryMenuOpen && 'background-color: #fff;'}
-            `}
-          >
-            {/** ACTIVITY LIBRARY */}
-            {libraryMenuOpen && typeof activityName === 'string' && (
-              <ClickAwayListener
-                onClickAway={() => {
-                  setActivityName(null);
-                  setLibraryMenuOpen(false);
-                }}
-              >
-                <div
-                  ref={libraryMenuRef}
-                  className={css`
-                    height: 30vh;
-                    overflow-y: scroll;
-                    overflow-x: hidden;
-                    padding: ${Pad.Small} ${Pad.Medium};
-                    border-top: 1px solid ${Color.ActionPrimaryBlue};
-                  `}
-                >
-                  <LibraryAutocomplete
-                    query={activityName}
-                    setActivityName={(name: string | null) => setActivityName(name)}
-                    addFromLibrary={addFromLibrary}
-                  />
-                </div>
-              </ClickAwayListener>
-            )}
 
-            {/** TODO Fix */}
-            {/* {DataState.isReady(logNotes) && (
+          {/** TODO Fix */}
+          {/* {DataState.isReady(logNotes) && (
               <textarea
                 name="Training log notes"
                 ref={logNotesRef}
@@ -520,57 +480,110 @@ export const TrainingLogEditor: FC = () => {
                 `}
               />
             )} */}
-
-            {activityName === null ? (
-              <>
+          {activityName === null ? (
+            <>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: navBarHeight,
+                  backgroundColor: 'transparent',
+                  left: 0,
+                  padding: '1rem',
+                  width: '100%',
+                  zIndex: 999,
+                }}
+              >
+                {/** ADD ACTIVITY BUTTON */}
+                <Button
+                  fullWidth
+                  disableRipple
+                  startIcon={<Add />}
+                  size="large"
+                  variant="outlined"
+                  sx={{
+                    backgroundColor: 'white',
+                  }}
+                  onClick={() => {
+                    // Set to non-null to render the input
+                    setActivityName('');
+                    // Wait a tick for the input to render so it may be focused
+                    Promise.resolve().then(() => addActivityInputRef.current?.focus());
+                  }}
+                >
+                  Activity
+                </Button>
                 <EditorControlsDateView log={log} />
                 {DataState.isReady(activities) && activities.length > 1 && (
                   <Typography
                     variant="overline"
                     color="textSecondary"
-                    sx={{ lineHeight: 1, position: 'absolute', bottom: 0, left: 0 }}
+                    sx={{ lineHeight: 1, position: 'absolute', bottom: '1rem', left: '1rem' }}
                   >
-                    Reps:{' '}
-                    {activities.reduce(
-                      (sum, a) => sum + a.sets.reduce((sum, s) => sum + s.repCount, 0),
-                      0
-                    )}
-                    <br />
                     Total Vol: {activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)}
                   </Typography>
                 )}
-              </>
-            ) : (
-              <form onSubmit={addActivity}>
-                <TextField
-                  fullWidth
-                  inputRef={addActivityInputRef}
-                  placeholder="Add Activity..."
-                  value={activityName}
-                  onBlur={
-                    // Close activity autocomplete
-                    libraryMenuOpen ? undefined : () => setActivityName(null)
-                  }
-                  onFocus={() => {
-                    // Show activity complete upon initial button click
-                    if (activityName === '') {
-                      setLibraryMenuOpen(true);
-                      libraryMenuRef.current?.setAttribute('data-show', '');
-                    }
-                  }}
-                  onChange={event => {
-                    setActivityName(event.target.value);
-                    // Show activity autocomplete
-                    setLibraryMenuOpen(true);
-                    libraryMenuRef.current?.setAttribute('data-show', '');
-                  }}
-                  sx={{
-                    padding: Pad.Small,
-                  }}
-                />
-              </form>
-            )}
-          </Columns>
+              </Box>
+            </>
+          ) : (
+            <>
+              {/** ACTIVITY LIBRARY */}
+              <ClickAwayListener
+                onClickAway={() => {
+                  setActivityName(null);
+                  setLibraryMenuOpen(false);
+                }}
+              >
+                <div>
+                  {libraryMenuOpen && typeof activityName === 'string' && (
+                    <div
+                      ref={libraryMenuRef}
+                      className={css`
+                        height: 30vh;
+                        overflow-y: scroll;
+                        overflow-x: hidden;
+                        padding: ${Pad.Small} ${Pad.Medium};
+                        border-top: 1px solid ${Color.ActionPrimaryBlue};
+                      `}
+                    >
+                      <LibraryAutocomplete
+                        query={activityName}
+                        setActivityName={(name: string | null) => setActivityName(name)}
+                        addFromLibrary={addFromLibrary}
+                      />
+                    </div>
+                  )}
+                  <form onSubmit={addActivity}>
+                    <TextField
+                      fullWidth
+                      inputRef={addActivityInputRef}
+                      placeholder="Add Activity..."
+                      value={activityName}
+                      onBlur={
+                        // Close activity autocomplete
+                        libraryMenuOpen ? undefined : () => setActivityName(null)
+                      }
+                      onFocus={() => {
+                        // Show activity complete upon initial button click
+                        if (activityName === '') {
+                          setLibraryMenuOpen(true);
+                          libraryMenuRef.current?.setAttribute('data-show', '');
+                        }
+                      }}
+                      onChange={event => {
+                        setActivityName(event.target.value);
+                        // Show activity autocomplete
+                        setLibraryMenuOpen(true);
+                        libraryMenuRef.current?.setAttribute('data-show', '');
+                      }}
+                      sx={{
+                        padding: Pad.Small,
+                      }}
+                    />
+                  </form>
+                </div>
+              </ClickAwayListener>
+            </>
+          )}
         </Columns>
       )}
     </DataStateView>
@@ -656,9 +669,7 @@ const LibraryAutocomplete: FC<{
         if (queriedActivites.length > 1) {
           return (
             <Columns>
-              <Typography variant="overline">
-                Activity Library
-              </Typography>
+              <Typography variant="overline">Activity Library</Typography>
               <Grid container spacing={1}>
                 {queriedActivites.map(savedActivity => (
                   <Grid item key={savedActivity.id}>
@@ -801,8 +812,8 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
         sx={{
           lineHeight: 1,
           position: 'absolute',
-          bottom: 0,
-          right: 0,
+          bottom: '1rem',
+          right: '1rem',
         }}
       >
         Training Template
@@ -824,13 +835,11 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
           sx={{
             lineHeight: 1,
             position: 'absolute',
-            bottom: 0,
-            right: 0,
+            bottom: '1rem',
+            right: '1rem',
           }}
         >
-          {time}
-          &nbsp;
-          {date}
+          {time} {date}
         </Typography>
       )}
     </DataStateView>

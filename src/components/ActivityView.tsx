@@ -736,7 +736,8 @@ export const ActivityView = forwardRef<
                     border-bottom: 2px solid ${ActivitySet.getStatusColor(set.status)};
                     ${isSelectedSet &&
                     `
-                      border-bottom: 5px solid ${ActivitySet.getStatusColor(set.status)};
+                      border-bottom: 4px solid ${ActivitySet.getStatusColor(set.status)};
+                      text-shadow: 2px 2px 8px #bbb;
                     `}
                   `}
                 >
