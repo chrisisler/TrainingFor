@@ -336,6 +336,19 @@ export const TrainingLogEditor: FC = () => {
         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
         .doc(log.id)
         .delete();
+      // Deleting log deletes it from `templateIds` if it was in a
+      // TrainingTemplate.
+      if ('templateId' in log && typeof log.templateId === 'string') {
+        // Creating a log from a template will add a property on the log
+        // which distinguishes it from a template. This way we can check here.
+        await db
+          .user(log.authorId)
+          .collection(DbPath.UserTemplates)
+          .withConverter(DbConverter.TrainingTemplate)
+          .doc(log.templateId)
+          .update({ logIds: firebase.firestore.FieldValue.arrayRemove(log.id) });
+      }
+
       const logType = isTemplate ? 'Template' : 'Log';
       toast.info(`${logType} deleted.`);
       history.goBack();

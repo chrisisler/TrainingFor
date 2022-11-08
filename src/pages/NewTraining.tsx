@@ -56,10 +56,12 @@ export const NewTraining: FC = () => {
 
   const createTrainingLog = useCallback(async () => {
     const templateTitle = DataState.isReady(selectedTemplate) ? selectedTemplate.title : '';
+    const templateId = DataState.isReady(selectedTemplate) ? selectedTemplate.id : null;
     const title = `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`;
     const newLog = TrainingLog.create({
       title,
       authorId: user.uid,
+      templateId,
     });
     try {
       const newLogRef = await db.user(user.uid).collection(DbPath.UserLogs).add(newLog);

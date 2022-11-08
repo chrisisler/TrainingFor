@@ -33,6 +33,8 @@ export interface TrainingLog extends FirestoreDocument {
   notes: string;
   authorId: string;
   sleepHours: typeof SleepHours[keyof typeof SleepHours] | -99;
+  /** Null if this log is a template or this log is not from a template. */
+  templateId: null | string;
 }
 
 /** Represents the number of hours of sleep for a TrainingLog. */
@@ -196,7 +198,7 @@ const durationRegEx = /\d+\s+\w/;
 
 // eslint-disable-next-line
 export const TrainingLog = {
-  create: (data: Pick<TrainingLog, 'title' | 'authorId'>): Omit<TrainingLog, 'id'> => ({
+  create: (data: Pick<TrainingLog, 'templateId' | 'title' | 'authorId'>): Omit<TrainingLog, 'id'> => ({
     ...data,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     notes: '',
@@ -276,5 +278,6 @@ export const TrainingTemplate = {
     notes: '',
     logIds: [],
     sleepHours: -99,
+    templateId: null,
   }),
 };
