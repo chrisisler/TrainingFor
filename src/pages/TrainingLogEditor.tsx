@@ -10,8 +10,8 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { Add } from '@material-ui/icons';
-import { Box } from '@material-ui/system'
+import { Add, Menu as MenuIcon } from '@material-ui/icons';
+import { Box } from '@material-ui/system';
 import { createPopper, Instance as PopperInstance } from '@popperjs/core/lib/popper-lite';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
@@ -66,8 +66,8 @@ export const TrainingLogEditor: FC = () => {
 
   const menu = useMaterialMenu();
   const history = useHistory();
-
   const user = useUser();
+
   const { logId, templateId } = useParams<{
     logId?: string;
     templateId?: string;
@@ -375,7 +375,8 @@ export const TrainingLogEditor: FC = () => {
               aria-controls="log-menu-button"
               aria-haspopup="true"
               onClick={menu.open}
-              variant="outlined"
+              variant="text"
+              startIcon={<MenuIcon />}
               size="large"
               sx={{
                 backgroundColor: 'white',
@@ -435,7 +436,7 @@ export const TrainingLogEditor: FC = () => {
                 enterAnimation="fade"
                 leaveAnimation="fade"
                 className={css`
-                  height: 100%;
+                  // height: 100%;
                   width: 100%;
                   overflow-y: scroll;
                   ${activityViewContainerStyle}
@@ -482,6 +483,7 @@ export const TrainingLogEditor: FC = () => {
                 `}
               />
             )} */}
+
           {activityName === null ? (
             <>
               <Box
@@ -536,24 +538,6 @@ export const TrainingLogEditor: FC = () => {
                 }}
               >
                 <div>
-                  {libraryMenuOpen && typeof activityName === 'string' && (
-                    <div
-                      ref={libraryMenuRef}
-                      className={css`
-                        height: 30vh;
-                        overflow-y: scroll;
-                        overflow-x: hidden;
-                        padding: ${Pad.Small} ${Pad.Medium};
-                        border-top: 1px solid ${Color.ActionPrimaryBlue};
-                      `}
-                    >
-                      <LibraryAutocomplete
-                        query={activityName}
-                        setActivityName={(name: string | null) => setActivityName(name)}
-                        addFromLibrary={addFromLibrary}
-                      />
-                    </div>
-                  )}
                   <form onSubmit={addActivity}>
                     <TextField
                       fullWidth
@@ -578,10 +562,32 @@ export const TrainingLogEditor: FC = () => {
                         libraryMenuRef.current?.setAttribute('data-show', '');
                       }}
                       sx={{
-                        padding: Pad.Small,
+                        padding: Pad.Medium,
+                      }}
+                      inputProps={{
+                        sx: {
+                          backgroundColor: 'white',
+                          border: `1px solid ${Color.ActionPrimaryBlue}`,
+                        },
                       }}
                     />
                   </form>
+                  {libraryMenuOpen && typeof activityName === 'string' && (
+                    <div
+                      ref={libraryMenuRef}
+                      className={css`
+                        overflow-y: scroll;
+                        overflow-x: hidden;
+                        padding: ${Pad.Small} ${Pad.Medium};
+                      `}
+                    >
+                      <LibraryAutocomplete
+                        query={activityName}
+                        setActivityName={(name: string | null) => setActivityName(name)}
+                        addFromLibrary={addFromLibrary}
+                      />
+                    </div>
+                  )}
                 </div>
               </ClickAwayListener>
             </>
