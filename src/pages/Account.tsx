@@ -125,7 +125,7 @@ export const Account: FC = () => {
   );
 
   const deleteAccount = useCallback(async () => {
-    menu.close();
+    menu.onClose();
     const text = window.prompt('Type "delete" to delete account');
     if (!!text && text?.toLowerCase() !== 'delete') return;
     try {
@@ -155,7 +155,7 @@ export const Account: FC = () => {
         `}
       >
         {userId && <FollowButton />}
-        <ClickAwayListener onClickAway={menu.close}>
+        <ClickAwayListener onClickAway={menu.onClose}>
           <div
             className={css`
               border-radius: 8px;
@@ -169,7 +169,7 @@ export const Account: FC = () => {
               aria-label="Open account menu"
               aria-controls="account-menu"
               aria-haspopup="true"
-              onClick={menu.open}
+              onClick={menu.onOpen}
               size="small"
             >
               <Typography variant="h6" color="textPrimary">
@@ -184,7 +184,7 @@ export const Account: FC = () => {
               id="account-menu"
               anchorEl={menu.ref}
               open={!!menu.ref}
-              onClose={menu.close}
+              onClose={menu.onClose}
               MenuListProps={{ dense: true }}
             >
               <MenuItem

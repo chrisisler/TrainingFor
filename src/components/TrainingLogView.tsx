@@ -101,7 +101,7 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
   );
 
   const copyTemplate = useCallback(async () => {
-    menu.close();
+    menu.onClose();
     if (!TrainingLog.isTemplate(log)) return;
     try {
       await createTemplateFromLog(log, user.uid);
@@ -134,13 +134,13 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
                 </Typography>
               )}
               {isTemplate && <TrainingLogDateView log={log} />}
-              <ClickAwayListener onClickAway={menu.close}>
+              <ClickAwayListener onClickAway={menu.onClose}>
                 <div>
                   <IconButton
                     aria-label="Open log menu"
                     aria-controls="log-menu"
                     aria-haspopup="true"
-                    onClick={menu.open}
+                    onClick={menu.onOpen}
                     className={css`
                       padding: 0 !important;
                     `}
@@ -153,13 +153,13 @@ export const TrainingLogView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
                     id="log-menu"
                     anchorEl={menu.ref}
                     open={!!menu.ref}
-                    onClose={menu.close}
+                    onClose={menu.onClose}
                     MenuListProps={{ dense: true }}
                   >
                     {!!window.navigator.share && (
                       <MenuItem
                         onClick={() => {
-                          menu.close();
+                          menu.onClose();
                           const url = isTemplate
                             ? Paths.templateView(log.authorId, log.id)
                             : Paths.logView(log.authorId, log.id);

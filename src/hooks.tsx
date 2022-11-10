@@ -47,8 +47,12 @@ export const useMaterialMenu = () => {
   const menu = useMemo(
     () => ({
       ref: anchorEl,
-      open: openMenu,
-      close: closeMenu,
+
+      open: !!anchorEl,
+
+      onOpen: openMenu,
+
+      onClose: closeMenu,
     }),
     [anchorEl, closeMenu, openMenu]
   );

@@ -163,7 +163,7 @@ export const ActivityView = forwardRef<
   }, [activity.sets, activityDocument]);
 
   const duplicateActivity = useCallback(async () => {
-    menu.close();
+    menu.onClose();
     // Guaranteed array position due to existence
     const position = activities[activities.length - 1].position + 1;
     const duplicate: Activity = { ...activity, position };
@@ -176,7 +176,7 @@ export const ActivityView = forwardRef<
   }, [activityDocument, activity, menu, activities]);
 
   const removeAllSets = useCallback(async () => {
-    menu.close();
+    menu.onClose();
     try {
       await activityDocument.update({ sets: [] });
     } catch (error) {
@@ -186,7 +186,7 @@ export const ActivityView = forwardRef<
   }, [activityDocument, menu]);
 
   const deleteActivity = useCallback(async () => {
-    menu.close();
+    menu.onClose();
     try {
       await activityDocument.delete();
     } catch (error) {
@@ -196,7 +196,7 @@ export const ActivityView = forwardRef<
   }, [activityDocument, menu]);
 
   const renameActivity = useCallback(async () => {
-    menu.close();
+    menu.onClose();
     const newName = window.prompt('Update activity name', activity.name);
     if (!newName) return;
     try {
@@ -248,7 +248,7 @@ export const ActivityView = forwardRef<
   }, [activities, activity.position, activityDocument, index]);
 
   const showActivityCommentInput = useCallback(() => {
-    menu.close();
+    menu.onClose();
     if (comment) return;
     // Unhide the comment input and focus it
     setComment('');
@@ -350,7 +350,7 @@ export const ActivityView = forwardRef<
           aria-label="Open activity menu"
           aria-controls="activity-menu"
           aria-haspopup="true"
-          onClick={editable ? menu.open : undefined}
+          onClick={editable ? menu.onOpen : undefined}
         >
           {/** ACTIVITY NAME & BUTTON */}
           <button
@@ -370,7 +370,7 @@ export const ActivityView = forwardRef<
           </button>
           <ExpandMore sx={{ color: Color.ActionPrimaryGray }} fontSize="small" />
         </Rows>
-        <Menu id="activity-menu" anchorEl={menu.ref} open={!!menu.ref} onClose={menu.close}>
+        <Menu id="activity-menu" anchorEl={menu.ref} open={!!menu.ref} onClose={menu.onClose}>
           <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
             <ListItemIcon>
               <ArrowUpward />
@@ -628,7 +628,7 @@ export const ActivityView = forwardRef<
             id="activity-set-menu"
             anchorEl={selectedSetMenu.ref}
             open={!!selectedSetMenu.ref}
-            onClose={selectedSetMenu.close}
+            onClose={selectedSetMenu.onClose}
           >
             <MenuItem dense>
               {/** Display the set index as menu title */}
@@ -646,7 +646,7 @@ export const ActivityView = forwardRef<
 
             <MenuItem
               onClick={async () => {
-                selectedSetMenu.close();
+                selectedSetMenu.onClose();
                 if (!selectedSet) return;
                 try {
                   await API.ActivitySet.insertNew(log, activities, index, selectedSet);
@@ -663,7 +663,7 @@ export const ActivityView = forwardRef<
             </MenuItem>
             <MenuItem
               onClick={async () => {
-                selectedSetMenu.close();
+                selectedSetMenu.onClose();
                 if (!selectedSet) return;
                 try {
                   await API.ActivitySet.deleteSet(log, activity, selectedSet);
@@ -735,7 +735,7 @@ export const ActivityView = forwardRef<
                 key={set.uuid}
                 onClick={event => {
                   if (isSelectedSet) {
-                    selectedSetMenu.open(event);
+                    selectedSetMenu.onOpen(event);
                   } else {
                     setSelectedSet(set);
                   }

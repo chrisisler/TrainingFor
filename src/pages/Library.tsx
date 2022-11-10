@@ -169,13 +169,13 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
         padding: ${Pad.Medium} ${Pad.Large};
       `}
     >
-      <ClickAwayListener onClickAway={menu.close}>
+      <ClickAwayListener onClickAway={menu.onClose}>
         <div>
           <button
             aria-label="Open saved activity menu"
             aria-controls="saved-activity-menu"
             aria-haspopup="true"
-            onClick={menu.open}
+            onClick={menu.onOpen}
             className={css`
               color: ${Color.FontPrimary};
               font-size: ${Font.Medium};
@@ -195,12 +195,12 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
             id="saved-activity-menu"
             anchorEl={menu.ref}
             open={!!menu.ref}
-            onClose={menu.close}
+            onClose={menu.onClose}
             MenuListProps={{ dense: true }}
           >
             <MenuItem
               onClick={() => {
-                menu.close();
+                menu.onClose();
                 const name = window.prompt('Update name', activity.name);
                 if (!name) return;
                 try {
@@ -218,7 +218,7 @@ const SavedActivityView: FC<{ activity: SavedActivity }> = ({ activity }) => {
             {process.env.NODE_ENV === 'development' && (
               <MenuItem
                 onClick={() => {
-                  menu.close();
+                  menu.onClose();
                   setOpen(true);
                 }}
               >
