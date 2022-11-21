@@ -435,7 +435,6 @@ export const ActivityView = forwardRef<
                   noWrap
                   gutterBottom
                   variant="overline"
-                  color="textSecondary"
                   sx={{ lineHeight: 1 }}
                 >
                   {activity.weightUnit === ActivityWeightUnit.Weightless ? (
@@ -444,7 +443,7 @@ export const ActivityView = forwardRef<
                     <>Vol: {Intl.NumberFormat().format(Activity.getVolume(activity))}</>
                   )}
                 </Typography>
-                <Typography variant="overline" color="textSecondary" sx={{ lineHeight: 1 }}>
+                <Typography variant="overline" sx={{ lineHeight: 1 }}>
                   Set {(activity.sets.findIndex(_ => _.uuid === selectedSet?.uuid) ?? 0) + 1}
                 </Typography>
               </Box>
@@ -750,8 +749,8 @@ export const ActivityView = forwardRef<
                     border-bottom: 2px solid ${ActivitySet.getStatusColor(set.status)};
                     ${isSelectedSet &&
                     `
-                      border-bottom: 4px solid ${ActivitySet.getStatusColor(set.status)};
-                      text-shadow: 2px 2px 8px #bbb;
+                      border: 1px solid ${ActivitySet.getStatusColor(set.status)};
+                      border-radius: 8px;
                     `}
                   `}
                 >

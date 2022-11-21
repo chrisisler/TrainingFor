@@ -512,7 +512,10 @@ export const TrainingLogEditor: FC = () => {
                 color="textSecondary"
                 sx={{ lineHeight: 1, position: 'absolute', bottom: '0.5rem', left: '0.5rem' }}
               >
-                Total Vol: {activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)}
+                Total Vol:{' '}
+                {Intl.NumberFormat().format(
+                  activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)
+                )}
               </Typography>
             )}
           </Box>
