@@ -25,7 +25,6 @@ import { useMaterialMenu, useUser } from '../hooks';
 import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
-
 /**
  * Presents the currently authenticated user and their logs OR presents another
  * user's account and logs with a button to follow/unfollow.
@@ -102,7 +101,7 @@ export const Account: FC = () => {
 
   return (
     <Columns
-      pad={Pad.Large}
+      pad={Pad.Medium}
       className={css`
         height: 100%;
         padding: ${Pad.Small} 0;
@@ -165,39 +164,46 @@ export const Account: FC = () => {
           </div>
         </ClickAwayListener>
       </Rows>
-      <DataStateView data={DataState.all(logs, templates)}>
-        {([logs, templates]) => {
-          return (
-            <Box sx={{ height: '100%' }} display="flex">
-              {/** List of TrainingLogs */}
-              <Box sx={{ padding: theme => theme.spacing(0, 3) }}>
-                <DataStateView data={logs}>
-                  {logs => (
-                    <Stack sx={{  overflowY: 'scroll' }}>
-                      <Columns pad={Pad.Medium}>
-                        {logs.map(log => (
-                          <Box
-                            key={log.id}
-                            sx={{ borderBottom: `1px solid ${Color.ActionSecondaryGray}` }}
-                          >
-                            <Typography>
-                              <b>{log.title}</b>
-                            </Typography>
-                            <Typography gutterBottom color="textSecondary" variant="subtitle2">
-                              {format(
-                                (log.timestamp as firebase.firestore.Timestamp)?.toDate(),
-                                Format.date + ', ' + Format.time
-                              )}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Columns>
-                    </Stack>
-                  )}
-                </DataStateView>
-              </Box>
 
-              {/** List of templates */}
+      {/** List of TrainingLogs */}
+      <DataStateView data={logs}>
+        {logs => {
+          return (
+            <Box sx={{ padding: theme => theme.spacing(2, 3) }}>
+              <DataStateView data={logs}>
+                {logs => (
+                  <Stack sx={{ overflowY: 'scroll', maxHeight: '50vh' }}>
+                    <Columns pad={Pad.Medium}>
+                      {logs.map(log => (
+                        <Box
+                          key={log.id}
+                          sx={{ borderBottom: `1px solid ${Color.ActionSecondaryGray}` }}
+                        >
+                          <Typography>
+                            <b>{log.title}</b>
+                          </Typography>
+                          <Typography gutterBottom color="textSecondary" variant="subtitle2">
+                            {format(
+                              (log.timestamp as firebase.firestore.Timestamp)?.toDate(),
+                              Format.date + ', ' + Format.time
+                            )}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Columns>
+                  </Stack>
+                )}
+              </DataStateView>
+            </Box>
+          );
+        }}
+      </DataStateView>
+
+      {/** List of templates */}
+      <DataStateView data={templates}>
+        {templates => {
+          return (
+            <>
               {templates.length ? (
                 <Rows
                   pad={Pad.Medium}
@@ -217,7 +223,7 @@ export const Account: FC = () => {
               ) : (
                 <TrainingTemplateCreate />
               )}
-            </Box>
+            </>
           );
         }}
       </DataStateView>
