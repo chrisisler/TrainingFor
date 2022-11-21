@@ -178,6 +178,7 @@ export const Account: FC = () => {
                         <Box
                           key={log.id}
                           sx={{ borderBottom: `1px solid ${Color.ActionSecondaryGray}` }}
+                          onClick={() => history.push(Paths.logEditor(log.id))}
                         >
                           <Typography>
                             <b>{log.title}</b>
