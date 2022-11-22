@@ -1,24 +1,24 @@
 import { css } from '@emotion/css';
 import {
+  Badge,
   Box,
   Button,
   ClickAwayListener,
-  IconButton,
   Menu,
   MenuItem,
-  Popover,
   Stack,
+  SwipeableDrawer,
   Typography,
 } from '@material-ui/core';
-import { Add, ChevronRight, Menu as MenuIcon } from '@material-ui/icons';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { Add, ChevronRight } from '@material-ui/icons';
+import { format } from 'date-fns';
 import firebase from 'firebase/app';
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Line, LineChart } from 'recharts';
+// import { Line, LineChart } from 'recharts';
 
-import { Format, Months, Paths } from '../constants';
+import { Format, Months, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
@@ -35,6 +35,8 @@ export const Account: FC = () => {
   const user = useUser();
   const menu = useMaterialMenu();
   const history = useHistory();
+  // Skip the `ref` prop since <SwipeableDrawer /> does not use it.
+  const { ref: _ref, ...behaviorsDrawer } = useMaterialMenu();
 
   /**
    * Account UI re-write:
@@ -101,40 +103,44 @@ export const Account: FC = () => {
 
   return (
     <Columns
-      pad={Pad.Medium}
+      pad={Pad.Large}
       className={css`
         height: 100%;
         padding: ${Pad.Small} 0;
         background-color: ${baseBg};
       `}
     >
-      <Rows
-        center
-        className={css`
-          margin-left: auto;
-        `}
-      >
+      <Stack spacing={1} sx={{ padding: theme => theme.spacing(2, 3, 0) }}>
         {userId && <FollowButton />}
-        <ClickAwayListener onClickAway={menu.onClose}>
-          <div
-            className={css`
-              border-radius: 8px;
-              padding: 0 ${Pad.XSmall};
-              // background-color: #fff;
-              margin-right: ${Pad.Medium};
-            `}
-          >
+
+        <Box display="flex">
+          <Typography variant="h6" color="textSecondary">
+            happy {Weekdays[new Date().getDay()].toLowerCase()}{' '}
+          </Typography>
+          <span>
             <Button
               disabled={!!userId}
               aria-label="Open account menu"
               aria-controls="account-menu"
               aria-haspopup="true"
               onClick={menu.onOpen}
-              endIcon={<MenuIcon />}
               size="large"
+              variant="text"
+              // Make it look like normal text
+              sx={{
+                padding: '6px 0',
+                textTransform: 'lowercase',
+                fontSize: theme => theme.typography.h6.fontSize,
+                lineHeight: 1,
+              }}
             >
-              {user.displayName}
+              {user.displayName}!
             </Button>
+          </span>
+        </Box>
+        {/** TODO: Drawer-ify this menu. */}
+        <ClickAwayListener onClickAway={menu.onClose}>
+          <span>
             <Menu
               id="account-menu"
               anchorEl={menu.ref}
@@ -161,15 +167,44 @@ export const Account: FC = () => {
                 <b>Delete account</b>
               </MenuItem>
             </Menu>
-          </div>
+          </span>
         </ClickAwayListener>
-      </Rows>
+
+        <Box display="flex">
+          <Badge badgeContent={<b>!</b>} color="secondary">
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={event => {
+                behaviorsDrawer.onOpen(event);
+              }}
+            >
+              Behaviors
+            </Button>
+          </Badge>
+        </Box>
+      </Stack>
+
+      {/** Behaviors Drawer UI */}
+      <SwipeableDrawer
+        anchor="right"
+        {...behaviorsDrawer}
+        PaperProps={{ sx: { padding: theme => theme.spacing(3), width: '85vw' } }}
+      >
+        <Stack spacing={3}>Hello :)</Stack>
+        {/** 
+           TODO/NEXT
+           - button to fill out form (disabled if done for today)
+           - button to create new Behavior
+           - list of Behaviors
+        */}
+      </SwipeableDrawer>
 
       {/** List of TrainingLogs */}
       <DataStateView data={logs}>
         {logs => {
           return (
-            <Box sx={{ padding: theme => theme.spacing(2, 3) }}>
+            <Box sx={{ padding: theme => theme.spacing(0, 3) }}>
               <DataStateView data={logs}>
                 {logs => (
                   <Stack sx={{ overflowY: 'scroll', maxHeight: '50vh' }}>
@@ -180,10 +215,8 @@ export const Account: FC = () => {
                           sx={{ borderBottom: `1px solid ${Color.ActionSecondaryGray}` }}
                           onClick={() => history.push(Paths.logEditor(log.id))}
                         >
-                          <Typography>
-                            <b>{log.title}</b>
-                          </Typography>
-                          <Typography gutterBottom color="textSecondary" variant="subtitle2">
+                          <Typography>{log.title}</Typography>
+                          <Typography gutterBottom color="textSecondary" variant="body2">
                             {format(
                               (log.timestamp as firebase.firestore.Timestamp)?.toDate(),
                               Format.date + ', ' + Format.time

@@ -524,7 +524,7 @@ export const TrainingLogEditor: FC = () => {
           <SwipeableDrawer
             anchor="bottom"
             {...addActivityDrawer}
-            PaperProps={{ sx: { padding: theme => theme.spacing(4, 2) } }}
+            PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
           >
             <Stack spacing={3}>
               <Box sx={{ maxHeight: '30vh', overflowY: 'scroll' }}>
