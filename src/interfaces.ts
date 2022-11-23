@@ -66,6 +66,22 @@ export const SleepHours = {
   12: 12,
 } as const;
 
+/**
+ * A habit or factor outside of training that (the user is investigating
+ * whether or not it) impacts training positively or negatively.
+ */
+export interface Behavior extends FirestoreDocument {
+  timestamp: FirestoreTimestamp;
+  /** Number of days this habit/behavior has been completed. */
+  yesCount: number;
+  /** Number of days this habit/behavior has not been completed. */
+  noCount: number;
+  /** The user ID of the creator of this behavior. */
+  authorId: string;
+  name: string;
+  // emoji: unknown;
+}
+
 export interface Activity extends FirestoreDocument {
   name: string;
   notes: null | string;
@@ -279,5 +295,16 @@ export const TrainingTemplate = {
     logIds: [],
     sleepHours: -99,
     templateId: null,
+  }),
+};
+
+// eslint-disable-next-line
+export const Behavior = {
+  create: (data: Pick<Behavior, 'authorId' | 'name'>): Omit<Behavior, 'id'> => ({
+    noCount: 0,
+    yesCount: 0,
+    authorId: data.authorId,
+    name: data.name,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
   }),
 };

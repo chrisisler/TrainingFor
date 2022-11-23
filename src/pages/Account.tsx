@@ -8,6 +8,7 @@ import {
   MenuItem,
   Stack,
   SwipeableDrawer,
+  TextField,
   Typography,
 } from '@material-ui/core';
 import { Add, ChevronRight } from '@material-ui/icons';
@@ -16,13 +17,12 @@ import firebase from 'firebase/app';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-// import { Line, LineChart } from 'recharts';
 
-import { Format, Months, Paths, Weekdays } from '../constants';
+import { Format, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { Activity, TrainingLog, TrainingTemplate } from '../interfaces';
+import { Behavior, TrainingLog, TrainingTemplate } from '../interfaces';
 import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
 /**
@@ -30,13 +30,16 @@ import { baseBg, Color, Columns, Pad, Rows } from '../style';
  * user's account and logs with a button to follow/unfollow.
  */
 export const Account: FC = () => {
+  const [newBehaviorName, setNewBehaviorName] = useState('');
+
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
   const menu = useMaterialMenu();
   const history = useHistory();
   // Skip the `ref` prop since <SwipeableDrawer /> does not use it.
-  const { ref: _ref, ...behaviorsDrawer } = useMaterialMenu();
+  const { ref: _1, ...behaviorsDrawer } = useMaterialMenu();
+  const { ref: _2, ...newBehaviorDrawer } = useMaterialMenu();
 
   /**
    * Account UI re-write:
@@ -85,6 +88,19 @@ export const Account: FC = () => {
         .then(snapshot => snapshot.docs.map(doc => doc.data())),
     [userId, user.uid]
   );
+
+  const [behaviors, setBehaviors] = useDataState(async () => {
+    if (behaviorsDrawer.open) {
+      return db
+        .user(user.uid)
+        .collection(DbPath.UserBehaviors)
+        .withConverter(DbConverter.Behavior)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => snapshot.docs.map(doc => doc.data()));
+    }
+    return DataState.Empty;
+  }, [behaviorsDrawer.open, user.uid]);
 
   const deleteAccount = useCallback(async () => {
     menu.onClose();
@@ -170,19 +186,21 @@ export const Account: FC = () => {
           </span>
         </ClickAwayListener>
 
-        <Box display="flex">
-          <Badge badgeContent={<b>!</b>} color="secondary">
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={event => {
-                behaviorsDrawer.onOpen(event);
-              }}
-            >
-              Behaviors
-            </Button>
-          </Badge>
-        </Box>
+        {!userId && (
+          <Box display="flex">
+            <Badge badgeContent={<b>!</b>} color="secondary">
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={event => {
+                  behaviorsDrawer.onOpen(event);
+                }}
+              >
+                Behaviors
+              </Button>
+            </Badge>
+          </Box>
+        )}
       </Stack>
 
       {/** Behaviors Drawer UI */}
@@ -191,13 +209,85 @@ export const Account: FC = () => {
         {...behaviorsDrawer}
         PaperProps={{ sx: { padding: theme => theme.spacing(3), width: '85vw' } }}
       >
-        <Stack spacing={3}>Hello :)</Stack>
-        {/** 
-           TODO/NEXT
-           - button to fill out form (disabled if done for today)
-           - button to create new Behavior
-           - list of Behaviors
-        */}
+        <Stack spacing={3}>
+          <Typography variant="overline" lineHeight={1}>
+            Behaviors
+          </Typography>
+          <Button variant="contained" endIcon={<b>!</b>} size="large">
+            Check-in
+          </Button>
+          <Button variant="outlined" startIcon={<Add />} onClick={newBehaviorDrawer.onOpen}>
+            Behavior
+          </Button>
+          <DataStateView data={behaviors}>
+            {behaviors => (
+              <Stack spacing={1}>
+                {behaviors.map(behavior => (
+                  <Box
+                    sx={{ borderRadius: '8px', border: `1px solid ${Color.ActionSecondaryGray}` }}
+                  >
+                    <Stack spacing={1} sx={{ padding: theme => theme.spacing(1) }}>
+                      <Typography variant="body1">{behavior.name}</Typography>
+                      <Rows pad={Pad.Medium}>
+                        <Typography variant="body2" color="textSecondary">
+                          Yes: {behavior.yesCount}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          No: {behavior.noCount}
+                        </Typography>
+                        {/**
+                          TODO
+                          Implement "Check-in" button which takes user to the
+                          screen (IF it has not been filled out for today) to
+                          fill out the Behaviors form.
+                        */}
+                      </Rows>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </DataStateView>
+        </Stack>
+      </SwipeableDrawer>
+      <SwipeableDrawer
+        anchor="top"
+        {...newBehaviorDrawer}
+        PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
+      >
+        <Stack spacing={2}>
+          <TextField
+            fullWidth
+            required
+            label="Behavior Name"
+            onChange={event => setNewBehaviorName(event.target.value)}
+          />
+          <Button
+            size="large"
+            variant="outlined"
+            disabled={!newBehaviorName}
+            startIcon={<Add />}
+            onClick={async () => {
+              try {
+                // Create new behavior
+                const newEntry = Behavior.create({ authorId: user.uid, name: newBehaviorName });
+                const document = await db
+                  .user(user.uid)
+                  .collection(DbPath.UserBehaviors)
+                  .add(newEntry);
+                const behavior = { id: document.id, ...newEntry };
+                // Update local state
+                setBehaviors(DataState.map(behaviors, state => state.concat(behavior)));
+                // Close modal
+                newBehaviorDrawer.onClose();
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : 'Failed to create behavior.');
+              }
+            }}
+          >
+            Create
+          </Button>
+        </Stack>
       </SwipeableDrawer>
 
       {/** List of TrainingLogs */}

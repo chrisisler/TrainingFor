@@ -11,6 +11,7 @@ import {
   User,
   Comment,
   TrainingTemplate,
+  Behavior,
 } from './interfaces';
 
 export const firebaseConfig = {
@@ -43,6 +44,7 @@ export enum DbPath {
   UserTemplateActivities = 'activities',
   UserLogActivities = 'activities',
   UserLogActivityComments = 'comments',
+  UserBehaviors = 'behaviors',
 }
 
 // The Users collection is the only top-level collection in the Firestore.
@@ -120,6 +122,17 @@ const savedActivityConverter: firebase.firestore.FirestoreDataConverter<SavedAct
   },
 };
 
+const behaviorConverter: firebase.firestore.FirestoreDataConverter<Behavior> = {
+  toFirestore: (behavior: Behavior): firebase.firestore.DocumentData => {
+    return behavior;
+  },
+  fromFirestore: (doc: firebase.firestore.QueryDocumentSnapshot<Behavior>): Behavior => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
 export const DbConverter = {
   TrainingLog: trainingLogConverter,
   TrainingTemplate: trainingTemplateConverter,
@@ -127,4 +140,5 @@ export const DbConverter = {
   SavedActivity: savedActivityConverter,
   User: userConverter,
   Comment: commentConverter,
+  Behavior: behaviorConverter,
 };
