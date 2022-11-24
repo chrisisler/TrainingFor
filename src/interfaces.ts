@@ -80,6 +80,12 @@ export interface Behavior extends FirestoreDocument {
   authorId: string;
   name: string;
   // emoji: unknown;
+  /** 
+   * Indicates if the behavior is reported on a particularly stressful day.
+   * These are filtered out due to stress being the overriding factor in poor
+   * movement quality. 
+   */
+  isHighStressDay: boolean;
 }
 
 export interface Activity extends FirestoreDocument {
@@ -306,5 +312,6 @@ export const Behavior = {
     authorId: data.authorId,
     name: data.name,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    isHighStressDay: false,
   }),
 };

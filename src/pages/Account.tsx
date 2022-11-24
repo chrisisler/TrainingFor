@@ -3,15 +3,21 @@ import {
   Badge,
   Box,
   Button,
+  Checkbox,
   ClickAwayListener,
+  FormControlLabel,
+  IconButton,
   Menu,
   MenuItem,
   Stack,
   SwipeableDrawer,
+  Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@material-ui/core';
-import { Add, ChevronRight } from '@material-ui/icons';
+import { Add, Check, ChevronRight, Delete, Save } from '@material-ui/icons';
 import { format } from 'date-fns';
 import firebase from 'firebase/app';
 import { FC, useCallback, useEffect, useState } from 'react';
@@ -31,6 +37,9 @@ import { baseBg, Color, Columns, Pad, Rows } from '../style';
  */
 export const Account: FC = () => {
   const [newBehaviorName, setNewBehaviorName] = useState('');
+  // The Behavior instance being edited, if the context menu was opened for it
+  const [editingBehavior, setEditingBehavior] = useState<null | Behavior>(null);
+  const [isHighStressDay, setIsHighStressDay] = useState(false);
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
@@ -39,9 +48,11 @@ export const Account: FC = () => {
   const history = useHistory();
   // Skip the `ref` prop since <SwipeableDrawer /> does not use it.
   const { ref: _1, ...behaviorsDrawer } = useMaterialMenu();
-  const { ref: _2, ...newBehaviorDrawer } = useMaterialMenu();
+  const { ref: _2, ...addEditBehaviorDrawer } = useMaterialMenu();
+  const { ref: _3, ...checkinDrawer } = useMaterialMenu();
 
   /**
+   * TODO
    * Account UI re-write:
    * - [ ] List of logs rendered + clicking takes user to log in editor view
    * - [ ] Templates have the graph removed (poor API handling)
@@ -116,6 +127,13 @@ export const Account: FC = () => {
       toast.error(error.message);
     }
   }, [user.uid, menu]);
+
+  const closeEditedDrawer = useCallback(() => {
+    addEditBehaviorDrawer.onClose();
+
+    setNewBehaviorName('');
+    if (editingBehavior) setEditingBehavior(null);
+  }, [addEditBehaviorDrawer, editingBehavior]);
 
   return (
     <Columns
@@ -213,21 +231,35 @@ export const Account: FC = () => {
           <Typography variant="overline" lineHeight={1}>
             Behaviors
           </Typography>
-          <Button variant="contained" endIcon={<b>!</b>} size="large">
+          <Button
+            variant="contained"
+            endIcon={<b>!</b>}
+            size="large"
+            onClick={checkinDrawer.onOpen}
+          >
             Check-in
           </Button>
-          <Button variant="outlined" startIcon={<Add />} onClick={newBehaviorDrawer.onOpen}>
-            Behavior
+          <Button variant="outlined" startIcon={<Add />} onClick={addEditBehaviorDrawer.onOpen}>
+            New Behavior
           </Button>
           <DataStateView data={behaviors}>
             {behaviors => (
               <Stack spacing={1}>
                 {behaviors.map(behavior => (
                   <Box
+                    key={behavior.id}
                     sx={{ borderRadius: '8px', border: `1px solid ${Color.ActionSecondaryGray}` }}
                   >
-                    <Stack spacing={1} sx={{ padding: theme => theme.spacing(1) }}>
-                      <Typography variant="body1">{behavior.name}</Typography>
+                    <Stack
+                      sx={{ padding: theme => theme.spacing(1) }}
+                      onClick={event => {
+                        setEditingBehavior(behavior);
+                        // Controlled state for input on edit
+                        setNewBehaviorName(behavior.name);
+                        addEditBehaviorDrawer.onOpen(event);
+                      }}
+                    >
+                      <Typography variant="body2">{behavior.name}</Typography>
                       <Rows pad={Pad.Medium}>
                         <Typography variant="body2" color="textSecondary">
                           Yes: {behavior.yesCount}
@@ -251,41 +283,176 @@ export const Account: FC = () => {
         </Stack>
       </SwipeableDrawer>
       <SwipeableDrawer
-        anchor="top"
-        {...newBehaviorDrawer}
-        PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
+        anchor="right"
+        {...addEditBehaviorDrawer}
+        PaperProps={{ sx: { padding: theme => theme.spacing(3), width: '85vw' } }}
+        onClose={closeEditedDrawer}
       >
         <Stack spacing={2}>
-          <TextField
-            fullWidth
-            required
-            label="Behavior Name"
-            onChange={event => setNewBehaviorName(event.target.value)}
-          />
-          <Button
-            size="large"
-            variant="outlined"
-            disabled={!newBehaviorName}
-            startIcon={<Add />}
-            onClick={async () => {
+          <Stack
+            component="form"
+            spacing={2}
+            onSubmit={async event => {
+              event.preventDefault(); // Prevent browser refresh
               try {
-                // Create new behavior
-                const newEntry = Behavior.create({ authorId: user.uid, name: newBehaviorName });
-                const document = await db
-                  .user(user.uid)
-                  .collection(DbPath.UserBehaviors)
-                  .add(newEntry);
-                const behavior = { id: document.id, ...newEntry };
-                // Update local state
-                setBehaviors(DataState.map(behaviors, state => state.concat(behavior)));
+                // In editing mode
+                if (editingBehavior) {
+                  // Update DB
+                  await db
+                    .user(user.uid)
+                    .collection(DbPath.UserBehaviors)
+                    .doc(editingBehavior.id)
+                    .update({ ...editingBehavior, name: newBehaviorName });
+                  // Update local state to reflect changes in DB (if successful)
+                  setBehaviors(
+                    DataState.map(behaviors, state => {
+                      const copy = state.slice();
+                      copy[copy.indexOf(editingBehavior)].name = newBehaviorName;
+                      return copy;
+                    })
+                  );
+                } else {
+                  // Create new behavior
+                  const newEntry = Behavior.create({ authorId: user.uid, name: newBehaviorName });
+                  const document = await db
+                    .user(user.uid)
+                    .collection(DbPath.UserBehaviors)
+                    .add(newEntry);
+                  const behavior = { id: document.id, ...newEntry };
+                  // Update local state
+                  setBehaviors(DataState.map(behaviors, state => state.concat(behavior)));
+                }
                 // Close modal
-                newBehaviorDrawer.onClose();
+                closeEditedDrawer();
               } catch (err) {
-                toast.error(err instanceof Error ? err.message : 'Failed to create behavior.');
+                toast.error(err.message);
               }
             }}
           >
-            Create
+            <TextField
+              fullWidth
+              required
+              autoFocus={!editingBehavior && addEditBehaviorDrawer.open}
+              label="Behavior Name"
+              value={newBehaviorName}
+              onChange={event => setNewBehaviorName(event.target.value)}
+            />
+            <Button
+              size="large"
+              variant="outlined"
+              disabled={!newBehaviorName}
+              startIcon={<Save />}
+              type="submit"
+            >
+              {editingBehavior ? 'Update' : 'Create'}
+            </Button>
+          </Stack>
+
+          {/** Present delete button if in editing mode. */}
+          {!!editingBehavior && (
+            <Box display="flex" justifyContent="end">
+              <IconButton
+                size="small"
+                sx={{ color: theme => theme.palette.error.main }}
+                onClick={async () => {
+                  if (!window.confirm('Delete this item?')) return;
+                  try {
+                    await db
+                      .user(user.uid)
+                      .collection(DbPath.UserBehaviors)
+                      .doc(editingBehavior.id)
+                      .delete();
+                    // Update UI state to reflect changes
+                    setBehaviors(
+                      DataState.map(behaviors, _ => _.filter(_ => _.id !== editingBehavior.id))
+                    );
+                    // Close modal
+                    closeEditedDrawer();
+                  } catch (err) {
+                    toast.error(err.message);
+                  }
+                }}
+              >
+                <Delete />
+              </IconButton>
+            </Box>
+          )}
+        </Stack>
+      </SwipeableDrawer>
+      <SwipeableDrawer
+        anchor="right"
+        {...checkinDrawer}
+        PaperProps={{ sx: { padding: theme => theme.spacing(3), width: '85vw' } }}
+      >
+        <Stack spacing={3} width="100%">
+          <Typography variant="overline" lineHeight={1}>
+            Behaviors daily check-in for {format(new Date(), Format.date)}:
+          </Typography>
+          <Box width="100%">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isHighStressDay}
+                  onChange={event => setIsHighStressDay(event.target.checked)}
+                />
+              }
+              label="High stress day"
+              labelPlacement="end"
+            />
+          </Box>
+          <DataStateView data={behaviors}>
+            {behaviors => {
+              return (
+                <>
+                  {behaviors.map(behavior => {
+                    // TODO Need to solve the state problem for this form/component!
+                    // eslint-disable-next-line react-hooks/rules-of-hooks
+                    const [yes, setYes] = useState<'yes' | 'no' | null>(null);
+                    return (
+                      // <BehaviorCheckbox
+                      //   behavior={behavior}
+                      //   key={behavior.id}
+                      //   onChange={event => setIsHighStressDay(event.target.checked)}
+                      // />
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        width="100%"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Typography>{behavior.name}</Typography>
+                        <ToggleButtonGroup
+                          exclusive
+                          key={behavior.id}
+                          value={yes}
+                          onChange={(_, newYes) => setYes(newYes)}
+                          aria-label="Behavior occurred"
+                        >
+                          <ToggleButton value="yes" aria-label="yes">
+                            Yes
+                          </ToggleButton>
+                          <ToggleButton value="no" aria-label="no">
+                            No
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Stack>
+                    );
+                  })}
+                </>
+              );
+            }}
+          </DataStateView>
+          <Button
+            variant="outlined"
+            startIcon={<Check />}
+            onClick={() => {
+              // Need new DB for checkin results
+              checkinDrawer.onClose();
+              toast.warning('Unimplemented :)');
+            }}
+          >
+            Complete
           </Button>
         </Stack>
       </SwipeableDrawer>
@@ -295,6 +462,7 @@ export const Account: FC = () => {
         {logs => {
           return (
             <Box sx={{ padding: theme => theme.spacing(0, 3) }}>
+              {/** TODO Why are there two DataStateView data={logs} ??? Fix this */}
               <DataStateView data={logs}>
                 {logs => (
                   <Stack sx={{ overflowY: 'scroll', maxHeight: '50vh' }}>
