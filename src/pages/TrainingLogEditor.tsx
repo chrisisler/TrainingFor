@@ -46,6 +46,7 @@ const smallFont = css`
 `;
 
 export const TrainingLogEditor: FC = () => {
+  const listRef = useRef<HTMLDivElement | null>(null);
   // const logNotesRef = useRef<HTMLTextAreaElement | null>(null);
   // Do not show the activity input by default
   const [activityName, setActivityName] = useState('');
@@ -162,7 +163,9 @@ export const TrainingLogEditor: FC = () => {
           weightUnit: ActivityWeightUnit.Pounds,
           repCountUnit: ActivityRepCountUnit.Repetitions,
         });
-        await activitiesColl.add(entry);
+        const { id } = await activitiesColl.add(entry);
+        // Scroll new item into view
+        document.getElementById(`activity-${id}`)?.scrollIntoView();
       } catch (error) {
         // @ts-ignore
         toast.error(error.message);
@@ -454,28 +457,67 @@ export const TrainingLogEditor: FC = () => {
           {/** LIST OF ACTIVITIES */}
           <DataStateView data={activities}>
             {activities => (
-              <FlipMove
-                enterAnimation="fade"
-                leaveAnimation="fade"
-                className={css`
-                  // height: 100%;
-                  width: 100%;
-                  overflow-y: scroll;
-                  ${activityViewContainerStyle}
-                  padding: 0;
-                `}
-              >
-                {activities.map(({ id }, index) => (
-                  <ActivityView key={id} editable activities={activities} index={index} log={log} />
-                ))}
-              </FlipMove>
+              <>
+                <Box ref={listRef} height="100%">
+                  <FlipMove
+                    enterAnimation="fade"
+                    leaveAnimation="fade"
+                    className={css`
+                      height: 100%;
+                      width: 100%;
+                      overflow-y: scroll;
+                      ${activityViewContainerStyle}
+                      padding: 0;
+                    `}
+                  >
+                    {activities.map(({ id }, index) => (
+                      <ActivityView
+                        key={id}
+                        editable
+                        activities={activities}
+                        index={index}
+                        log={log}
+                      />
+                    ))}
+                  </FlipMove>
+                </Box>
+                <Box
+                  sx={{
+                    padding: theme => theme.spacing(0),
+                    margin: 0,
+                  }}
+                >
+                  {/** ADD ACTIVITY BUTTON */}
+                  <Button
+                    fullWidth
+                    disableRipple
+                    startIcon={<Add />}
+                    size="large"
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: 'white',
+                    }}
+                    onClick={event => {
+                      // Trigger the add activity drawer to open
+                      addActivityDrawer.onOpen(event);
+
+                      // // Set to non-null to render the input
+                      // setActivityName('');
+                      // // Wait a tick for the input to render so it may be focused
+                      // Promise.resolve().then(() => addActivityInputRef.current?.focus());
+                    }}
+                  >
+                    Activity
+                  </Button>
+                </Box>
+              </>
             )}
           </DataStateView>
 
           <Box
             sx={{
-              position: 'absolute',
-              bottom: navBarHeight,
+              position: 'fixed',
+              top: 12,
               backgroundColor: 'transparent',
               left: 0,
               padding: '0.5rem',
@@ -483,28 +525,6 @@ export const TrainingLogEditor: FC = () => {
               zIndex: 999,
             }}
           >
-            {/** ADD ACTIVITY BUTTON */}
-            <Button
-              fullWidth
-              disableRipple
-              startIcon={<Add />}
-              size="large"
-              variant="outlined"
-              sx={{
-                backgroundColor: 'white',
-              }}
-              onClick={event => {
-                // Trigger the add activity drawer to open
-                addActivityDrawer.onOpen(event);
-
-                // // Set to non-null to render the input
-                // setActivityName('');
-                // // Wait a tick for the input to render so it may be focused
-                // Promise.resolve().then(() => addActivityInputRef.current?.focus());
-              }}
-            >
-              Activity
-            </Button>
             <EditorControlsDateView log={log} />
             {DataState.isReady(activities) && activities.length > 1 && (
               <Typography
@@ -512,7 +532,7 @@ export const TrainingLogEditor: FC = () => {
                 color="textSecondary"
                 sx={{ lineHeight: 1, position: 'absolute', bottom: '0.5rem', left: '0.5rem' }}
               >
-                Total Vol:{' '}
+                Total Vol{' '}
                 {Intl.NumberFormat().format(
                   activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)
                 )}

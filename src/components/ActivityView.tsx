@@ -57,6 +57,10 @@ const activitySetInputStyle = css`
   letter-spacing: 0.004em;
 `;
 
+/**
+ * Presents a *list* of activities to the user to interact with and record
+ * training into.
+ */
 export const ActivityView = forwardRef<
   HTMLDivElement,
   {
@@ -335,13 +339,14 @@ export const ActivityView = forwardRef<
     <Columns
       ref={ref}
       className={css`
-        padding: ${Pad.Small} ${Pad.Medium};
-        padding-bottom: ${Pad.XSmall};
-        margin: ${Pad.Small} ${Pad.Small};
+        padding: ${Pad.XLarge} ${Pad.Medium} ${Pad.Large};
+        margin: 0;
+        border-bottom: 1px solid ${Color.ActionSecondaryGray};
         border-radius: 20px;
         background-color: #fff;
       `}
-      pad={Pad.Small}
+      pad={Pad.Large}
+      id={`activity-${activity.id}`}
     >
       <Rows center maxWidth between>
         <Rows
@@ -357,6 +362,7 @@ export const ActivityView = forwardRef<
             className={css`
               color: ${Color.FontPrimary};
               font-size: ${Font.MedLarge};
+              text-transform: uppercase;
               font-weight: 400;
               padding: 0;
               border: none;
@@ -368,7 +374,7 @@ export const ActivityView = forwardRef<
           >
             <ActivityNameBold name={activity.name} />
           </button>
-          <ExpandMore sx={{ color: Color.ActionPrimaryGray }} fontSize="small" />
+          {/** <ExpandMore sx={{ color: Color.ActionPrimaryGray }} fontSize="small" /> */}
         </Rows>
         <Menu id="activity-menu" anchorEl={menu.ref} open={!!menu.ref} onClose={menu.onClose}>
           <MenuItem onClick={moveActivityUp} disabled={activities.length === 1 || index === 0}>
@@ -436,12 +442,12 @@ export const ActivityView = forwardRef<
                     <>Reps: {activity.sets.reduce((sum, s) => sum + s.repCount, 0)}</>
                   ) : (
                     <>
-                      Vol: <b>{Intl.NumberFormat().format(Activity.getVolume(activity))}</b>
+                      Vol <b>{Intl.NumberFormat().format(Activity.getVolume(activity))}</b>
                     </>
                   )}
                 </Typography>
                 <Typography variant="overline" sx={{ lineHeight: 1 }}>
-                  Set {(activity.sets.findIndex(_ => _.uuid === selectedSet?.uuid) ?? 0) + 1}
+                  Set <b>{(activity.sets.findIndex(_ => _.uuid === selectedSet?.uuid) ?? 0) + 1}</b>
                 </Typography>
               </Box>
             )}
