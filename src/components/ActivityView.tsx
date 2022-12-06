@@ -18,7 +18,6 @@ import {
   DeleteOutlined,
   DeleteSweepOutlined,
   Edit,
-  ExpandMore,
   Favorite,
   FavoriteBorder,
   FileCopyOutlined,
@@ -52,8 +51,8 @@ const activitySetInputStyle = css`
   padding: 0 ${Pad.XSmall};
   font-family: sans-serif;
   color: ${Color.ActionPrimaryBlue};
-  font-weight: 400;
-  font-size: 2.125rem;
+  font-weight: 300;
+  font-size: 2.2rem;
   letter-spacing: 0.004em;
 `;
 
@@ -539,91 +538,95 @@ export const ActivityView = forwardRef<
             </Box>
 
             {/** SELECTED SET VALUE CONTROLS */}
-            <Grid container justifyContent="end" alignItems="end" wrap="nowrap">
+            <Box
+              display="flex"
+              sx={{
+                justifyContent: 'right',
+                whiteSpace: 'nowrap',
+                // justifyContent: 'flex-end',
+                alignItems: 'end',
+                // wrap: 'nowrap',
+                '& > *:not(:last-child)': {
+                  marginRight: theme => theme.spacing(1),
+                },
+              }}
+            >
               {/** WEIGHT VALUE */}
               {activity.weightUnit !== ActivityWeightUnit.Weightless && (
-                <Grid item>
-                  <input
-                    disabled={!editable}
-                    ref={resizeWeightInput}
-                    type="tel"
-                    min={0}
-                    max={9999}
-                    name="weight"
-                    value={weight}
-                    onFocus={event => {
-                      event.currentTarget.select();
-                    }}
-                    onChange={event => {
-                      if (Number.isNaN(event.target.value)) return;
-                      setWeight(Number(event.target.value));
-                    }}
-                    onBlur={event => {
-                      const index = activity.sets.findIndex(_ => _.uuid === selectedSet.uuid);
-                      if (index === -1) return toast.error('Could not find selected set index.');
-                      activity.sets[index].weight = Number(event.target.value);
-                      updateSets(activity.sets);
-                    }}
-                    className={activitySetInputStyle}
-                  />
-                </Grid>
-              )}
-              {/** WEIGHT UNIT */}
-              <Grid item>
-                <IconButton
-                  disabled={!editable}
-                  onClick={cycleWeightUnit}
-                  size="small"
-                  className={css`
-                    font-size: 1rem !important;
-                  `}
-                >
-                  {activity.weightUnit.toUpperCase()}
-                </IconButton>
-              </Grid>
-              {/** REP VALUE */}
-              <Grid item>
                 <input
                   disabled={!editable}
-                  ref={resizeRepCountInput}
+                  ref={resizeWeightInput}
                   type="tel"
                   min={0}
                   max={9999}
-                  name="repCount"
-                  value={repCount ?? 0}
+                  name="weight"
+                  value={weight}
                   onFocus={event => {
                     event.currentTarget.select();
                   }}
                   onChange={event => {
                     if (Number.isNaN(event.target.value)) return;
-                    setRepCount(Number(event.target.value));
+                    setWeight(Number(event.target.value));
                   }}
                   onBlur={event => {
                     const index = activity.sets.findIndex(_ => _.uuid === selectedSet.uuid);
                     if (index === -1) return toast.error('Could not find selected set index.');
-                    activity.sets[index].repCount = Number(event.target.value);
+                    activity.sets[index].weight = Number(event.target.value);
                     updateSets(activity.sets);
                   }}
-                  className={css`
-                    ${activitySetInputStyle};
-                  `}
+                  className={activitySetInputStyle}
                 />
-              </Grid>
+              )}
+              {/** WEIGHT UNIT */}
+              <IconButton
+                disabled={!editable}
+                onClick={cycleWeightUnit}
+                size="small"
+                className={css`
+                  font-size: 1.1rem !important;
+                `}
+              >
+                {activity.weightUnit.toUpperCase()}
+              </IconButton>
+              {/** REP VALUE */}
+              <input
+                disabled={!editable}
+                ref={resizeRepCountInput}
+                type="tel"
+                min={0}
+                max={9999}
+                name="repCount"
+                value={repCount ?? 0}
+                onFocus={event => {
+                  event.currentTarget.select();
+                }}
+                onChange={event => {
+                  if (Number.isNaN(event.target.value)) return;
+                  setRepCount(Number(event.target.value));
+                }}
+                onBlur={event => {
+                  const index = activity.sets.findIndex(_ => _.uuid === selectedSet.uuid);
+                  if (index === -1) return toast.error('Could not find selected set index.');
+                  activity.sets[index].repCount = Number(event.target.value);
+                  updateSets(activity.sets);
+                }}
+                className={css`
+                  ${activitySetInputStyle};
+                `}
+              />
 
               {/** REP UNIT */}
-              <Grid item>
-                <IconButton
-                  disabled={!editable}
-                  onClick={cycleRepCountUnit}
-                  size="small"
-                  className={css`
-                    font-size: 1rem !important;
-                  `}
-                >
-                  {activity.repCountUnit.toUpperCase()}
-                </IconButton>
-              </Grid>
-            </Grid>
+              <IconButton
+                disabled={!editable}
+                onClick={cycleRepCountUnit}
+                size="small"
+                className={css`
+                  font-size: 1.1rem !important;
+                `}
+              >
+                {activity.repCountUnit.toUpperCase()}
+              </IconButton>
+            </Box>
           </Rows>
           {/** ACTIVITY SET MENU */}
           <Menu
