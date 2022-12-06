@@ -431,16 +431,13 @@ export const ActivityView = forwardRef<
             {/** VOLUME/REPS DISPLAY */}
             {activity.sets.length > 0 && (
               <Box display="flex" flexDirection="column" alignItems="flex-end">
-                <Typography
-                  noWrap
-                  gutterBottom
-                  variant="overline"
-                  sx={{ lineHeight: 1 }}
-                >
+                <Typography noWrap gutterBottom variant="overline" sx={{ lineHeight: 1 }}>
                   {activity.weightUnit === ActivityWeightUnit.Weightless ? (
                     <>Reps: {activity.sets.reduce((sum, s) => sum + s.repCount, 0)}</>
                   ) : (
-                    <>Vol: {Intl.NumberFormat().format(Activity.getVolume(activity))}</>
+                    <>
+                      Vol: <b>{Intl.NumberFormat().format(Activity.getVolume(activity))}</b>
+                    </>
                   )}
                 </Typography>
                 <Typography variant="overline" sx={{ lineHeight: 1 }}>
