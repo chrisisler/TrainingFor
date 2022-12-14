@@ -3,7 +3,6 @@ import {
   Badge,
   Box,
   Button,
-  Checkbox,
   ClickAwayListener,
   FormControlLabel,
   IconButton,
@@ -28,7 +27,7 @@ import { Format, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { Behavior, TrainingLog, TrainingTemplate } from '../interfaces';
+import { Behavior, Checkin, TrainingLog, TrainingTemplate } from '../interfaces';
 import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
 /**
@@ -39,7 +38,6 @@ export const Account: FC = () => {
   const [newBehaviorName, setNewBehaviorName] = useState('');
   // The Behavior instance being edited, if the context menu was opened for it
   const [editingBehavior, setEditingBehavior] = useState<null | Behavior>(null);
-  const [isHighStressDay, setIsHighStressDay] = useState(false);
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
@@ -54,12 +52,10 @@ export const Account: FC = () => {
   /**
    * TODO
    * Account UI re-write:
-   * - [ ] List of logs rendered + clicking takes user to log in editor view
-   * - [ ] Templates have the graph removed (poor API handling)
-   *   - [ ] Implement list of viewable logs UI from each template (as Drawer?)
+   * - [x] List of logs rendered + clicking takes user to log in editor view
+   * - [x] Templates have the graph removed (poor API handling)
    * - [ ] Use Drawer UI for creating new logs! Integrate the NewTraining page
-   *
-   * Had to stop because we hit quote on back-end = app is crippled.
+   * - [ ] Implement list of viewable logs UI from each template as Drawer
    */
 
   // const [selectedUser] = useDataState(
@@ -74,6 +70,27 @@ export const Account: FC = () => {
   //       }),
   //   [userId]
   // );
+
+  /** Whether or not the user has completed their check in for the day. */
+  const [hasCheckedIn] = useDataState(async () => {
+    if (userId) return;
+    const snapshot = await db
+      .user(user.uid)
+      .collection(DbPath.UserCheckins)
+      .withConverter(DbConverter.Checkin)
+      .orderBy('timestamp', 'desc')
+      .limit(1)
+      .get();
+    if (snapshot.size === 1) {
+      const checkin = snapshot.docs[0]?.data?.();
+      const checkinDate = (checkin?.timestamp as firebase.firestore.Timestamp)?.toDate();
+      const today = new Date();
+      if (checkinDate && checkinDate.toDateString() === today.toDateString()) {
+        return true;
+      }
+    }
+    return false;
+  }, [user.uid]);
 
   const [templates] = useDataState(
     () =>
@@ -206,7 +223,10 @@ export const Account: FC = () => {
 
         {!userId && (
           <Box display="flex">
-            <Badge badgeContent={<b>!</b>} color="secondary">
+            <Badge
+              badgeContent={DataState.isReady(hasCheckedIn) && hasCheckedIn ? undefined : <b>!</b>}
+              color="secondary"
+            >
               <Button
                 variant="outlined"
                 fullWidth
@@ -233,11 +253,11 @@ export const Account: FC = () => {
           </Typography>
           <Button
             variant="contained"
-            endIcon={<b>!</b>}
-            size="large"
             onClick={checkinDrawer.onOpen}
+            endIcon={DataState.isReady(hasCheckedIn) && hasCheckedIn ? <b>!</b> : undefined}
+            disabled={DataState.isReady(hasCheckedIn) && hasCheckedIn}
           >
-            Check-in
+            {DataState.isReady(hasCheckedIn) && hasCheckedIn ? 'Checked In' : 'Check In'}
           </Button>
           <Button variant="outlined" startIcon={<Add />} onClick={addEditBehaviorDrawer.onOpen}>
             New Behavior
@@ -267,12 +287,6 @@ export const Account: FC = () => {
                         <Typography variant="body2" color="textSecondary">
                           No: {behavior.noCount}
                         </Typography>
-                        {/**
-                          TODO
-                          Implement "Check-in" button which takes user to the
-                          screen (IF it has not been filled out for today) to
-                          fill out the Behaviors form.
-                        */}
                       </Rows>
                     </Stack>
                   </Box>
@@ -384,77 +398,7 @@ export const Account: FC = () => {
         {...checkinDrawer}
         PaperProps={{ sx: { padding: theme => theme.spacing(3), width: '85vw' } }}
       >
-        <Stack spacing={3} width="100%">
-          <Typography variant="overline" lineHeight={1}>
-            Behaviors daily check-in for {format(new Date(), Format.date)}:
-          </Typography>
-          <Box width="100%">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={isHighStressDay}
-                  onChange={event => setIsHighStressDay(event.target.checked)}
-                />
-              }
-              label="High stress day"
-              labelPlacement="end"
-            />
-          </Box>
-          <DataStateView data={behaviors}>
-            {behaviors => {
-              return (
-                <>
-                  {behaviors.map(behavior => {
-                    // TODO Need to solve the state problem for this form/component!
-                    // eslint-disable-next-line react-hooks/rules-of-hooks
-                    const [yes, setYes] = useState<'yes' | 'no' | null>(null);
-                    return (
-                      // <BehaviorCheckbox
-                      //   behavior={behavior}
-                      //   key={behavior.id}
-                      //   onChange={event => setIsHighStressDay(event.target.checked)}
-                      // />
-                      <Stack
-                        direction="row"
-                        spacing={2}
-                        width="100%"
-                        alignItems="center"
-                        justifyContent="space-between"
-                      >
-                        <Typography>{behavior.name}</Typography>
-                        <ToggleButtonGroup
-                          exclusive
-                          key={behavior.id}
-                          value={yes}
-                          onChange={(_, newYes) => setYes(newYes)}
-                          aria-label="Behavior occurred"
-                        >
-                          <ToggleButton value="yes" aria-label="yes">
-                            Yes
-                          </ToggleButton>
-                          <ToggleButton value="no" aria-label="no">
-                            No
-                          </ToggleButton>
-                        </ToggleButtonGroup>
-                      </Stack>
-                    );
-                  })}
-                </>
-              );
-            }}
-          </DataStateView>
-          <Button
-            variant="outlined"
-            startIcon={<Check />}
-            onClick={() => {
-              // Need new DB for checkin results
-              checkinDrawer.onClose();
-              toast.warning('Unimplemented :)');
-            }}
-          >
-            Complete
-          </Button>
-        </Stack>
+        <CheckinDrawer behaviors={behaviors} onClose={checkinDrawer.onClose} />
       </SwipeableDrawer>
 
       {/** List of TrainingLogs */}
@@ -552,6 +496,140 @@ export const Account: FC = () => {
 //     </Rows>
 //   );
 // };
+
+/**
+ * An answer to a user-generated question about their own behavior/habits.
+ * Null represents unanswered/initial state.
+ */
+type Answer = 'yes' | 'no' | null;
+
+const CheckinDrawer: FC<{
+  behaviors: DataState<Behavior[]>;
+  onClose(): void;
+}> = ({ behaviors, onClose }) => {
+  const user = useUser();
+
+  const [isHighStressDay, setIsHighStressDay] = useState(false);
+  // A map of each behavior as keys and yes/no/unanswered as values
+  const [form, setForm] = useState<Map<Behavior, Answer>>(new Map());
+
+  // Set the initial state of the form map data based on the given `behaviors` prop
+  useEffect(() => {
+    if (!DataState.isReady(behaviors)) return;
+    const initialState = new Map<Behavior, Answer>();
+    behaviors.forEach(behavior => {
+      initialState.set(behavior, null);
+    });
+    setForm(initialState);
+  }, [behaviors]);
+
+  const completeCheckin = useCallback(async () => {
+    if (!DataState.isReady(behaviors)) return;
+    try {
+      // Batch: 1) creating the checkin; 2) incrementing the yes/no count for each Behavior
+      const batch = db.batch();
+      // Create a new version of the behaviors data with yes/no increment/decremented
+      const incremented = behaviors.map(behavior => {
+        const answer = form.get(behavior);
+        let updateData: Partial<Pick<Behavior, 'yesCount' | 'noCount'>> = {};
+        // Increment behavior yes/no counts based on the answer
+        if (answer === 'yes') {
+          behavior.yesCount++;
+          updateData.yesCount = behavior.yesCount;
+        }
+        if (answer === 'no') {
+          behavior.noCount++;
+          updateData.noCount = behavior.noCount;
+        }
+        batch.update(
+          db.user(user.uid).collection(DbPath.UserBehaviors).doc(behavior.id),
+          updateData
+        );
+        return behavior;
+      });
+      // Patch together list of updated yes/no behaviors with rest of the checkin info
+      const checkinEntry: Omit<Checkin, 'id'> = {
+        behaviors: incremented,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        isHighStressDay,
+      };
+      // Create a new document and set checkinEntry as the data
+      batch.set(db.user(user.uid).collection(DbPath.UserCheckins).doc(), checkinEntry);
+      // Fire it off
+      await batch.commit();
+      // Display success message
+      toast.success('Checkin-in complete for today!');
+    } catch (err) {
+      toast.error(err.message);
+    }
+    // Close the UI
+    onClose();
+  }, [behaviors, form, isHighStressDay, onClose, user.uid]);
+
+  return (
+    <Stack spacing={4} width="100%">
+      <Typography variant="overline" lineHeight={1}>
+        <b>Daily check-in for {format(new Date(), Format.date)}:</b>
+      </Typography>
+      <Box width="100%">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={isHighStressDay}
+              onChange={event => setIsHighStressDay(event.target.checked)}
+            />
+          }
+          label="High stress day"
+          labelPlacement="end"
+        />
+      </Box>
+      <Typography variant="overline" lineHeight={1} color="textSecondary">
+        For each question, did it improve training quality/ability?
+      </Typography>
+      {Array.from(form.entries()).map(([behavior, answer]) => {
+        return (
+          <Stack
+            direction="row"
+            spacing={2}
+            width="100%"
+            alignItems="center"
+            justifyContent="space-between"
+            key={behavior.id}
+          >
+            <Typography>{behavior.name}</Typography>
+            <ToggleButtonGroup
+              exclusive
+              value={answer ?? undefined}
+              onChange={(_, newAnswer: Answer) => {
+                setForm(map => {
+                  const next = new Map(map);
+                  next.set(behavior, newAnswer);
+                  return next;
+                });
+              }}
+              aria-label="Behavior occurred"
+            >
+              <ToggleButton value="yes" aria-label="yes">
+                Yes
+              </ToggleButton>
+              <ToggleButton value="no" aria-label="no">
+                No
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
+        );
+      })}
+      <Button
+        variant="contained"
+        endIcon={<Check />}
+        disabled={!DataState.isReady(behaviors) || Array.from(form.values()).includes(null)}
+        onClick={completeCheckin}
+      >
+        Complete
+      </Button>
+    </Stack>
+  );
+};
 
 const FollowButton: FC = () => {
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
@@ -781,8 +859,8 @@ const TrainingTemplatePreview: FC<{
   );
 };
 
-const isLeapYear = (year: number): boolean =>
-  (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+// const isLeapYear = (year: number): boolean =>
+//   (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 
 /**
  * @note When passing `monthIndex` remember that January is index 0.

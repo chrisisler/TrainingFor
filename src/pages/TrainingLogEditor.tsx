@@ -23,7 +23,6 @@ import {
   ActivityView,
   activityViewContainerStyle,
   createTemplateFromLog,
-  navBarHeight,
 } from '../components';
 import { Format, Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';

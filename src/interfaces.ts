@@ -67,10 +67,27 @@ export const SleepHours = {
 } as const;
 
 /**
+ * Represents an individual day of a "check-in" which means the user answering
+ * the questions (for the day) that they wrote for themselves. This is a
+ * process with the goal of improving training quality while ideally allowing
+ * the user to pick and choose which behaviors (outside of training) provide an
+ * improved quality/experience of time spent training.
+ */
+export interface Checkin extends FirestoreDocument {
+  /** The list of behaviors involved in this Checkin. */
+  behaviors: Pick<Behavior, 'name' | 'id' | 'yesCount' | 'noCount'>[];
+  /** The date of the checkin. */
+  timestamp: FirestoreTimestamp;
+  // TODO Remove this field from Behavior interface, it belongs here.
+  isHighStressDay: boolean;
+}
+
+/**
  * A habit or factor outside of training that (the user is investigating
  * whether or not it) impacts training positively or negatively.
  */
 export interface Behavior extends FirestoreDocument {
+  // TODO Is this field necessary?
   timestamp: FirestoreTimestamp;
   /** Number of days this habit/behavior has been completed. */
   yesCount: number;

@@ -12,6 +12,7 @@ import {
   Comment,
   TrainingTemplate,
   Behavior,
+  Checkin,
 } from './interfaces';
 
 export const firebaseConfig = {
@@ -45,6 +46,7 @@ export enum DbPath {
   UserLogActivities = 'activities',
   UserLogActivityComments = 'comments',
   UserBehaviors = 'behaviors',
+  UserCheckins = 'checkins',
 }
 
 // The Users collection is the only top-level collection in the Firestore.
@@ -122,6 +124,17 @@ const savedActivityConverter: firebase.firestore.FirestoreDataConverter<SavedAct
   },
 };
 
+const checkinConverter: firebase.firestore.FirestoreDataConverter<Checkin> = {
+  toFirestore: (checkin: Checkin): firebase.firestore.DocumentData => {
+    return checkin;
+  },
+  fromFirestore: (doc: firebase.firestore.QueryDocumentSnapshot<Checkin>): Checkin => {
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  },
+};
+
 const behaviorConverter: firebase.firestore.FirestoreDataConverter<Behavior> = {
   toFirestore: (behavior: Behavior): firebase.firestore.DocumentData => {
     return behavior;
@@ -141,4 +154,5 @@ export const DbConverter = {
   User: userConverter,
   Comment: commentConverter,
   Behavior: behaviorConverter,
+  Checkin: checkinConverter,
 };
