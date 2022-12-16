@@ -339,8 +339,8 @@ export const ActivityView = forwardRef<
       ref={ref}
       className={css`
         padding: ${Pad.XLarge} ${Pad.Medium} ${Pad.Large};
-        margin: 0;
-        border-bottom: 1px solid ${Color.ActionSecondaryGray};
+        margin: ${Pad.XSmall} ${Pad.Small};
+        // border-bottom: 1px solid ${Color.ActionSecondaryGray};
         border-radius: 20px;
         background-color: #fff;
       `}

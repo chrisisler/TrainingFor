@@ -467,18 +467,13 @@ export const TrainingLogEditor: FC = () => {
                     ))}
                   </FlipMove>
                 </Box>
-                <Box
-                  sx={{
-                    padding: theme => theme.spacing(0),
-                    margin: 0,
-                  }}
-                >
-                  {/** ADD ACTIVITY BUTTON */}
+
+                {/** ADD ACTIVITY BUTTON */}
+                <Box display="flex" width="100%" sx={{ padding: '0 1rem' }}>
                   <Button
                     fullWidth
                     disableRipple
                     startIcon={<Add />}
-                    size="large"
                     variant="outlined"
                     sx={{
                       backgroundColor: 'white',
@@ -762,7 +757,7 @@ const LibraryMenuSavedActivityView: FC<{
                         </Typography>
                       )}
                     </DataStateView>
-                    <Add fontSize="small" sx={{ color: theme => theme.palette.primary.main }}/>
+                    <Add fontSize="small" sx={{ color: theme => theme.palette.primary.main }} />
                   </Stack>
                 </Rows>
                 <Rows pad={Pad.Small}>
