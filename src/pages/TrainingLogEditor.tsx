@@ -1,8 +1,7 @@
 import { css } from '@emotion/css';
 import {
+  Box,
   Button,
-  Chip,
-  Grid,
   Menu,
   MenuItem,
   Stack,
@@ -11,7 +10,6 @@ import {
   Typography,
 } from '@material-ui/core';
 import { Add, Menu as MenuIcon } from '@material-ui/icons';
-import { Box } from '@material-ui/system';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +18,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import {
+  ActivityNameBold,
   ActivityView,
   activityViewContainerStyle,
   createTemplateFromLog,
@@ -37,12 +36,7 @@ import {
   TrainingLog,
   TrainingTemplate,
 } from '../interfaces';
-import { baseBg, Color, Columns, Font, Pad, Rows } from '../style';
-
-const smallFont = css`
-  font-size: ${Font.Small};
-  color: ${Color.FontSecondary};
-`;
+import { baseBg, Color, Pad, Rows } from '../style';
 
 export const TrainingLogEditor: FC = () => {
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -131,47 +125,40 @@ export const TrainingLogEditor: FC = () => {
       );
   }, [user.uid, logId, templateId]);
 
-  // Handle creating & destroying Popper refs for the activity library menu
-  // useEffect(() => {
-  //   if (!inputRef.current || !libraryMenuRef.current) return;
-  //   popperRef.current = createPopper(inputRef.current, libraryMenuRef.current);
-  //   return () => popperRef.current?.destroy();
-  // });
-
-  const addActivity = useCallback(
-    async <E extends React.SyntheticEvent>(event: E) => {
-      event.preventDefault();
-      if (!activityName?.length || !DataState.isReady(log)) return;
-      const name = activityName;
-      // Hide the input
-      addActivityDrawer.onClose();
-      try {
-        const activitiesColl = db
-          .user(user.uid)
-          .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-          .doc(log.id)
-          .collection(DbPath.UserLogActivities);
-        const { docs } = await activitiesColl.orderBy('position', 'desc').limit(1).get();
-        const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
-        const entry = Activity.create({
-          name,
-          position: prevMaxPosition + 1,
-          logId: log.id,
-          timestamp: log.timestamp,
-          sets: [],
-          weightUnit: ActivityWeightUnit.Pounds,
-          repCountUnit: ActivityRepCountUnit.Repetitions,
-        });
-        const { id } = await activitiesColl.add(entry);
-        // Scroll new item into view
-        document.getElementById(`activity-${id}`)?.scrollIntoView();
-      } catch (error) {
-        // @ts-ignore
-        toast.error(error.message);
-      }
-    },
-    [activityName, log, user.uid, isTemplate, addActivityDrawer]
-  );
+  // const addActivity = useCallback(
+  //   async <E extends React.SyntheticEvent>(event: E) => {
+  //     event.preventDefault();
+  //     if (!activityName?.length || !DataState.isReady(log)) return;
+  //     const name = activityName;
+  //     // Hide the input
+  //     addActivityDrawer.onClose();
+  //     try {
+  //       const activitiesColl = db
+  //         .user(user.uid)
+  //         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
+  //         .doc(log.id)
+  //         .collection(DbPath.UserLogActivities);
+  //       const { docs } = await activitiesColl.orderBy('position', 'desc').limit(1).get();
+  //       const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
+  //       const entry = Activity.create({
+  //         name,
+  //         position: prevMaxPosition + 1,
+  //         logId: log.id,
+  //         timestamp: log.timestamp,
+  //         sets: [],
+  //         weightUnit: ActivityWeightUnit.Pounds,
+  //         repCountUnit: ActivityRepCountUnit.Repetitions,
+  //       });
+  //       const { id } = await activitiesColl.add(entry);
+  //       // Scroll new item into view
+  //       document.getElementById(`activity-${id}`)?.scrollIntoView();
+  //     } catch (error) {
+  //       // @ts-ignore
+  //       toast.error(error.message);
+  //     }
+  //   },
+  //   [activityName, log, user.uid, isTemplate, addActivityDrawer]
+  // );
 
   // const updateLogNotes = useCallback(async () => {
   //   if (!DataState.isReady(log)) return;
@@ -499,11 +486,6 @@ export const TrainingLogEditor: FC = () => {
                     onClick={event => {
                       // Trigger the add activity drawer to open
                       addActivityDrawer.onOpen(event);
-
-                      // // Set to non-null to render the input
-                      // setActivityName('');
-                      // // Wait a tick for the input to render so it may be focused
-                      // Promise.resolve().then(() => addActivityInputRef.current?.focus());
                     }}
                   >
                     Activity
@@ -545,7 +527,7 @@ export const TrainingLogEditor: FC = () => {
             {...addActivityDrawer}
             PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
           >
-            <Stack spacing={3}>
+            <Stack spacing={2}>
               <Box sx={{ maxHeight: '30vh', overflowY: 'scroll' }}>
                 <LibraryAutocomplete
                   query={activityName}
@@ -553,17 +535,16 @@ export const TrainingLogEditor: FC = () => {
                   addFromLibrary={addFromLibrary}
                 />
               </Box>
-              <form onSubmit={addActivity}>
-                <TextField
-                  fullWidth
-                  label="Add Activity..."
-                  autoFocus={addActivityDrawer.open}
-                  value={activityName}
-                  onChange={event => {
-                    setActivityName(event.target.value);
-                  }}
-                />
-              </form>
+              <TextField
+                fullWidth
+                variant="standard"
+                label="Search Activity..."
+                autoFocus={addActivityDrawer.open}
+                value={activityName}
+                onChange={event => {
+                  setActivityName(event.target.value);
+                }}
+              />
             </Stack>
           </SwipeableDrawer>
         </Box>
@@ -593,7 +574,7 @@ const LibraryAutocomplete: FC<{
         .user(user.uid)
         .collection(DbPath.UserActivityLibrary)
         .withConverter(DbConverter.SavedActivity)
-        .orderBy('name', 'asc')
+        .orderBy('name', 'asc') // TODO Sort manually using a.localCompare(b)
         .get()
         .then(snapshot =>
           // Skip saved activities that do not match the queried name
@@ -611,6 +592,7 @@ const LibraryAutocomplete: FC<{
     [query, user.uid]
   );
 
+  // TODO Also needs to add this new activity to the current log and
   const createSavedActivity = useCallback(async () => {
     try {
       // Create the Library entry and get its data.
@@ -635,17 +617,14 @@ const LibraryAutocomplete: FC<{
         position: 0,
       }) as Activity;
       addFromLibrary(newActivity, libraryEntry);
-
-      // TODO
-      // Hide the activity input and autocomplete menu
-      // setActivityName(null);
-
-      toast.success(`Added "${query}" to Activity Library!`);
+      // Set the input state to the query value so that LibraryAutocomplete
+      // renders just the autocomplete options for that exact new input
+      setActivityName(query);
     } catch (error) {
       // @ts-ignore
       toast.error(error.message);
     }
-  }, [user.uid, addFromLibrary, query]);
+  }, [user.uid, addFromLibrary, query, setActivityName]);
 
   // TODO - Add X button to activity input to clear it instantly
   return (
@@ -653,18 +632,31 @@ const LibraryAutocomplete: FC<{
       {queriedActivites => {
         if (queriedActivites.length > 1) {
           return (
-            <Columns>
-              <Grid container spacing={1}>
-                {queriedActivites.map(savedActivity => (
-                  <Grid item key={savedActivity.id}>
-                    <Chip
-                      label={savedActivity.name}
-                      onClick={() => setActivityName(savedActivity.name)}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            </Columns>
+            <Stack spacing={1}>
+              {queriedActivites.map(savedActivity => (
+                <Box
+                  display="flex"
+                  width="100%"
+                  sx={{
+                    borderRadius: '8px',
+                    backgroundColor: '#eee', // TODO Use color from theme (MuiChip bgColor)
+                    border: '1px solid #ddd',
+                    padding: '0.5rem 1.0rem',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                  onClick={() => setActivityName(savedActivity.name)}
+                >
+                  <Box key={savedActivity.id}>
+                    <ActivityNameBold name={savedActivity.name} />
+                    <Typography color="textSecondary" variant="subtitle2">
+                      {savedActivity.history.length} logs
+                    </Typography>
+                  </Box>
+                  <Add />
+                </Box>
+              ))}
+            </Stack>
           );
         }
         if (queriedActivites.length === 1) {
@@ -676,25 +668,20 @@ const LibraryAutocomplete: FC<{
           );
         }
         return (
-          <Grid
-            container
-            direction="column"
-            justifyContent="center"
-            alignItems="center"
-            height="100%"
+          <Stack
             spacing={3}
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%',
+              padding: '2rem',
+            }}
           >
-            <Grid item>
-              <Typography variant="body1" color="textSecondary">
-                <b>No results.</b>
-              </Typography>
-            </Grid>
-            <Grid item>
-              <Button variant="outlined" onClick={createSavedActivity}>
-                Add "{query}" to Library
-              </Button>
-            </Grid>
-          </Grid>
+            <Button variant="outlined" onClick={createSavedActivity}>
+              Add "{query}" to Library
+            </Button>
+          </Stack>
         );
       }}
     </DataStateView>
@@ -742,7 +729,7 @@ const LibraryMenuSavedActivityView: FC<{
   return (
     <DataStateView data={pastActivities} empty={() => <p>No history!</p>} loading={() => null}>
       {pastActivities => (
-        <Columns pad={Pad.Medium}>
+        <Stack spacing={3} sx={{ padding: '0.5rem 0' }}>
           {/** TODO Display `activity.name` as title section and use background-color grouping */}
           {pastActivities.length === 0 ? (
             <Typography variant="body1" color="textSecondary">
@@ -751,28 +738,44 @@ const LibraryMenuSavedActivityView: FC<{
             </Typography>
           ) : (
             pastActivities.map(activity => (
-              <Columns key={activity.id}>
+              <Stack
+                key={activity.id}
+                sx={{
+                  borderLeft: `3px solid ${Color.ActionPrimaryBlue}`,
+                  padding: '0.5rem 1.0rem',
+                  backgroundColor: '#f4f9ff',
+                }}
+              >
                 <Rows center between onClick={() => addFromLibrary(activity, savedActivity)}>
-                  <p>{activity.name}</p>
-                  <DataStateView
-                    data={buildDate(activity.timestamp)}
-                    loading={() => null}
-                    error={() => null}
-                  >
-                    {date => <p className={smallFont}>{date}</p>}
-                  </DataStateView>
+                  <Typography variant="subtitle2" color="textSecondary">
+                    {activity.name}
+                  </Typography>
+                  <Stack direction="row" display="flex" alignItems="center" spacing={1}>
+                    <DataStateView
+                      data={buildDate(activity.timestamp)}
+                      loading={() => null}
+                      error={() => null}
+                    >
+                      {date => (
+                        <Typography color="textSecondary" variant="subtitle2">
+                          {date}
+                        </Typography>
+                      )}
+                    </DataStateView>
+                    <Add fontSize="small" sx={{ color: theme => theme.palette.primary.main }}/>
+                  </Stack>
                 </Rows>
                 <Rows pad={Pad.Small}>
                   {activity.sets.map(set => (
-                    <p className={smallFont} key={set.uuid}>
+                    <Typography variant="body2" key={set.uuid}>
                       {set.weight}x{set.repCount}
-                    </p>
+                    </Typography>
                   ))}
                 </Rows>
-              </Columns>
+              </Stack>
             ))
           )}
-        </Columns>
+        </Stack>
       )}
     </DataStateView>
   );

@@ -884,7 +884,7 @@ export const ActivityView = forwardRef<
  * Displays the given Activity name with several or none parts in
  * bold based on the number of words.
  */
-const ActivityNameBold: FC<{ name: string }> = ({ name }) => {
+export const ActivityNameBold: FC<{ name: string }> = ({ name }) => {
   const parts = name.split(/\s+/g);
   const numParts = parts.length;
   if (numParts === 0) {
@@ -899,7 +899,7 @@ const ActivityNameBold: FC<{ name: string }> = ({ name }) => {
     const [first, ...rest] = parts;
     return (
       <>
-        <b>{first}</b> {rest.join(' ')}
+        <b>{first} </b> {rest.join(' ')}
       </>
     );
   } else if (numParts >= 4) {
