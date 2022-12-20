@@ -587,7 +587,6 @@ const LibraryAutocomplete: FC<{
     [query, user.uid]
   );
 
-  // TODO Also needs to add this new activity to the current log and
   const createSavedActivity = useCallback(async () => {
     try {
       // Create the Library entry and get its data.
@@ -634,7 +633,7 @@ const LibraryAutocomplete: FC<{
                   width="100%"
                   sx={{
                     borderRadius: '8px',
-                    backgroundColor: '#eee', // TODO Use color from theme (MuiChip bgColor)
+                    backgroundColor: '#eee',
                     border: '1px solid #ddd',
                     padding: '0.5rem 1.0rem',
                     alignItems: 'center',
@@ -725,7 +724,7 @@ const LibraryMenuSavedActivityView: FC<{
     <DataStateView data={pastActivities} empty={() => <p>No history!</p>} loading={() => null}>
       {pastActivities => (
         <Stack spacing={3} sx={{ padding: '0.5rem 0' }}>
-          {/** TODO Display `activity.name` as title section and use background-color grouping */}
+          {/** TODO Display `activity.name` as title section and use background-color grouping (?) */}
           {pastActivities.length === 0 ? (
             <Typography variant="body1" color="textSecondary">
               {/** TODO This displays for things that have history actuall... */}
