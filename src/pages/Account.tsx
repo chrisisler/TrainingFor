@@ -569,7 +569,7 @@ const CheckinDrawer: FC<{
   return (
     <Stack spacing={4} width="100%">
       <Typography variant="overline" lineHeight={1}>
-        <b>Daily check-in for {format(new Date(), Format.date)}:</b>
+      <b>{format(new Date(), Format.date)} Check-in</b>
       </Typography>
       <Box width="100%">
         <FormControlLabel
@@ -579,7 +579,7 @@ const CheckinDrawer: FC<{
               onChange={event => setIsHighStressDay(event.target.checked)}
             />
           }
-          label="High stress day"
+          label="High stress day?"
           labelPlacement="end"
         />
       </Box>

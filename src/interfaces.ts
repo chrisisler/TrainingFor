@@ -124,6 +124,9 @@ export interface Activity extends FirestoreDocument {
  * A SavedActivity is an Activity belonging to the Library collection. It
  * represents activities commonly executed in training logs and powers a data
  * visualization of the history.
+ *
+ * As of commit 11d04b3 a SavedActivity (an activity in the Library) MUST exist
+ * in the Library for that activity to even be added to the log.
  */
 export interface SavedActivity extends FirestoreDocument {
   name: string;
@@ -131,6 +134,10 @@ export interface SavedActivity extends FirestoreDocument {
    * The list of occurrences of an Activity.
    */
   history: { activityId: string; logId: string }[];
+  /**
+   * The last datetime this activity was performed.
+   */
+  lastSeen: FirestoreTimestamp;
 }
 
 export interface ActivitySet {
@@ -184,6 +191,7 @@ export const SavedActivity = {
   create: (data: Pick<SavedActivity, 'name'>): Omit<SavedActivity, 'id'> => ({
     ...data,
     history: [],
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
   }),
 };
 
