@@ -105,7 +105,12 @@ export interface Behavior extends FirestoreDocument {
   isHighStressDay: boolean;
 }
 
+// TODO Since all Activity instances are tied to a SavedActivity in order to
+// exist/be created, Activity needs to have a reference to the SavedActivity
+// instance that owns it.
 export interface Activity extends FirestoreDocument {
+  // TODO
+  // savedActivityId: string;
   name: string;
   notes: null | string;
   position: number;

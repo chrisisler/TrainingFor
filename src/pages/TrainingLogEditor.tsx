@@ -190,6 +190,7 @@ export const TrainingLogEditor: FC = () => {
       setActivityName('');
       try {
         const prevMaxPosition = activities[activities.length - 1]?.position ?? 0;
+        // Get list of sets with status reset
         const sets = activity.sets.map(s => {
           s.status = ActivitySetStatus.Unattempted;
           return s;
@@ -199,7 +200,7 @@ export const TrainingLogEditor: FC = () => {
           sets,
           position: prevMaxPosition + 1,
           logId: log.id,
-          timestamp: log.timestamp,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           weightUnit: activity.weightUnit,
           repCountUnit: activity.repCountUnit,
         });
@@ -212,12 +213,14 @@ export const TrainingLogEditor: FC = () => {
           .add(newActivity);
         // Add new Activity entry to SavedActivity.history
         const history = saved.history.concat({ activityId, logId: log.id });
+        // Update lastSeen field since this SavedActivity has been used again
+        const lastSeen = firebase.firestore.FieldValue.serverTimestamp();
         await db
           .user(user.uid)
           .collection(DbPath.UserActivityLibrary)
           .withConverter(DbConverter.SavedActivity)
           .doc(saved.id)
-          .set({ history }, { merge: true });
+          .set({ history, lastSeen }, { merge: true });
       } catch (error) {
         // @ts-ignore
         toast.error(error.message);
@@ -583,7 +586,23 @@ const LibraryAutocomplete: FC<{
             }
             return [];
           })
-        ),
+        )
+        .then(savedActivities => {
+          savedActivities.forEach(_ => console.log(_.lastSeen))
+          // Sort array by frequency - size of history
+          const byFrequency = savedActivities.sort((a, b) => {
+            if (!a.history.length || !b.history.length) return NaN;
+            if (a.history.length === b.history.length) return 0;
+            return a.history.length > b.history.length ? -1 : 1;
+          });
+          // Sort array by recency - most recent lastSeen timestamp
+          const byRecency = byFrequency.sort((a, b) => {
+            if (!a.lastSeen || !b.lastSeen) return NaN;
+            if (a.lastSeen === b.lastSeen) return 0;
+            return a.lastSeen > b.lastSeen ? -1 : 1;
+          });
+          return byRecency;
+        }),
     [query, user.uid]
   );
 
