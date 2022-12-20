@@ -2,6 +2,7 @@ import { css } from '@emotion/css';
 import {
   Box,
   Button,
+  IconButton,
   Menu,
   MenuItem,
   Stack,
@@ -9,7 +10,7 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { Add, Menu as MenuIcon } from '@material-ui/icons';
+import { Add, ChevronRight, Close, Menu as MenuIcon } from '@material-ui/icons';
 import format from 'date-fns/format';
 import firebase from 'firebase/app';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
@@ -526,7 +527,7 @@ export const TrainingLogEditor: FC = () => {
             PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
           >
             <Stack spacing={2}>
-              <Box sx={{ maxHeight: '30vh', overflowY: 'scroll' }}>
+              <Box sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
                 <LibraryAutocomplete
                   query={activityName}
                   setActivityName={(name: string) => setActivityName(name)}
@@ -541,6 +542,20 @@ export const TrainingLogEditor: FC = () => {
                 value={activityName}
                 onChange={event => {
                   setActivityName(event.target.value);
+                }}
+                InputProps={{
+                  endAdornment: !!activityName && (
+                    <IconButton
+                      disableRipple
+                      size="small"
+                      onClick={() => {
+                        // Clear the input
+                        setActivityName('');
+                      }}
+                    >
+                      <Close />
+                    </IconButton>
+                  ),
                 }}
               />
             </Stack>
@@ -588,7 +603,6 @@ const LibraryAutocomplete: FC<{
           })
         )
         .then(savedActivities => {
-          savedActivities.forEach(_ => console.log(_.lastSeen))
           // Sort array by frequency - size of history
           const byFrequency = savedActivities.sort((a, b) => {
             if (!a.history.length || !b.history.length) return NaN;
@@ -754,7 +768,9 @@ const LibraryMenuSavedActivityView: FC<{
               <Stack
                 key={activity.id}
                 sx={{
+                  border: `1px solid ${Color.ActionPrimaryBlue}`,
                   borderLeft: `3px solid ${Color.ActionPrimaryBlue}`,
+                  borderRadius: '3px',
                   padding: '0.5rem 1.0rem',
                   backgroundColor: '#f4f9ff',
                 }}
@@ -775,12 +791,12 @@ const LibraryMenuSavedActivityView: FC<{
                         </Typography>
                       )}
                     </DataStateView>
-                    <Add fontSize="small" sx={{ color: theme => theme.palette.primary.main }} />
+                    <ChevronRight sx={{ color: theme => theme.palette.primary.main }} />
                   </Stack>
                 </Rows>
                 <Rows pad={Pad.Small}>
                   {activity.sets.map(set => (
-                    <Typography variant="body2" key={set.uuid}>
+                    <Typography variant="body1" key={set.uuid}>
                       {set.weight}x{set.repCount}
                     </Typography>
                   ))}
