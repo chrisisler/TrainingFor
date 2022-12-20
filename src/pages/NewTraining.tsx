@@ -10,7 +10,7 @@ import { Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
 import { useUser } from '../hooks';
-import { TrainingLog, TrainingTemplate } from '../interfaces';
+import { SavedActivity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { Columns, Pad } from '../style';
 
 export const NewTraining: FC = () => {
@@ -54,6 +54,7 @@ export const NewTraining: FC = () => {
     [templates, templateId]
   );
 
+  // May (or may not) be a log created from a template.
   const createTrainingLog = useCallback(async () => {
     const templateTitle = DataState.isReady(selectedTemplate) ? selectedTemplate.title : '';
     const templateId = DataState.isReady(selectedTemplate) ? selectedTemplate.id : null;
@@ -101,6 +102,35 @@ export const NewTraining: FC = () => {
               toast.error(error.message);
             });
           batch.set(newLogActivityRef, templateActivity);
+          // Activities from templates have their history added to their linked
+          // savedActivityId if it exists
+          if (!!templateActivity.savedActivityId) {
+            const ref: firebase.firestore.DocumentReference<SavedActivity> = db
+              .user(user.uid)
+              .collection(DbPath.UserTemplateActivities)
+              .withConverter(DbConverter.SavedActivity)
+              .doc(templateActivity.savedActivityId);
+            ref
+              .get()
+              .then(doc => doc.data())
+              .then(saved => {
+                if (!saved) {
+                  toast.error('Saved Activity not found.');
+                  return;
+                }
+                // Add new Activity entry to SavedActivity.history
+                const history = saved.history.concat({
+                  activityId: templateActivity.id,
+                  logId: templateActivity.logId,
+                });
+                // Update lastSeen field since this SavedActivity has been used again
+                const lastSeen = firebase.firestore.FieldValue.serverTimestamp();
+                return ref.set({ history, lastSeen }, { merge: true });
+              })
+              .catch(error => {
+                toast.error(error.message);
+              });
+          }
         });
         await batch.commit();
         // Add this log to the list of logs created from the selected template

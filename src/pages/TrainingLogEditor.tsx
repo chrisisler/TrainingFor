@@ -204,6 +204,7 @@ export const TrainingLogEditor: FC = () => {
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           weightUnit: activity.weightUnit,
           repCountUnit: activity.repCountUnit,
+          savedActivityId: saved.id,
         });
         // Add Activity to the current TrainingLog and get its ID
         const { id: activityId } = await db
@@ -642,6 +643,7 @@ const LibraryAutocomplete: FC<{
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         logId: '',
         position: 0,
+        savedActivityId: libraryEntry.id,
       }) as Activity;
       addFromLibrary(newActivity, libraryEntry);
       // Set the input state to the query value so that LibraryAutocomplete

@@ -109,8 +109,7 @@ export interface Behavior extends FirestoreDocument {
 // exist/be created, Activity needs to have a reference to the SavedActivity
 // instance that owns it.
 export interface Activity extends FirestoreDocument {
-  // TODO
-  // savedActivityId: string;
+  savedActivityId: string;
   name: string;
   notes: null | string;
   position: number;
