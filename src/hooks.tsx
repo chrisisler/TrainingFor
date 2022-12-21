@@ -89,3 +89,18 @@ export const useResizableInputRef = (): React.MutableRefObject<HTMLInputElement 
 
   return inputRef;
 };
+
+/**
+ * Returns a version of the given state that can be compared against the latest
+ * props.
+ */
+export function usePrevious<T>(value: T): T {
+  const ref = useRef(value);
+
+  useEffect(() => {
+    ref.current = value;
+  });
+
+  return ref.current;
+}
+

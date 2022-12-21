@@ -27,7 +27,7 @@ import {
 import { Format, Months, Paths } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { db, DbConverter, DbPath } from '../firebase';
-import { useMaterialMenu, useUser } from '../hooks';
+import { useMaterialMenu, usePrevious, useUser } from '../hooks';
 import {
   Activity,
   ActivityRepCountUnit,
@@ -581,6 +581,10 @@ const LibraryAutocomplete: FC<{
 }> = ({ query, setActivityName, addFromLibrary }) => {
   const user = useUser();
 
+  const [selected, setSelected] = useState<null | SavedActivity>(null);
+  const prevQuery = usePrevious(query);
+
+  // TODO Debounce this
   // SavedActivity's matching the query
   const [queriedActivites] = useDataState(
     () =>
@@ -655,7 +659,21 @@ const LibraryAutocomplete: FC<{
     }
   }, [user.uid, addFromLibrary, query, setActivityName]);
 
-  // TODO - Add X button to activity input to clear it instantly
+  useEffect(() => {
+    // When user types after `selected` exists, set selected to null to avoid
+    // blocking UI from displaying the updated list results
+    if (selected && prevQuery !== query) {
+      setSelected(null);
+    }
+  }, [prevQuery, query, selected]);
+
+  // True if one SavedActivity out of multiple has been user-selected
+  if (selected) {
+    return (
+      <LibraryMenuSavedActivityView savedActivity={selected} addFromLibrary={addFromLibrary} />
+    );
+  }
+
   return (
     <DataStateView data={queriedActivites}>
       {queriedActivites => {
@@ -674,7 +692,12 @@ const LibraryAutocomplete: FC<{
                     alignItems: 'center',
                     justifyContent: 'space-between',
                   }}
-                  onClick={() => setActivityName(savedActivity.name)}
+                  onClick={() => {
+                    // If this just sets thie name to a subset of something, we
+                    // know what they clicked, just go to the library
+                    // autocomplete for JUST that item.
+                    setSelected(savedActivity);
+                  }}
                 >
                   <Box key={savedActivity.id}>
                     <ActivityNameBold name={savedActivity.name} />
@@ -688,14 +711,7 @@ const LibraryAutocomplete: FC<{
             </Stack>
           );
         }
-        if (queriedActivites.length === 1) {
-          return (
-            <LibraryMenuSavedActivityView
-              savedActivity={queriedActivites[0]}
-              addFromLibrary={addFromLibrary}
-            />
-          );
-        }
+        // Button to create `query` as a new activity
         return (
           <Stack
             spacing={3}
@@ -708,7 +724,7 @@ const LibraryAutocomplete: FC<{
             }}
           >
             <Button variant="outlined" onClick={createSavedActivity}>
-              Add "{query}" to Library
+              Create "{query}" as Activity
             </Button>
           </Stack>
         );
@@ -758,7 +774,7 @@ const LibraryMenuSavedActivityView: FC<{
   return (
     <DataStateView data={pastActivities} empty={() => <p>No history!</p>} loading={() => null}>
       {pastActivities => (
-        <Stack spacing={3} sx={{ padding: '0.5rem 0' }}>
+        <Stack spacing={2} sx={{ padding: '0.5rem 0' }}>
           {/** TODO Display `activity.name` as title section and use background-color grouping (?) */}
           {pastActivities.length === 0 ? (
             <Typography variant="body1" color="textSecondary">
