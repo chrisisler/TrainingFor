@@ -526,6 +526,8 @@ export const Account: FC = () => {
 const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ templates }) => {
   /** The ID of the selected template, if there is one. */
   const [templateId, setTemplateId] = useState('');
+  /** The controlled input of the new TrainingLog title. */
+  const [title, setTitle] = useState(() => `${Weekdays[new Date().getDay()]} Training`);
 
   const user = useUser();
   const history = useHistory();
@@ -537,9 +539,8 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
 
   // May (or may not) be a log created from a template.
   const createTrainingLog = useCallback(async () => {
-    const templateTitle = DataState.isReady(selectedTemplate) ? selectedTemplate.title : '';
+    // const templateTitle = DataState.isReady(selectedTemplate) ? selectedTemplate.title : '';
     const templateId = DataState.isReady(selectedTemplate) ? selectedTemplate.id : null;
-    const title = `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`;
     const newLog = TrainingLog.create({
       title,
       authorId: user.uid,
@@ -628,15 +629,15 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
     } catch (error) {
       toast.error(error.message);
     }
-  }, [history, user.uid, selectedTemplate]);
+  }, [selectedTemplate, title, user.uid, history]);
 
   return (
     <Stack spacing={4} width="100%" sx={{ margin: '1rem 0' }}>
       <FormControl disabled={!DataState.isReady(templates)}>
-        <InputLabel htmlFor="template-helper">Training Templates</InputLabel>
+        <InputLabel htmlFor="template-helper" >Training Templates</InputLabel>
         <NativeSelect
           value={templateId}
-          variant="standard"
+          // Setting the ID selects the template
           onChange={event => setTemplateId(event.target.value)}
           inputProps={{
             name: 'Training Template',
@@ -664,7 +665,18 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
         </NativeSelect>
       </FormControl>
 
-      {/** Add input for training log name here. */}
+      <TextField
+        fullWidth
+        required
+        autoFocus
+        disabled={typeof title !== 'string' || title === ''}
+        // variant="standard"
+        label="Title"
+        value={title}
+        onChange={event => {
+          setTitle(event.target.value);
+        }}
+      />
 
       <Button variant="contained" color="primary" onClick={createTrainingLog} size="large">
         New Training
