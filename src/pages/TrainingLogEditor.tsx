@@ -523,18 +523,11 @@ export const TrainingLogEditor: FC = () => {
 
           {/** Add Activity Drawer */}
           <SwipeableDrawer
-            anchor="bottom"
+            anchor="top"
             {...addActivityDrawer}
             PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
           >
             <Stack spacing={2}>
-              <Box sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
-                <LibraryAutocomplete
-                  query={activityName}
-                  setActivityName={(name: string) => setActivityName(name)}
-                  addFromLibrary={addFromLibrary}
-                />
-              </Box>
               <TextField
                 fullWidth
                 variant="standard"
@@ -559,6 +552,13 @@ export const TrainingLogEditor: FC = () => {
                   ),
                 }}
               />
+              <Box sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
+                <LibraryAutocomplete
+                  query={activityName}
+                  setActivityName={(name: string) => setActivityName(name)}
+                  addFromLibrary={addFromLibrary}
+                />
+              </Box>
             </Stack>
           </SwipeableDrawer>
         </Box>
@@ -772,7 +772,11 @@ const LibraryMenuSavedActivityView: FC<{
   }, [user.uid, savedActivity.history]);
 
   return (
-    <DataStateView data={pastActivities} empty={() => <p>No history!</p>} loading={() => null}>
+    <DataStateView
+      data={pastActivities}
+      empty={() => <p>No {savedActivity.name} history.</p>}
+      loading={() => <p>Loading {savedActivity.name} history...</p>}
+    >
       {pastActivities => (
         <Stack spacing={2} sx={{ padding: '0.5rem 0' }}>
           {/** TODO Display `activity.name` as title section and use background-color grouping (?) */}
