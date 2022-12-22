@@ -4,10 +4,13 @@ import {
   Box,
   Button,
   ClickAwayListener,
+  FormControl,
   FormControlLabel,
   IconButton,
+  InputLabel,
   Menu,
   MenuItem,
+  NativeSelect,
   Stack,
   SwipeableDrawer,
   Switch,
@@ -19,7 +22,7 @@ import {
 import { Add, Check, ChevronRight, Delete, Save } from '@material-ui/icons';
 import { format } from 'date-fns';
 import firebase from 'firebase/app';
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -27,7 +30,7 @@ import { Format, Paths, Weekdays } from '../constants';
 import { DataState, DataStateView, useDataState } from '../DataState';
 import { auth, db, DbConverter, DbPath } from '../firebase';
 import { useMaterialMenu, useUser } from '../hooks';
-import { Behavior, Checkin, TrainingLog, TrainingTemplate } from '../interfaces';
+import { Behavior, Checkin, SavedActivity, TrainingLog, TrainingTemplate } from '../interfaces';
 import { baseBg, Color, Columns, Pad, Rows } from '../style';
 
 /**
@@ -48,6 +51,7 @@ export const Account: FC = () => {
   const { ref: _1, ...behaviorsDrawer } = useMaterialMenu();
   const { ref: _2, ...addEditBehaviorDrawer } = useMaterialMenu();
   const { ref: _3, ...checkinDrawer } = useMaterialMenu();
+  const { ref: _4, ...newTrainingDrawer } = useMaterialMenu();
 
   /**
    * TODO
@@ -189,6 +193,7 @@ export const Account: FC = () => {
             </Button>
           </span>
         </Box>
+
         {/** TODO: Drawer-ify this menu. */}
         <ClickAwayListener onClickAway={menu.onClose}>
           <span>
@@ -221,14 +226,15 @@ export const Account: FC = () => {
           </span>
         </ClickAwayListener>
 
-        {!userId && (
-          <Box display="flex">
+        <Stack direction="row" spacing={2} sx={{ padding: theme => theme.spacing(1) }}>
+          {!userId && (
             <Badge
               badgeContent={DataState.isReady(hasCheckedIn) && hasCheckedIn ? undefined : <b>!</b>}
               color="secondary"
             >
               <Button
                 variant="outlined"
+                size="large"
                 fullWidth
                 onClick={event => {
                   behaviorsDrawer.onOpen(event);
@@ -237,15 +243,27 @@ export const Account: FC = () => {
                 Behaviors
               </Button>
             </Badge>
-          </Box>
-        )}
+          )}
+
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            startIcon={<Add />}
+            onClick={event => {
+              newTrainingDrawer.onOpen(event);
+            }}
+          >
+            Training
+          </Button>
+        </Stack>
       </Stack>
 
       {/** Behaviors Drawer UI */}
       <SwipeableDrawer
         anchor="right"
         {...behaviorsDrawer}
-        PaperProps={{ sx: { padding: theme => theme.spacing(3), width: '85vw' } }}
+        PaperProps={{ sx: { padding: theme => theme.spacing(4), width: '85vw' } }}
       >
         <Stack spacing={3}>
           <Typography variant="overline" lineHeight={1}>
@@ -401,6 +419,14 @@ export const Account: FC = () => {
         <CheckinDrawer behaviors={behaviors} onClose={checkinDrawer.onClose} />
       </SwipeableDrawer>
 
+      <SwipeableDrawer
+        anchor="top"
+        {...newTrainingDrawer}
+        PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
+      >
+        <NewTrainingDrawer templates={templates} />
+      </SwipeableDrawer>
+
       {/** List of TrainingLogs */}
       <DataStateView data={logs}>
         {logs => {
@@ -497,6 +523,156 @@ export const Account: FC = () => {
 //   );
 // };
 
+const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ templates }) => {
+  /** The ID of the selected template, if there is one. */
+  const [templateId, setTemplateId] = useState('');
+
+  const user = useUser();
+  const history = useHistory();
+
+  const selectedTemplate: DataState<TrainingTemplate> = useMemo(
+    () => DataState.map(templates, _ => _.find(t => t.id === templateId) ?? DataState.Empty),
+    [templates, templateId]
+  );
+
+  // May (or may not) be a log created from a template.
+  const createTrainingLog = useCallback(async () => {
+    const templateTitle = DataState.isReady(selectedTemplate) ? selectedTemplate.title : '';
+    const templateId = DataState.isReady(selectedTemplate) ? selectedTemplate.id : null;
+    const title = `${Weekdays[new Date().getDay()]} ${templateTitle || 'Training'}`;
+    const newLog = TrainingLog.create({
+      title,
+      authorId: user.uid,
+      templateId,
+    });
+    try {
+      const newLogRef = await db.user(user.uid).collection(DbPath.UserLogs).add(newLog);
+      // Copy the activites to the new training log if using a template
+      if (DataState.isReady(selectedTemplate)) {
+        const logActivities = newLogRef.collection(DbPath.UserLogActivities);
+        const batch = db.batch();
+        const templateActivitiesSnapshot = await db
+          .user(user.uid)
+          .collection(DbPath.UserTemplates)
+          .doc(selectedTemplate.id)
+          .collection(DbPath.UserTemplateActivities)
+          .withConverter(DbConverter.Activity)
+          .get();
+        // Create new Activity documents with the same data from the
+        // Template but each their own custom ID
+        templateActivitiesSnapshot.docs.forEach(templateActivityDoc => {
+          const templateActivity = templateActivityDoc.data();
+          const newLogActivityRef = logActivities.doc();
+          const newLogActivityComments = newLogActivityRef
+            .collection(DbPath.UserLogActivityComments)
+            .withConverter(DbConverter.Comment);
+          // Asynchronously copy comments from templateActivity to logActivity
+          templateActivityDoc.ref
+            .collection(DbPath.UserLogActivityComments)
+            .withConverter(DbConverter.Comment)
+            .get()
+            .then(({ empty, docs }) => {
+              if (empty) return; // No comments to copy over
+              docs.forEach(commentDoc => {
+                newLogActivityComments.add(commentDoc.data()).catch(error => {
+                  toast.error(error.message);
+                });
+              });
+            })
+            .catch(error => {
+              toast.error(error.message);
+            });
+          batch.set(newLogActivityRef, templateActivity);
+          // Activities from templates have their history added to their linked
+          // savedActivityId if it exists
+          if (!!templateActivity.savedActivityId) {
+            const ref: firebase.firestore.DocumentReference<SavedActivity> = db
+              .user(user.uid)
+              .collection(DbPath.UserTemplateActivities)
+              .withConverter(DbConverter.SavedActivity)
+              .doc(templateActivity.savedActivityId);
+            ref
+              .get()
+              .then(doc => doc.data())
+              .then(saved => {
+                if (!saved) {
+                  toast.error('Saved Activity not found.');
+                  return;
+                }
+                // Add new Activity entry to SavedActivity.history
+                const history = saved.history.concat({
+                  activityId: templateActivity.id,
+                  logId: templateActivity.logId,
+                });
+                // Update lastSeen field since this SavedActivity has been used again
+                const lastSeen = firebase.firestore.FieldValue.serverTimestamp();
+                return ref.set({ history, lastSeen }, { merge: true });
+              })
+              .catch(error => {
+                toast.error(error.message);
+              });
+          }
+        });
+        await batch.commit();
+        // Add this log to the list of logs created from the selected template
+        // TODO add this to the batch above.
+        await db
+          .user(user.uid)
+          .collection(DbPath.UserTemplates)
+          .doc(selectedTemplate.id)
+          .update({
+            logIds: firebase.firestore.FieldValue.arrayUnion(newLogRef.id),
+          });
+      }
+      history.push(Paths.logEditor(newLogRef.id));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [history, user.uid, selectedTemplate]);
+
+  return (
+    <Stack spacing={4} width="100%" sx={{ margin: '1rem 0' }}>
+      <FormControl disabled={!DataState.isReady(templates)}>
+        <InputLabel htmlFor="template-helper">Training Templates</InputLabel>
+        <NativeSelect
+          value={templateId}
+          variant="standard"
+          onChange={event => setTemplateId(event.target.value)}
+          inputProps={{
+            name: 'Training Template',
+            id: 'template-helper',
+          }}
+        >
+          <option aria-label="None" value=""></option>
+          <DataStateView data={templates} error={() => null} loading={() => null}>
+            {templates =>
+              !!templates.length ? (
+                <>
+                  {Array.from(templates.values()).map(template => (
+                    <option key={template.id} value={template.id}>
+                      {template.title}
+                    </option>
+                  ))}
+                </>
+              ) : (
+                <option aria-label="None" value="">
+                  No templates!
+                </option>
+              )
+            }
+          </DataStateView>
+        </NativeSelect>
+      </FormControl>
+
+      {/** Add input for training log name here. */}
+
+      <Button variant="contained" color="primary" onClick={createTrainingLog} size="large">
+        New Training
+      </Button>
+    </Stack>
+  );
+};
+
 /**
  * An answer to a user-generated question about their own behavior/habits.
  * Null represents unanswered/initial state.
@@ -569,7 +745,7 @@ const CheckinDrawer: FC<{
   return (
     <Stack spacing={4} width="100%">
       <Typography variant="overline" lineHeight={1}>
-      <b>{format(new Date(), Format.date)} Check-in</b>
+        <b>{format(new Date(), Format.date)} Check-in</b>
       </Typography>
       <Box width="100%">
         <FormControlLabel
