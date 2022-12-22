@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, } from 'react';
 
 import { Columns, Pad } from '../style';
 

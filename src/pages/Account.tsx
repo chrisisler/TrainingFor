@@ -614,16 +614,15 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
               });
           }
         });
-        await batch.commit();
-        // Add this log to the list of logs created from the selected template
-        // TODO add this to the batch above.
-        await db
+        const templateDocument = db
           .user(user.uid)
           .collection(DbPath.UserTemplates)
-          .doc(selectedTemplate.id)
-          .update({
-            logIds: firebase.firestore.FieldValue.arrayUnion(newLogRef.id),
-          });
+          .doc(selectedTemplate.id);
+        // Add this log to the list of logs created from the selected template
+        batch.update(templateDocument, {
+          logIds: firebase.firestore.FieldValue.arrayUnion(newLogRef.id),
+        });
+        await batch.commit();
       }
       history.push(Paths.logEditor(newLogRef.id));
     } catch (error) {
@@ -634,7 +633,7 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
   return (
     <Stack spacing={4} width="100%" sx={{ margin: '1rem 0' }}>
       <FormControl disabled={!DataState.isReady(templates)}>
-        <InputLabel htmlFor="template-helper" >Training Templates</InputLabel>
+        <InputLabel htmlFor="template-helper">Training Templates</InputLabel>
         <NativeSelect
           value={templateId}
           // Setting the ID selects the template
