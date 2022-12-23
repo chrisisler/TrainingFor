@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   ClickAwayListener,
+  Fade,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -20,7 +21,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { Add, Check, ChevronRight, Delete, Save } from '@material-ui/icons';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import firebase from 'firebase/app';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -58,7 +59,7 @@ export const Account: FC = () => {
    * Account UI re-write:
    * - [x] List of logs rendered + clicking takes user to log in editor view
    * - [x] Templates have the graph removed (poor API handling)
-   * - [ ] Use Drawer UI for creating new logs! Integrate the NewTraining page
+   * - [x] Use Drawer UI for creating new logs! Integrate the NewTraining page
    * - [ ] Implement list of viewable logs UI from each template as Drawer
    */
 
@@ -254,7 +255,7 @@ export const Account: FC = () => {
               newTrainingDrawer.onOpen(event);
             }}
           >
-            Training
+            Train
           </Button>
         </Stack>
       </Stack>
@@ -427,39 +428,9 @@ export const Account: FC = () => {
         <NewTrainingDrawer templates={templates} />
       </SwipeableDrawer>
 
-      {/** List of TrainingLogs */}
-      <DataStateView data={logs}>
-        {logs => {
-          return (
-            <Box sx={{ padding: theme => theme.spacing(0, 3) }}>
-              {/** TODO Why are there two DataStateView data={logs} ??? Fix this */}
-              <DataStateView data={logs}>
-                {logs => (
-                  <Stack sx={{ overflowY: 'scroll', maxHeight: '50vh' }}>
-                    <Columns pad={Pad.Medium}>
-                      {logs.map(log => (
-                        <Box
-                          key={log.id}
-                          sx={{ borderBottom: `1px solid ${Color.ActionSecondaryGray}` }}
-                          onClick={() => history.push(Paths.logEditor(log.id))}
-                        >
-                          <Typography>{log.title}</Typography>
-                          <Typography gutterBottom color="textSecondary" variant="body2">
-                            {format(
-                              (log.timestamp as firebase.firestore.Timestamp)?.toDate(),
-                              Format.date + ', ' + Format.time
-                            )}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Columns>
-                  </Stack>
-                )}
-              </DataStateView>
-            </Box>
-          );
-        }}
-      </DataStateView>
+      <Box sx={{ padding: theme => theme.spacing(0, 3) }}>
+        <TrainingLogsListView logs={logs} />
+      </Box>
 
       {/** List of templates */}
       <DataStateView data={templates}>
@@ -920,6 +891,7 @@ const TrainingTemplatePreview: FC<{
 }> = ({ template }) => {
   const history = useHistory();
   const user = useUser();
+  const { ref: _1, ...templateDrawer } = useMaterialMenu();
 
   const navigateToTemplate = useCallback(() => {
     const templatePath =
@@ -928,6 +900,35 @@ const TrainingTemplatePreview: FC<{
         : Paths.templateView(template.authorId, template.id);
     history.push(templatePath);
   }, [user.uid, template, history]);
+
+  const [templateLogs] = useDataState(async () => {
+    // Do NOT fetch each log data associated with this template.
+    if (templateDrawer.open === false) {
+      return DataState.Empty;
+    }
+    // Get all logs associated with this template.
+    const promises = template.logIds.map(
+      logId =>
+        db
+          .user(user.uid)
+          .collection(DbPath.UserLogs)
+          .withConverter(DbConverter.TrainingLog)
+          .doc(logId)
+          .get()
+          .then(_ => _.data()) // TODO Fetch ONLY id, name, timestamp fields
+    );
+    const logs = await Promise.all(promises);
+    // Tell TypeScript the predicate narrows the type
+    const filtered = logs.filter((_): _ is Exclude<typeof _, undefined> => _ !== undefined);
+    // Sort by date
+    return filtered.sort((a, b) => {
+      const dateA = (a.timestamp as firebase.firestore.Timestamp)?.toDate();
+      const dateB = (b.timestamp as firebase.firestore.Timestamp)?.toDate();
+      if (!dateA || !dateB) return NaN;
+      if (dateA === dateB) return 0;
+      return dateA > dateB ? -1 : 1;
+    });
+  }, [user.uid, templateDrawer.open, template.logIds]);
 
   /** Total volume calculated for each log in `template.logIds`. */
   // const [templateLogVolumes] = useDataState(
@@ -985,8 +986,32 @@ const TrainingTemplatePreview: FC<{
         min-height: 150px;
         border: 1px solid ${Color.ActionPrimaryGray};
       `}
-      onClick={navigateToTemplate}
+      onClick={templateDrawer.onOpen}
     >
+      <SwipeableDrawer
+        anchor="bottom"
+        {...templateDrawer}
+        PaperProps={{ sx: { padding: theme => theme.spacing(4) } }}
+      >
+        <Stack spacing={5}>
+          <Stack>
+            <Typography variant="h6">{template.title}</Typography>
+            <Typography color="textSecondary" variant="subtitle2">
+              Last performed:{' '}
+              {DataState.isReady(templateLogs) &&
+                formatDistanceToNowStrict(
+                  (templateLogs[0].timestamp as firebase.firestore.Timestamp)?.toDate(),
+                  { addSuffix: true }
+                )}
+            </Typography>
+          </Stack>
+          <TrainingLogsListView logs={templateLogs} />
+          <Button fullWidth onClick={navigateToTemplate} variant="contained">
+            Edit Template
+          </Button>
+        </Stack>
+      </SwipeableDrawer>
+
       <Rows center pad={Pad.Medium}>
         <div
           className={css`
@@ -1016,32 +1041,9 @@ const TrainingTemplatePreview: FC<{
           `}
         />
       </Rows>
-      <Rows center pad={Pad.Medium}>
-        {/**template.logIds.length > 1 && (
-          <DataStateView data={templateLogVolumes}>
-            {templateLogVolumes => (
-              <LineChart height={60} width={80} data={templateLogVolumes}>
-                <Line type="monotone" dot={false} dataKey="volume" strokeWidth={2} stroke="green" />
-              </LineChart>
-            )}
-          </DataStateView>
-        )*/}
-        {!!template.logIds.length && (
-          <Rows
-            pad={Pad.XSmall}
-            className={css`
-              align-items: center !important;
-            `}
-          >
-            <Typography variant="h4" color="textPrimary">
-              {template.logIds.length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Log{template.logIds.length === 1 ? '' : 's'}
-            </Typography>
-          </Rows>
-        )}
-      </Rows>
+      <Typography variant="overline" color="textSecondary">
+        Template
+      </Typography>
     </Columns>
   );
 };
@@ -1260,5 +1262,42 @@ const TrainingTemplateCreate: FC = () => {
         </div>
       </Columns>
     </Columns>
+  );
+};
+
+const TrainingLogsListView: FC<{ logs: DataState<TrainingLog[]> }> = ({ logs }) => {
+  const history = useHistory();
+
+  return (
+    <DataStateView data={logs}>
+      {logs => (
+        <Stack sx={{ overflowY: 'scroll', maxHeight: '50vh' }}>
+          <Fade in timeout={1000}>
+            <Box>
+              <Typography variant="overline" color="textSecondary">
+                {logs.length} logs
+              </Typography>
+              <Columns pad={Pad.Medium}>
+                {logs.map(log => (
+                  <Box
+                    key={log.id}
+                    sx={{ borderBottom: `1px solid ${Color.ActionSecondaryGray}` }}
+                    onClick={() => history.push(Paths.logEditor(log.id))}
+                  >
+                    <Typography>{log.title}</Typography>
+                    <Typography gutterBottom color="textSecondary" variant="body2">
+                      {format(
+                        (log.timestamp as firebase.firestore.Timestamp)?.toDate(),
+                        Format.date + ', ' + Format.time
+                      )}
+                    </Typography>
+                  </Box>
+                ))}
+              </Columns>
+            </Box>
+          </Fade>
+        </Stack>
+      )}
+    </DataStateView>
   );
 };
