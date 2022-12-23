@@ -633,7 +633,9 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
       />
 
       <Button variant="contained" color="primary" onClick={createTrainingLog} size="large">
-        New Training
+        {DataState.isReady(selectedTemplate)
+          ? `New ${selectedTemplate.title} Training`
+          : 'New Training'}
       </Button>
     </Stack>
   );
