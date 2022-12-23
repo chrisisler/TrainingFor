@@ -54,15 +54,6 @@ export const Account: FC = () => {
   const { ref: _3, ...checkinDrawer } = useMaterialMenu();
   const { ref: _4, ...newTrainingDrawer } = useMaterialMenu();
 
-  /**
-   * TODO
-   * Account UI re-write:
-   * - [x] List of logs rendered + clicking takes user to log in editor view
-   * - [x] Templates have the graph removed (poor API handling)
-   * - [x] Use Drawer UI for creating new logs! Integrate the NewTraining page
-   * - [ ] Implement list of viewable logs UI from each template as Drawer
-   */
-
   // const [selectedUser] = useDataState(
   //   () =>
   //     db
@@ -889,90 +880,7 @@ const FollowButton: FC = () => {
 const TrainingTemplatePreview: FC<{
   template: TrainingTemplate;
 }> = ({ template }) => {
-  const history = useHistory();
-  const user = useUser();
   const { ref: _1, ...templateDrawer } = useMaterialMenu();
-
-  const navigateToTemplate = useCallback(() => {
-    const templatePath =
-      template.authorId === user.uid
-        ? Paths.templateEditor(template.id)
-        : Paths.templateView(template.authorId, template.id);
-    history.push(templatePath);
-  }, [user.uid, template, history]);
-
-  const [templateLogs] = useDataState(async () => {
-    // Do NOT fetch each log data associated with this template.
-    if (templateDrawer.open === false) {
-      return DataState.Empty;
-    }
-    // Get all logs associated with this template.
-    const promises = template.logIds.map(
-      logId =>
-        db
-          .user(user.uid)
-          .collection(DbPath.UserLogs)
-          .withConverter(DbConverter.TrainingLog)
-          .doc(logId)
-          .get()
-          .then(_ => _.data()) // TODO Fetch ONLY id, name, timestamp fields
-    );
-    const logs = await Promise.all(promises);
-    // Tell TypeScript the predicate narrows the type
-    const filtered = logs.filter((_): _ is Exclude<typeof _, undefined> => _ !== undefined);
-    // Sort by date
-    return filtered.sort((a, b) => {
-      const dateA = (a.timestamp as firebase.firestore.Timestamp)?.toDate();
-      const dateB = (b.timestamp as firebase.firestore.Timestamp)?.toDate();
-      if (!dateA || !dateB) return NaN;
-      if (dateA === dateB) return 0;
-      return dateA > dateB ? -1 : 1;
-    });
-  }, [user.uid, templateDrawer.open, template.logIds]);
-
-  /** Total volume calculated for each log in `template.logIds`. */
-  // const [templateLogVolumes] = useDataState(
-  //   () =>
-  //     Promise.all(
-  //       template.logIds.map(logId =>
-  //         db
-  //           .user(user.uid)
-  //           .collection(DbPath.UserLogs)
-  //           .doc(logId)
-  //           .collection(DbPath.UserLogActivities)
-  //           .withConverter(DbConverter.Activity)
-  //           .get()
-  //           .then(snapshot => ({
-  //             volume: snapshot.docs
-  //               .map(doc => Activity.getVolume(doc.data()))
-  //               .reduce((sum, v) => sum + v, 0),
-  //           }))
-  //       )
-  //     ),
-  //   [user.uid, template.logIds]
-  // );
-
-  // const [latestLogDate] = useDataState(async () => {
-  //   if (template.logIds.length === 0) return DataState.Empty;
-  //   // All the Dates of logs created from this template
-  //   const promises = template.logIds.map(logId =>
-  //     db
-  //       .user(user.uid)
-  //       .collection(DbPath.UserLogs)
-  //       .doc(logId)
-  //       .get()
-  //       .then(doc => {
-  //         // `t` could be undefined
-  //         const t: TrainingLog['timestamp'] = doc.get('timestamp');
-  //         return (t as firebase.firestore.Timestamp)?.toDate();
-  //       })
-  //   );
-  //   const logDates = await Promise.all(promises);
-  //   // Convert dates to number to please the TypeScript machine
-  //   const sorted = logDates.filter(_ => _ !== void 0).sort((a, b) => +b - +a);
-  //   if (sorted.length === 0) return DataState.Empty;
-  //   return formatDistanceToNowStrict(sorted[0], { addSuffix: true });
-  // }, [user.uid, template]);
 
   return (
     <Columns
@@ -993,25 +901,12 @@ const TrainingTemplatePreview: FC<{
         {...templateDrawer}
         PaperProps={{ sx: { padding: theme => theme.spacing(4) } }}
       >
-        <Stack spacing={5}>
-          <Stack>
-            <Typography variant="h6">{template.title}</Typography>
-            <Typography color="textSecondary" variant="subtitle2">
-              Last performed:{' '}
-              {DataState.isReady(templateLogs) &&
-                formatDistanceToNowStrict(
-                  (templateLogs[0].timestamp as firebase.firestore.Timestamp)?.toDate(),
-                  { addSuffix: true }
-                )}
-            </Typography>
-          </Stack>
-          <TrainingLogsListView logs={templateLogs} />
-          <Button fullWidth onClick={navigateToTemplate} variant="contained">
-            Edit Template
-          </Button>
-        </Stack>
+        <TemplateDrawer template={template} />
       </SwipeableDrawer>
 
+      <Typography variant="overline" color="textSecondary" lineHeight={1.5}>
+        Template
+      </Typography>
       <Rows center pad={Pad.Medium}>
         <div
           className={css`
@@ -1028,11 +923,6 @@ const TrainingTemplatePreview: FC<{
           <Typography variant="body1" color="textPrimary">
             <b>{template.title}</b>
           </Typography>
-          {/**DataState.isReady(latestLogDate) && (
-            <Typography variant="caption" color="textSecondary">
-              {latestLogDate}
-            </Typography>
-          )*/}
         </Columns>
         <ChevronRight
           className={css`
@@ -1041,170 +931,9 @@ const TrainingTemplatePreview: FC<{
           `}
         />
       </Rows>
-      <Typography variant="overline" color="textSecondary">
-        Template
-      </Typography>
     </Columns>
   );
 };
-
-// const isLeapYear = (year: number): boolean =>
-//   (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-
-/**
- * @note When passing `monthIndex` remember that January is index 0.
- * @example const februaryDaysCount = getMonthLength(new Date(), 1)
- */
-// const getMonthLength = (now: Date, monthIndex: number): number => {
-//   const year = now.getFullYear();
-//   const lengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-//   return lengths[monthIndex];
-// };
-
-/**
- * Presents an active, clickable calendar date ("11") if a `logId` prop is
- * given, otherwise a neutral, non-interactable date display.
- *
- * Calendar dates with logs for those days display Popover menus onClick.
- */
-// const TrainingCalendarLog: FC<{
-//   dayOfMonth: number;
-//   /** If present, there is a TrainingLog associated with the given date. */
-//   logId?: string;
-// }> = ({ dayOfMonth, logId }) => {
-//   const history = useHistory();
-//   const { userId } = useParams<{ userId?: string }>();
-//   const user = useUser();
-
-//   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-
-//   const open = !!anchorEl;
-//   const id = open ? 'training-log-popover' : undefined;
-
-//   const nowDay = new Date().getDate() - 1;
-
-//   /**
-//    * The TrainingLog data for the log for this data, if it exists.
-//    * This is always `DataState.Empty` if the Popover is never opened.
-//    */
-//   const [log] = useDataState(async () => {
-//     // nah
-//     if (!open) return DataState.Empty;
-//     // fetch the log, the thing is open
-//     const data = await db
-//       .user(userId ?? user.uid)
-//       .collection(DbPath.UserLogs)
-//       .withConverter(DbConverter.TrainingLog)
-//       .doc(logId)
-//       .get()
-//       .then(doc => doc.data());
-//     if (!data) return DataState.error('Log not found');
-//     return data;
-//   }, [open, logId, userId, user.uid]);
-
-//   // How many times have we done this?
-//   const logDate = DataState.map(log, l => (l.timestamp as firebase.firestore.Timestamp)?.toDate());
-
-//   return (
-//     <IconButton
-//       disableRipple
-//       className={css`
-//         /** Up to seven items per row */
-//         flex-basis: 14.28% !important;
-//         padding: 0 !important;
-
-//         & p {
-//           padding: ${Pad.Small} 0 !important;
-//           width: 5ch;
-//           ${dayOfMonth === nowDay && `text-decoration: underline;`}
-//         }
-//       `}
-//       onClick={logId ? event => setAnchorEl(event.currentTarget) : undefined}
-//     >
-//       {logId ? (
-//         <>
-//           <Popover
-//             id={id}
-//             open={open}
-//             anchorEl={anchorEl}
-//             onClose={() => setAnchorEl(null)}
-//             anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
-//             transformOrigin={{ vertical: 'center', horizontal: 'center' }}
-//           >
-//             <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
-//               <Columns
-//                 pad={Pad.Small}
-//                 className={css`
-//                   padding: ${Pad.Medium};
-//                 `}
-//               >
-//                 <DataStateView data={DataState.all(log, logDate)}>
-//                   {([log, logDate]) => (
-//                     <>
-//                       <Rows pad={Pad.Medium} center>
-//                         <Columns
-//                           center
-//                           className={css`
-//                             background-color: ${baseBg};
-//                             border-radius: 20px;
-//                             padding: ${Pad.Small} ${Pad.Medium};
-//                             font-weight: 600 !important;
-//                           `}
-//                         >
-//                           <Typography variant="overline" color="textSecondary">
-//                             {Months[logDate.getMonth()].slice(0, 3)}
-//                           </Typography>
-//                           <Typography variant="body1" color="textSecondary">
-//                             {logDate.getDate()}
-//                           </Typography>
-//                         </Columns>
-//                         <Columns>
-//                           <Typography variant="body1" color="textPrimary">
-//                             {log.title}
-//                           </Typography>
-//                           <Typography variant="caption" color="textSecondary">
-//                             {formatDistanceToNowStrict(logDate, {
-//                               addSuffix: true,
-//                             })}
-//                           </Typography>
-//                         </Columns>
-//                       </Rows>
-//                       <Button
-//                         variant="contained"
-//                         color="primary"
-//                         onClick={() => history.push(Paths.logEditor(logId))}
-//                         size="large"
-//                       >
-//                         Go
-//                         <ChevronRight fontSize="small" />
-//                       </Button>
-//                     </>
-//                   )}
-//                 </DataStateView>
-//               </Columns>
-//             </ClickAwayListener>
-//           </Popover>
-//           <Typography
-//             aria-describedby={id}
-//             variant="body1"
-//             className={css`
-//               color: ${Color.ActionPrimaryBlue};
-//               background-color: ${baseBg};
-//               border-radius: 50%;
-//               box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-//             `}
-//           >
-//             {dayOfMonth + 1}
-//           </Typography>
-//         </>
-//       ) : (
-//         <Typography variant="body1" color="textSecondary">
-//           {dayOfMonth + 1}
-//         </Typography>
-//       )}
-//     </IconButton>
-//   );
-// };
 
 const TrainingTemplateCreate: FC = () => {
   const user = useUser();
@@ -1265,6 +994,66 @@ const TrainingTemplateCreate: FC = () => {
   );
 };
 
+const TemplateDrawer: FC<{ template: TrainingTemplate }> = ({ template }) => {
+  const history = useHistory();
+  const user = useUser();
+
+  const navigateToTemplate = useCallback(() => {
+    const templatePath =
+      template.authorId === user.uid
+        ? Paths.templateEditor(template.id)
+        : Paths.templateView(template.authorId, template.id);
+    history.push(templatePath);
+  }, [user.uid, template, history]);
+
+  // NOTE: This is only fetched when the Drawer (that renders this component)
+  // is actually open
+  const [templateLogs] = useDataState(async () => {
+    // Get all logs associated with this template.
+    const promises = template.logIds.map(
+      logId =>
+        db
+          .user(user.uid)
+          .collection(DbPath.UserLogs)
+          .withConverter(DbConverter.TrainingLog)
+          .doc(logId)
+          .get()
+          .then(_ => _.data()) // TODO Fetch ONLY id, name, timestamp fields
+    );
+    const logs = await Promise.all(promises);
+    // Tell TypeScript the predicate narrows the type
+    const filtered = logs.filter((_): _ is Exclude<typeof _, undefined> => _ !== undefined);
+    // Sort by date
+    return filtered.sort((a, b) => {
+      const dateA = (a.timestamp as firebase.firestore.Timestamp)?.toDate();
+      const dateB = (b.timestamp as firebase.firestore.Timestamp)?.toDate();
+      if (!dateA || !dateB) return NaN;
+      if (dateA === dateB) return 0;
+      return dateA > dateB ? -1 : 1;
+    });
+  }, [user.uid, template.logIds]);
+
+  return (
+    <Stack spacing={5}>
+      <Stack>
+        <Typography variant="h6">{template.title}</Typography>
+        <Typography color="textSecondary" variant="subtitle2">
+          Last performed:{' '}
+          {DataState.isReady(templateLogs) &&
+            formatDistanceToNowStrict(
+              (templateLogs[0].timestamp as firebase.firestore.Timestamp)?.toDate(),
+              { addSuffix: true }
+            )}
+        </Typography>
+      </Stack>
+      <TrainingLogsListView logs={templateLogs} />
+      <Button fullWidth onClick={navigateToTemplate} variant="contained">
+        Edit Template
+      </Button>
+    </Stack>
+  );
+};
+
 const TrainingLogsListView: FC<{ logs: DataState<TrainingLog[]> }> = ({ logs }) => {
   const history = useHistory();
 
@@ -1272,7 +1061,7 @@ const TrainingLogsListView: FC<{ logs: DataState<TrainingLog[]> }> = ({ logs }) 
     <DataStateView data={logs}>
       {logs => (
         <Stack sx={{ overflowY: 'scroll', maxHeight: '50vh' }}>
-          <Fade in timeout={1000}>
+          <Fade in timeout={750}>
             <Box>
               <Typography variant="overline" color="textSecondary">
                 {logs.length} logs
