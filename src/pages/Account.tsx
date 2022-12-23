@@ -3,13 +3,11 @@ import {
   Badge,
   Box,
   Button,
-  ClickAwayListener,
   Fade,
   FormControl,
   FormControlLabel,
   IconButton,
   InputLabel,
-  Menu,
   MenuItem,
   NativeSelect,
   Stack,
@@ -40,15 +38,15 @@ import { baseBg, Color, Columns, Pad, Rows } from '../style';
  */
 export const Account: FC = () => {
   const [newBehaviorName, setNewBehaviorName] = useState('');
-  // The Behavior instance being edited, if the context menu was opened for it
+  // The Behavior instance being edited, if addEditBehaviorDrawer is opened
   const [editingBehavior, setEditingBehavior] = useState<null | Behavior>(null);
 
   /** The ID of the selected user. Is `undefined` if viewing our own page. */
   const { userId } = useParams<{ userId?: string }>();
   const user = useUser();
-  const menu = useMaterialMenu();
   const history = useHistory();
   // Skip the `ref` prop since <SwipeableDrawer /> does not use it.
+  const { ref: _0, ...menu } = useMaterialMenu();
   const { ref: _1, ...behaviorsDrawer } = useMaterialMenu();
   const { ref: _2, ...addEditBehaviorDrawer } = useMaterialMenu();
   const { ref: _3, ...checkinDrawer } = useMaterialMenu();
@@ -160,7 +158,7 @@ export const Account: FC = () => {
       <Stack spacing={1} sx={{ padding: theme => theme.spacing(2, 3, 0) }}>
         {userId && <FollowButton />}
 
-        <Box display="flex">
+        <Box display="flex" onClick={menu.onOpen}>
           <Typography variant="h6" color="textSecondary">
             happy {Weekdays[new Date().getDay()].toLowerCase()}{' '}
           </Typography>
@@ -186,37 +184,32 @@ export const Account: FC = () => {
           </span>
         </Box>
 
-        {/** TODO: Drawer-ify this menu. */}
-        <ClickAwayListener onClickAway={menu.onClose}>
-          <span>
-            <Menu
-              id="account-menu"
-              anchorEl={menu.ref}
-              open={!!menu.ref}
-              onClose={menu.onClose}
-              MenuListProps={{ dense: true }}
+        <SwipeableDrawer
+          anchor="top"
+          {...menu}
+          PaperProps={{ sx: { padding: theme => theme.spacing(3) } }}
+        >
+          <Stack spacing={1}>
+            <MenuItem
+              onClick={() => {
+                history.push(Paths.library(user.uid));
+              }}
             >
-              <MenuItem
-                onClick={() => {
-                  history.push(Paths.library(user.uid));
-                }}
-              >
-                Activity Library
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  if (!window.confirm('Sign out?')) return;
-                  auth.signOut();
-                }}
-              >
-                Sign out
-              </MenuItem>
-              <MenuItem onClick={deleteAccount}>
-                <b>Delete account</b>
-              </MenuItem>
-            </Menu>
-          </span>
-        </ClickAwayListener>
+              Activity Library
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                if (!window.confirm('Sign out?')) return;
+                auth.signOut();
+              }}
+            >
+              Sign out
+            </MenuItem>
+            <MenuItem onClick={deleteAccount}>
+              <b>Delete account</b>
+            </MenuItem>
+          </Stack>
+        </SwipeableDrawer>
 
         <Stack direction="row" spacing={2} sx={{ padding: theme => theme.spacing(1) }}>
           {!userId && (
