@@ -1005,15 +1005,25 @@ const TemplateDrawer: FC<{ template: TrainingTemplate }> = ({ template }) => {
   // is actually open
   const [templateLogs] = useDataState(async () => {
     // Get all logs associated with this template.
-    const promises = template.logIds.map(
-      logId =>
-        db
-          .user(user.uid)
-          .collection(DbPath.UserLogs)
-          .withConverter(DbConverter.TrainingLog)
-          .doc(logId)
-          .get()
-          .then(_ => _.data()) // TODO Fetch ONLY id, name, timestamp fields
+    const promises = template.logIds.map(logId =>
+      db
+        .user(user.uid)
+        .collection(DbPath.UserLogs)
+        .withConverter(DbConverter.TrainingLog)
+        .doc(logId)
+        .get()
+        .then(document => {
+          if (document.exists) {
+            // Get only the necessary fields
+            const logFields = {
+              id: document.id,
+              title: document.get('title'),
+              timestamp: document.get('timestamp'),
+            } as unknown as TrainingLog;
+            return logFields;
+          }
+          return undefined;
+        })
     );
     const logs = await Promise.all(promises);
     // Tell TypeScript the predicate narrows the type
