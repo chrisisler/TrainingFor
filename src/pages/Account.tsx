@@ -260,7 +260,7 @@ export const Account: FC = () => {
             endIcon={DataState.isReady(hasCheckedIn) && hasCheckedIn ? <b>!</b> : undefined}
             disabled={DataState.isReady(hasCheckedIn) && hasCheckedIn}
           >
-            {DataState.isReady(hasCheckedIn) && hasCheckedIn ? 'Checked In' : 'Check In'}
+            {DataState.isReady(hasCheckedIn) && hasCheckedIn ? 'Already Checked In Today' : 'Check In'}
           </Button>
           <Button variant="outlined" startIcon={<Add />} onClick={addEditBehaviorDrawer.onOpen}>
             New Behavior
@@ -672,9 +672,8 @@ const CheckinDrawer: FC<{
     // If the form is submitted with some unanswered (null) Answers, then ask
     // the user if they want to continue/submit with some unfilled values.
     if (Array.from(form.values()).includes(null)) {
-      if (window.confirm('Some questions are unanswered; complete check-in now?')) {
+      if (!window.confirm('Some questions are unanswered; complete check-in now?')) {
         toast.info('Cancelled check-in.');
-      } else {
         return;
       }
     }
