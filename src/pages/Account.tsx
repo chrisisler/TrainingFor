@@ -654,7 +654,7 @@ const CheckinDrawer: FC<{
   const user = useUser();
 
   const [isHighStressDay, setIsHighStressDay] = useState(false);
-  // A map of each behavior as keys and yes/no/unanswered as values
+  /** A map of each behavior as keys and yes/no/unanswered as values. */
   const [form, setForm] = useState<Map<Behavior, Answer>>(new Map());
 
   // Set the initial state of the form map data based on the given `behaviors` prop
@@ -669,6 +669,15 @@ const CheckinDrawer: FC<{
 
   const completeCheckin = useCallback(async () => {
     if (!DataState.isReady(behaviors)) return;
+    // If the form is submitted with some unanswered (null) Answers, then ask
+    // the user if they want to continue/submit with some unfilled values.
+    if (Array.from(form.values()).includes(null)) {
+      if (window.confirm('Some questions are unanswered; complete check-in now?')) {
+        toast.info('Cancelled check-in.');
+      } else {
+        return;
+      }
+    }
     try {
       // Batch: 1) creating the checkin; 2) incrementing the yes/no count for each Behavior
       const batch = db.batch();
@@ -766,7 +775,7 @@ const CheckinDrawer: FC<{
       <Button
         variant="contained"
         endIcon={<Check />}
-        disabled={!DataState.isReady(behaviors) || Array.from(form.values()).includes(null)}
+        disabled={!DataState.isReady(behaviors)}
         onClick={completeCheckin}
       >
         Complete
