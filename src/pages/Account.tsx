@@ -260,7 +260,9 @@ export const Account: FC = () => {
             endIcon={DataState.isReady(hasCheckedIn) && hasCheckedIn ? <b>!</b> : undefined}
             disabled={DataState.isReady(hasCheckedIn) && hasCheckedIn}
           >
-            {DataState.isReady(hasCheckedIn) && hasCheckedIn ? 'Already Checked In Today' : 'Check In'}
+            {DataState.isReady(hasCheckedIn) && hasCheckedIn
+              ? 'Already Checked In Today'
+              : 'Check In'}
           </Button>
           <Button variant="outlined" startIcon={<Add />} onClick={addEditBehaviorDrawer.onOpen}>
             New Behavior
@@ -623,16 +625,20 @@ const NewTrainingDrawer: FC<{ templates: DataState<TrainingTemplate[]> }> = ({ t
         fullWidth
         required
         autoFocus
-        disabled={typeof title !== 'string' || title === ''}
-        // variant="standard"
-        label="Title"
+        label="Training Log Title"
         value={title}
         onChange={event => {
           setTitle(event.target.value);
         }}
       />
 
-      <Button variant="contained" color="primary" onClick={createTrainingLog} size="large">
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={createTrainingLog}
+        size="large"
+        disabled={typeof title !== 'string' || title === ''}
+      >
         {DataState.isReady(selectedTemplate)
           ? `New ${selectedTemplate.title} Training`
           : 'New Training'}
