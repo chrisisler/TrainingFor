@@ -1058,7 +1058,7 @@ const TemplateDrawer: FC<{ template: TrainingTemplate }> = ({ template }) => {
         <Typography variant="h6">{template.title}</Typography>
         <Typography color="textSecondary" variant="subtitle2">
           Last performed:{' '}
-          {DataState.isReady(templateLogs) &&
+          {DataState.isReady(templateLogs) && templateLogs.length > 0 &&
             formatDistanceToNowStrict(
               (templateLogs[0].timestamp as firebase.firestore.Timestamp)?.toDate(),
               { addSuffix: true }
