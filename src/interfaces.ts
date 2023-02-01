@@ -97,10 +97,10 @@ export interface Behavior extends FirestoreDocument {
   authorId: string;
   name: string;
   // emoji: unknown;
-  /** 
+  /**
    * Indicates if the behavior is reported on a particularly stressful day.
    * These are filtered out due to stress being the overriding factor in poor
-   * movement quality. 
+   * movement quality.
    */
   isHighStressDay: boolean;
 }
@@ -222,7 +222,7 @@ export const Activity = {
   /**
    * Calculates the total volume for a given Activity's sets.
    * Volume = [for each rep:] weight * reps
-   * 
+   *
    * Returns total volume in pounds.
    */
   getVolume: (a: Activity): number => {
@@ -239,9 +239,7 @@ export const Activity = {
       return 0;
     }
     // weightUnit is LB or KG; repCountUnit is Repetitions
-    return sets
-      .filter(set => set.status === ActivitySetStatus.Completed)
-      .reduce((sum, set) => sum + set.weight * set.repCount, 0);
+    return sets.reduce((sum, set) => sum + set.weight * set.repCount, 0);
   },
 };
 
@@ -249,7 +247,9 @@ const durationRegEx = /\d+\s+\w/;
 
 // eslint-disable-next-line
 export const TrainingLog = {
-  create: (data: Pick<TrainingLog, 'templateId' | 'title' | 'authorId'>): Omit<TrainingLog, 'id'> => ({
+  create: (
+    data: Pick<TrainingLog, 'templateId' | 'title' | 'authorId'>
+  ): Omit<TrainingLog, 'id'> => ({
     ...data,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     notes: '',

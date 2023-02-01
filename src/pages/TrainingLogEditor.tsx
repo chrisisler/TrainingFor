@@ -126,41 +126,6 @@ export const TrainingLogEditor: FC = () => {
       );
   }, [user.uid, logId, templateId]);
 
-  // const addActivity = useCallback(
-  //   async <E extends React.SyntheticEvent>(event: E) => {
-  //     event.preventDefault();
-  //     if (!activityName?.length || !DataState.isReady(log)) return;
-  //     const name = activityName;
-  //     // Hide the input
-  //     addActivityDrawer.onClose();
-  //     try {
-  //       const activitiesColl = db
-  //         .user(user.uid)
-  //         .collection(isTemplate ? DbPath.UserTemplates : DbPath.UserLogs)
-  //         .doc(log.id)
-  //         .collection(DbPath.UserLogActivities);
-  //       const { docs } = await activitiesColl.orderBy('position', 'desc').limit(1).get();
-  //       const prevMaxPosition: number = docs[0]?.get('position') ?? 0;
-  //       const entry = Activity.create({
-  //         name,
-  //         position: prevMaxPosition + 1,
-  //         logId: log.id,
-  //         timestamp: log.timestamp,
-  //         sets: [],
-  //         weightUnit: ActivityWeightUnit.Pounds,
-  //         repCountUnit: ActivityRepCountUnit.Repetitions,
-  //       });
-  //       const { id } = await activitiesColl.add(entry);
-  //       // Scroll new item into view
-  //       document.getElementById(`activity-${id}`)?.scrollIntoView();
-  //     } catch (error) {
-  //       // @ts-ignore
-  //       toast.error(error.message);
-  //     }
-  //   },
-  //   [activityName, log, user.uid, isTemplate, addActivityDrawer]
-  // );
-
   // const updateLogNotes = useCallback(async () => {
   //   if (!DataState.isReady(log)) return;
   //   if (logNotes === '') setLogNotes(DataState.Empty);
@@ -514,8 +479,13 @@ export const TrainingLogEditor: FC = () => {
                 sx={{ lineHeight: 1, position: 'absolute', bottom: '0.5rem', left: '0.5rem' }}
               >
                 Total Vol{' '}
-                {Intl.NumberFormat().format(
-                  activities.map(Activity.getVolume).reduce((sum, v) => sum + v, 0)
+                {displayTotalVolume(
+                  isTemplate
+                    ? activities
+                    : activities.map(a => {
+                        a.sets = a.sets.filter(set => set.status === ActivitySetStatus.Completed);
+                        return a;
+                      })
                 )}
               </Typography>
             )}
@@ -881,5 +851,11 @@ const EditorControlsDateView: FC<{ log: TrainingLog | TrainingTemplate }> = ({ l
         </Typography>
       )}
     </DataStateView>
+  );
+};
+
+const displayTotalVolume = (activities: Activity[]) => {
+  return Intl.NumberFormat().format(
+    activities.map(a => Activity.getVolume(a)).reduce((sum, v) => sum + v, 0)
   );
 };
