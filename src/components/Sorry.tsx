@@ -1,23 +1,19 @@
-import { css } from '@emotion/css';
-import React, { FC } from 'react';
+import { Box, Typography } from "@mui/material";
+import { FC } from "react";
 
 export const Sorry: FC = () => {
   return (
-    <div
-      className={css`
-        width: 100%;
-        height: 100%;
-        display: grid;
-        place-items: center;
-      `}
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        placeItems: "center",
+      }}
     >
-      <p
-        className={css`
-          font-style: italic;
-        `}
-      >
+      <Typography sx={{ fontStyle: "italic" }}>
         Sorry! Something went wrong.
-      </p>
-    </div>
+      </Typography>
+    </Box>
   );
 };

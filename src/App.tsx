@@ -1,124 +1,46 @@
-import 'react-toastify/dist/ReactToastify.min.css';
+import { Box } from '@mui/material';
+import { User } from 'firebase/auth';
+import { SnackbarProvider } from 'notistack';
+import { FC } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import { css } from '@emotion/css';
-import firebase from 'firebase/app';
-import React, { FC, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Redirect, Route, Switch } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import { PrivateThemeProvider, UserProvider } from './context';
+import { Authentication, Account, Editor } from './pages';
+import { DataState, DataStateView, Paths, useUserAuthSubscription } from './util';
 
-import { ViewWithNavBar } from './components';
-import { Paths } from './constants';
-import { DataState, DataStateView } from './DataState';
-import { auth } from './firebase';
-import { UserProvider } from './hooks';
-import {
-  Account,
-  Library,
-  LogIn,
-  NewTraining,
-  SignUp,
-  Timeline,
-  TrainingLogEditor,
-  TrainingLogViewPage,
-} from './pages';
-import { Pad } from './style';
+// import logo from "./logo.svg";
 
 export const App: FC = () => {
-  const [user, setUser] = useState<DataState<firebase.User>>(DataState.Loading);
-
-  useEffect(() => {
-    return auth.onAuthStateChanged(
-      authUser => {
-        setUser(authUser ?? DataState.Empty);
-      },
-      error => {
-        setUser(DataState.error(error.message));
-      }
-    );
-  }, []);
+  /** When this value is DataState.Empty, the user is not authenticated. */
+  const authState: DataState<User> = useUserAuthSubscription();
 
   return (
-    <div
-      className={css`
-        width: 100%;
-        height: 100%;
-        max-width: 512px;
-      `}
-    >
-      <Router>
-        <DataStateView
-          data={user}
-          empty={() => (
-            <Switch>
-              <Route exact path={Paths.logIn}>
-                <LogIn />
-              </Route>
-              <Route exact path={Paths.signUp}>
-                <SignUp />
-              </Route>
-              <Route path="/">
-                <Redirect to={Paths.logIn} />
-              </Route>
-            </Switch>
-          )}
-        >
-          {user => (
-            <UserProvider user={user}>
-              <Switch>
-                <Route exact path={[Paths.logView(), Paths.templateView()]}>
-                  <ViewWithNavBar>
-                    <TrainingLogViewPage />
-                  </ViewWithNavBar>
-                </Route>
-                <Route exact path={[Paths.logEditor(), Paths.templateEditor()]}>
-                  <ViewWithNavBar>
-                    <TrainingLogEditor />
-                  </ViewWithNavBar>
-                </Route>
-                <Route exact path={Paths.timeline}>
-                  <ViewWithNavBar>
-                    <Timeline />
-                  </ViewWithNavBar>
-                </Route>
-                <Route exact path={[Paths.account, Paths.user()]}>
-                  <ViewWithNavBar>
-                    <Account />
-                  </ViewWithNavBar>
-                </Route>
-                <Route exact path={Paths.library()}>
-                  <ViewWithNavBar>
-                    <Library />
-                  </ViewWithNavBar>
-                </Route>
-                <Route exact path={Paths.training}>
-                  <ViewWithNavBar>
-                    <NewTraining />
-                  </ViewWithNavBar>
-                </Route>
-                <Route path="/">
-                  <Redirect to={Paths.account} />
-                </Route>
-              </Switch>
-            </UserProvider>
-          )}
-        </DataStateView>
-      </Router>
-      <ToastContainer
-        hideProgressBar
-        pauseOnFocusLoss={false}
-        autoClose={3000}
-        className={css`
-          & > *:not(:last-child) {
-            margin-bottom: ${Pad.XSmall};
-          }
-        `}
-        toastClassName={css`
-          border-radius: 8px;
-          font-weight: 500;
-          text-align: center;
-          word-break: break-word;
-        `}
-      />
-    </div>
+    <Box sx={{ width: '100%', height: '100%' }}>
+      <BrowserRouter>
+        <SnackbarProvider maxSnack={3} dense autoHideDuration={2500}>
+          <PrivateThemeProvider>
+            <DataStateView
+              data={authState}
+              empty={() => (
+                <Routes>
+                  <Route path="/" element={<Authentication />} />
+                  {/** TODO Ensure navigation to non-legit URLs redirects to Authentication */}
+                </Routes>
+              )}
+            >
+              {user => (
+                <UserProvider user={user}>
+                  <Routes>
+                    <Route path={Paths.account} element={<Account />} />
+                    <Route path={Paths.editor()} element={<Editor />} />
+                    <Route path="*" element={<Navigate to={Paths.account} />} />
+                  </Routes>
+                </UserProvider>
+              )}
+            </DataStateView>
+          </PrivateThemeProvider>
+        </SnackbarProvider>
+      </BrowserRouter>
+    </Box>
   );
 };

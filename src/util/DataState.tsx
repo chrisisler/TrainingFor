@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { Loading, Sorry } from './components';
+import { Loading, Sorry } from '../components';
 
 const DataStateEmpty = 'DataState::Empty' as const;
 const DataStateLoading = 'DataState::Loading' as const;
@@ -14,6 +14,7 @@ const DataStateLoading = 'DataState::Loading' as const;
 export type DataState<T> = typeof DataStateEmpty | typeof DataStateLoading | Error | T;
 
 /** Wait for all provided DataStates to be ready. */
+// @ts-ignore
 const dataStateAll: DataStateAll = (...dss) => {
   const notReady = dss.find(ds => !DataState.isReady(ds));
   if (notReady) return notReady;
