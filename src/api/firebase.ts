@@ -34,7 +34,8 @@ export enum DbPath {
 export const Authenticate = {
   withGoogle: async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    signInWithRedirect(auth, provider);
+    await Promise.resolve();
     return await getRedirectResult(auth);
   },
   anonymously: async () => {

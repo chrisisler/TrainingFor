@@ -345,8 +345,9 @@ export const Editor: FC = () => {
               fullWidth
               autoFocus={savedMovementDrawer.open} // TODO wtf
               variant="standard"
-              label="New Name"
-              helperText="Enter a new name then click anywhere outside to update."
+              label="Movement Name"
+              helperText="Movement will be renamed at the previous screen."
+              // helperText="Enter a new name then click anywhere outside to update."
               defaultValue={savedMovementDrawer.getData()?.name}
               // Avoiding controlled state this way with onBlur
               onBlur={async event => {
@@ -368,7 +369,7 @@ export const Editor: FC = () => {
                   setSavedMovements(next);
                   // Close drawer
                   savedMovementDrawer.onClose();
-                  toast.success(`Renamed ${savedMovement.name} to ${newName}`);
+                  toast.success(`Movement renamed to ${newName}`);
                 } catch (error) {
                   toast.error(error.message);
                 }
