@@ -6,6 +6,7 @@ import {
   Collapse,
   IconButton,
   MenuItem,
+  NativeSelect,
   Stack,
   SwipeableDrawer,
   TextField,
@@ -408,7 +409,7 @@ export const Editor: FC = () => {
         <DataStateView data={movements}>
           {movements => (
             <>
-              {movements.map((movement: Movement) => (
+              {movements.map((movement: Movement, movementIndex) => (
                 <Stack
                   spacing={1}
                   key={movement.id}
@@ -428,24 +429,63 @@ export const Editor: FC = () => {
                     {movement.name}
                   </Typography>
                   <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                    <Stack direction="row" spacing={2}>
+                    <Stack direction="row" spacing={1}>
                       {/** Stack of unit control text buttons */}
                       <Stack
                         alignItems="end"
                         visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
                         marginLeft={-1}
+                        spacing={2}
                       >
-                        <IconButton
-                          disableRipple
-                          onClick={() => {
-                            toast.info('Unimplmented: Select Rep Units.');
+                        <NativeSelect
+                          disableUnderline
+                          style={{ padding: 0, paddingTop: '8px' }}
+                          sx={{
+                            color: theme => theme.palette.text.secondary,
+                            width: '68px',
                           }}
-                          sx={{ textTransform: 'uppercase' }}
+                          value={movement.repCountUnit}
+                          onChange={async event => {
+                            try {
+                              const newRepCountUnit = event.target.value as MovementRepCountUnit;
+                              // Update field on the movement
+                              const updated: Movement = await API.Movements.update({
+                                id: movement.id,
+                                repCountUnit: newRepCountUnit,
+                              });
+                              // Update local state
+                              const copy = movements.slice();
+                              copy[movementIndex] = updated;
+                              setMovements(copy);
+                            } catch (error) {
+                              toast.error(error.message);
+                            }
+                          }}
+                          inputProps={{
+                            // Make the select look like a text button
+                            style: {
+                              padding: '4px',
+                              textAlign: 'right',
+                              textTransform: 'uppercase',
+                              fontSize: '0.7rem',
+                            },
+                          }}
+                          IconComponent={() => null}
                         >
-                          <Typography variant="overline" color="text.secondary">
-                            {movement.repCountUnit}
-                          </Typography>
-                        </IconButton>
+                          <option value={MovementRepCountUnit.Reps}>
+                            {MovementRepCountUnit.Reps}
+                          </option>
+                          <option value={MovementRepCountUnit.Seconds}>
+                            {MovementRepCountUnit.Seconds}
+                          </option>
+                          <option value={MovementRepCountUnit.Minutes}>
+                            {MovementRepCountUnit.Minutes}
+                          </option>
+                          <option value={MovementRepCountUnit.Meters}>
+                            {MovementRepCountUnit.Meters}
+                          </option>
+                        </NativeSelect>
+
                         <IconButton
                           disableRipple
                           onClick={() => {
@@ -474,7 +514,7 @@ export const Editor: FC = () => {
                               });
                               // Update local state
                               const copy = movements.slice();
-                              copy[copy.indexOf(movement)] = updated;
+                              copy[movementIndex] = updated;
                               setMovements(copy);
                             } catch (error) {
                               toast.error(error.message);
