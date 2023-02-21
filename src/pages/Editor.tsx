@@ -1,11 +1,10 @@
 import { uuidv4 } from '@firebase/util';
-import { Add, Close, DeleteOutline, MoreHoriz, Remove } from '@mui/icons-material';
+import { Add, Close, DeleteOutline, MoreHoriz, PersonOutline, Remove } from '@mui/icons-material';
 import {
   Box,
   Button,
   Collapse,
   IconButton,
-  MenuItem,
   NativeSelect,
   Stack,
   SwipeableDrawer,
@@ -15,7 +14,7 @@ import {
 } from '@mui/material';
 import { where } from 'firebase/firestore';
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
 import { useUser } from '../context';
@@ -30,6 +29,7 @@ import {
 import {
   DataState,
   DataStateView,
+  Paths,
   useDataState,
   useDrawer,
   useMaterialMenu,
@@ -44,6 +44,7 @@ import {
  * It should be obvious that a quick "program" can be created from the list of frequent (and recent) movements.
  */
 export const Editor: FC = () => {
+  const navigate = useNavigate();
   const toast = useToast();
   const user = useUser();
   const { logId } = useParams<{ logId: string }>();
@@ -214,7 +215,12 @@ export const Editor: FC = () => {
         padding: theme => theme.spacing(2),
       }}
     >
-      <Typography variant="overline">Editor Page</Typography>
+      <Box display="flex" width="100%" justifyContent="space-between">
+        <Typography variant="overline">Training Page</Typography>
+        <IconButton size="small" onClick={() => navigate(Paths.account)}>
+          <PersonOutline fontSize="small" />
+        </IconButton>
+      </Box>
 
       <SwipeableDrawer {...addMovementDrawer} anchor="top">
         <Collapse in={addMovementDrawer.open}>
@@ -531,7 +537,6 @@ export const Editor: FC = () => {
                             {MovementWeightUnit.Weightless}
                           </option>
                         </NativeSelect>
-
                       </Stack>
 
                       {movement.sets.map((movementSet, index) => (
@@ -723,11 +728,9 @@ const MovementSetView: FC<{
   updateSets(mSets: MovementSet[]): Promise<void>;
 }> = ({ movementSet, movement, updateSets, index }) => {
   const resizeWeightInput = useResizableInputRef();
-  const toast = useToast();
   const theme = useTheme();
 
   const [weight, setWeight] = useState(movementSet.weight);
-  // const [repCountActual, setRepCountActual] = useState(movementSet.repCountExpected);
 
   const statusBasedStyle = useMemo(
     () =>

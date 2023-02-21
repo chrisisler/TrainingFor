@@ -1,17 +1,21 @@
-import { Add, MenuBook } from '@mui/icons-material';
-import { Box, Button, Typography } from '@mui/material';
+import { Add, ChevronRightTwoTone } from '@mui/icons-material';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API } from '../api';
 import { useUser } from '../context';
 import { TrainingLog } from '../types';
-import { Paths, useToast } from '../util';
+import { DataStateView, Paths, useDataState, useToast } from '../util';
 
 export const Account: FC = () => {
   const user = useUser();
   const navigate = useNavigate();
   const toast = useToast();
+
+  const [logs] = useDataState(() => API.TrainingLogs.getAll(user.uid), [user.uid]);
+  console.log('logs', logs);
 
   const startNewTrainingLog = useCallback(async () => {
     try {
@@ -36,7 +40,9 @@ export const Account: FC = () => {
       }}
     >
       <Typography variant="overline">Account Page</Typography>
+
       {/** Account button */}
+
       <Button
         fullWidth
         size="large"
@@ -46,7 +52,38 @@ export const Account: FC = () => {
       >
         Log
       </Button>
-      {/** List of Training Logs */}
+
+      <DataStateView data={logs}>
+        {logs => (
+          <Stack spacing={2} sx={{ padding: theme => theme.spacing(3, 2) }}>
+            {logs.map(log => (
+              <Box
+                key={log.id}
+                sx={{
+                  // color: theme => theme.palette.text.primary,
+                  borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                  // borderLeft: theme => `3px solid ${theme.palette.divider}`,
+                  // borderRadius: 0,
+                  // textTransform: 'none',
+                  // textAlign: 'left',
+                  padding: theme => theme.spacing(1, 2),
+                }}
+                onClick={() => navigate(Paths.editor(log.id))}
+                display="flex"
+                justifyContent="space-between"
+              >
+                <Stack>
+                  <Typography>{new Date(log.timestamp).toLocaleString()}</Typography>
+                  <Typography color="textSecondary">
+                    {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
+                  </Typography>
+                </Stack>
+                <ChevronRightTwoTone sx={{ color: 'text.secondary' }} />
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </DataStateView>
     </Box>
   );
 };
