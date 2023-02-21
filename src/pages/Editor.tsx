@@ -486,17 +486,52 @@ export const Editor: FC = () => {
                           </option>
                         </NativeSelect>
 
-                        <IconButton
-                          disableRipple
-                          onClick={() => {
-                            toast.info('Unimplmented: Select Weight Units.');
+                        <NativeSelect
+                          disableUnderline
+                          style={{ padding: 0, paddingTop: '8px' }}
+                          sx={{
+                            color: theme => theme.palette.text.secondary,
+                            width: '68px',
                           }}
-                          sx={{ textTransform: 'uppercase' }}
+                          value={movement.weightUnit}
+                          onChange={async event => {
+                            try {
+                              const newWeightUnit = event.target.value as MovementWeightUnit;
+                              // Update field on the movement
+                              const updated: Movement = await API.Movements.update({
+                                id: movement.id,
+                                weightUnit: newWeightUnit,
+                              });
+                              // Update local state
+                              const copy = movements.slice();
+                              copy[movementIndex] = updated;
+                              setMovements(copy);
+                            } catch (error) {
+                              toast.error(error.message);
+                            }
+                          }}
+                          inputProps={{
+                            // Make the select look like a text button
+                            style: {
+                              padding: '4px',
+                              textAlign: 'right',
+                              textTransform: 'uppercase',
+                              fontSize: '0.7rem',
+                            },
+                          }}
+                          IconComponent={() => null}
                         >
-                          <Typography variant="overline" color="text.secondary">
-                            {movement.weightUnit}
-                          </Typography>
-                        </IconButton>
+                          <option value={MovementWeightUnit.Pounds}>
+                            {MovementWeightUnit.Pounds}
+                          </option>
+                          <option value={MovementWeightUnit.Kilograms}>
+                            {MovementWeightUnit.Kilograms}
+                          </option>
+                          <option value={MovementWeightUnit.Weightless}>
+                            {MovementWeightUnit.Weightless}
+                          </option>
+                        </NativeSelect>
+
                       </Stack>
 
                       {movement.sets.map((movementSet, index) => (
