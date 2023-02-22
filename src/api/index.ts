@@ -8,7 +8,7 @@ import {
   getDoc,
   getDocs,
   query,
-  QueryFieldFilterConstraint,
+  QueryConstraint,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -76,16 +76,16 @@ function createAPI<T extends { id: string }>(collection: CollectionReference<T>)
 
     /**
      * Pass the userId to simply fetch all resources with the given userId OR
-     * pass a queryConstraint to provide a custom `where` clause.
+     * pass one or more queryConstraints to provide custom constraints.
      *
      * @usage API.MyResource.getAll(userId) // Fetch all
      * @usage API.MyResource.getAll(where('customField', '==', customValue)) // Custom fetch
      */
-    async getAll(param: string | QueryFieldFilterConstraint): Promise<T[]> {
+    async getAll(param: string | QueryConstraint, ...constraints: QueryConstraint[]): Promise<T[]> {
       // Convert given userId to a query constraint OR use the one given.
       const queryConstraint =
         typeof param === 'string' ? where('authorUserId', '==', param) : param;
-      const q = query(collection, queryConstraint);
+      const q = query(collection, queryConstraint, ...constraints);
       const { docs } = await getDocs(q);
       return docs.map(doc => ({ ...doc.data(), id: doc.id } as T));
     },

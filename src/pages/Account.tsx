@@ -15,7 +15,6 @@ export const Account: FC = () => {
   const toast = useToast();
 
   const [logs] = useDataState(() => API.TrainingLogs.getAll(user.uid), [user.uid]);
-  console.log('logs', logs);
 
   const startNewTrainingLog = useCallback(async () => {
     try {

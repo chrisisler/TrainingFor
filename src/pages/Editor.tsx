@@ -14,7 +14,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { where } from 'firebase/firestore';
+import { orderBy, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -66,7 +66,7 @@ export const Editor: FC = () => {
   /** List of movements for this log. */
   const [movements, setMovements] = useDataState<Movement[]>(async () => {
     if (logId) {
-      return API.Movements.getAll(where('logId', '==', logId));
+      return API.Movements.getAll(where('logId', '==', logId), orderBy('position', 'asc'));
     }
     return DataState.Empty;
   }, [logId]);
@@ -805,7 +805,7 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
     }}
     sx={{
       color: theme => theme.palette.text.secondary,
-      width: '100%',  
+      width: '100%',
       textAlign: 'right',
       textTransform: 'uppercase',
       border: 'none',
