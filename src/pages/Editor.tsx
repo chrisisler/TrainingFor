@@ -14,7 +14,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { orderBy, where } from 'firebase/firestore';
+import { getCountFromServer, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -72,10 +72,19 @@ export const Editor: FC = () => {
   }, [logId]);
 
   /** List of saved movements from this users collection. */
-  const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(
-    async () => API.SavedMovements.getAll(user.uid),
-    [user.uid]
-  );
+  const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(async () => {
+    const savedMovements = await API.SavedMovements.getAll(user.uid);
+    // Sort savedMovements by number of existing Movements with that savedMovementId.
+    const countPromises = savedMovements.map(_ =>
+      getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
+    );
+    const snapshots = await Promise.all(countPromises);
+    const counts: number[] = snapshots.map(_ => _.data().count); // Number of usages per movement
+    return savedMovements
+      .map((data, index) => Object.assign(data, { count: counts[index] }))
+      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.lastSeen - a.lastSeen);
+  }, [user.uid]);
 
   // If no movements, auto-open the add movement drawer
   useEffect(() => {
@@ -84,9 +93,12 @@ export const Editor: FC = () => {
     }
     if (movements.length === 0) {
       addMovementBtnRef.current?.click();
+      // Potential fix for autofocus on add movement input
+      // Promise.resolve().then(() => addMovementInputRef.current?.focus());
     }
   }, [movements]);
 
+  /** A subset of `savedMovements`. */
   // debounced movementNameQuery fetch/search for SavedMovements in the DB
   const [matches, setMatches] = useState<DataState<SavedMovement[]>>(DataState.Empty);
   useEffect(() => {
@@ -118,7 +130,7 @@ export const Editor: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movementNameQuery, savedMovements]);
 
-  const createSavedMovement = useCallback(async () => {
+  const addMovementFromNewSavedMovement = useCallback(async () => {
     if (!logId) {
       throw TypeError('Unreachable: logId is required');
     }
@@ -126,16 +138,18 @@ export const Editor: FC = () => {
       return;
     }
     try {
+      const timestamp: number = Date.now();
       const newSavedMovement: SavedMovement = await API.SavedMovements.create({
         name: movementNameQuery,
         authorUserId: user.uid,
         id: '',
+        lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
       const newMovement: Movement = await API.Movements.create({
         logId,
         name: newSavedMovement.name,
-        timestamp: Date.now(),
+        timestamp,
         sets: [],
         authorUserId: user.uid,
         savedMovementId: newSavedMovement.id,
@@ -166,6 +180,61 @@ export const Editor: FC = () => {
     addMovementDrawer,
     toast,
   ]);
+
+  const addMovementFromExistingSavedMovement = useCallback(
+    async (match: SavedMovement) => {
+      if (!logId) {
+        throw Error('Unreachable: logId is required');
+      }
+      if (!DataState.isReady(movements)) return;
+      if (!DataState.isReady(savedMovements)) return;
+      try {
+        const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
+        const now: number = Date.now();
+        // Create a Movement from the match
+        const newMovement: Movement = await API.Movements.create({
+          logId,
+          name: match.name,
+          timestamp: now,
+          sets: [],
+          authorUserId: user.uid,
+          savedMovementId: match.id,
+          savedMovementName: match.name,
+          position,
+          isFavorited: false,
+          id: '',
+          weightUnit: MovementWeightUnit.Pounds,
+          repCountUnit: MovementRepCountUnit.Reps,
+        });
+        // Update lastSeen property
+        await API.SavedMovements.update({
+          id: match.id,
+          lastSeen: now,
+        });
+        // Update local state from DB
+        setMovements(DataState.map(movements, prev => prev.concat(newMovement)));
+        const next = savedMovements.slice();
+        next[next.indexOf(match)].lastSeen = now;
+        setSavedMovements(next);
+        // Close the drawer
+        addMovementDrawer.onClose();
+        // Clear the input
+        setMovementNameQuery('');
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [
+      addMovementDrawer,
+      logId,
+      movements,
+      savedMovements,
+      setMovements,
+      setSavedMovements,
+      toast,
+      user.uid,
+    ]
+  );
 
   const addSetToMovement = useCallback(
     async event => {
@@ -263,45 +332,7 @@ export const Editor: FC = () => {
                                 borderRadius: 1,
                                 border: '1px solid lightgrey',
                               }}
-                              onClick={async () => {
-                                if (!logId) {
-                                  throw Error('Unreachable: logId is required');
-                                }
-                                if (!DataState.isReady(movements)) {
-                                  return;
-                                }
-                                try {
-                                  const position =
-                                    movements.length > 0
-                                      ? movements[movements.length - 1].position + 1
-                                      : 0;
-                                  // Create a Movement from the match
-                                  const newMovement: Movement = await API.Movements.create({
-                                    logId,
-                                    name: match.name,
-                                    timestamp: Date.now(),
-                                    sets: [],
-                                    authorUserId: user.uid,
-                                    savedMovementId: match.id,
-                                    savedMovementName: match.name,
-                                    position,
-                                    isFavorited: false,
-                                    id: '',
-                                    weightUnit: MovementWeightUnit.Pounds,
-                                    repCountUnit: MovementRepCountUnit.Reps,
-                                  });
-                                  // Add the new Movement to the log
-                                  setMovements(
-                                    DataState.map(movements, prev => prev.concat(newMovement))
-                                  );
-                                  // Close the drawer
-                                  addMovementDrawer.onClose();
-                                  // Clear the input
-                                  setMovementNameQuery('');
-                                } catch (error) {
-                                  toast.error(error.message);
-                                }
-                              }}
+                              onClick={() => addMovementFromExistingSavedMovement(match)}
                             >
                               {match.name}
                             </Typography>
@@ -332,7 +363,7 @@ export const Editor: FC = () => {
                           sx={{ justifyContent: 'flex-start' }}
                           variant="outlined"
                           startIcon={<Add />}
-                          onClick={createSavedMovement}
+                          onClick={addMovementFromNewSavedMovement}
                         >
                           Create {movementNameQuery}
                         </Button>
@@ -359,7 +390,7 @@ export const Editor: FC = () => {
               // helperText="Enter a new name then click anywhere outside to update."
               defaultValue={savedMovementDrawer.getData()?.name}
               // Avoiding controlled state this way with onBlur
-              onBlur={async event => {
+              onBlur={async function editSavedMovement(event) {
                 try {
                   const savedMovement = savedMovementDrawer.getData();
                   if (!savedMovement) throw Error('Unreachable');
@@ -388,7 +419,7 @@ export const Editor: FC = () => {
               <Button
                 color="error"
                 startIcon={<DeleteOutline />}
-                onClick={async () => {
+                onClick={async function deleteSavedMovement() {
                   try {
                     if (!window.confirm('Are you sure you want to delete this?')) return;
                     const savedMovement = savedMovementDrawer.getData();
