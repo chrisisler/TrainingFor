@@ -43,17 +43,3 @@ export const Authenticate = {
   },
 };
 
-// const trainingLogConverter: firebase.firestore.FirestoreDataConverter<TrainingLog> = {
-//   toFirestore: (log: TrainingLog): firebase.firestore.DocumentData => {
-//     return log;
-//   },
-//   fromFirestore: (doc: firebase.firestore.QueryDocumentSnapshot<TrainingLog>): TrainingLog => {
-//     const data = doc.data();
-//     data.id = doc.id;
-//     return data;
-//   },
-// };
-
-// export const DbConverter = {
-//   TrainingLog: trainingLogConverter,
-// };

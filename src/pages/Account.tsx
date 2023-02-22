@@ -1,11 +1,12 @@
-import { Add, ChevronRightTwoTone } from '@mui/icons-material';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Add, ChevronRightTwoTone, Logout } from '@mui/icons-material';
+import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { signOut } from 'firebase/auth';
 import { limit, orderBy } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { API } from '../api';
+import { API, auth } from '../api';
 import { useUser } from '../context';
 import { TrainingLog } from '../types';
 import { DataStateView, Paths, useDataState, useToast } from '../util';
@@ -34,6 +35,16 @@ export const Account: FC = () => {
     }
   }, [user.uid, navigate, toast]);
 
+  const deauthenticate = useCallback(async () => {
+    if (!window.confirm('Sign out?')) return;
+    try {
+      await signOut(auth);
+      toast.success('Signed out.');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }, [toast]);
+
   return (
     <Box
       sx={{
@@ -42,7 +53,12 @@ export const Account: FC = () => {
         padding: theme => theme.spacing(2),
       }}
     >
-      <Typography variant="overline">Account Page</Typography>
+      <Box display="flex" width="100%" justifyContent="space-between">
+        <Typography variant="overline">Account Page</Typography>
+        <IconButton size="small" onClick={deauthenticate}>
+          <Logout fontSize="small" />
+        </IconButton>
+      </Box>
 
       {/** Account button */}
 

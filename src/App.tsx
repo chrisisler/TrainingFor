@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Collapse } from '@mui/material';
 import { User } from 'firebase/auth';
 import { SnackbarProvider } from 'notistack';
 import { FC } from 'react';
@@ -8,8 +8,6 @@ import { PrivateThemeProvider, UserProvider } from './context';
 import { Authentication, Account, Editor } from './pages';
 import { DataState, DataStateView, Paths, useUserAuthSubscription } from './util';
 
-// import logo from "./logo.svg";
-
 export const App: FC = () => {
   /** When this value is DataState.Empty, the user is not authenticated. */
   const authState: DataState<User> = useUserAuthSubscription();
@@ -17,14 +15,14 @@ export const App: FC = () => {
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
       <BrowserRouter>
-        <SnackbarProvider maxSnack={3} dense autoHideDuration={2500}>
+        <SnackbarProvider maxSnack={3} dense autoHideDuration={2500} TransitionComponent={Collapse}>
           <PrivateThemeProvider>
             <DataStateView
               data={authState}
               empty={() => (
                 <Routes>
                   <Route path="/" element={<Authentication />} />
-                  {/** TODO Ensure navigation to non-legit URLs redirects to Authentication */}
+                  <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               )}
             >
