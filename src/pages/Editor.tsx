@@ -533,7 +533,7 @@ export const Editor: FC = () => {
                         />
                       ))}
 
-                      <Stack spacing={2}>
+                      <Stack spacing={1}>
                         <IconButton
                           color="primary"
                           onClick={event => {
@@ -554,14 +554,14 @@ export const Editor: FC = () => {
                         </IconButton>
                         {movement.sets.length > 0 ? (
                           <IconButton
-                            sx={{ opacity: 0.5 }}
+                            sx={{ opacity: 0.4 }}
                             color="error"
-                            size="small"
                             onClick={async () => {
                               try {
                                 const last = movement.sets[movement.sets.length - 1];
                                 if (!last) throw TypeError('Unreachable');
                                 const without = movement.sets.filter(_ => _.uuid !== last.uuid);
+                                //
                                 const updated: Movement = await API.Movements.update({
                                   sets: without,
                                   id: movement.id,
@@ -666,7 +666,7 @@ export const Editor: FC = () => {
                   size="large"
                   disabled={newSetRepCount === 0}
                 >
-                  Add Set #{addSetDrawerMovement.sets.length + 1}
+                  Add Set {addSetDrawerMovement.sets.length + 1}
                 </Button>
               </Stack>
             )}
@@ -805,8 +805,8 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
     }}
     sx={{
       color: theme => theme.palette.text.secondary,
-      // textAlign: 'right',
-      // width: '68px',
+      width: '100%',  
+      textAlign: 'right',
       textTransform: 'uppercase',
       border: 'none',
       fontSize: '0.7rem',
