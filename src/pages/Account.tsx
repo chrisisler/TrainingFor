@@ -1,6 +1,7 @@
 import { Add, ChevronRightTwoTone } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { limit, orderBy } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,7 +15,10 @@ export const Account: FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [logs] = useDataState(() => API.TrainingLogs.getAll(user.uid), [user.uid]);
+  const [logs] = useDataState(
+    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
+    [user.uid]
+  );
 
   const startNewTrainingLog = useCallback(async () => {
     try {
