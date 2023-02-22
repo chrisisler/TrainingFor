@@ -54,7 +54,10 @@ export const Account: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between">
-        <Typography variant="overline">Account Page</Typography>
+        <Typography variant="overline">
+          Account Page:{' '}
+          {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
+        </Typography>
         <IconButton size="small" onClick={deauthenticate}>
           <Logout fontSize="small" />
         </IconButton>
@@ -68,6 +71,7 @@ export const Account: FC = () => {
         variant="contained"
         startIcon={<Add />}
         onClick={startNewTrainingLog}
+        sx={{ marginTop: theme => theme.spacing(3) }}
       >
         Log
       </Button>
