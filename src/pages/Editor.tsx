@@ -5,7 +5,9 @@ import {
   Button,
   Collapse,
   IconButton,
-  NativeSelect,
+  MenuItem,
+  Select,
+  SelectProps,
   Stack,
   SwipeableDrawer,
   TextField,
@@ -13,7 +15,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { where } from 'firebase/firestore';
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
@@ -440,16 +442,10 @@ export const Editor: FC = () => {
                       <Stack
                         alignItems="end"
                         visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
-                        marginLeft={-1}
                         spacing={2}
+                        sx={{ marginTop: '4px' }}
                       >
-                        <NativeSelect
-                          disableUnderline
-                          style={{ padding: 0, paddingTop: '8px' }}
-                          sx={{
-                            color: theme => theme.palette.text.secondary,
-                            width: '68px',
-                          }}
+                        <MovementUnitSelect
                           value={movement.repCountUnit}
                           onChange={async event => {
                             try {
@@ -467,38 +463,22 @@ export const Editor: FC = () => {
                               toast.error(error.message);
                             }
                           }}
-                          inputProps={{
-                            // Make the select look like a text button
-                            style: {
-                              padding: '4px',
-                              textAlign: 'right',
-                              textTransform: 'uppercase',
-                              fontSize: '0.7rem',
-                            },
-                          }}
-                          IconComponent={() => null}
                         >
-                          <option value={MovementRepCountUnit.Reps}>
+                          <MenuItem value={MovementRepCountUnit.Reps}>
                             {MovementRepCountUnit.Reps}
-                          </option>
-                          <option value={MovementRepCountUnit.Seconds}>
+                          </MenuItem>
+                          <MenuItem value={MovementRepCountUnit.Seconds}>
                             {MovementRepCountUnit.Seconds}
-                          </option>
-                          <option value={MovementRepCountUnit.Minutes}>
+                          </MenuItem>
+                          <MenuItem value={MovementRepCountUnit.Minutes}>
                             {MovementRepCountUnit.Minutes}
-                          </option>
-                          <option value={MovementRepCountUnit.Meters}>
+                          </MenuItem>
+                          <MenuItem value={MovementRepCountUnit.Meters}>
                             {MovementRepCountUnit.Meters}
-                          </option>
-                        </NativeSelect>
+                          </MenuItem>
+                        </MovementUnitSelect>
 
-                        <NativeSelect
-                          disableUnderline
-                          style={{ padding: 0, paddingTop: '8px' }}
-                          sx={{
-                            color: theme => theme.palette.text.secondary,
-                            width: '68px',
-                          }}
+                        <MovementUnitSelect
                           value={movement.weightUnit}
                           onChange={async event => {
                             try {
@@ -516,27 +496,17 @@ export const Editor: FC = () => {
                               toast.error(error.message);
                             }
                           }}
-                          inputProps={{
-                            // Make the select look like a text button
-                            style: {
-                              padding: '4px',
-                              textAlign: 'right',
-                              textTransform: 'uppercase',
-                              fontSize: '0.7rem',
-                            },
-                          }}
-                          IconComponent={() => null}
                         >
-                          <option value={MovementWeightUnit.Pounds}>
+                          <MenuItem value={MovementWeightUnit.Pounds}>
                             {MovementWeightUnit.Pounds}
-                          </option>
-                          <option value={MovementWeightUnit.Kilograms}>
+                          </MenuItem>
+                          <MenuItem value={MovementWeightUnit.Kilograms}>
                             {MovementWeightUnit.Kilograms}
-                          </option>
-                          <option value={MovementWeightUnit.Weightless}>
+                          </MenuItem>
+                          <MenuItem value={MovementWeightUnit.Weightless}>
                             {MovementWeightUnit.Weightless}
-                          </option>
-                        </NativeSelect>
+                          </MenuItem>
+                        </MovementUnitSelect>
                       </Stack>
 
                       {movement.sets.map((movementSet, index) => (
@@ -818,3 +788,33 @@ const MovementSetView: FC<{
     </Stack>
   );
 };
+
+const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value' | 'onChange'>> = ({
+  children,
+  value,
+  onChange,
+}) => (
+  <Select
+    // Make the select look like a text button
+    disableUnderline
+    variant="standard"
+    SelectDisplayProps={{
+      style: {
+        padding: '8px',
+      },
+    }}
+    sx={{
+      color: theme => theme.palette.text.secondary,
+      // textAlign: 'right',
+      // width: '68px',
+      textTransform: 'uppercase',
+      border: 'none',
+      fontSize: '0.7rem',
+    }}
+    IconComponent={() => null}
+    value={value}
+    onChange={onChange}
+  >
+    {children}
+  </Select>
+);
