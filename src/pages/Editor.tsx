@@ -55,6 +55,9 @@ export const Editor: FC = () => {
   const savedMovementDrawer = useDrawer<SavedMovement>();
   const movementMenuDrawer = useDrawer<Movement>();
   const addMovementBtnRef = useRef<HTMLButtonElement | null>(null);
+  const addMovementInputRef = useRef<HTMLInputElement | null>(null);
+  const savedMovementNameInputRef = useRef<HTMLInputElement | null>(null);
+  const addSetWeightInputRef = useRef<HTMLInputElement | null>(null);
 
   const [addSetDrawerMovement, setAddSetDrawerMovement] = useState<Movement | null>(null);
   /** Controlled state of the Add Movement input. */
@@ -93,8 +96,8 @@ export const Editor: FC = () => {
     }
     if (movements.length === 0) {
       addMovementBtnRef.current?.click();
-      // Potential fix for autofocus on add movement input
-      // Promise.resolve().then(() => addMovementInputRef.current?.focus());
+      // autofocus on add movement input
+      setTimeout(() => addMovementInputRef.current?.focus(), 1);
     }
   }, [movements]);
 
@@ -129,8 +132,6 @@ export const Editor: FC = () => {
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movementNameQuery, savedMovements]);
-
-  while (Math.random()) {}
 
   const addMovementFromNewSavedMovement = useCallback(async () => {
     if (!logId) {
@@ -302,10 +303,10 @@ export const Editor: FC = () => {
           <Stack spacing={3}>
             <TextField
               fullWidth
+              inputRef={addMovementInputRef}
               variant="standard"
               label="Search for a movement..."
               helperText="Select a movement or create one"
-              autoFocus={addMovementDrawer.open} // TODO I wish this would work! -> Try using ref= and .focus() it.
               value={movementNameQuery}
               onChange={event => setMovementNameQuery(event.target.value)}
               InputProps={{
@@ -342,6 +343,7 @@ export const Editor: FC = () => {
                               sx={{ color: theme => theme.palette.text.secondary }}
                               onClick={event => {
                                 savedMovementDrawer.onOpen(event, match);
+                                setTimeout(() => savedMovementNameInputRef.current?.focus(), 1);
                               }}
                             >
                               <MoreHoriz fontSize="small" />
@@ -385,7 +387,7 @@ export const Editor: FC = () => {
           <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
             <TextField
               fullWidth
-              autoFocus={savedMovementDrawer.open} // TODO wtf
+              inputRef={savedMovementNameInputRef}
               variant="standard"
               label="Movement Name"
               helperText="Movement will be renamed at the previous screen."
@@ -572,6 +574,7 @@ export const Editor: FC = () => {
                           onClick={event => {
                             addSetDrawer.onOpen(event);
                             setAddSetDrawerMovement(movement);
+                            setTimeout(() => addSetWeightInputRef.current?.select(), 1);
                             // Set controlled state default values to previous set
                             if (movement.sets.length > 0) {
                               const lastSet = movement.sets[movement.sets.length - 1];
@@ -669,7 +672,7 @@ export const Editor: FC = () => {
                     <>
                       <TextField
                         label={`Weight (${addSetDrawerMovement.weightUnit}s)`}
-                        autoFocus={addSetDrawer.open || !!addSetDrawerMovement}
+                        inputRef={addSetWeightInputRef}
                         inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                         value={newSetWeight}
                         onChange={event => setNewSetWeight(+event.target.value)}
@@ -713,7 +716,11 @@ export const Editor: FC = () => {
               ref={addMovementBtnRef}
               size="large"
               startIcon={<Add />}
-              onClick={event => addMovementDrawer.onOpen(event)}
+              onClick={event => {
+                addMovementDrawer.onOpen(event);
+                // autofocus on add movement input
+                setTimeout(() => addMovementInputRef.current?.focus(), 1);
+              }}
             >
               Movement
             </Button>
