@@ -119,13 +119,12 @@ export const Account: FC = () => {
       </DataStateView>
 
       {/** Button to reassign data from current anon user to google auth'd account */}
-      {true && (
+      {DataState.isReady(logs) && logs.length > 0 && (
         <>
           <Button
             fullWidth
             variant="outlined"
             size="small"
-            // startIcon={<Google />}
             endIcon={<Logout />}
             onClick={reauthDrawer.onOpen}
           >
@@ -152,7 +151,6 @@ export const Account: FC = () => {
                   startIcon={<Google />}
                   endIcon={<Launch />}
                   onClick={async () => {
-                    if (!!true) throw Error();
                     if (!window.confirm('Are you sure?')) return;
                     try {
                       const credential = await Authenticate.withGoogle();
