@@ -590,7 +590,7 @@ export const Editor: FC = () => {
                         </IconButton>
                         {movement.sets.length > 0 ? (
                           <IconButton
-                            sx={{ opacity: 0.4 }}
+                            sx={{ opacity: 0.5 }}
                             color="error"
                             onClick={async () => {
                               try {
