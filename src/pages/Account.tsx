@@ -10,11 +10,11 @@ import {
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
-import { doc, limit, orderBy, runTransaction, writeBatch } from 'firebase/firestore';
+import { limit, orderBy, } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { API, auth, Authenticate, db } from '../api';
+import { API, auth, Authenticate } from '../api';
 import { useUser } from '../context';
 import { TrainingLog } from '../types';
 import { DataState, DataStateView, Paths, useDataState, useMaterialMenu, useToast } from '../util';
