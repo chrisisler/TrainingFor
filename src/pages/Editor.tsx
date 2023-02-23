@@ -97,7 +97,7 @@ export const Editor: FC = () => {
     if (movements.length === 0) {
       addMovementBtnRef.current?.click();
       // autofocus on add movement input
-      setTimeout(() => addMovementInputRef.current?.click(), 1);
+      setTimeout(() => addMovementInputRef.current?.select(), 1);
     }
   }, [movements]);
 
@@ -343,7 +343,7 @@ export const Editor: FC = () => {
                               sx={{ color: theme => theme.palette.text.secondary }}
                               onClick={event => {
                                 savedMovementDrawer.onOpen(event, match);
-                                setTimeout(() => savedMovementNameInputRef.current?.click(), 1);
+                                setTimeout(() => savedMovementNameInputRef.current?.select(), 1);
                               }}
                             >
                               <MoreHoriz fontSize="small" />
@@ -574,7 +574,7 @@ export const Editor: FC = () => {
                           onClick={event => {
                             addSetDrawer.onOpen(event);
                             setAddSetDrawerMovement(movement);
-                            setTimeout(() => addSetWeightInputRef.current?.click(), 1);
+                            setTimeout(() => addSetWeightInputRef.current?.select(), 1);
                             // Set controlled state default values to previous set
                             if (movement.sets.length > 0) {
                               const lastSet = movement.sets[movement.sets.length - 1];
@@ -719,7 +719,7 @@ export const Editor: FC = () => {
               onClick={event => {
                 addMovementDrawer.onOpen(event);
                 // autofocus on add movement input
-                setTimeout(() => addMovementInputRef.current?.click(), 1);
+                setTimeout(() => addMovementInputRef.current?.select(), 1);
               }}
             >
               Movement
