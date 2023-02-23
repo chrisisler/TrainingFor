@@ -779,7 +779,7 @@ const MovementSetView: FC<{
         sx={{
           paddingY: theme => theme.spacing(1),
           paddingX: theme =>
-            theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1 : 2),
+            theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1.33 : 2),
         }}
         // Handles dynamic styling based on repCount button for a movement set
         style={dynamicRepCountButtonStyle}
