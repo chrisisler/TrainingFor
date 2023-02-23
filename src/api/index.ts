@@ -11,10 +11,9 @@ import {
   QueryConstraint,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 
-// import { TrainingLogsAPI } from './TrainingLogsAPI';
-// import { MovementsAPI } from './MovementsAPI';
 import { TrainingLog, Movement, SavedMovement } from '../types';
 import { db, DbPath } from './firebase';
 
@@ -29,22 +28,9 @@ function init() {
   );
   const movementsRef = collection(db, DbPath.Movements).withConverter(converter<Movement>());
 
-  /** Basic CRUD operations for entities. */
   const TrainingLogs = createAPI<TrainingLog>(trainingLogsRef);
   const SavedMovements = createAPI<SavedMovement>(savedMovementsRef);
   const Movements = createAPI<Movement>(movementsRef);
-
-  /** Fetch all `Movement`s with the given logId. */
-  // const getFromLog = async (logId: string) => {
-  //   const q = query(movementsRef, where('logId', '==', logId));
-  //   return await getDocs(q).then(_ => _.docs.map(_ => _.data()));
-  // };
-
-  /** Search all `Movements` with the given name. */
-  // const search = async (name: string) => {
-  //   const q = query(movementsRef, where('name', '==', name));
-  //   return await getDocs(q).then(_ => _.docs.map(_ => _.data()));
-  // }
 
   return {
     TrainingLogs,
@@ -56,6 +42,8 @@ function init() {
       savedMovements: savedMovementsRef,
       logs: trainingLogsRef,
     },
+
+    assignAnonymousDataToGoogleUser,
   };
 }
 
@@ -74,13 +62,6 @@ function createAPI<T extends { id: string }>(collection: CollectionReference<T>)
       return data;
     },
 
-    /**
-     * Pass the userId to simply fetch all resources with the given userId OR
-     * pass one or more queryConstraints to provide custom constraints.
-     *
-     * @usage API.MyResource.getAll(userId) // Fetch all
-     * @usage API.MyResource.getAll(where('customField', '==', customValue)) // Custom fetch
-     */
     async getAll(param: string | QueryConstraint, ...constraints: QueryConstraint[]): Promise<T[]> {
       // Convert given userId to a query constraint OR use the one given.
       const queryConstraint =
@@ -112,4 +93,27 @@ function converter<T>(): FirestoreDataConverter<T> {
     // @ts-ignore
     fromFirestore: doc => Object.assign(doc.data(), { id: doc.id }),
   };
+}
+
+/**
+ * "Copies" the data from the anonymous user account into the Google user
+ * account by reassigning all data from that old user to the new user's ID as
+ * the data author.
+ */
+async function assignAnonymousDataToGoogleUser(oldUserId: string, newUserId: string) {
+  const q = where('authorUserId', '==', oldUserId);
+  // Get all IDs of the old user's documents
+  const snapshots = await Promise.all([
+    getDocs(query(API.collections.logs, q)),
+    getDocs(query(API.collections.movements, q)),
+    getDocs(query(API.collections.savedMovements, q)),
+  ]);
+  const batch = writeBatch(db);
+  snapshots.forEach(({ docs }) => {
+    docs.forEach((doc: (typeof docs)[0]) => {
+      // Assign the data from the old user to the new user
+      batch.update<ReturnType<typeof doc.data>>(doc.ref, { authorUserId: newUserId });
+    });
+  });
+  await batch.commit();
 }

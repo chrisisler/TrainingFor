@@ -1,20 +1,29 @@
-import { Add, ChevronRightTwoTone, Logout } from '@mui/icons-material';
-import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
+import { Add, ChevronRightTwoTone, Google, Launch, Logout } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Collapse,
+  IconButton,
+  Stack,
+  SwipeableDrawer,
+  Typography,
+} from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
-import { limit, orderBy } from 'firebase/firestore';
+import { doc, limit, orderBy, runTransaction, writeBatch } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { API, auth } from '../api';
+import { API, auth, Authenticate, db } from '../api';
 import { useUser } from '../context';
 import { TrainingLog } from '../types';
-import { DataStateView, Paths, useDataState, useToast } from '../util';
+import { DataState, DataStateView, Paths, useDataState, useMaterialMenu, useToast } from '../util';
 
 export const Account: FC = () => {
   const user = useUser();
   const navigate = useNavigate();
   const toast = useToast();
+  const reauthDrawer = useMaterialMenu();
 
   const [logs] = useDataState(
     () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
@@ -46,7 +55,8 @@ export const Account: FC = () => {
   }, [toast]);
 
   return (
-    <Box
+    <Stack
+      spacing={3}
       sx={{
         height: '100%',
         width: '100%',
@@ -71,7 +81,7 @@ export const Account: FC = () => {
         variant="contained"
         startIcon={<Add />}
         onClick={startNewTrainingLog}
-        sx={{ marginTop: theme => theme.spacing(3) }}
+        // sx={{ marginTop: theme => theme.spacing(3) }}
       >
         Log
       </Button>
@@ -107,6 +117,60 @@ export const Account: FC = () => {
           </Stack>
         )}
       </DataStateView>
-    </Box>
+
+      {/** Button to reassign data from current anon user to google auth'd account */}
+      {true && (
+        <>
+          <Button
+            fullWidth
+            variant="outlined"
+            size="small"
+            // startIcon={<Google />}
+            endIcon={<Logout />}
+            onClick={reauthDrawer.onOpen}
+          >
+            Create Persistent Account
+          </Button>
+
+          <SwipeableDrawer {...reauthDrawer} anchor="bottom">
+            <Collapse in={reauthDrawer.open}>
+              <Stack spacing={5} sx={{ padding: theme => theme.spacing(3, 1), height: '70vh' }}>
+                <Typography variant="h6" color="textSecondary">
+                  Anonymous accounts are for temporary usage.
+                  <br />
+                  <br />
+                  Re-create this account (using Google sign-in) to persist your training across
+                  sessions?
+                  <br />
+                  <br />
+                  All data will be copied over.
+                </Typography>
+                <Button
+                  fullWidth
+                  size="large"
+                  variant="outlined"
+                  startIcon={<Google />}
+                  endIcon={<Launch />}
+                  onClick={async () => {
+                    if (!!true) throw Error();
+                    if (!window.confirm('Are you sure?')) return;
+                    try {
+                      const credential = await Authenticate.withGoogle();
+                      if (!credential) throw Error('Authentication failed - user not found.');
+                      await API.assignAnonymousDataToGoogleUser(user.uid, credential.user.uid);
+                      toast.success('Assigned data to persistent account.');
+                    } catch (error) {
+                      toast.error(error.message);
+                    }
+                  }}
+                >
+                  Sign In With Google
+                </Button>
+              </Stack>
+            </Collapse>
+          </SwipeableDrawer>
+        </>
+      )}
+    </Stack>
   );
 };

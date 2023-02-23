@@ -130,6 +130,8 @@ export const Editor: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movementNameQuery, savedMovements]);
 
+  while (Math.random()) {}
+
   const addMovementFromNewSavedMovement = useCallback(async () => {
     if (!logId) {
       throw TypeError('Unreachable: logId is required');

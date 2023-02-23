@@ -6,6 +6,7 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signInAnonymously,
+  UserCredential,
 } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -32,14 +33,12 @@ export enum DbPath {
 
 /** Ways of logging in. */
 export const Authenticate = {
-  withGoogle: async () => {
+  withGoogle: async (): Promise<UserCredential | null> => {
     const provider = new GoogleAuthProvider();
     signInWithRedirect(auth, provider);
-    await Promise.resolve();
-    return await getRedirectResult(auth);
+    return await Promise.resolve().then(() => getRedirectResult(auth));
   },
-  anonymously: async () => {
+  anonymously: async (): Promise<UserCredential> => {
     return await signInAnonymously(auth);
   },
 };
-
