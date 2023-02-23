@@ -742,11 +742,11 @@ const MovementSetView: FC<{
 
   const [weight, setWeight] = useState(movementSet.weight);
 
-  const statusBasedStyle = useMemo(
+  const dynamicRepCountButtonStyle = useMemo(
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: theme.palette.success.main,
+            backgroundColor: theme.palette.success.light,
             // Avoid jarring when switching between Unattempted and Completed
             border: '1px solid transparent',
           }
@@ -756,30 +756,34 @@ const MovementSetView: FC<{
     [movementSet.status, theme]
   );
 
+  const decrementRepCount = useCallback(() => {
+    const { repCountActual, repCountExpected, status } = movementSet;
+    // First click: Unattempted status -> Completed status
+    if (repCountActual === repCountExpected && status === MovementSetStatus.Unattempted) {
+      movement.sets[index].status = MovementSetStatus.Completed;
+    } else if (repCountActual === 0) {
+      // Last click: Completed status -> Unattempted status && reset reps achieved
+      movement.sets[index].status = MovementSetStatus.Unattempted;
+      movement.sets[index].repCountActual = repCountExpected;
+    } else if (status === MovementSetStatus.Completed) {
+      // Not first or last click: Decrement number of successful reps
+      movement.sets[index].repCountActual -= 1;
+    }
+    updateSets([...movement.sets]);
+    // Side Note: Deleting a set is done through clicking the movement name button.
+  }, [index, movement.sets, movementSet, updateSets]);
+
   return (
     <Stack>
       <IconButton
         sx={{
-          padding: theme => theme.spacing(1, 2),
+          paddingY: theme => theme.spacing(1),
+          paddingX: theme =>
+            theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1 : 2),
         }}
         // Handles dynamic styling based on repCount button for a movement set
-        style={statusBasedStyle}
-        onClick={() => {
-          const { repCountActual, repCountExpected, status } = movementSet;
-          // First click: Unattempted status -> Completed status
-          if (repCountActual === repCountExpected && status === MovementSetStatus.Unattempted) {
-            movement.sets[index].status = MovementSetStatus.Completed;
-          } else if (repCountActual === 0) {
-            // Last click: Completed status -> Unattempted status && reset reps achieved
-            movement.sets[index].status = MovementSetStatus.Unattempted;
-            movement.sets[index].repCountActual = repCountExpected;
-          } else if (status === MovementSetStatus.Completed) {
-            // Not first or last click: Decrement number of successful reps
-            movement.sets[index].repCountActual -= 1;
-          }
-          updateSets([...movement.sets]);
-          // Side Note: Deleting a set is done through clicking the movement name button.
-        }}
+        style={dynamicRepCountButtonStyle}
+        onClick={decrementRepCount}
       >
         {movementSet.repCountActual}
       </IconButton>
