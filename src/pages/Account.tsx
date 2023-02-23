@@ -119,7 +119,7 @@ export const Account: FC = () => {
       </DataStateView>
 
       {/** Button to reassign data from current anon user to google auth'd account */}
-      {DataState.isReady(logs) && logs.length > 0 && (
+      {user.isAnonymous && DataState.isReady(logs) && logs.length > 0 && (
         <>
           <Button
             fullWidth
