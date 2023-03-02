@@ -1,5 +1,14 @@
 import { uuidv4 } from '@firebase/util';
-import { Add, Close, DeleteOutline, MoreHoriz, PersonOutline, Remove } from '@mui/icons-material';
+import {
+  Add,
+  AddCircle,
+  Close,
+  DeleteOutline,
+  MoreHoriz,
+  PersonOutline,
+  PlaylistAddRounded,
+  Remove,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -81,9 +90,12 @@ export const Editor: FC = () => {
       getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
     );
     const snapshots = await Promise.all(countPromises);
-    const counts: number[] = snapshots.map(_ => _.data().count); // Number of usages per movement
+    const usagesByMovement: number[] = snapshots.map(_ => _.data().count);
+    // Attach `count` to each savedMovement, where count is the number of
+    // existing Movements with that savedMovementId.
+    // Then sort by frequency and recency.
     return savedMovements
-      .map((data, index) => Object.assign(data, { count: counts[index] }))
+      .map((sm, index) => Object.assign(sm, { count: usagesByMovement[index] }))
       .sort((a, b) => b.count - a.count)
       .sort((a, b) => b.lastSeen - a.lastSeen);
   }, [user.uid]);
@@ -272,20 +284,222 @@ export const Editor: FC = () => {
   );
 
   return (
-    <Box
-      sx={{
-        height: '100%',
-        width: '100%',
-        overflowY: 'scroll',
-        padding: theme => theme.spacing(2),
-      }}
-    >
-      <Box display="flex" width="100%" justifyContent="space-between">
-        <Box />
-        <IconButton size="small" onClick={() => navigate(Paths.account)}>
-          <PersonOutline fontSize="small" />
-        </IconButton>
+    <>
+      <Box
+        sx={{
+          height: '100%',
+          width: '100%',
+          overflowY: 'scroll',
+          padding: theme => theme.spacing(2),
+        }}
+      >
+        <Box display="flex" width="100%" justifyContent="space-between">
+          <Box />
+          <IconButton size="small" onClick={() => navigate(Paths.account)}>
+            <PersonOutline fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <Stack spacing={1}>
+          <DataStateView data={movements}>
+            {movements => (
+              <>
+                {movements.map((movement: Movement, movementIndex) => (
+                  <Stack
+                    spacing={1}
+                    key={movement.id}
+                    sx={{
+                      // borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                      // borderRadius: 1,
+                      padding: theme => theme.spacing(1, 0),
+                    }}
+                  >
+                    <Typography
+                      fontSize="1.1rem"
+                      sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
+                      onClick={event => {
+                        movementMenuDrawer.onOpen(event, movement);
+                      }}
+                    >
+                      {movement.name}
+                    </Typography>
+                    <Box width="100%" sx={{ overflowX: 'scroll' }}>
+                      <Stack direction="row" spacing={1}>
+                        {/** Stack of unit control text buttons */}
+                        {movement.sets.length > 0 && (
+                          <Stack
+                            alignItems="end"
+                            visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
+                            spacing={2}
+                            sx={{ marginTop: '4px' }}
+                          >
+                            <MovementUnitSelect
+                              value={movement.repCountUnit}
+                              onChange={async event => {
+                                try {
+                                  const newRepCountUnit = event.target
+                                    .value as MovementRepCountUnit;
+                                  // Update field on the movement
+                                  const updated: Movement = await API.Movements.update({
+                                    id: movement.id,
+                                    repCountUnit: newRepCountUnit,
+                                  });
+                                  // Update local state
+                                  const copy = movements.slice();
+                                  copy[movementIndex] = updated;
+                                  setMovements(copy);
+                                } catch (error) {
+                                  toast.error(error.message);
+                                }
+                              }}
+                            >
+                              <MenuItem value={MovementRepCountUnit.Reps}>
+                                {MovementRepCountUnit.Reps}
+                              </MenuItem>
+                              <MenuItem value={MovementRepCountUnit.Seconds}>
+                                {MovementRepCountUnit.Seconds}
+                              </MenuItem>
+                              <MenuItem value={MovementRepCountUnit.Minutes}>
+                                {MovementRepCountUnit.Minutes}
+                              </MenuItem>
+                              <MenuItem value={MovementRepCountUnit.Meters}>
+                                {MovementRepCountUnit.Meters}
+                              </MenuItem>
+                            </MovementUnitSelect>
+
+                            <MovementUnitSelect
+                              value={movement.weightUnit}
+                              onChange={async event => {
+                                try {
+                                  const newWeightUnit = event.target.value as MovementWeightUnit;
+                                  // Update field on the movement
+                                  const updated: Movement = await API.Movements.update({
+                                    id: movement.id,
+                                    weightUnit: newWeightUnit,
+                                  });
+                                  // Update local state
+                                  const copy = movements.slice();
+                                  copy[movementIndex] = updated;
+                                  setMovements(copy);
+                                } catch (error) {
+                                  toast.error(error.message);
+                                }
+                              }}
+                            >
+                              <MenuItem value={MovementWeightUnit.Pounds}>
+                                {MovementWeightUnit.Pounds}
+                              </MenuItem>
+                              <MenuItem value={MovementWeightUnit.Kilograms}>
+                                {MovementWeightUnit.Kilograms}
+                              </MenuItem>
+                              <MenuItem value={MovementWeightUnit.Weightless}>
+                                {MovementWeightUnit.Weightless}
+                              </MenuItem>
+                            </MovementUnitSelect>
+                          </Stack>
+                        )}
+
+                        {movement.sets.map((movementSet, index) => (
+                          <MovementSetView
+                            key={movementSet.uuid}
+                            movementSet={movementSet}
+                            movement={movement}
+                            index={index}
+                            updateSets={async (mSets: MovementSet[]) => {
+                              try {
+                                // Send changes
+                                const updated = await API.Movements.update({
+                                  id: movement.id,
+                                  sets: mSets,
+                                });
+                                // Update local state
+                                const copy = movements.slice();
+                                copy[movementIndex] = updated;
+                                setMovements(copy);
+                              } catch (error) {
+                                toast.error(error.message);
+                              }
+                            }}
+                          />
+                        ))}
+
+                        {/** ADD NEW SET BUTTON */}
+                        <Stack spacing={1}>
+                          <IconButton
+                            color="primary"
+                            onClick={event => {
+                              addSetDrawer.onOpen(event);
+                              setAddSetDrawerMovement(movement);
+                              // Set controlled state default values to previous set
+                              if (movement.sets.length > 0) {
+                                const lastSet = movement.sets[movement.sets.length - 1];
+                                setNewSetWeight(lastSet.weight);
+                                setNewSetRepCount(lastSet.repCountActual);
+                              } else {
+                                setNewSetWeight(0);
+                                setNewSetRepCount(0);
+                              }
+                            }}
+                          >
+                            {movement.sets.length === 0 ? <AddCircle /> : <Add />}
+                          </IconButton>
+                          {movement.sets.length > 0 ? (
+                            <IconButton
+                              sx={{ opacity: 0.5 }}
+                              color="error"
+                              onClick={async () => {
+                                try {
+                                  const last = movement.sets[movement.sets.length - 1];
+                                  if (!last) throw TypeError('Unreachable: last');
+                                  const without = movement.sets.filter(_ => _.uuid !== last.uuid);
+                                  //
+                                  const updated: Movement = await API.Movements.update({
+                                    sets: without,
+                                    id: movement.id,
+                                  });
+                                  // Update local state
+                                  const copy = movements.slice();
+                                  copy[copy.indexOf(movement)] = updated;
+                                  setMovements(copy);
+                                } catch (error) {
+                                  toast.error(error.message);
+                                }
+                              }}
+                            >
+                              <Remove fontSize="small" />
+                            </IconButton>
+                          ) : (
+                            <Box>{/** Empty box for spacing/alignment */}</Box>
+                          )}
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  </Stack>
+                ))}
+              </>
+            )}
+          </DataStateView>
+
+          {DataState.isReady(movements) && (
+            <Box display="flex" width="100%" justifyContent="center">
+              <Button
+                // fullWidth
+                ref={addMovementBtnRef}
+                // size="small"
+                variant="outlined"
+                startIcon={<PlaylistAddRounded />}
+                onClick={event => {
+                  addMovementDrawer.onOpen(event);
+                }}
+              >
+                Movements
+              </Button>
+            </Box>
+          )}
+        </Stack>
       </Box>
+
+      {/** ------------------------- DRAWERS ------------------------- */}
 
       <SwipeableDrawer {...addMovementDrawer} anchor="top">
         <Collapse in={addMovementDrawer.open}>
@@ -441,290 +655,88 @@ export const Editor: FC = () => {
         </Collapse>
       </SwipeableDrawer>
 
-      <Stack spacing={1}>
-        <DataStateView data={movements}>
-          {movements => (
-            <>
-              {movements.map((movement: Movement, movementIndex) => (
-                <Stack
-                  spacing={1}
-                  key={movement.id}
-                  sx={{
-                    // borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                    // borderRadius: 1,
-                    padding: theme => theme.spacing(1, 0),
-                  }}
-                >
-                  <Typography
-                    fontSize="1.1rem"
-                    sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
-                    onClick={event => {
-                      movementMenuDrawer.onOpen(event, movement);
-                    }}
-                  >
-                    {movement.name}
-                  </Typography>
-                  <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                    <Stack direction="row" spacing={1}>
-                      {/** Stack of unit control text buttons */}
-                      <Stack
-                        alignItems="end"
-                        visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
-                        spacing={2}
-                        sx={{ marginTop: '4px' }}
-                      >
-                        <MovementUnitSelect
-                          value={movement.repCountUnit}
-                          onChange={async event => {
-                            try {
-                              const newRepCountUnit = event.target.value as MovementRepCountUnit;
-                              // Update field on the movement
-                              const updated: Movement = await API.Movements.update({
-                                id: movement.id,
-                                repCountUnit: newRepCountUnit,
-                              });
-                              // Update local state
-                              const copy = movements.slice();
-                              copy[movementIndex] = updated;
-                              setMovements(copy);
-                            } catch (error) {
-                              toast.error(error.message);
-                            }
-                          }}
-                        >
-                          <MenuItem value={MovementRepCountUnit.Reps}>
-                            {MovementRepCountUnit.Reps}
-                          </MenuItem>
-                          <MenuItem value={MovementRepCountUnit.Seconds}>
-                            {MovementRepCountUnit.Seconds}
-                          </MenuItem>
-                          <MenuItem value={MovementRepCountUnit.Minutes}>
-                            {MovementRepCountUnit.Minutes}
-                          </MenuItem>
-                          <MenuItem value={MovementRepCountUnit.Meters}>
-                            {MovementRepCountUnit.Meters}
-                          </MenuItem>
-                        </MovementUnitSelect>
-
-                        <MovementUnitSelect
-                          value={movement.weightUnit}
-                          onChange={async event => {
-                            try {
-                              const newWeightUnit = event.target.value as MovementWeightUnit;
-                              // Update field on the movement
-                              const updated: Movement = await API.Movements.update({
-                                id: movement.id,
-                                weightUnit: newWeightUnit,
-                              });
-                              // Update local state
-                              const copy = movements.slice();
-                              copy[movementIndex] = updated;
-                              setMovements(copy);
-                            } catch (error) {
-                              toast.error(error.message);
-                            }
-                          }}
-                        >
-                          <MenuItem value={MovementWeightUnit.Pounds}>
-                            {MovementWeightUnit.Pounds}
-                          </MenuItem>
-                          <MenuItem value={MovementWeightUnit.Kilograms}>
-                            {MovementWeightUnit.Kilograms}
-                          </MenuItem>
-                          <MenuItem value={MovementWeightUnit.Weightless}>
-                            {MovementWeightUnit.Weightless}
-                          </MenuItem>
-                        </MovementUnitSelect>
-                      </Stack>
-
-                      {movement.sets.map((movementSet, index) => (
-                        <MovementSetView
-                          key={movementSet.uuid}
-                          movementSet={movementSet}
-                          movement={movement}
-                          index={index}
-                          updateSets={async (mSets: MovementSet[]) => {
-                            try {
-                              // Send changes
-                              const updated = await API.Movements.update({
-                                id: movement.id,
-                                sets: mSets,
-                              });
-                              // Update local state
-                              const copy = movements.slice();
-                              copy[movementIndex] = updated;
-                              setMovements(copy);
-                            } catch (error) {
-                              toast.error(error.message);
-                            }
-                          }}
-                        />
-                      ))}
-
-                      <Stack spacing={1}>
-                        <IconButton
-                          color="primary"
-                          onClick={event => {
-                            addSetDrawer.onOpen(event);
-                            setAddSetDrawerMovement(movement);
-                            // Set controlled state default values to previous set
-                            if (movement.sets.length > 0) {
-                              const lastSet = movement.sets[movement.sets.length - 1];
-                              setNewSetWeight(lastSet.weight);
-                              setNewSetRepCount(lastSet.repCountActual);
-                            } else {
-                              setNewSetWeight(0);
-                              setNewSetRepCount(0);
-                            }
-                          }}
-                        >
-                          <Add />
-                        </IconButton>
-                        {movement.sets.length > 0 ? (
-                          <IconButton
-                            sx={{ opacity: 0.5 }}
-                            color="error"
-                            onClick={async () => {
-                              try {
-                                const last = movement.sets[movement.sets.length - 1];
-                                if (!last) throw TypeError('Unreachable: last');
-                                const without = movement.sets.filter(_ => _.uuid !== last.uuid);
-                                //
-                                const updated: Movement = await API.Movements.update({
-                                  sets: without,
-                                  id: movement.id,
-                                });
-                                // Update local state
-                                const copy = movements.slice();
-                                copy[copy.indexOf(movement)] = updated;
-                                setMovements(copy);
-                              } catch (error) {
-                                toast.error(error.message);
-                              }
-                            }}
-                          >
-                            <Remove fontSize="small" />
-                          </IconButton>
-                        ) : (
-                          <Box>{/** Empty box for spacing/alignment */}</Box>
-                        )}
-                      </Stack>
-                    </Stack>
-                  </Box>
-                </Stack>
-              ))}
-            </>
-          )}
-        </DataStateView>
-
-        {/** Movement Menu Drawer */}
-        <SwipeableDrawer {...movementMenuDrawer.props()} anchor="top">
-          <Collapse in={movementMenuDrawer.open}>
-            <Stack spacing={3}>
-              <Button
-                color="error"
-                startIcon={<DeleteOutline />}
-                onClick={async () => {
-                  try {
-                    const movement = movementMenuDrawer.getData();
-                    if (!movement) throw TypeError('Unreachable: rename movement');
-                    await API.Movements.delete(movement.id);
-                    // Update local state
-                    setMovements(
-                      DataState.map(movements, _ => _.filter(_ => _.id !== movement.id))
-                    );
-                    // Close drawer
-                    movementMenuDrawer.onClose();
-                  } catch (error) {
-                    toast.error(error.message);
-                  }
-
-                  // TODO remaining actions
-                  // Move up
-                  // Move down
-                  // Edit name
-                }}
-              >
-                Remove {movementMenuDrawer.getData()?.name || 'Movement'}
-              </Button>
-            </Stack>
-          </Collapse>
-        </SwipeableDrawer>
-
-        {/** Add Set Drawer */}
-        <SwipeableDrawer anchor="top" {...addSetDrawer}>
-          <Collapse in={addSetDrawer.open}>
-            {addSetDrawerMovement && (
-              <Stack spacing={3} component="form" onSubmit={addSetToMovement}>
-                <Box width="100%" textAlign="center">
-                  <Typography variant="overline">{addSetDrawerMovement.name}</Typography>
-                </Box>
-                <Stack direction="row" spacing={2}>
-                  {addSetDrawerMovement.weightUnit !== MovementWeightUnit.Weightless && (
-                    <>
-                      <TextField
-                        label={`Weight (${addSetDrawerMovement.weightUnit}s)`}
-                        // inputRef={addSetWeightInputRef}
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetWeight}
-                        onChange={event => setNewSetWeight(+event.target.value)}
-                      />
-                      <Typography
-                        variant="overline"
-                        sx={{ color: theme => theme.palette.divider }}
-                        display="flex"
-                        alignItems="center"
-                      >
-                        <Close fontSize="small" />
-                      </Typography>
-                    </>
-                  )}
-                  <TextField
-                    label={MovementRepCountUnit[addSetDrawerMovement.repCountUnit]}
-                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                    value={newSetRepCount}
-                    onChange={event => setNewSetRepCount(+event.target.value)}
-                  />
-                </Stack>
-                <Button
-                  fullWidth
-                  startIcon={<Add />}
-                  type="submit"
-                  variant="outlined"
-                  size="large"
-                  disabled={newSetRepCount === 0}
-                >
-                  Add Set {addSetDrawerMovement.sets.length + 1}
-                </Button>
-              </Stack>
-            )}
-          </Collapse>
-        </SwipeableDrawer>
-
-        <DataStateView data={movements}>
-          {() => (
+      {/** Movement Menu Drawer */}
+      <SwipeableDrawer {...movementMenuDrawer.props()} anchor="top">
+        <Collapse in={movementMenuDrawer.open}>
+          <Stack spacing={3}>
             <Button
-              fullWidth
-              ref={addMovementBtnRef}
-              size="large"
-              startIcon={<Add />}
-              onClick={event => {
-                addMovementDrawer.onOpen(event);
-                // autofocus on add movement input
-                // delay(250).then(() => {
-                //   toast.info('yes2');
-                //   addMovementInputRef.current?.focus();
-                //   addMovementInputRef.current?.click();
-                // });
-                // setTimeout(() => addMovementInputRef.current?.select(), 1);
+              color="error"
+              startIcon={<DeleteOutline />}
+              onClick={async () => {
+                try {
+                  const movement = movementMenuDrawer.getData();
+                  if (!movement) throw TypeError('Unreachable: rename movement');
+                  await API.Movements.delete(movement.id);
+                  // Update local state
+                  setMovements(DataState.map(movements, _ => _.filter(_ => _.id !== movement.id)));
+                  // Close drawer
+                  movementMenuDrawer.onClose();
+                } catch (error) {
+                  toast.error(error.message);
+                }
+
+                // TODO remaining actions
+                // Move up
+                // Move down
+                // Edit name
               }}
             >
-              Movement
+              Remove {movementMenuDrawer.getData()?.name || 'Movement'}
             </Button>
+          </Stack>
+        </Collapse>
+      </SwipeableDrawer>
+
+      {/** Add Set Drawer */}
+      <SwipeableDrawer anchor="top" {...addSetDrawer}>
+        <Collapse in={addSetDrawer.open}>
+          {addSetDrawerMovement && (
+            <Stack spacing={3} component="form" onSubmit={addSetToMovement}>
+              <Box width="100%" textAlign="center">
+                <Typography variant="overline">{addSetDrawerMovement.name}</Typography>
+              </Box>
+              <Stack direction="row" spacing={2}>
+                {addSetDrawerMovement.weightUnit !== MovementWeightUnit.Weightless && (
+                  <>
+                    <TextField
+                      label={`Weight (${addSetDrawerMovement.weightUnit}s)`}
+                      // inputRef={addSetWeightInputRef}
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={newSetWeight}
+                      onChange={event => setNewSetWeight(+event.target.value)}
+                    />
+                    <Typography
+                      variant="overline"
+                      sx={{ color: theme => theme.palette.divider }}
+                      display="flex"
+                      alignItems="center"
+                    >
+                      <Close fontSize="small" />
+                    </Typography>
+                  </>
+                )}
+                <TextField
+                  label={MovementRepCountUnit[addSetDrawerMovement.repCountUnit]}
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  value={newSetRepCount}
+                  onChange={event => setNewSetRepCount(+event.target.value)}
+                />
+              </Stack>
+              <Button
+                fullWidth
+                startIcon={<Add />}
+                type="submit"
+                variant="outlined"
+                size="large"
+                disabled={newSetRepCount === 0}
+              >
+                Add Set {addSetDrawerMovement.sets.length + 1}
+              </Button>
+            </Stack>
           )}
-        </DataStateView>
-      </Stack>
-    </Box>
+        </Collapse>
+      </SwipeableDrawer>
+    </>
   );
 };
 
