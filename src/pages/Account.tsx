@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
-import { limit, orderBy, } from 'firebase/firestore';
+import { limit, orderBy } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -64,8 +64,7 @@ export const Account: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between">
-        <Typography variant="overline">
-          Account Page:{' '}
+        <Typography variant="overline" color="textSecondary">
           {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
         </Typography>
         <IconButton size="small" onClick={deauthenticate}>

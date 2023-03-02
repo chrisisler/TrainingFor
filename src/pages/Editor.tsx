@@ -291,7 +291,6 @@ export const Editor: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between">
-        <Typography variant="overline">Training Page</Typography>
         <IconButton size="small" onClick={() => navigate(Paths.account)}>
           <PersonOutline fontSize="small" />
         </IconButton>
