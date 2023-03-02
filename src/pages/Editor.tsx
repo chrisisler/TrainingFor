@@ -14,7 +14,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { getCountFromServer, orderBy, query, where } from 'firebase/firestore';
+import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -192,6 +192,7 @@ export const Editor: FC = () => {
       if (!DataState.isReady(movements)) return;
       if (!DataState.isReady(savedMovements)) return;
       try {
+        const [prev] = await API.Movements.getAll(where('savedMovementId', '==', match.id), limit(1));
         const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
         const now: number = Date.now();
         // Create a Movement from the match
@@ -206,8 +207,8 @@ export const Editor: FC = () => {
           position,
           isFavorited: false,
           id: '',
-          weightUnit: MovementWeightUnit.Pounds,
-          repCountUnit: MovementRepCountUnit.Reps,
+          weightUnit: prev?.weightUnit ?? MovementWeightUnit.Pounds,
+          repCountUnit: prev?.repCountUnit ?? MovementRepCountUnit.Reps,
         });
         // Update lastSeen property
         await API.SavedMovements.update({
