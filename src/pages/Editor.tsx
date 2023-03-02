@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
@@ -55,9 +56,7 @@ export const Editor: FC = () => {
   const savedMovementDrawer = useDrawer<SavedMovement>();
   const movementMenuDrawer = useDrawer<Movement>();
   const addMovementBtnRef = useRef<HTMLButtonElement | null>(null);
-  const addMovementInputRef = useRef<HTMLInputElement | null>(null);
-  const savedMovementNameInputRef = useRef<HTMLInputElement | null>(null);
-  const addSetWeightInputRef = useRef<HTMLInputElement | null>(null);
+  // const addSetWeightInputRef = useRef<HTMLInputElement | null>(null);
 
   const [addSetDrawerMovement, setAddSetDrawerMovement] = useState<Movement | null>(null);
   /** Controlled state of the Add Movement input. */
@@ -88,18 +87,6 @@ export const Editor: FC = () => {
       .sort((a, b) => b.count - a.count)
       .sort((a, b) => b.lastSeen - a.lastSeen);
   }, [user.uid]);
-
-  // If no movements, auto-open the add movement drawer
-  useEffect(() => {
-    if (!DataState.isReady(movements)) {
-      return;
-    }
-    if (movements.length === 0) {
-      addMovementBtnRef.current?.click();
-      // autofocus on add movement input
-      setTimeout(() => addMovementInputRef.current?.select(), 1);
-    }
-  }, [movements]);
 
   /** A subset of `savedMovements`. */
   // debounced movementNameQuery fetch/search for SavedMovements in the DB
@@ -192,7 +179,10 @@ export const Editor: FC = () => {
       if (!DataState.isReady(movements)) return;
       if (!DataState.isReady(savedMovements)) return;
       try {
-        const [prev] = await API.Movements.getAll(where('savedMovementId', '==', match.id), limit(1));
+        const [prev] = await API.Movements.getAll(
+          where('savedMovementId', '==', match.id),
+          limit(1)
+        );
         const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
         const now: number = Date.now();
         // Create a Movement from the match
@@ -243,9 +233,9 @@ export const Editor: FC = () => {
   const addSetToMovement = useCallback(
     async event => {
       event.preventDefault();
-      if (!DataState.isReady(movements)) throw Error('Unreachable');
+      if (!DataState.isReady(movements)) throw Error('Unreachable: movements not ready');
       const movement = addSetDrawerMovement;
-      if (!movement) throw Error('Unreachable');
+      if (!movement) throw Error('Unreachable: no movement data to add set');
       try {
         // Add new set to list of sets for this Movement
         const sets = movement.sets.concat({
@@ -291,6 +281,7 @@ export const Editor: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between">
+        <Box />
         <IconButton size="small" onClick={() => navigate(Paths.account)}>
           <PersonOutline fontSize="small" />
         </IconButton>
@@ -300,23 +291,25 @@ export const Editor: FC = () => {
         <Collapse in={addMovementDrawer.open}>
           {/** Top 3-8 recommendations */}
 
-          <Stack spacing={3}>
-            <TextField
-              fullWidth
-              inputRef={addMovementInputRef}
-              variant="standard"
-              label="Search for a movement..."
-              helperText="Select a movement or create one"
-              value={movementNameQuery}
-              onChange={event => setMovementNameQuery(event.target.value)}
-              InputProps={{
-                endAdornment: !!movementNameQuery && (
-                  <IconButton disableRipple size="small" onClick={() => setMovementNameQuery('')}>
-                    <Close />
-                  </IconButton>
-                ),
-              }}
-            />
+          <Stack spacing={3} key={JSON.stringify(addMovementDrawer)}>
+            <ReactFocusLock disabled={!addMovementDrawer.open}>
+              <TextField
+                fullWidth
+                // inputRef={addMovementInputRef}
+                variant="standard"
+                label="Search for a movement..."
+                helperText="Select a movement or create one"
+                value={movementNameQuery}
+                onChange={event => setMovementNameQuery(event.target.value)}
+                InputProps={{
+                  endAdornment: !!movementNameQuery && (
+                    <IconButton disableRipple size="small" onClick={() => setMovementNameQuery('')}>
+                      <Close />
+                    </IconButton>
+                  ),
+                }}
+              />
+            </ReactFocusLock>
 
             <DataStateView data={matches}>
               {matches => {
@@ -343,7 +336,6 @@ export const Editor: FC = () => {
                               sx={{ color: theme => theme.palette.text.secondary }}
                               onClick={event => {
                                 savedMovementDrawer.onOpen(event, match);
-                                setTimeout(() => savedMovementNameInputRef.current?.select(), 1);
                               }}
                             >
                               <MoreHoriz fontSize="small" />
@@ -385,40 +377,41 @@ export const Editor: FC = () => {
       <SwipeableDrawer {...savedMovementDrawer.props()} anchor="top">
         <Collapse in={savedMovementDrawer.open}>
           <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
-            <TextField
-              fullWidth
-              inputRef={savedMovementNameInputRef}
-              variant="standard"
-              label="Movement Name"
-              helperText="Movement will be renamed at the previous screen."
-              // helperText="Enter a new name then click anywhere outside to update."
-              defaultValue={savedMovementDrawer.getData()?.name}
-              // Avoiding controlled state this way with onBlur
-              onBlur={async function editSavedMovement(event) {
-                try {
-                  const savedMovement = savedMovementDrawer.getData();
-                  if (!savedMovement) throw Error('Unreachable');
-                  const newName = event.target.value;
-                  if (newName.length < 3 || newName === savedMovement.name) {
-                    return;
+            <ReactFocusLock>
+              <TextField
+                fullWidth
+                variant="standard"
+                label="Movement Name"
+                helperText="Movement will be renamed at the previous screen."
+                // helperText="Enter a new name then click anywhere outside to update."
+                defaultValue={savedMovementDrawer.getData()?.name}
+                // Avoiding controlled state this way with onBlur
+                onBlur={async function editSavedMovement(event) {
+                  try {
+                    const savedMovement = savedMovementDrawer.getData();
+                    if (!savedMovement) return;
+                    const newName = event.target.value;
+                    if (newName.length < 3 || newName === savedMovement.name) {
+                      return;
+                    }
+                    const updated: SavedMovement = await API.SavedMovements.update({
+                      id: savedMovement.id,
+                      name: newName,
+                    });
+                    // Update local state
+                    if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
+                    const next = savedMovements.slice();
+                    next[next.indexOf(savedMovement)] = updated;
+                    setSavedMovements(next);
+                    // Close drawer
+                    savedMovementDrawer.onClose();
+                    toast.success(`Movement renamed to ${newName}`);
+                  } catch (error) {
+                    toast.error(error.message);
                   }
-                  const updated: SavedMovement = await API.SavedMovements.update({
-                    id: savedMovement.id,
-                    name: newName,
-                  });
-                  // Update local state
-                  if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
-                  const next = savedMovements.slice();
-                  next[next.indexOf(savedMovement)] = updated;
-                  setSavedMovements(next);
-                  // Close drawer
-                  savedMovementDrawer.onClose();
-                  toast.success(`Movement renamed to ${newName}`);
-                } catch (error) {
-                  toast.error(error.message);
-                }
-              }}
-            />
+                }}
+              />
+            </ReactFocusLock>
             <Box>
               <Button
                 color="error"
@@ -427,7 +420,7 @@ export const Editor: FC = () => {
                   try {
                     if (!window.confirm('Are you sure you want to delete this?')) return;
                     const savedMovement = savedMovementDrawer.getData();
-                    if (!savedMovement) throw Error('Unreachable');
+                    if (!savedMovement) throw Error('Unreachable: deleteSavedMovement');
                     await API.SavedMovements.delete(savedMovement.id);
                     // Update local state
                     setSavedMovements(
@@ -574,7 +567,6 @@ export const Editor: FC = () => {
                           onClick={event => {
                             addSetDrawer.onOpen(event);
                             setAddSetDrawerMovement(movement);
-                            setTimeout(() => addSetWeightInputRef.current?.select(), 1);
                             // Set controlled state default values to previous set
                             if (movement.sets.length > 0) {
                               const lastSet = movement.sets[movement.sets.length - 1];
@@ -595,7 +587,7 @@ export const Editor: FC = () => {
                             onClick={async () => {
                               try {
                                 const last = movement.sets[movement.sets.length - 1];
-                                if (!last) throw TypeError('Unreachable');
+                                if (!last) throw TypeError('Unreachable: last');
                                 const without = movement.sets.filter(_ => _.uuid !== last.uuid);
                                 //
                                 const updated: Movement = await API.Movements.update({
@@ -635,7 +627,7 @@ export const Editor: FC = () => {
                 onClick={async () => {
                   try {
                     const movement = movementMenuDrawer.getData();
-                    if (!movement) throw TypeError('Unreachable');
+                    if (!movement) throw TypeError('Unreachable: rename movement');
                     await API.Movements.delete(movement.id);
                     // Update local state
                     setMovements(
@@ -653,7 +645,7 @@ export const Editor: FC = () => {
                   // Edit name
                 }}
               >
-                Remove Movement
+                Remove {movementMenuDrawer.getData()?.name || 'Movement'}
               </Button>
             </Stack>
           </Collapse>
@@ -672,7 +664,7 @@ export const Editor: FC = () => {
                     <>
                       <TextField
                         label={`Weight (${addSetDrawerMovement.weightUnit}s)`}
-                        inputRef={addSetWeightInputRef}
+                        // inputRef={addSetWeightInputRef}
                         inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                         value={newSetWeight}
                         onChange={event => setNewSetWeight(+event.target.value)}
@@ -719,7 +711,12 @@ export const Editor: FC = () => {
               onClick={event => {
                 addMovementDrawer.onOpen(event);
                 // autofocus on add movement input
-                setTimeout(() => addMovementInputRef.current?.select(), 1);
+                // delay(250).then(() => {
+                //   toast.info('yes2');
+                //   addMovementInputRef.current?.focus();
+                //   addMovementInputRef.current?.click();
+                // });
+                // setTimeout(() => addMovementInputRef.current?.select(), 1);
               }}
             >
               Movement
@@ -805,7 +802,7 @@ const MovementSetView: FC<{
           }}
           onBlur={event => {
             if (Number.isNaN(event.target.value)) {
-              throw Error('Unreachable');
+              throw Error('Unreachable: weight input is NaN');
             }
             const value = +event.target.value;
             movement.sets[index].weight = value;

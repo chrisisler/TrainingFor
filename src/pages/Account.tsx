@@ -66,8 +66,8 @@ export const Account: FC = () => {
     <Stack
       spacing={3}
       sx={{
-        height: '100%',
-        width: '100%',
+        height: '100vh',
+        width: '100vw',
         padding: theme => theme.spacing(2),
       }}
     >
