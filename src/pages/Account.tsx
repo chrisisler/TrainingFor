@@ -1,8 +1,16 @@
-import { Add, ChevronRightTwoTone, Google, Launch, Logout } from '@mui/icons-material';
+import {
+  ChevronRightTwoTone,
+  Create,
+  Google,
+  Launch,
+  Logout,
+  ShortTextRounded,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
   Collapse,
+  Fab,
   IconButton,
   Stack,
   SwipeableDrawer,
@@ -72,50 +80,52 @@ export const Account: FC = () => {
         </IconButton>
       </Box>
 
-      {/** Account button */}
-
-      <Button
-        fullWidth
-        size="large"
-        variant="contained"
-        startIcon={<Add />}
-        onClick={startNewTrainingLog}
-        // sx={{ marginTop: theme => theme.spacing(3) }}
-      >
-        Log
-      </Button>
+      {/** Count of unique saved movements */}
+      {/** Count of training logs */}
+      {/** Count of total volume */}
 
       <DataStateView data={logs}>
-        {logs => (
-          <Stack spacing={2} sx={{ padding: theme => theme.spacing(3, 2) }}>
-            {logs.map(log => (
-              <Box
-                key={log.id}
-                sx={{
-                  // color: theme => theme.palette.text.primary,
-                  borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                  // borderLeft: theme => `3px solid ${theme.palette.divider}`,
-                  // borderRadius: 0,
-                  // textTransform: 'none',
-                  // textAlign: 'left',
-                  padding: theme => theme.spacing(1, 2),
-                }}
-                onClick={() => navigate(Paths.editor(log.id))}
-                display="flex"
-                justifyContent="space-between"
-              >
-                <Stack>
-                  <Typography>{new Date(log.timestamp).toLocaleString()}</Typography>
-                  <Typography color="textSecondary">
-                    {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
-                  </Typography>
-                </Stack>
-                <ChevronRightTwoTone sx={{ color: 'text.secondary' }} />
-              </Box>
-            ))}
-          </Stack>
-        )}
+        {logs =>
+          logs.length === 0 ? (
+            <Typography sx={{ textAlign: 'center' }} color="textSecondary">
+              No training data.
+            </Typography>
+          ) : (
+            <Stack spacing={2} sx={{ padding: theme => theme.spacing(3, 2) }}>
+              {logs.map(log => (
+                <Box
+                  key={log.id}
+                  sx={{
+                    borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                    padding: theme => theme.spacing(1, 2),
+                  }}
+                  onClick={() => navigate(Paths.editor(log.id))}
+                  display="flex"
+                  justifyContent="space-between"
+                >
+                  <Stack>
+                    <Typography>{new Date(log.timestamp).toLocaleString()}</Typography>
+                    <Typography color="textSecondary">
+                      {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
+                    </Typography>
+                  </Stack>
+                  <ChevronRightTwoTone sx={{ color: 'text.secondary' }} />
+                </Box>
+              ))}
+            </Stack>
+          )
+        }
       </DataStateView>
+
+      <Box
+        display="flex"
+        sx={{ width: '100%', height: '100%', alignItems: 'end', justifyContent: 'center' }}
+      >
+        <Fab variant="extended" onClick={startNewTrainingLog} sx={{ width: '100%' }}>
+          <ShortTextRounded sx={{ mr: -1 }} fontSize="large" />
+          <Create fontSize="large" />
+        </Fab>
+      </Box>
 
       {/** Button to reassign data from current anon user to google auth'd account */}
       {user.isAnonymous && DataState.isReady(logs) && logs.length > 0 && (
