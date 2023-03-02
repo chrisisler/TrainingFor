@@ -3,10 +3,9 @@ import { getFirestore } from 'firebase/firestore';
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
   signInAnonymously,
   UserCredential,
+  signInWithPopup,
 } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -31,12 +30,11 @@ export enum DbPath {
   // Templates = 'Templates',
 }
 
-/** Ways of logging in. */
 export const Authenticate = {
-  withGoogle: async (): Promise<UserCredential | null> => {
+  withGoogle: async (): Promise<UserCredential> => {
     const provider = new GoogleAuthProvider();
-    signInWithRedirect(auth, provider);
-    return await Promise.resolve().then(() => getRedirectResult(auth));
+    // Not 100% perfect. See https://stackoverflow.com/questions/74846216
+    return await signInWithPopup(auth, provider);
   },
   anonymously: async (): Promise<UserCredential> => {
     return await signInAnonymously(auth);

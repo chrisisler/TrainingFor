@@ -154,9 +154,9 @@ export const Account: FC = () => {
                     if (!window.confirm('Are you sure?')) return;
                     try {
                       const credential = await Authenticate.withGoogle();
-                      if (!credential) throw Error('Authentication failed - user not found.');
+                      if (!credential) throw Error('Cannot authenticate: user not found.');
                       await API.assignAnonymousDataToGoogleUser(user.uid, credential.user.uid);
-                      toast.success('Assigned data to persistent account.');
+                      toast.success('Assigned data to new persistent account.');
                     } catch (error) {
                       toast.error(error.message);
                     }

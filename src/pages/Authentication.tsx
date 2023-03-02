@@ -39,10 +39,7 @@ export const Authentication: FC = () => {
             startIcon={<Google />}
             onClick={async () => {
               try {
-                const user = await Authenticate.withGoogle();
-                if (!user) {
-                  throw Error('Authentication failed - user not found.');
-                }
+                await Authenticate.withGoogle();
                 navigate(Paths.account);
               } catch (error) {
                 toast.error(error.message);
