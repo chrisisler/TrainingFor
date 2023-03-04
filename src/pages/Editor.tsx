@@ -306,7 +306,7 @@ export const Editor: FC = () => {
       >
         <Box display="flex" width="100%" justifyContent="space-between">
           <Box />
-          <IconButton size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
+          <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
             <ShortTextRounded />
           </IconButton>
         </Box>
@@ -494,9 +494,9 @@ export const Editor: FC = () => {
           {DataState.isReady(movements) && (
             <Box display="flex" width="100%" justifyContent="center">
               <Button
+                disableRipple
                 ref={addMovementBtnRef}
-                // size="small"
-                // variant="outlined"
+                size="large"
                 startIcon={<PlaylistAddRounded />}
                 onClick={event => {
                   addMovementDrawer.onOpen(event);
