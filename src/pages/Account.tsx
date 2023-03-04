@@ -1,6 +1,6 @@
 import {
   ChevronRightTwoTone,
-  Create,
+  CreateOutlined,
   Google,
   Launch,
   Logout,
@@ -46,7 +46,7 @@ export const Account: FC = () => {
         id: '',
       });
       navigate(Paths.editor(entry.id));
-      toast.success('Training log created successfully.');
+      toast.success('Created new training page.');
     } catch (err) {
       toast.error(err.message);
     }
@@ -121,9 +121,14 @@ export const Account: FC = () => {
         display="flex"
         sx={{ width: '100%', height: '100%', alignItems: 'end', justifyContent: 'center' }}
       >
-        <Fab variant="extended" onClick={startNewTrainingLog} sx={{ width: '100%' }}>
+        <Fab
+          variant="extended"
+          onClick={startNewTrainingLog}
+          sx={{ width: '100%' }}
+          color="primary"
+        >
           <ShortTextRounded sx={{ mr: -1 }} fontSize="large" />
-          <Create fontSize="large" />
+          <CreateOutlined fontSize="large" />
         </Fab>
       </Box>
 
@@ -137,7 +142,7 @@ export const Account: FC = () => {
             endIcon={<Logout />}
             onClick={reauthDrawer.onOpen}
           >
-            Create Persistent Account
+            Persist Account
           </Button>
 
           <SwipeableDrawer {...reauthDrawer} anchor="bottom">

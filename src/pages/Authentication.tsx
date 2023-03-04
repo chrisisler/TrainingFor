@@ -55,7 +55,7 @@ export const Authentication: FC = () => {
               try {
                 await Authenticate.anonymously();
                 navigate(Paths.account);
-                toast.success('Registered successfully!');
+                toast.success('Welcome!');
               } catch (error) {
                 toast.error(error.message);
               }

@@ -3,15 +3,18 @@ import {
   Add,
   AddCircle,
   Close,
+  DeleteForeverRounded,
   DeleteOutline,
   MoreHoriz,
-  PersonOutline,
+  Person,
   PlaylistAddRounded,
   Remove,
+  ShortTextRounded,
 } from '@mui/icons-material';
 import {
   Box,
   Button,
+  CircularProgress,
   Collapse,
   IconButton,
   MenuItem,
@@ -23,6 +26,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { format } from 'date-fns';
 import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
@@ -64,6 +68,7 @@ export const Editor: FC = () => {
   const addSetDrawer = useMaterialMenu();
   const savedMovementDrawer = useDrawer<SavedMovement>();
   const movementMenuDrawer = useDrawer<Movement>();
+  const logDrawer = useDrawer<undefined>();
   const addMovementBtnRef = useRef<HTMLButtonElement | null>(null);
   // const addSetWeightInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -131,6 +136,12 @@ export const Editor: FC = () => {
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movementNameQuery, savedMovements]);
+
+  const [logTimestamp] = useDataState(async () => {
+    if (!logId || !logDrawer.open) return DataState.Empty;
+    const log = await API.TrainingLogs.get(logId);
+    return log.timestamp;
+  }, [logId, logDrawer.open]);
 
   const addMovementFromNewSavedMovement = useCallback(async () => {
     if (!logId) {
@@ -290,13 +301,13 @@ export const Editor: FC = () => {
           height: '100%',
           width: '100%',
           overflowY: 'scroll',
-          padding: theme => theme.spacing(2),
+          padding: theme => theme.spacing(1, 2, 3, 2),
         }}
       >
         <Box display="flex" width="100%" justifyContent="space-between">
           <Box />
-          <IconButton size="small" onClick={() => navigate(Paths.account)}>
-            <PersonOutline fontSize="small" />
+          <IconButton size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
+            <ShortTextRounded />
           </IconButton>
         </Box>
 
@@ -483,23 +494,66 @@ export const Editor: FC = () => {
           {DataState.isReady(movements) && (
             <Box display="flex" width="100%" justifyContent="center">
               <Button
-                // fullWidth
                 ref={addMovementBtnRef}
                 // size="small"
-                variant="outlined"
+                // variant="outlined"
                 startIcon={<PlaylistAddRounded />}
                 onClick={event => {
                   addMovementDrawer.onOpen(event);
                 }}
-              >
-                Movements
-              </Button>
+              ></Button>
             </Box>
           )}
         </Stack>
       </Box>
 
       {/** ------------------------- DRAWERS ------------------------- */}
+
+      <SwipeableDrawer {...logDrawer.props()} anchor="top">
+        <Collapse in={logDrawer.open}>
+          <Stack spacing={2} direction="row-reverse" justifyContent="space-between">
+            <Button variant="outlined" onClick={() => navigate(Paths.account)}>
+              <Person />
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                toast.info('Unimplemented: Update log notes.');
+              }}
+            >
+              Note
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                toast.info('Unimplemented: Update log timestamp.');
+              }}
+            >
+              <DataStateView data={logTimestamp} loading={() => <CircularProgress size="1.0rem" />}>
+                {timestamp => <>{format(new Date(timestamp), 'MMM M')}</>}
+              </DataStateView>
+            </Button>
+            <Button
+              color="error"
+              variant="outlined"
+              onClick={async () => {
+                if (!logId) throw Error('Unreachable');
+                if (!window.confirm('Delete Training?')) return;
+                try {
+                  await API.TrainingLogs.delete(logId);
+                  logDrawer.onClose();
+                  navigate(Paths.account);
+                  toast.success('Deleted training.');
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+            >
+              <DeleteForeverRounded />
+            </Button>
+          </Stack>
+        </Collapse>
+      </SwipeableDrawer>
 
       <SwipeableDrawer {...addMovementDrawer} anchor="top">
         <Collapse in={addMovementDrawer.open}>
