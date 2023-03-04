@@ -43,6 +43,7 @@ export const Authentication: FC = () => {
                 const authResult = await Authenticate.withGoogle();
                 setUser(authResult.user);
                 navigate(Paths.account);
+                toast.success('Welcome!');
               } catch (error) {
                 toast.error(error.message);
               }
