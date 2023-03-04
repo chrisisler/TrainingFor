@@ -559,25 +559,30 @@ export const Editor: FC = () => {
         <Collapse in={addMovementDrawer.open}>
           {/** Top 3-8 recommendations */}
 
-          <Stack spacing={3} key={JSON.stringify(addMovementDrawer)}>
-            <ReactFocusLock disabled={!addMovementDrawer.open}>
-              <TextField
-                fullWidth
-                // inputRef={addMovementInputRef}
-                variant="standard"
-                label="Search for a movement..."
-                helperText="Select a movement or create one"
-                value={movementNameQuery}
-                onChange={event => setMovementNameQuery(event.target.value)}
-                InputProps={{
-                  endAdornment: !!movementNameQuery && (
-                    <IconButton disableRipple size="small" onClick={() => setMovementNameQuery('')}>
-                      <Close />
-                    </IconButton>
-                  ),
-                }}
-              />
-            </ReactFocusLock>
+          <Stack spacing={1} key={JSON.stringify(addMovementDrawer)}>
+            <Box> {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
+              <ReactFocusLock disabled={!addMovementDrawer.open}>
+                <TextField
+                  fullWidth
+                  variant="standard"
+                  // label="Search for a movement..."
+                  helperText="Select a movement or create one"
+                  value={movementNameQuery}
+                  onChange={event => setMovementNameQuery(event.target.value)}
+                  InputProps={{
+                    endAdornment: !!movementNameQuery && (
+                      <IconButton
+                        disableRipple
+                        size="small"
+                        onClick={() => setMovementNameQuery('')}
+                      >
+                        <Close />
+                      </IconButton>
+                    ),
+                  }}
+                />
+              </ReactFocusLock>
+            </Box>
 
             <DataStateView data={matches}>
               {matches => {
@@ -586,32 +591,34 @@ export const Editor: FC = () => {
                 const hasFuzzyNameMatch = matches.some(_ => _.name.includes(movementNameQuery));
                 return (
                   <>
-                    <Collapse in={queryIsEmpty || (!queryIsEmpty && hasFuzzyNameMatch)}>
-                      <Stack spacing={1}>
-                        {matches.map((match: SavedMovement) => (
-                          <Box key={match.id} display="flex" justifyContent="space-between">
-                            <Typography
-                              sx={{
-                                padding: theme => theme.spacing(0.5, 1),
-                                borderRadius: 1,
-                                border: '1px solid lightgrey',
-                              }}
-                              onClick={() => addMovementFromExistingSavedMovement(match)}
-                            >
-                              {match.name}
-                            </Typography>
-                            <IconButton
-                              sx={{ color: theme => theme.palette.text.secondary }}
-                              onClick={event => {
-                                savedMovementDrawer.onOpen(event, match);
-                              }}
-                            >
-                              <MoreHoriz fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </Collapse>
+                    {matches.length > 0 && (
+                      <Collapse in={queryIsEmpty || (!queryIsEmpty && hasFuzzyNameMatch)}>
+                        <Stack spacing={1}>
+                          {matches.map((match: SavedMovement) => (
+                            <Box key={match.id} display="flex" justifyContent="space-between">
+                              <Typography
+                                sx={{
+                                  padding: theme => theme.spacing(0.5, 1),
+                                  borderRadius: 1,
+                                  border: '1px solid lightgrey',
+                                }}
+                                onClick={() => addMovementFromExistingSavedMovement(match)}
+                              >
+                                {match.name}
+                              </Typography>
+                              <IconButton
+                                sx={{ color: theme => theme.palette.text.secondary }}
+                                onClick={event => {
+                                  savedMovementDrawer.onOpen(event, match);
+                                }}
+                              >
+                                <MoreHoriz fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Collapse>
+                    )}
                     <Collapse in={!queryIsEmpty && !hasFoundExactName}>
                       <Box
                         sx={{
@@ -624,8 +631,7 @@ export const Editor: FC = () => {
                         <Button
                           fullWidth
                           size="large"
-                          sx={{ justifyContent: 'flex-start' }}
-                          variant="outlined"
+                          sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                           startIcon={<Add />}
                           onClick={addMovementFromNewSavedMovement}
                         >
@@ -645,41 +651,43 @@ export const Editor: FC = () => {
       <SwipeableDrawer {...savedMovementDrawer.props()} anchor="top">
         <Collapse in={savedMovementDrawer.open}>
           <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
-            <ReactFocusLock>
-              <TextField
-                fullWidth
-                variant="standard"
-                label="Movement Name"
-                helperText="Movement will be renamed at the previous screen."
-                // helperText="Enter a new name then click anywhere outside to update."
-                defaultValue={savedMovementDrawer.getData()?.name}
-                // Avoiding controlled state this way with onBlur
-                onBlur={async function editSavedMovement(event) {
-                  try {
-                    const savedMovement = savedMovementDrawer.getData();
-                    if (!savedMovement) return;
-                    const newName = event.target.value;
-                    if (newName.length < 3 || newName === savedMovement.name) {
-                      return;
+            <Box>
+              <ReactFocusLock>
+                <TextField
+                  fullWidth
+                  variant="standard"
+                  label="Movement Name"
+                  helperText="Movement will be renamed at the previous screen."
+                  // helperText="Enter a new name then click anywhere outside to update."
+                  defaultValue={savedMovementDrawer.getData()?.name}
+                  // Avoiding controlled state this way with onBlur
+                  onBlur={async function editSavedMovement(event) {
+                    try {
+                      const savedMovement = savedMovementDrawer.getData();
+                      if (!savedMovement) return;
+                      const newName = event.target.value;
+                      if (newName.length < 3 || newName === savedMovement.name) {
+                        return;
+                      }
+                      const updated: SavedMovement = await API.SavedMovements.update({
+                        id: savedMovement.id,
+                        name: newName,
+                      });
+                      // Update local state
+                      if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
+                      const next = savedMovements.slice();
+                      next[next.indexOf(savedMovement)] = updated;
+                      setSavedMovements(next);
+                      // Close drawer
+                      savedMovementDrawer.onClose();
+                      toast.success(`Movement renamed to ${newName}`);
+                    } catch (error) {
+                      toast.error(error.message);
                     }
-                    const updated: SavedMovement = await API.SavedMovements.update({
-                      id: savedMovement.id,
-                      name: newName,
-                    });
-                    // Update local state
-                    if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
-                    const next = savedMovements.slice();
-                    next[next.indexOf(savedMovement)] = updated;
-                    setSavedMovements(next);
-                    // Close drawer
-                    savedMovementDrawer.onClose();
-                    toast.success(`Movement renamed to ${newName}`);
-                  } catch (error) {
-                    toast.error(error.message);
-                  }
-                }}
-              />
-            </ReactFocusLock>
+                  }}
+                />
+              </ReactFocusLock>
+            </Box>
             <Box>
               <Button
                 color="error"
