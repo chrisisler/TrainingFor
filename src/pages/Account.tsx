@@ -16,7 +16,7 @@ import {
   SwipeableDrawer,
   Typography,
 } from '@mui/material';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { limit, orderBy } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
@@ -92,26 +92,31 @@ export const Account: FC = () => {
             </Typography>
           ) : (
             <Stack spacing={2} sx={{ padding: theme => theme.spacing(3, 2) }}>
-              {logs.map(log => (
-                <Box
-                  key={log.id}
-                  sx={{
-                    borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                    padding: theme => theme.spacing(1, 2),
-                  }}
-                  onClick={() => navigate(Paths.editor(log.id))}
-                  display="flex"
-                  justifyContent="space-between"
-                >
-                  <Stack>
-                    <Typography>{new Date(log.timestamp).toLocaleString()}</Typography>
-                    <Typography color="textSecondary">
-                      {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
-                    </Typography>
-                  </Stack>
-                  <ChevronRightTwoTone sx={{ color: 'text.secondary' }} />
-                </Box>
-              ))}
+              {logs.map(log => {
+                const timestamp = new Date(log.timestamp);
+
+                return (
+                  <Box
+                    key={log.id}
+                    sx={{
+                      border: theme => `1px solid ${theme.palette.divider}`,
+                      borderRadius: 2,
+                      padding: theme => theme.spacing(2, 3),
+                    }}
+                    onClick={() => navigate(Paths.editor(log.id))}
+                    display="flex"
+                    justifyContent="space-between"
+                  >
+                    <Stack>
+                      <Typography>{format(timestamp, 'MMMM M')}</Typography>
+                      <Typography color="textSecondary">
+                        {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
+                      </Typography>
+                    </Stack>
+                    <ChevronRightTwoTone sx={{ color: 'text.secondary' }} fontSize="small" />
+                  </Box>
+                );
+              })}
             </Stack>
           )
         }

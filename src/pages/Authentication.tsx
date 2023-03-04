@@ -4,11 +4,12 @@ import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Authenticate } from '../api';
-import { Paths, useToast } from '../util';
+import { Paths, useToast, useUserAuthSubscription } from '../util';
 
 export const Authentication: FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
+  const [, setUser] = useUserAuthSubscription();
 
   return (
     <Box
@@ -39,7 +40,8 @@ export const Authentication: FC = () => {
             startIcon={<Google />}
             onClick={async () => {
               try {
-                await Authenticate.withGoogle();
+                const authResult = await Authenticate.withGoogle();
+                setUser(authResult.user);
                 navigate(Paths.account);
               } catch (error) {
                 toast.error(error.message);

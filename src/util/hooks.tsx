@@ -114,7 +114,7 @@ export function usePrevious<T>(value: T): T {
  * Maps the state of authentication (in VS not in VS logging in VS failed) to
  * DataState and updates based on auth changes (log in and out).
  */
-export const useUserAuthSubscription = (): DataState<User> => {
+export const useUserAuthSubscription = (): [DataState<User>, (user: DataState<User>) => void] => {
   const [state, setState] = useState<DataState<User>>(DataState.Loading);
 
   useEffect(() => {
@@ -130,7 +130,7 @@ export const useUserAuthSubscription = (): DataState<User> => {
     );
   }, []);
 
-  return state;
+  return [state, setState];
 };
 
 /**
