@@ -452,8 +452,8 @@ export const Editor: FC = () => {
                           <Stack
                             alignItems="end"
                             visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
-                            spacing={2}
-                            sx={{ marginTop: '4px' }}
+                            spacing={1.25}
+                            sx={{ marginTop: '8px' }}
                           >
                             <MovementUnitSelect
                               value={movement.repCountUnit}
