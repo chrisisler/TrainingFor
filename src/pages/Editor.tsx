@@ -364,7 +364,7 @@ export const Editor: FC = () => {
                       </Typography>
                       {/** Display volume or reps total. */}
                       {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                      {movement.sets.length >= 2 && (
+                      {movement.sets.length >= 1 && (
                         <Typography color="textSecondary" variant="overline">
                           {Intl.NumberFormat().format(
                             movement.sets[0].weight > 0
@@ -387,7 +387,7 @@ export const Editor: FC = () => {
                       )}
                     </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row" spacing={1}>
+                      <Stack direction="row" spacing={1.4}>
                         {/** Stack of unit control text buttons */}
                         {movement.sets.length > 0 && (
                           <Stack
@@ -954,7 +954,7 @@ const MovementSetView: FC<{
             padding: '2px 4px',
             fontFamily: 'monospace',
             fontWeight: 500,
-            fontSize: '1.1rem',
+            fontSize: '1.2rem',
             letterSpacing: '0.004em',
           }}
         />
