@@ -747,7 +747,6 @@ export const Editor: FC = () => {
                       setSavedMovements(next);
                       // Close drawer
                       savedMovementDrawer.onClose();
-                      toast.success(`Saved Movement renamed to ${newName}`);
                     } catch (error) {
                       toast.error(error.message);
                     }
