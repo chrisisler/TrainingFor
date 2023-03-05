@@ -32,6 +32,7 @@ import {
 import { format } from 'date-fns';
 import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ConfettiExplosion from 'react-confetti-explosion';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -878,6 +879,7 @@ const MovementSetView: FC<{
   const theme = useTheme();
 
   const [weight, setWeight] = useState(movementSet.weight);
+  const [exploding, setExploding] = useState(false);
 
   const dynamicRepCountButtonStyle = useMemo(
     () =>
@@ -900,20 +902,23 @@ const MovementSetView: FC<{
     // First click: Unattempted status -> Completed status
     if (repCountActual === repCountExpected && status === MovementSetStatus.Unattempted) {
       movement.sets[index].status = MovementSetStatus.Completed;
+      setExploding(true);
     } else if (repCountActual === 0) {
       // Last click: Completed status -> Unattempted status && reset reps achieved
       movement.sets[index].status = MovementSetStatus.Unattempted;
       movement.sets[index].repCountActual = repCountExpected;
+      setExploding(false);
     } else if (status === MovementSetStatus.Completed) {
       // Not first or last click: Decrement number of successful reps
       movement.sets[index].repCountActual -= 1;
+      setExploding(false);
     }
     updateSets([...movement.sets]);
-    // Side Note: Deleting a set is done through clicking the movement name button.
   }, [index, movement.sets, movementSet, updateSets]);
 
   return (
     <Stack>
+      {exploding && <ConfettiExplosion particleCount={35} width={400} force={0.4} />}
       <IconButton
         sx={{
           paddingY: theme => theme.spacing(1),
