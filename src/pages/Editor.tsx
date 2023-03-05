@@ -2,6 +2,7 @@ import { uuidv4 } from '@firebase/util';
 import {
   Add,
   AddCircle,
+  AddRounded,
   Close,
   DeleteForeverRounded,
   DeleteOutline,
@@ -296,10 +297,24 @@ export const Editor: FC = () => {
     ]
   );
 
+  // If no movements, display an info toast to add a movement to get started
+  useEffect(() => {
+    if (!DataState.isReady(movements)) return;
+    if (movements.length > 0) return;
+    toast.info('Add a movement to get started!', {
+      action: () => (
+        <Button onClick={event => addMovementDrawer.onOpen(event)}>
+          <AddRounded />
+        </Button>
+      ),
+    });
+  }, [addMovementDrawer, movements, toast]);
+
+  // Random notice for sleep
   useEffect(() => {
     if (!(Math.random() >= 0.96)) return;
     toast.info('Make sure to get 8 hours of sleep!', {
-      action: _ => (
+      action: () => (
         <Button onClick={event => sleepDrawer.onOpen(event)}>
           <HelpRounded />
         </Button>

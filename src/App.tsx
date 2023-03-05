@@ -14,7 +14,13 @@ export const App: FC = () => {
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
       <BrowserRouter>
-        <SnackbarProvider maxSnack={3} dense autoHideDuration={2500} TransitionComponent={Collapse}>
+        <SnackbarProvider
+          dense
+          preventDuplicate
+          maxSnack={2}
+          autoHideDuration={2500}
+          TransitionComponent={Collapse}
+        >
           <PrivateThemeProvider>
             <DataStateView
               data={authState}
