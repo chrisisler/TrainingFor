@@ -879,7 +879,7 @@ const MovementSetView: FC<{
   const theme = useTheme();
 
   const [weight, setWeight] = useState(movementSet.weight);
-  const [exploding, setExploding] = useState(false);
+  const [confetti, setConfetti] = useState(false);
 
   const dynamicRepCountButtonStyle = useMemo(
     () =>
@@ -899,26 +899,31 @@ const MovementSetView: FC<{
 
   const decrementRepCount = useCallback(() => {
     const { repCountActual, repCountExpected, status } = movementSet;
+    setConfetti(false);
     // First click: Unattempted status -> Completed status
     if (repCountActual === repCountExpected && status === MovementSetStatus.Unattempted) {
       movement.sets[index].status = MovementSetStatus.Completed;
-      setExploding(true);
+      // Intermittent reinforcement is the delivery of a reward at irregular
+      // intervals, a method that has been determined to yield the greatest
+      // effort from the subject. The subject does not receive a reward each
+      // time they perform a desired behavior but at seemingly random intervals.
+      if (Math.random() > 0.66) {
+        setConfetti(true);
+      }
     } else if (repCountActual === 0) {
       // Last click: Completed status -> Unattempted status && reset reps achieved
       movement.sets[index].status = MovementSetStatus.Unattempted;
       movement.sets[index].repCountActual = repCountExpected;
-      setExploding(false);
     } else if (status === MovementSetStatus.Completed) {
       // Not first or last click: Decrement number of successful reps
       movement.sets[index].repCountActual -= 1;
-      setExploding(false);
     }
     updateSets([...movement.sets]);
   }, [index, movement.sets, movementSet, updateSets]);
 
   return (
     <Stack>
-      {exploding && <ConfettiExplosion particleCount={35} width={400} force={0.4} />}
+      {confetti && <ConfettiExplosion particleCount={35} width={400} force={0.4} />}
       <IconButton
         sx={{
           paddingY: theme => theme.spacing(1),
