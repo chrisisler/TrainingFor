@@ -1,16 +1,16 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
-  AddCircle,
+  AddCircleRounded,
   AddRounded,
   Close,
+  CloseRounded,
   DeleteForeverRounded,
   DeleteOutline,
   HelpRounded,
   MoreHoriz,
   Person,
   PlaylistAddRounded,
-  Remove,
   ShortTextRounded,
 } from '@mui/icons-material';
 import {
@@ -489,52 +489,56 @@ export const Editor: FC = () => {
 
                         {/** ADD NEW SET BUTTON */}
                         <Stack spacing={1}>
-                          <IconButton
-                            color="primary"
-                            onClick={event => {
-                              addSetDrawer.onOpen(event);
-                              setAddSetDrawerMovement(movement);
-                              // Set controlled state default values to previous set
-                              if (movement.sets.length > 0) {
-                                const lastSet = movement.sets[movement.sets.length - 1];
-                                setNewSetWeight(lastSet.weight);
-                                setNewSetRepCount(lastSet.repCountActual);
-                              } else {
-                                setNewSetWeight(0);
-                                setNewSetRepCount(0);
-                              }
-                            }}
-                          >
-                            {movement.sets.length === 0 ? <AddCircle /> : <Add />}
-                          </IconButton>
-                          {movement.sets.length > 0 ? (
+                          <Stack spacing={1} direction="row">
                             <IconButton
-                              sx={{ opacity: 0.5 }}
-                              color="error"
-                              onClick={async () => {
-                                try {
-                                  const last = movement.sets[movement.sets.length - 1];
-                                  if (!last) throw TypeError('Unreachable: last');
-                                  const without = movement.sets.filter(_ => _.uuid !== last.uuid);
-                                  //
-                                  const updated: Movement = await API.Movements.update({
-                                    sets: without,
-                                    id: movement.id,
-                                  });
-                                  // Update local state
-                                  const copy = movements.slice();
-                                  copy[copy.indexOf(movement)] = updated;
-                                  setMovements(copy);
-                                } catch (error) {
-                                  toast.error(error.message);
+                              color="primary"
+                              onClick={event => {
+                                addSetDrawer.onOpen(event);
+                                setAddSetDrawerMovement(movement);
+                                // Set controlled state default values to previous set
+                                if (movement.sets.length > 0) {
+                                  const lastSet = movement.sets[movement.sets.length - 1];
+                                  setNewSetWeight(lastSet.weight);
+                                  setNewSetRepCount(lastSet.repCountActual);
+                                } else {
+                                  setNewSetWeight(0);
+                                  setNewSetRepCount(0);
                                 }
                               }}
                             >
-                              <Remove fontSize="small" />
+                              {movement.sets.length === 0 ? <AddCircleRounded /> : <AddRounded />}
                             </IconButton>
-                          ) : (
-                            <Box>{/** Empty box for spacing/alignment */}</Box>
-                          )}
+                            {movement.sets.length > 0 ? (
+                              <IconButton
+                                sx={{ opacity: 0.7 }}
+                                color="error"
+                                onClick={async () => {
+                                  try {
+                                    const last = movement.sets[movement.sets.length - 1];
+                                    if (!last) throw TypeError('Unreachable: last');
+                                    const without = movement.sets.filter(_ => _.uuid !== last.uuid);
+                                    //
+                                    const updated: Movement = await API.Movements.update({
+                                      sets: without,
+                                      id: movement.id,
+                                    });
+                                    // Update local state
+                                    const copy = movements.slice();
+                                    copy[copy.indexOf(movement)] = updated;
+                                    setMovements(copy);
+                                  } catch (error) {
+                                    toast.error(error.message);
+                                  }
+                                }}
+                              >
+                                <CloseRounded fontSize="small" />
+                              </IconButton>
+                            ) : (
+                              <Box>{/** Empty box for spacing/alignment */}</Box>
+                            )}
+                          </Stack>
+
+                          <Box />
                         </Stack>
                       </Stack>
                     </Box>
