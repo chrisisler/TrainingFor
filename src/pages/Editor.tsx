@@ -14,6 +14,7 @@ import {
   ShortTextRounded,
 } from '@mui/icons-material';
 import {
+  alpha,
   Box,
   Button,
   CircularProgress,
@@ -312,7 +313,7 @@ export const Editor: FC = () => {
 
   // Random notice for sleep
   useEffect(() => {
-    if (!(Math.random() >= 0.96)) return;
+    if (!(Math.random() >= 0.98)) return;
     toast.info('Make sure to get 8 hours of sleep!', {
       action: () => (
         <Button onClick={event => sleepDrawer.onOpen(event)}>
@@ -825,6 +826,7 @@ export const Editor: FC = () => {
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                       value={newSetWeight}
                       onChange={event => setNewSetWeight(+event.target.value)}
+                      onFocus={event => event.currentTarget.select()}
                     />
                     <Typography
                       variant="overline"
@@ -841,6 +843,7 @@ export const Editor: FC = () => {
                   inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                   value={newSetRepCount}
                   onChange={event => setNewSetRepCount(+event.target.value)}
+                  onFocus={event => event.currentTarget.select()}
                 />
               </Stack>
               <Button
@@ -876,12 +879,14 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: theme.palette.success.light,
+            backgroundColor: alpha(theme.palette.success.light, 0.05),
             // Avoid jarring when switching between Unattempted and Completed
-            border: '1px solid transparent',
+            borderBottom: `2px solid ${theme.palette.success.light}`,
+            color: theme.palette.success.light,
           }
         : {
-            border: `1px solid ${theme.palette.divider}`,
+            backgroundColor: alpha(theme.palette.divider, 0.05),
+            borderBottom: `2px solid ${theme.palette.divider}`,
           },
     [movementSet.status, theme]
   );
@@ -910,6 +915,7 @@ const MovementSetView: FC<{
           paddingY: theme => theme.spacing(1),
           paddingX: theme =>
             theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1.33 : 2),
+          borderRadius: 1,
         }}
         // Handles dynamic styling based on repCount button for a movement set
         style={dynamicRepCountButtonStyle}
