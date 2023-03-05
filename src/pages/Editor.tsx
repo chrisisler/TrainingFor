@@ -335,8 +335,7 @@ export const Editor: FC = () => {
           padding: theme => theme.spacing(1, 2, 3, 2),
         }}
       >
-        <Box display="flex" width="100%" justifyContent="space-between">
-          <Box />
+        <Box display="flex" width="100%" justifyContent="center">
           <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
             <ShortTextRounded />
           </IconButton>
@@ -552,15 +551,15 @@ export const Editor: FC = () => {
 
           {DataState.isReady(movements) && (
             <Box display="flex" width="100%" justifyContent="center">
-              <Button
+              <IconButton
                 disableRipple
-                ref={addMovementBtnRef}
+                sx={{ opacity: 0.5, color: 'text.secondary' }}
                 size="large"
-                startIcon={<PlaylistAddRounded />}
-                onClick={event => {
-                  addMovementDrawer.onOpen(event);
-                }}
-              ></Button>
+                ref={addMovementBtnRef}
+                onClick={addMovementDrawer.onOpen}
+              >
+                <PlaylistAddRounded sx={{ fontSize: '1.8rem' }} />
+              </IconButton>
             </Box>
           )}
         </Stack>
@@ -826,7 +825,7 @@ export const Editor: FC = () => {
                 color="error"
                 startIcon={<DeleteOutline />}
                 onClick={async () => {
-                  if (!window.confirm('Are you sure you want to delete this?')) return;
+                  if (!window.confirm('Are you sure?')) return;
                   try {
                     const movement = movementMenuDrawer.getData();
                     if (!movement) throw TypeError('Unreachable: rename movement');
@@ -906,12 +905,7 @@ export const Editor: FC = () => {
                   }}
                 />
               </Stack>
-              <Button
-                fullWidth
-                type="submit"
-                size="large"
-                disabled={newSetRepCount === 0}
-              >
+              <Button fullWidth type="submit" size="large" disabled={newSetRepCount === 0}>
                 Add Set #<b>{addSetDrawerMovement.sets.length + 1}</b>
               </Button>
             </Stack>
