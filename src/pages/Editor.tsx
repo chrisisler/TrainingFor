@@ -626,7 +626,7 @@ export const Editor: FC = () => {
           <Stack spacing={1} key={JSON.stringify(addMovementDrawer)}>
             <Box>
               {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
-              <ReactFocusLock disabled={!addMovementDrawer.open}>
+              <ReactFocusLock disabled={!addMovementDrawer.open} returnFocus>
                 <TextField
                   fullWidth
                   variant="standard"
@@ -717,13 +717,12 @@ export const Editor: FC = () => {
         <Collapse in={savedMovementDrawer.open}>
           <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
             <Box>
-              <ReactFocusLock>
+              <ReactFocusLock disabled={!savedMovementDrawer.open} returnFocus>
                 <TextField
                   fullWidth
                   variant="standard"
-                  label="Movement Name"
-                  helperText="Movement will be renamed at the previous screen."
-                  // helperText="Enter a new name then click anywhere outside to update."
+                  label="Saved Movement Name"
+                  helperText="Saved Movement will be renamed at the previous screen."
                   defaultValue={savedMovementDrawer.getData()?.name}
                   // Avoiding controlled state this way with onBlur
                   onBlur={async function editSavedMovement(event) {
@@ -745,7 +744,7 @@ export const Editor: FC = () => {
                       setSavedMovements(next);
                       // Close drawer
                       savedMovementDrawer.onClose();
-                      toast.success(`Movement renamed to ${newName}`);
+                      toast.success(`Saved Movement renamed to ${newName}`);
                     } catch (error) {
                       toast.error(error.message);
                     }
@@ -756,7 +755,7 @@ export const Editor: FC = () => {
             <Box>
               <Button
                 color="error"
-                startIcon={<DeleteOutline />}
+                startIcon={<DeleteForeverRounded />}
                 onClick={async function deleteSavedMovement() {
                   try {
                     if (!window.confirm('Are you sure you want to delete this?')) return;
@@ -785,31 +784,66 @@ export const Editor: FC = () => {
       {/** Movement Menu Drawer */}
       <SwipeableDrawer {...movementMenuDrawer.props()} anchor="top">
         <Collapse in={movementMenuDrawer.open}>
-          <Stack spacing={3}>
-            <Button
-              color="error"
-              startIcon={<DeleteOutline />}
-              onClick={async () => {
-                try {
-                  const movement = movementMenuDrawer.getData();
-                  if (!movement) throw TypeError('Unreachable: rename movement');
-                  await API.Movements.delete(movement.id);
-                  // Update local state
-                  setMovements(DataState.map(movements, _ => _.filter(_ => _.id !== movement.id)));
-                  // Close drawer
-                  movementMenuDrawer.onClose();
-                } catch (error) {
-                  toast.error(error.message);
-                }
-
-                // TODO remaining actions
-                // Move up
-                // Move down
-                // Edit name
-              }}
-            >
-              Remove {movementMenuDrawer.getData()?.name || 'Movement'}
-            </Button>
+          <Stack spacing={1} key={JSON.stringify(movementMenuDrawer)}>
+            <Box>
+              <ReactFocusLock disabled={!movementMenuDrawer.open} returnFocus>
+                <TextField
+                  fullWidth
+                  variant="standard"
+                  label="Movement Name"
+                  helperText="Movement will be renamed at the previous screen."
+                  defaultValue={movementMenuDrawer.getData()?.name}
+                  onBlur={async function editMovement(event) {
+                    try {
+                      const movement = movementMenuDrawer.getData();
+                      if (!movement) return;
+                      const newName = event.target.value;
+                      if (newName.length < 3 || newName === movement.name) {
+                        return;
+                      }
+                      const updated: Movement = await API.Movements.update({
+                        id: movement.id,
+                        name: newName,
+                      });
+                      // Update local state
+                      if (!DataState.isReady(movements)) throw Error('Unreachable');
+                      const next = movements.slice();
+                      next[next.indexOf(movement)] = updated;
+                      setMovements(next);
+                      // Close drawer
+                      movementMenuDrawer.onClose();
+                      toast.success(`Movement renamed to ${newName}`);
+                    } catch (error) {
+                      toast.error(error.message);
+                    }
+                  }}
+                />
+              </ReactFocusLock>
+            </Box>
+            <Box>
+              <Button
+                color="error"
+                startIcon={<DeleteOutline />}
+                onClick={async () => {
+                  if (!window.confirm('Are you sure you want to delete this?')) return;
+                  try {
+                    const movement = movementMenuDrawer.getData();
+                    if (!movement) throw TypeError('Unreachable: rename movement');
+                    await API.Movements.delete(movement.id);
+                    // Update local state
+                    setMovements(
+                      DataState.map(movements, _ => _.filter(_ => _.id !== movement.id))
+                    );
+                    // Close drawer
+                    movementMenuDrawer.onClose();
+                  } catch (error) {
+                    toast.error(error.message);
+                  }
+                }}
+              >
+                Remove
+              </Button>
+            </Box>
           </Stack>
         </Collapse>
       </SwipeableDrawer>
