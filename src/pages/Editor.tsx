@@ -341,7 +341,7 @@ export const Editor: FC = () => {
           </IconButton>
         </Box>
 
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           <DataStateView data={movements}>
             {movements => (
               <>
@@ -355,40 +355,98 @@ export const Editor: FC = () => {
                       padding: theme => theme.spacing(1, 0),
                     }}
                   >
-                    <Box display="flex" alignItems="baseline">
-                      <Typography
-                        fontSize="1.1rem"
-                        sx={{ padding: theme => theme.spacing(0.5, 1.0, 0.5, 0.5) }}
-                        onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                      >
-                        {movement.name}
-                      </Typography>
-                      {/** Display volume or reps total. */}
-                      {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                      {movement.sets.length >= 1 && (
-                        <Typography color="textSecondary" variant="overline">
-                          {Intl.NumberFormat().format(
-                            movement.sets[0].weight > 0
-                              ? movement.sets.reduce(
-                                  (sum, _) =>
-                                    _.status === MovementSetStatus.Completed
-                                      ? sum + _.repCountActual * _.weight
-                                      : sum,
-                                  0
-                                )
-                              : movement.sets.reduce(
-                                  (sum, _) =>
-                                    _.status === MovementSetStatus.Completed
-                                      ? sum + _.repCountActual
-                                      : sum,
-                                  0
-                                )
-                          )}
+                    <Box
+                      display="flex"
+                      alignItems="end"
+                      width="100%"
+                      justifyContent="space-between"
+                    >
+                      <Stack direction="row" spacing={1}>
+                        <Typography
+                          fontSize="1.0rem"
+                          sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
+                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
+                          fontWeight={600}
+                        >
+                          {movement.name}
                         </Typography>
-                      )}
+                        {/** Display volume or reps total. */}
+                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                        {movement.sets.length >= 1 && (
+                          <Typography
+                            variant="overline"
+                            sx={{ opacity: 0.7, color: 'text.secondary' }}
+                          >
+                            {Intl.NumberFormat().format(
+                              movement.sets[0].weight > 0
+                                ? movement.sets.reduce(
+                                    (sum, _) =>
+                                      _.status === MovementSetStatus.Completed
+                                        ? sum + _.repCountActual * _.weight
+                                        : sum,
+                                    0
+                                  )
+                                : movement.sets.reduce(
+                                    (sum, _) =>
+                                      _.status === MovementSetStatus.Completed
+                                        ? sum + _.repCountActual
+                                        : sum,
+                                    0
+                                  )
+                            )}
+                          </Typography>
+                        )}
+                      </Stack>
+                      <Stack direction="row">
+                        <IconButton
+                          // color="primary"
+                          sx={{ opacity: 0.5, color: 'text.secondary' }}
+                          onClick={event => {
+                            addSetDrawer.onOpen(event);
+                            setAddSetDrawerMovement(movement);
+                            // Set controlled state default values to previous set
+                            if (movement.sets.length > 0) {
+                              const lastSet = movement.sets[movement.sets.length - 1];
+                              setNewSetWeight(lastSet.weight);
+                              setNewSetRepCount(lastSet.repCountActual);
+                            } else {
+                              setNewSetWeight(0);
+                              setNewSetRepCount(0);
+                            }
+                          }}
+                        >
+                          {movement.sets.length === 0 ? <AddCircleRounded /> : <AddRounded />}
+                        </IconButton>
+                        {movement.sets.length > 0 && (
+                          <IconButton
+                            sx={{ opacity: 0.5, color: 'text.secondary' }}
+                            // color="error"
+                            onClick={async () => {
+                              try {
+                                const last = movement.sets[movement.sets.length - 1];
+                                if (!last) throw TypeError('Unreachable: last');
+                                const without = movement.sets.filter(_ => _.uuid !== last.uuid);
+                                //
+                                const updated: Movement = await API.Movements.update({
+                                  sets: without,
+                                  id: movement.id,
+                                });
+                                // Update local state
+                                const copy = movements.slice();
+                                copy[copy.indexOf(movement)] = updated;
+                                setMovements(copy);
+                              } catch (error) {
+                                toast.error(error.message);
+                              }
+                            }}
+                          >
+                            <CloseRounded fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Stack>
                     </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row" spacing={1.4}>
+                      <Stack direction="row" spacing={1.7}>
                         {/** Stack of unit control text buttons */}
                         {movement.sets.length > 0 && (
                           <Stack
@@ -486,61 +544,6 @@ export const Editor: FC = () => {
                             }}
                           />
                         ))}
-
-                        {/** ADD NEW SET BUTTON */}
-                        <Stack spacing={1}>
-                          <Stack spacing={1} direction="row">
-                            <IconButton
-                              // color="primary"
-                              sx={{ opacity: 0.5, color: 'text.secondary' }}
-                              onClick={event => {
-                                addSetDrawer.onOpen(event);
-                                setAddSetDrawerMovement(movement);
-                                // Set controlled state default values to previous set
-                                if (movement.sets.length > 0) {
-                                  const lastSet = movement.sets[movement.sets.length - 1];
-                                  setNewSetWeight(lastSet.weight);
-                                  setNewSetRepCount(lastSet.repCountActual);
-                                } else {
-                                  setNewSetWeight(0);
-                                  setNewSetRepCount(0);
-                                }
-                              }}
-                            >
-                              {movement.sets.length === 0 ? <AddCircleRounded /> : <AddRounded />}
-                            </IconButton>
-                            {movement.sets.length > 0 ? (
-                              <IconButton
-                                sx={{ opacity: 0.5, color: 'text.secondary' }}
-                                // color="error"
-                                onClick={async () => {
-                                  try {
-                                    const last = movement.sets[movement.sets.length - 1];
-                                    if (!last) throw TypeError('Unreachable: last');
-                                    const without = movement.sets.filter(_ => _.uuid !== last.uuid);
-                                    //
-                                    const updated: Movement = await API.Movements.update({
-                                      sets: without,
-                                      id: movement.id,
-                                    });
-                                    // Update local state
-                                    const copy = movements.slice();
-                                    copy[copy.indexOf(movement)] = updated;
-                                    setMovements(copy);
-                                  } catch (error) {
-                                    toast.error(error.message);
-                                  }
-                                }}
-                              >
-                                <CloseRounded fontSize="small" />
-                              </IconButton>
-                            ) : (
-                              <Box>{/** Empty box for spacing/alignment */}</Box>
-                            )}
-                          </Stack>
-
-                          <Box />
-                        </Stack>
                       </Stack>
                     </Box>
                   </Stack>
