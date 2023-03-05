@@ -492,7 +492,8 @@ export const Editor: FC = () => {
                         <Stack spacing={1}>
                           <Stack spacing={1} direction="row">
                             <IconButton
-                              color="primary"
+                              // color="primary"
+                              sx={{ opacity: 0.5, color: 'text.secondary' }}
                               onClick={event => {
                                 addSetDrawer.onOpen(event);
                                 setAddSetDrawerMovement(movement);
@@ -511,8 +512,8 @@ export const Editor: FC = () => {
                             </IconButton>
                             {movement.sets.length > 0 ? (
                               <IconButton
-                                sx={{ opacity: 0.7 }}
-                                color="error"
+                                sx={{ opacity: 0.5, color: 'text.secondary' }}
+                                // color="error"
                                 onClick={async () => {
                                   try {
                                     const last = movement.sets[movement.sets.length - 1];
