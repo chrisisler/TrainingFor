@@ -354,15 +354,38 @@ export const Editor: FC = () => {
                       padding: theme => theme.spacing(1, 0),
                     }}
                   >
-                    <Typography
-                      fontSize="1.1rem"
-                      sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
-                      onClick={event => {
-                        movementMenuDrawer.onOpen(event, movement);
-                      }}
-                    >
-                      {movement.name}
-                    </Typography>
+                    <Box display="flex" alignItems="baseline">
+                      <Typography
+                        fontSize="1.1rem"
+                        sx={{ padding: theme => theme.spacing(0.5, 1.0, 0.5, 0.5) }}
+                        onClick={event => movementMenuDrawer.onOpen(event, movement)}
+                      >
+                        {movement.name}
+                      </Typography>
+                      {/** Display volume or reps total. */}
+                      {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                      {movement.sets.length >= 2 && (
+                        <Typography color="textSecondary" variant="overline">
+                          {Intl.NumberFormat().format(
+                            movement.sets[0].weight > 0
+                              ? movement.sets.reduce(
+                                  (sum, _) =>
+                                    _.status === MovementSetStatus.Completed
+                                      ? sum + _.repCountActual * _.weight
+                                      : sum,
+                                  0
+                                )
+                              : movement.sets.reduce(
+                                  (sum, _) =>
+                                    _.status === MovementSetStatus.Completed
+                                      ? sum + _.repCountActual
+                                      : sum,
+                                  0
+                                )
+                          )}
+                        </Typography>
+                      )}
+                    </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
                       <Stack direction="row" spacing={1}>
                         {/** Stack of unit control text buttons */}
