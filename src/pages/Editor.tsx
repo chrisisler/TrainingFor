@@ -857,16 +857,28 @@ export const Editor: FC = () => {
               <Box width="100%" textAlign="center">
                 <Typography variant="overline">{addSetDrawerMovement.name}</Typography>
               </Box>
-              <Stack direction="row" spacing={2}>
+              <Stack direction="row" spacing={2} paddingX={3}>
                 {addSetDrawerMovement.weightUnit !== MovementWeightUnit.Weightless && (
                   <>
                     <TextField
-                      label={`Weight (${addSetDrawerMovement.weightUnit}s)`}
-                      // inputRef={addSetWeightInputRef}
+                      variant="standard"
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                       value={newSetWeight}
                       onChange={event => setNewSetWeight(+event.target.value)}
                       onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        startAdornment: (
+                          <Typography
+                            variant="overline"
+                            color="textSecondary"
+                            mr={1}
+                            alignSelf="end"
+                          >
+                            {addSetDrawerMovement.weightUnit}
+                          </Typography>
+                        ),
+                        sx: { fontSize: '1.2rem' },
+                      }}
                     />
                     <Typography
                       variant="overline"
@@ -879,22 +891,28 @@ export const Editor: FC = () => {
                   </>
                 )}
                 <TextField
-                  label={MovementRepCountUnit[addSetDrawerMovement.repCountUnit]}
+                  variant="standard"
                   inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                   value={newSetRepCount}
                   onChange={event => setNewSetRepCount(+event.target.value)}
                   onFocus={event => event.currentTarget.select()}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography variant="overline" color="textSecondary" mr={1} alignSelf="end">
+                        {MovementRepCountUnit[addSetDrawerMovement.repCountUnit]}
+                      </Typography>
+                    ),
+                    sx: { fontSize: '1.2rem' },
+                  }}
                 />
               </Stack>
               <Button
                 fullWidth
-                startIcon={<Add />}
                 type="submit"
-                variant="outlined"
                 size="large"
                 disabled={newSetRepCount === 0}
               >
-                Add Set {addSetDrawerMovement.sets.length + 1}
+                Add Set #<b>{addSetDrawerMovement.sets.length + 1}</b>
               </Button>
             </Stack>
           )}
