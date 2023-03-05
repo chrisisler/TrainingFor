@@ -347,7 +347,7 @@ export const Editor: FC = () => {
               <>
                 {movements.map((movement: Movement, movementIndex) => (
                   <Stack
-                    spacing={1}
+                    spacing={0}
                     key={movement.id}
                     sx={{
                       // borderBottom: theme => `1px solid ${theme.palette.divider}`,
@@ -361,7 +361,7 @@ export const Editor: FC = () => {
                       width="100%"
                       justifyContent="space-between"
                     >
-                      <Stack direction="row" spacing={1}>
+                      <Stack direction="row" spacing={1} alignItems="baseline">
                         <Typography
                           fontSize="1.0rem"
                           sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
@@ -375,7 +375,7 @@ export const Editor: FC = () => {
                         {movement.sets.length >= 1 && (
                           <Typography
                             variant="overline"
-                            sx={{ opacity: 0.7, color: 'text.secondary' }}
+                            sx={{ opacity: 1.7, color: 'text.secondary' }}
                           >
                             {Intl.NumberFormat().format(
                               movement.sets[0].weight > 0
@@ -400,7 +400,7 @@ export const Editor: FC = () => {
                       <Stack direction="row">
                         <IconButton
                           // color="primary"
-                          sx={{ opacity: 0.5, color: 'text.secondary' }}
+                          sx={{ opacity: 0.7, color: 'text.secondary' }}
                           onClick={event => {
                             addSetDrawer.onOpen(event);
                             setAddSetDrawerMovement(movement);
