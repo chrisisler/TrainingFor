@@ -5,6 +5,7 @@ import {
   Close,
   DeleteForeverRounded,
   DeleteOutline,
+  HelpRounded,
   MoreHoriz,
   Person,
   PlaylistAddRounded,
@@ -66,6 +67,7 @@ export const Editor: FC = () => {
   const { logId } = useParams<{ logId: string }>();
   const addMovementDrawer = useMaterialMenu();
   const addSetDrawer = useMaterialMenu();
+  const sleepDrawer = useMaterialMenu();
   const savedMovementDrawer = useDrawer<SavedMovement>();
   const movementMenuDrawer = useDrawer<Movement>();
   const logDrawer = useDrawer<undefined>();
@@ -294,6 +296,18 @@ export const Editor: FC = () => {
     ]
   );
 
+  useEffect(() => {
+    if (!(Math.random() >= 0.96)) return;
+    toast.info('Make sure to get 8 hours of sleep!', {
+      action: _ => (
+        <Button onClick={event => sleepDrawer.onOpen(event)}>
+          <HelpRounded />
+        </Button>
+      ),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <>
       <Box
@@ -509,6 +523,12 @@ export const Editor: FC = () => {
 
       {/** ------------------------- DRAWERS ------------------------- */}
 
+      <SwipeableDrawer {...sleepDrawer} anchor="top">
+        <Collapse in={sleepDrawer.open}>
+          <Typography>Sleep is more important than training and eating.</Typography>
+        </Collapse>
+      </SwipeableDrawer>
+
       <SwipeableDrawer {...logDrawer.props()} anchor="top">
         <Collapse in={logDrawer.open}>
           <Stack spacing={2} direction="row-reverse" justifyContent="space-between">
@@ -560,7 +580,8 @@ export const Editor: FC = () => {
           {/** Top 3-8 recommendations */}
 
           <Stack spacing={1} key={JSON.stringify(addMovementDrawer)}>
-            <Box> {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
+            <Box>
+              {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
               <ReactFocusLock disabled={!addMovementDrawer.open}>
                 <TextField
                   fullWidth
