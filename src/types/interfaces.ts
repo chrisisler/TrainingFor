@@ -110,8 +110,6 @@ export enum MovementRepCountUnit {
 }
 
 export enum MovementWeightUnit {
-  /** Bodyweight */
-  Weightless = 'BW',
   Kilograms = 'Kg',
   Pounds = 'Lb',
 }

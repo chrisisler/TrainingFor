@@ -301,8 +301,8 @@ export const Editor: FC = () => {
 
   // If no movements, display an info toast to add a movement to get started
   useEffect(() => {
-    if (!DataState.isReady(movements)) return;
-    if (movements.length > 0) return;
+    if (addMovementDrawer.open) return;
+    if (!DataState.isReady(movements) || movements.length > 0) return;
     toast.info('Add a movement to get started!', {
       action: () => (
         <Button onClick={event => addMovementDrawer.onOpen(event)}>
@@ -513,9 +513,6 @@ export const Editor: FC = () => {
                               </MenuItem>
                               <MenuItem value={MovementWeightUnit.Kilograms}>
                                 {MovementWeightUnit.Kilograms}
-                              </MenuItem>
-                              <MenuItem value={MovementWeightUnit.Weightless}>
-                                {MovementWeightUnit.Weightless}
                               </MenuItem>
                             </MovementUnitSelect>
                           </Stack>
@@ -897,39 +894,30 @@ export const Editor: FC = () => {
               <Box width="100%" textAlign="center">
                 <Typography variant="overline">{addSetDrawerMovement.name}</Typography>
               </Box>
-              <Stack direction="row" spacing={2} paddingX={3}>
-                {addSetDrawerMovement.weightUnit !== MovementWeightUnit.Weightless && (
-                  <>
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetWeight}
-                      onChange={event => setNewSetWeight(+event.target.value)}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        startAdornment: (
-                          <Typography
-                            variant="overline"
-                            color="textSecondary"
-                            mr={1}
-                            alignSelf="end"
-                          >
-                            {addSetDrawerMovement.weightUnit}
-                          </Typography>
-                        ),
-                        sx: { fontSize: '1.2rem' },
-                      }}
-                    />
-                    <Typography
-                      variant="overline"
-                      sx={{ color: theme => theme.palette.divider }}
-                      display="flex"
-                      alignItems="center"
-                    >
-                      <Close fontSize="small" />
-                    </Typography>
-                  </>
-                )}
+              <Stack direction="row" spacing={2} paddingX={4}>
+                <TextField
+                  variant="standard"
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  value={newSetWeight}
+                  onChange={event => setNewSetWeight(+event.target.value)}
+                  onFocus={event => event.currentTarget.select()}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography variant="overline" color="textSecondary" mr={1} alignSelf="end">
+                        {addSetDrawerMovement.weightUnit}
+                      </Typography>
+                    ),
+                    sx: { fontSize: '1.3rem' },
+                  }}
+                />
+                <Typography
+                  variant="overline"
+                  sx={{ color: theme => theme.palette.divider, opacity: 0.7 }}
+                  display="flex"
+                  alignItems="end"
+                >
+                  <Close fontSize="small" />
+                </Typography>
                 <TextField
                   variant="standard"
                   inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -942,7 +930,7 @@ export const Editor: FC = () => {
                         {MovementRepCountUnit[addSetDrawerMovement.repCountUnit]}
                       </Typography>
                     ),
-                    sx: { fontSize: '1.2rem' },
+                    sx: { fontSize: '1.3rem' },
                   }}
                 />
               </Stack>
@@ -1026,47 +1014,44 @@ const MovementSetView: FC<{
         {movementSet.repCountActual}
       </IconButton>
 
-      {movement.weightUnit !== MovementWeightUnit.Weightless && (
-        <input
-          ref={resizeWeightInput}
-          type="tel"
-          min={0}
-          max={9999}
-          name="weight"
-          value={weight}
-          onFocus={event => {
-            event.currentTarget.select();
-          }}
-          onChange={event => {
-            if (Number.isNaN(event.target.value)) return;
-            setWeight(Number(event.target.value));
-          }}
-          onBlur={event => {
-            if (Number.isNaN(event.target.value)) {
-              throw Error('Unreachable: weight input is NaN');
-            }
-            const value = +event.target.value;
-            movement.sets[index].weight = value;
-            updateSets([...movement.sets]);
-          }}
-          style={{
-            height: '100%',
-            color: theme.palette.text.primary,
-            backgroundColor: 'transparent',
-            width: '3ch',
-            border: 'none',
-            outline: 'none',
-            // lineHeight: '1 !important',
-            margin: '0 auto',
-            // textAlign: 'center',
-            padding: '2px 4px',
-            fontFamily: 'monospace',
-            fontWeight: 500,
-            fontSize: '1.2rem',
-            letterSpacing: '0.004em',
-          }}
-        />
-      )}
+      <input
+        ref={resizeWeightInput}
+        type="tel"
+        min={0}
+        max={9999}
+        name="weight"
+        value={weight}
+        onFocus={event => {
+          event.currentTarget.select();
+        }}
+        onChange={event => {
+          if (Number.isNaN(event.target.value)) return;
+          setWeight(Number(event.target.value));
+        }}
+        onBlur={event => {
+          if (Number.isNaN(event.target.value)) {
+            throw Error('Unreachable: weight input is NaN');
+          }
+          const value = +event.target.value;
+          movement.sets[index].weight = value;
+          updateSets([...movement.sets]);
+        }}
+        style={{
+          height: '100%',
+          color: weight === 0 ? theme.palette.text.secondary : theme.palette.text.primary,
+          backgroundColor: 'transparent',
+          width: '3ch',
+          border: 'none',
+          outline: 'none',
+          margin: '0 auto',
+          // textAlign: 'center',
+          padding: '2px 4px',
+          fontFamily: 'monospace',
+          fontWeight: 500,
+          fontSize: '1.2rem',
+          letterSpacing: '0.004em',
+        }}
+      />
     </Stack>
   );
 };
