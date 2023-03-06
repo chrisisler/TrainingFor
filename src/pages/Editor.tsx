@@ -220,7 +220,12 @@ export const Editor: FC = () => {
           logId,
           name: match.name,
           timestamp: now,
-          sets: previous.sets.length > 0 ? previous.sets : [],
+          // Get the sets for this new movement from prior history
+          sets: previous.sets.map(s => ({
+            ...s,
+            status: MovementSetStatus.Unattempted,
+            uuid: uuidv4(),
+          })),
           authorUserId: user.uid,
           savedMovementId: match.id,
           savedMovementName: match.name,
@@ -618,7 +623,7 @@ export const Editor: FC = () => {
                 key={DataState.isReady(log) ? log.bodyweight : undefined}
                 inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                 onFocus={event => event.currentTarget.select()}
-                defaultValue={DataState.isReady(log) ? log.bodyweight : void 0}
+                defaultValue={(DataState.isReady(log) && log.bodyweight) || void 0}
                 onBlur={async function updateTrainingLogBodyweight(event) {
                   if (Number.isNaN(event.target.value)) return;
                   if (!DataState.isReady(log)) return;
