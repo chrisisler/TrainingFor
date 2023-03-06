@@ -18,7 +18,7 @@ export const App: FC = () => {
           dense
           preventDuplicate
           maxSnack={2}
-          autoHideDuration={2500}
+          autoHideDuration={3500}
           TransitionComponent={Collapse}
         >
           <PrivateThemeProvider>

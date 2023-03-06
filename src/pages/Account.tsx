@@ -43,6 +43,7 @@ export const Account: FC = () => {
       const entry: TrainingLog = await API.TrainingLogs.create({
         timestamp: Date.now(),
         authorUserId: user.uid,
+        bodyweight: 0,
         id: '',
       });
       navigate(Paths.editor(entry.id));

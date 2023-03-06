@@ -17,8 +17,8 @@ import {
   alpha,
   Box,
   Button,
-  CircularProgress,
   Collapse,
+  Grid,
   IconButton,
   MenuItem,
   Select,
@@ -142,10 +142,10 @@ export const Editor: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movementNameQuery, savedMovements]);
 
-  const [logTimestamp] = useDataState(async () => {
+  const [log, setLog] = useDataState(async () => {
     if (!logId || !logDrawer.open) return DataState.Empty;
     const log = await API.TrainingLogs.get(logId);
-    return log.timestamp;
+    return log;
   }, [logId, logDrawer.open]);
 
   const addMovementFromNewSavedMovement = useCallback(async () => {
@@ -578,47 +578,86 @@ export const Editor: FC = () => {
 
       <SwipeableDrawer {...logDrawer.props()} anchor="top">
         <Collapse in={logDrawer.open}>
-          <Stack spacing={2} direction="row-reverse" justifyContent="space-between">
-            <Button variant="outlined" onClick={() => navigate(Paths.account)}>
-              <Person />
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                toast.info('Unimplemented: Update log notes.');
-              }}
-            >
-              Note
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                toast.info('Unimplemented: Update log timestamp.');
-              }}
-            >
-              <DataStateView data={logTimestamp} loading={() => <CircularProgress size="1.0rem" />}>
-                {timestamp => <>{format(new Date(timestamp), 'MMM M')}</>}
-              </DataStateView>
-            </Button>
-            <Button
-              color="error"
-              variant="outlined"
-              onClick={async () => {
-                if (!logId) throw Error('Unreachable');
-                if (!window.confirm('Delete Training?')) return;
-                try {
-                  await API.TrainingLogs.delete(logId);
-                  logDrawer.onClose();
-                  navigate(Paths.account);
-                  toast.success('Deleted training.');
-                } catch (error) {
-                  toast.error(error.message);
-                }
-              }}
-            >
-              <DeleteForeverRounded />
-            </Button>
-          </Stack>
+          <Grid
+            container
+            rowSpacing={2}
+            columnSpacing={1}
+            direction="row-reverse"
+            justifyContent="space-evenly"
+          >
+            <Grid item xs={4}>
+              <Button variant="outlined" onClick={() => navigate(Paths.account)}>
+                <Person />
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  toast.info('Unimplemented: Update log notes.');
+                }}
+              >
+                Note
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  toast.info('Unimplemented: Update log timestamp.');
+                }}
+              >
+                {DataState.isReady(log) ? <>{format(new Date(log.timestamp), 'MMM M')}</> : <></>}
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                size="small"
+                variant="standard"
+                label="Bodyweight"
+                // sx={{ width: '8rem' }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                onFocus={event => event.currentTarget.select()}
+                defaultValue={DataState.isReady(log) ? log.bodyweight : void 0}
+                onBlur={async function updateTrainingLogBodyweight(event) {
+                  if (Number.isNaN(event.target.value)) return;
+                  if (!DataState.isReady(log)) return;
+                  const newBodyweight = +event.target.value;
+                  if (newBodyweight === log.bodyweight) return;
+                  try {
+                    const updated = await API.TrainingLogs.update({
+                      id: log.id,
+                      bodyweight: newBodyweight,
+                    });
+                    setLog(updated);
+                    toast.success('Updated bodyweight.');
+                  } catch (error) {
+                    toast.error(error.message);
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                color="error"
+                variant="outlined"
+                onClick={async () => {
+                  if (!logId) throw Error('Unreachable');
+                  if (!window.confirm('Delete Training?')) return;
+                  try {
+                    await API.TrainingLogs.delete(logId);
+                    logDrawer.onClose();
+                    navigate(Paths.account);
+                    toast.success('Deleted training.');
+                  } catch (error) {
+                    toast.error(error.message);
+                  }
+                }}
+              >
+                <DeleteForeverRounded />
+              </Button>
+            </Grid>
+          </Grid>
         </Collapse>
       </SwipeableDrawer>
 

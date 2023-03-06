@@ -5,16 +5,31 @@ interface FirestoreDocument {
 export interface TrainingLog extends FirestoreDocument {
   timestamp: number;
   authorUserId: string;
+  /** Currently unitless. */
+  bodyweight: number;
 
   // notes: string;
 
-  /** 
+  /**
    * A checkmark warmup list the user creates for themself. Makes it easy to
-   * knock things off to get into the good stuff. 
-   *
+   * knock things off to get into the good stuff.
    */
-  // TODO Create Warmup tab like Stronglifts 5x5
+  // Note: When I was at my best squatting (315+lb for reps) my warmups was distinct from my training.
   // warmup: { description: string; done: boolean }[];
+}
+
+/**
+ * Log for sleep, walks, water, food intake, mood, thoughts (usually about training)
+ *
+ * Upon completion of the RestLog, the user will get points.
+ */
+export interface RestLog extends FirestoreDocument {
+  timestamp: number;
+  authorUserId: string;
+  // checkboxes
+  /** The self-reported sufficient sleep quality. */
+  userWokeUpWellRested: boolean;
+  // mood: { NotSure: boolean; Bad: boolean; Neutral: boolean; Good: boolean };
 }
 
 /**
