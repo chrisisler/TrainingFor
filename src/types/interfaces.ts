@@ -92,14 +92,8 @@ export enum MovementSetStatus {
   Unattempted = 'unattempted',
   /** Attempted and successful */
   Completed = 'completed',
-  /** Attempted */
-  // Injured = 'injured',
-  /** Will not attempt */
-  // Skipped = 'skipped',
   /** Not yet chosen to attempt or skip */
-  Optional = 'optional',
-  /** Attempted and unsuccessful */
-  // Missed = 'missed',
+  // Optional = 'optional',
 }
 
 export enum MovementRepCountUnit {

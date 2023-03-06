@@ -446,15 +446,43 @@ export const Editor: FC = () => {
                       </Stack>
                     </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row" spacing={1.7}>
+                      <Stack direction="row" spacing={2.0}>
                         {/** Stack of unit control text buttons */}
                         {movement.sets.length > 0 && (
                           <Stack
                             alignItems="end"
                             visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
                             spacing={1.25}
-                            sx={{ marginTop: '8px' }}
+                            marginRight={-0.5}
+                            marginLeft="-4px"
                           >
+                            <MovementUnitSelect
+                              value={movement.weightUnit}
+                              onChange={async event => {
+                                try {
+                                  const newWeightUnit = event.target.value as MovementWeightUnit;
+                                  // Update field on the movement
+                                  const updated: Movement = await API.Movements.update({
+                                    id: movement.id,
+                                    weightUnit: newWeightUnit,
+                                  });
+                                  // Update local state
+                                  const copy = movements.slice();
+                                  copy[movementIndex] = updated;
+                                  setMovements(copy);
+                                } catch (error) {
+                                  toast.error(error.message);
+                                }
+                              }}
+                            >
+                              <MenuItem value={MovementWeightUnit.Pounds}>
+                                {MovementWeightUnit.Pounds}
+                              </MenuItem>
+                              <MenuItem value={MovementWeightUnit.Kilograms}>
+                                {MovementWeightUnit.Kilograms}
+                              </MenuItem>
+                            </MovementUnitSelect>
+
                             <MovementUnitSelect
                               value={movement.repCountUnit}
                               onChange={async event => {
@@ -486,33 +514,6 @@ export const Editor: FC = () => {
                               </MenuItem>
                               <MenuItem value={MovementRepCountUnit.Meters}>
                                 {MovementRepCountUnit.Meters}
-                              </MenuItem>
-                            </MovementUnitSelect>
-
-                            <MovementUnitSelect
-                              value={movement.weightUnit}
-                              onChange={async event => {
-                                try {
-                                  const newWeightUnit = event.target.value as MovementWeightUnit;
-                                  // Update field on the movement
-                                  const updated: Movement = await API.Movements.update({
-                                    id: movement.id,
-                                    weightUnit: newWeightUnit,
-                                  });
-                                  // Update local state
-                                  const copy = movements.slice();
-                                  copy[movementIndex] = updated;
-                                  setMovements(copy);
-                                } catch (error) {
-                                  toast.error(error.message);
-                                }
-                              }}
-                            >
-                              <MenuItem value={MovementWeightUnit.Pounds}>
-                                {MovementWeightUnit.Pounds}
-                              </MenuItem>
-                              <MenuItem value={MovementWeightUnit.Kilograms}>
-                                {MovementWeightUnit.Kilograms}
                               </MenuItem>
                             </MovementUnitSelect>
                           </Stack>
@@ -961,13 +962,13 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.05),
+            backgroundColor: alpha(theme.palette.success.light, 0.06),
             // Avoid jarring when switching between Unattempted and Completed
             borderBottom: `2px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,
           }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.05),
+            backgroundColor: alpha(theme.palette.divider, 0.03),
             borderBottom: `2px solid ${theme.palette.divider}`,
           },
     [movementSet.status, theme]
@@ -999,21 +1000,6 @@ const MovementSetView: FC<{
 
   return (
     <Stack>
-      {confetti && <ConfettiExplosion particleCount={35} width={400} force={0.4} />}
-      <IconButton
-        sx={{
-          paddingY: theme => theme.spacing(1),
-          paddingX: theme =>
-            theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1.33 : 2),
-          borderRadius: 1,
-        }}
-        // Handles dynamic styling based on repCount button for a movement set
-        style={dynamicRepCountButtonStyle}
-        onClick={decrementRepCount}
-      >
-        {movementSet.repCountActual}
-      </IconButton>
-
       <input
         ref={resizeWeightInput}
         type="tel"
@@ -1038,7 +1024,10 @@ const MovementSetView: FC<{
         }}
         style={{
           height: '100%',
-          color: weight === 0 ? theme.palette.text.secondary : theme.palette.text.primary,
+          color:
+            weight === 0 || movementSet.status === MovementSetStatus.Unattempted
+              ? theme.palette.text.secondary
+              : theme.palette.text.primary,
           backgroundColor: 'transparent',
           width: '3ch',
           border: 'none',
@@ -1048,10 +1037,25 @@ const MovementSetView: FC<{
           padding: '2px 4px',
           fontFamily: 'monospace',
           fontWeight: 500,
-          fontSize: '1.2rem',
+          fontSize: '1.1rem',
           letterSpacing: '0.004em',
         }}
       />
+
+      <IconButton
+        sx={{
+          paddingY: theme => theme.spacing(1),
+          paddingX: theme =>
+            theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1.33 : 2),
+          borderRadius: 1,
+        }}
+        // Handles dynamic styling based on repCount button for a movement set
+        style={dynamicRepCountButtonStyle}
+        onClick={decrementRepCount}
+      >
+        {movementSet.repCountActual}
+      </IconButton>
+      {confetti && <ConfettiExplosion particleCount={35} width={400} force={0.4} />}
     </Stack>
   );
 };
