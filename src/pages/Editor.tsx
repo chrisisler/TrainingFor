@@ -207,8 +207,10 @@ export const Editor: FC = () => {
       if (!DataState.isReady(movements)) return;
       if (!DataState.isReady(savedMovements)) return;
       try {
-        const [prev] = await API.Movements.getAll(
+        /** The movement data from the last time the user performed this movement. */
+        const [previous] = await API.Movements.getAll(
           where('savedMovementId', '==', match.id),
+          orderBy('timestamp', 'desc'),
           limit(1)
         );
         const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
@@ -218,15 +220,15 @@ export const Editor: FC = () => {
           logId,
           name: match.name,
           timestamp: now,
-          sets: [],
+          sets: previous.sets.length > 0 ? previous.sets : [],
           authorUserId: user.uid,
           savedMovementId: match.id,
           savedMovementName: match.name,
           position,
           isFavorited: false,
           id: '',
-          weightUnit: prev?.weightUnit ?? MovementWeightUnit.Pounds,
-          repCountUnit: prev?.repCountUnit ?? MovementRepCountUnit.Reps,
+          weightUnit: previous?.weightUnit ?? MovementWeightUnit.Pounds,
+          repCountUnit: previous?.repCountUnit ?? MovementRepCountUnit.Reps,
         });
         // Update lastSeen property
         await API.SavedMovements.update({
@@ -614,7 +616,6 @@ export const Editor: FC = () => {
                 variant="standard"
                 label="Bodyweight"
                 key={DataState.isReady(log) ? log.bodyweight : undefined}
-                // sx={{ width: '8rem' }}
                 inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                 onFocus={event => event.currentTarget.select()}
                 defaultValue={DataState.isReady(log) ? log.bodyweight : void 0}
