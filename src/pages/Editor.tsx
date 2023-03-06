@@ -613,6 +613,7 @@ export const Editor: FC = () => {
                 size="small"
                 variant="standard"
                 label="Bodyweight"
+                key={DataState.isReady(log) ? log.bodyweight : undefined}
                 // sx={{ width: '8rem' }}
                 inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                 onFocus={event => event.currentTarget.select()}
