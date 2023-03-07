@@ -417,13 +417,12 @@ export const Editor: FC = () => {
                       </Stack>
                     </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row" spacing={2.0}>
+                      <Stack direction="row" spacing={1.6}>
                         {/** Stack of unit control text buttons */}
                         {movement.sets.length > 0 && (
                           <Stack
                             alignItems="end"
-                            visibility={movement.sets.length > 0 ? 'visible' : 'hidden'}
-                            spacing={1.25}
+                            spacing={1}
                             marginRight={-0.5}
                             marginLeft="-4px"
                           >
@@ -529,7 +528,7 @@ export const Editor: FC = () => {
                 size="large"
                 onClick={addMovementDrawer.onOpen}
               >
-                <PlaylistAddRounded sx={{ fontSize: '1.8rem' }} />
+                <PlaylistAddRounded sx={{ fontSize: '1.7rem' }} />
               </IconButton>
             </Box>
           )}
