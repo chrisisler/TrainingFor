@@ -6,7 +6,7 @@ import { DataState } from '../util';
 import { auth } from '../api';
 
 /**
- * Simplifies the usage of Material-UI's SwipeableDrawer interactions.
+ * Simplifies the usage of Material-UI's SwipeableDrawer and Menu.
  */
 export const useMaterialMenu = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -19,6 +19,7 @@ export const useMaterialMenu = () => {
 
   const menu = useMemo(
     () => ({
+      anchorEl,
       open: !!anchorEl,
       onOpen: openMenu,
       onClose: closeMenu,

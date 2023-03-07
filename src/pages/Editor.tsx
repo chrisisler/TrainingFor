@@ -15,11 +15,13 @@ import {
 } from '@mui/icons-material';
 import {
   alpha,
+  Backdrop,
   Box,
   Button,
   Collapse,
   Grid,
   IconButton,
+  Menu,
   MenuItem,
   Select,
   SelectProps,
@@ -68,16 +70,14 @@ export const Editor: FC = () => {
   const toast = useToast();
   const user = useUser();
   const { logId } = useParams<{ logId: string }>();
-  const addMovementDrawer = useMaterialMenu();
-  const addSetDrawer = useMaterialMenu();
-  const sleepDrawer = useMaterialMenu();
+  const { anchorEl: _0, ...addMovementDrawer } = useMaterialMenu();
+  const { anchorEl: _1, ...sleepDrawer } = useMaterialMenu();
+  const addSetMenu = useMaterialMenu();
   const savedMovementDrawer = useDrawer<SavedMovement>();
   const movementMenuDrawer = useDrawer<Movement>();
   const logDrawer = useDrawer<undefined>();
   const addMovementBtnRef = useRef<HTMLButtonElement | null>(null);
-  // const addSetWeightInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [addSetDrawerMovement, setAddSetDrawerMovement] = useState<Movement | null>(null);
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
   /** Controlled state of the Add Set inputs. */
@@ -221,6 +221,7 @@ export const Editor: FC = () => {
           name: match.name,
           timestamp: now,
           // Get the sets for this new movement from prior history
+          // prettier-ignore
           sets: previous.sets.length === 0 ? [] : previous.sets.map(s => ({
             ...s,
             status: MovementSetStatus.Unattempted,
@@ -266,11 +267,9 @@ export const Editor: FC = () => {
   );
 
   const addSetToMovement = useCallback(
-    async event => {
-      event.preventDefault();
-      if (!DataState.isReady(movements)) throw Error('Unreachable: movements not ready');
-      const movement = addSetDrawerMovement;
-      if (!movement) throw Error('Unreachable: no movement data to add set');
+    async (movement: Movement) => {
+      if (!DataState.isReady(movements)) return;
+      // if (newSetRepCount === 0 || newSetWeight ===0)
       try {
         // Add new set to list of sets for this Movement
         const sets = movement.sets.concat({
@@ -288,22 +287,11 @@ export const Editor: FC = () => {
         const copy = movements.slice();
         copy[copy.indexOf(movement)] = updated;
         setMovements(copy);
-        // Close drawer
-        addSetDrawer.onClose();
-        setAddSetDrawerMovement(null);
       } catch (error) {
         toast.error(error.message);
       }
     },
-    [
-      addSetDrawer,
-      addSetDrawerMovement,
-      movements,
-      newSetRepCount,
-      newSetWeight,
-      setMovements,
-      toast,
-    ]
+    [movements, newSetRepCount, newSetWeight, setMovements, toast]
   );
 
   // If no movements, display an info toast to add a movement to get started
@@ -406,11 +394,9 @@ export const Editor: FC = () => {
                       </Stack>
                       <Stack direction="row">
                         <IconButton
-                          // color="primary"
                           sx={{ opacity: 0.7, color: 'text.secondary' }}
                           onClick={event => {
-                            addSetDrawer.onOpen(event);
-                            setAddSetDrawerMovement(movement);
+                            addSetMenu.onOpen(event);
                             // Set controlled state default values to previous set
                             if (movement.sets.length > 0) {
                               const lastSet = movement.sets[movement.sets.length - 1];
@@ -424,32 +410,111 @@ export const Editor: FC = () => {
                         >
                           {movement.sets.length === 0 ? <AddCircleRounded /> : <AddRounded />}
                         </IconButton>
-                        {movement.sets.length > 0 && (
-                          <IconButton
-                            sx={{ opacity: 0.5, color: 'text.secondary' }}
-                            // color="error"
-                            onClick={async () => {
-                              try {
-                                const last = movement.sets[movement.sets.length - 1];
-                                if (!last) throw TypeError('Unreachable: last');
-                                const without = movement.sets.filter(_ => _.uuid !== last.uuid);
-                                //
-                                const updated: Movement = await API.Movements.update({
-                                  sets: without,
-                                  id: movement.id,
-                                });
-                                // Update local state
-                                const copy = movements.slice();
-                                copy[copy.indexOf(movement)] = updated;
-                                setMovements(copy);
-                              } catch (error) {
-                                toast.error(error.message);
+                        <Backdrop open={addSetMenu.open}>
+                          <Menu
+                            open={addSetMenu.open}
+                            anchorEl={addSetMenu.anchorEl}
+                            onClose={(_event, reason) => {
+                              if (reason === 'backdropClick') {
+                                if (newSetRepCount === 0) {
+                                  addSetMenu.onClose();
+                                  return;
+                                }
+                                addSetToMovement(movement);
+                                addSetMenu.onClose();
+                                return;
                               }
+                              // Click was NOT on the backdrop so it was within
+                              // the menu which means the user is clicking
+                              // around in the menu, so do nothing.
+                              return;
                             }}
                           >
-                            <CloseRounded fontSize="small" />
-                          </IconButton>
-                        )}
+                            <Stack
+                              spacing={2}
+                              width="30vh"
+                              sx={{ padding: theme => theme.spacing(1, 2) }}
+                            >
+                              <Box width="100%" textAlign="center" marginBottom="-1rem">
+                                <Typography variant="overline" color="textSecondary">
+                                  <Collapse in={newSetRepCount > 0}>
+                                    Click outside to add set #<b>{movement.sets.length + 1}</b>
+                                  </Collapse>
+                                  <Collapse in={newSetRepCount === 0}>
+                                    Add Set #<b>{movement.sets.length + 1}</b>
+                                  </Collapse>
+                                </Typography>
+                              </Box>
+                              <Stack direction="row" spacing={2}>
+                                <TextField
+                                  variant="standard"
+                                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                                  value={newSetWeight}
+                                  onChange={event => setNewSetWeight(+event.target.value)}
+                                  onFocus={event => event.currentTarget.select()}
+                                  InputProps={{
+                                    startAdornment: (
+                                      <Typography variant="overline" mr={1} alignSelf="end">
+                                        {movement.weightUnit}
+                                      </Typography>
+                                    ),
+                                    sx: { fontSize: '1.3rem' },
+                                  }}
+                                />
+                                <TextField
+                                  variant="standard"
+                                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                                  value={newSetRepCount}
+                                  onChange={event => setNewSetRepCount(+event.target.value)}
+                                  onFocus={event => event.currentTarget.select()}
+                                  InputProps={{
+                                    startAdornment: (
+                                      <Typography variant="overline" mr={1} alignSelf="end">
+                                        {MovementRepCountUnit[movement.repCountUnit]}
+                                      </Typography>
+                                    ),
+                                    sx: { fontSize: '1.3rem' },
+                                  }}
+                                />
+                              </Stack>
+                              <Button
+                                variant="outlined"
+                                sx={{ color: 'text.secondary', borderColor: 'divider' }}
+                                onClick={addSetMenu.onClose}
+                              >
+                                Cancel
+                              </Button>
+                              {movement.sets.length > 0 && (
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  color="error"
+                                  startIcon={<CloseRounded fontSize="small" />}
+                                  onClick={async function deleteSet() {
+                                    try {
+                                      const last = movement.sets[movement.sets.length - 1];
+                                      if (!last) throw TypeError('Unreachable: last');
+                                      const updated: Movement = await API.Movements.update({
+                                        sets: movement.sets.filter(_ => _.uuid !== last.uuid),
+                                        id: movement.id,
+                                      });
+                                      // Update local state
+                                      const copy = movements.slice();
+                                      copy[copy.indexOf(movement)] = updated;
+                                      setMovements(copy);
+                                      // Close the menu
+                                      addSetMenu.onClose();
+                                    } catch (error) {
+                                      toast.error(error.message);
+                                    }
+                                  }}
+                                >
+                                  Delete Set #<b>{movement.sets.length}</b>
+                                </Button>
+                              )}
+                            </Stack>
+                          </Menu>
+                        </Backdrop>
                       </Stack>
                     </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
@@ -891,62 +956,6 @@ export const Editor: FC = () => {
               </Button>
             </Box>
           </Stack>
-        </Collapse>
-      </SwipeableDrawer>
-
-      {/** Add Set Drawer */}
-      <SwipeableDrawer anchor="top" {...addSetDrawer}>
-        <Collapse in={addSetDrawer.open}>
-          {addSetDrawerMovement && (
-            <Stack spacing={3} component="form" onSubmit={addSetToMovement}>
-              <Box width="100%" textAlign="center">
-                <Typography variant="overline">{addSetDrawerMovement.name}</Typography>
-              </Box>
-              <Stack direction="row" spacing={2} paddingX={4}>
-                <TextField
-                  variant="standard"
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                  value={newSetWeight}
-                  onChange={event => setNewSetWeight(+event.target.value)}
-                  onFocus={event => event.currentTarget.select()}
-                  InputProps={{
-                    startAdornment: (
-                      <Typography variant="overline" color="textSecondary" mr={1} alignSelf="end">
-                        {addSetDrawerMovement.weightUnit}
-                      </Typography>
-                    ),
-                    sx: { fontSize: '1.3rem' },
-                  }}
-                />
-                <Typography
-                  variant="overline"
-                  sx={{ color: theme => theme.palette.divider, opacity: 0.7 }}
-                  display="flex"
-                  alignItems="end"
-                >
-                  <Close fontSize="small" />
-                </Typography>
-                <TextField
-                  variant="standard"
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                  value={newSetRepCount}
-                  onChange={event => setNewSetRepCount(+event.target.value)}
-                  onFocus={event => event.currentTarget.select()}
-                  InputProps={{
-                    startAdornment: (
-                      <Typography variant="overline" color="textSecondary" mr={1} alignSelf="end">
-                        {MovementRepCountUnit[addSetDrawerMovement.repCountUnit]}
-                      </Typography>
-                    ),
-                    sx: { fontSize: '1.3rem' },
-                  }}
-                />
-              </Stack>
-              <Button fullWidth type="submit" size="large" disabled={newSetRepCount === 0}>
-                Add Set #<b>{addSetDrawerMovement.sets.length + 1}</b>
-              </Button>
-            </Stack>
-          )}
         </Collapse>
       </SwipeableDrawer>
     </>
