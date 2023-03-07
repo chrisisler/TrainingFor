@@ -76,7 +76,6 @@ export const Editor: FC = () => {
   const savedMovementDrawer = useDrawer<SavedMovement>();
   const movementMenuDrawer = useDrawer<Movement>();
   const logDrawer = useDrawer<undefined>();
-  const addMovementBtnRef = useRef<HTMLButtonElement | null>(null);
 
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
@@ -635,7 +634,6 @@ export const Editor: FC = () => {
                 disableRipple
                 sx={{ opacity: 0.5, color: 'text.secondary' }}
                 size="large"
-                ref={addMovementBtnRef}
                 onClick={addMovementDrawer.onOpen}
               >
                 <PlaylistAddRounded sx={{ fontSize: '1.8rem' }} />
