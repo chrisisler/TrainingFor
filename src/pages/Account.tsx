@@ -16,7 +16,7 @@ import {
   SwipeableDrawer,
   Typography,
 } from '@mui/material';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { limit, orderBy } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
@@ -25,7 +25,15 @@ import { useNavigate } from 'react-router-dom';
 import { API, auth, Authenticate } from '../api';
 import { useUser } from '../context';
 import { TrainingLog } from '../types';
-import { DataState, DataStateView, Paths, useDataState, useMaterialMenu, useToast } from '../util';
+import {
+  DataState,
+  DataStateView,
+  Months,
+  Paths,
+  useDataState,
+  useMaterialMenu,
+  useToast,
+} from '../util';
 
 export const Account: FC = () => {
   const user = useUser();
@@ -94,8 +102,7 @@ export const Account: FC = () => {
           ) : (
             <Stack spacing={2} sx={{ padding: theme => theme.spacing(3, 2) }}>
               {logs.map(log => {
-                const timestamp = new Date(log.timestamp);
-
+                const date = new Date(log.timestamp);
                 return (
                   <Box
                     key={log.id}
@@ -109,7 +116,9 @@ export const Account: FC = () => {
                     justifyContent="space-between"
                   >
                     <Stack>
-                      <Typography>{format(timestamp, 'MMMM M')}</Typography>
+                      <Typography>
+                        {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+                      </Typography>
                       <Typography color="textSecondary">
                         {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
                       </Typography>

@@ -221,7 +221,7 @@ export const Editor: FC = () => {
           name: match.name,
           timestamp: now,
           // Get the sets for this new movement from prior history
-          sets: previous.sets.map(s => ({
+          sets: previous.sets.length === 0 ? [] : previous.sets.map(s => ({
             ...s,
             status: MovementSetStatus.Unattempted,
             uuid: uuidv4(),
