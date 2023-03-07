@@ -6,6 +6,7 @@ import {
   CloseRounded,
   DeleteForeverRounded,
   DeleteOutline,
+  EditOutlined,
   HelpRounded,
   MoreHoriz,
   Person,
@@ -347,9 +348,57 @@ export const Editor: FC = () => {
                       width="100%"
                       justifyContent="space-between"
                     >
-                      <Stack direction="row" alignItems="center">
+                      {/** alignItems here could be END or BASELINE */}
+                      <Stack
+                        direction="row"
+                        alignItems="end"
+                        justifyContent="space-between"
+                        width="100%"
+                      >
+                        <Box display="flex" alignItems="baseline">
+                          <Typography
+                            fontSize="1.0rem"
+                            sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
+                            onClick={event => movementMenuDrawer.onOpen(event, movement)}
+                            fontWeight={600}
+                          >
+                            {movement.name}
+                          </Typography>
+
+                          {/** Display volume or reps total. */}
+                          {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                          {movement.sets.length >= 1 && (
+                            <Typography
+                              variant="overline"
+                              sx={{
+                                opacity: 0.7,
+                                color: 'text.secondary',
+                                marginLeft: theme => theme.spacing(1),
+                              }}
+                            >
+                              {Intl.NumberFormat().format(
+                                movement.sets[0].weight > 0
+                                  ? movement.sets.reduce(
+                                      (sum, _) =>
+                                        _.status === MovementSetStatus.Completed
+                                          ? sum + _.repCountActual * _.weight
+                                          : sum,
+                                      0
+                                    )
+                                  : movement.sets.reduce(
+                                      (sum, _) =>
+                                        _.status === MovementSetStatus.Completed
+                                          ? sum + _.repCountActual
+                                          : sum,
+                                      0
+                                    )
+                              )}
+                            </Typography>
+                          )}
+                        </Box>
                         <IconButton
                           disableRipple
+                          size="small"
                           sx={{ color: 'text.secondary' }}
                           onClick={event => {
                             addSetMenu.onOpen(event);
@@ -364,9 +413,9 @@ export const Editor: FC = () => {
                             }
                           }}
                         >
-                          <AddRounded />
+                          <EditOutlined />
                         </IconButton>
-                        <Backdrop open={addSetMenu.open}>
+                        <Backdrop open={addSetMenu.open} sx={{ color: '#fff' }}>
                           <Menu
                             open={addSetMenu.open}
                             anchorEl={addSetMenu.anchorEl}
@@ -471,46 +520,6 @@ export const Editor: FC = () => {
                             </Stack>
                           </Menu>
                         </Backdrop>
-                        <Typography
-                          fontSize="1.0rem"
-                          sx={{ padding: theme => theme.spacing(0.5, 0.5, 0, 0) }}
-                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                          fontWeight={600}
-                        >
-                          {movement.name}
-                        </Typography>
-
-                        {/** Display volume or reps total. */}
-                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                        {movement.sets.filter(_ => _.status === MovementSetStatus.Completed).length >= 1 && (
-                          <Typography
-                            variant="overline"
-                            sx={{
-                              opacity: 0.7,
-                              color: 'text.secondary',
-                              marginLeft: theme => theme.spacing(1),
-                              alignSelf: 'end',
-                            }}
-                          >
-                            {Intl.NumberFormat().format(
-                              movement.sets[0].weight > 0
-                                ? movement.sets.reduce(
-                                    (sum, _) =>
-                                      _.status === MovementSetStatus.Completed
-                                        ? sum + _.repCountActual * _.weight
-                                        : sum,
-                                    0
-                                  )
-                                : movement.sets.reduce(
-                                    (sum, _) =>
-                                      _.status === MovementSetStatus.Completed
-                                        ? sum + _.repCountActual
-                                        : sum,
-                                    0
-                                  )
-                            )}
-                          </Typography>
-                        )}
                       </Stack>
                     </Box>
                     <Box width="100%" sx={{ overflowX: 'scroll' }}>
