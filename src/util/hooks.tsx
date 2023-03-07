@@ -19,7 +19,6 @@ export const useMaterialMenu = () => {
 
   const menu = useMemo(
     () => ({
-      anchorEl,
       open: !!anchorEl,
       onOpen: openMenu,
       onClose: closeMenu,
@@ -54,6 +53,7 @@ export const useDrawer = <T extends unknown>() => {
   );
 
   return {
+    anchorEl,
     open: !!anchorEl,
     props: getMenu,
     onOpen(event: React.MouseEvent<HTMLElement>, data: T) {
@@ -62,7 +62,6 @@ export const useDrawer = <T extends unknown>() => {
     },
     onClose: closeMenu,
     getData: () => data,
-    getOpen: () => !!anchorEl,
   };
 };
 
