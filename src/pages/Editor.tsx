@@ -367,7 +367,8 @@ export const Editor: FC = () => {
 
                           {/** Display volume or reps total. */}
                           {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                          {movement.sets.length >= 1 && (
+                          {movement.sets.filter(_ => _.status === MovementSetStatus.Completed)
+                            .length >= 1 && (
                             <Typography
                               variant="overline"
                               sx={{
