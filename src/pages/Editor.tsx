@@ -399,7 +399,6 @@ export const Editor: FC = () => {
                         </Box>
                         <IconButton
                           disableRipple
-                          size="small"
                           sx={{ color: 'text.secondary' }}
                           onClick={event => {
                             addSetMenu.onOpen(event);
@@ -414,7 +413,7 @@ export const Editor: FC = () => {
                             }
                           }}
                         >
-                          <EditOutlined />
+                          <EditOutlined fontSize="small" />
                         </IconButton>
                         <Backdrop open={addSetMenu.open} sx={{ color: '#fff' }}>
                           <Menu
@@ -438,11 +437,11 @@ export const Editor: FC = () => {
                           >
                             <Stack
                               spacing={2}
-                              width="30vh"
-                              sx={{ padding: theme => theme.spacing(1, 2) }}
+                              width="75vw"
+                              sx={{ padding: theme => theme.spacing(1, 3) }}
                             >
                               <Box width="100%" textAlign="center" marginBottom="-1rem">
-                                <Typography variant="overline" color="textSecondary">
+                                <Typography variant="overline">
                                   <Collapse in={newSetRepCount > 0}>
                                     Click outside to add set #<b>{movement.sets.length + 1}</b>
                                   </Collapse>
@@ -484,18 +483,20 @@ export const Editor: FC = () => {
                                 />
                               </Stack>
                               <Button
+                                size="large"
                                 variant="outlined"
                                 sx={{ color: 'text.secondary', borderColor: 'divider' }}
                                 onClick={addSetMenu.onClose}
+                                startIcon={<CloseRounded fontSize="small" />}
                               >
-                                Cancel
+                                Close
                               </Button>
                               {movement.sets.length > 0 && (
                                 <Button
                                   size="small"
                                   variant="text"
                                   color="error"
-                                  startIcon={<CloseRounded fontSize="small" />}
+                                  startIcon={<DeleteOutline fontSize="small" />}
                                   onClick={async function deleteSet() {
                                     try {
                                       const last = movement.sets[movement.sets.length - 1];
