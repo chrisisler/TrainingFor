@@ -1078,7 +1078,7 @@ const MovementSetView: FC<{
       >
         {movementSet.repCountActual}
       </IconButton>
-      {confetti && <ConfettiExplosion particleCount={35} width={400} force={0.4} />}
+      {confetti && <ConfettiExplosion particleCount={45} width={400} force={0.4} />}
     </Stack>
   );
 };
