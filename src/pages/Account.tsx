@@ -51,7 +51,9 @@ export const Account: FC = () => {
     if (!DataState.isReady(logs)) {
       return logs;
     }
-    const promises = logs.map(_ => API.Movements.getAll(where('logId', '==', _.id)));
+    const promises = logs.map(_ =>
+      API.Movements.getAll(where('logId', '==', _.id), orderBy('timestamp', 'desc'))
+    );
     const movementLists = await Promise.all(promises);
     const movementsByLogId = new Map<string, Movement[]>(logs.map(_ => [_.id, []]));
     movementLists.forEach(movementList => {
