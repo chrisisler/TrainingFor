@@ -560,7 +560,7 @@ export const Editor: FC = () => {
                   return;
                 }}
               >
-                <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(2, 3) }}>
+                <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(1, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
                     <Typography variant="overline">
                       <Collapse in={newSetRepCount > 0}>
@@ -605,8 +605,8 @@ export const Editor: FC = () => {
                   </Stack>
                   <Button
                     size="large"
-                    variant="outlined"
-                    sx={{ color: 'text.secondary', borderColor: 'divider' }}
+                    variant="contained"
+                    sx={{ color: 'text.secondary', backgroundColor: 'divider' }}
                     onClick={addSetMenu.onClose}
                     startIcon={<CloseRounded fontSize="small" />}
                   >
@@ -614,7 +614,6 @@ export const Editor: FC = () => {
                   </Button>
                   {movement.sets.length > 0 && (
                     <Button
-                      size="small"
                       variant="text"
                       color="error"
                       startIcon={<DeleteOutline fontSize="small" />}
