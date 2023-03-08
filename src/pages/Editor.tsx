@@ -560,18 +560,18 @@ export const Editor: FC = () => {
                   return;
                 }}
               >
-                <Stack spacing={2} width="75vw" sx={{ padding: theme => theme.spacing(1, 3) }}>
+                <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(2, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
                     <Typography variant="overline">
                       <Collapse in={newSetRepCount > 0}>
-                        Click outside to add set #<b>{movement.sets.length + 1}</b>
+                        Click anywhere to add set
                       </Collapse>
                       <Collapse in={newSetRepCount === 0}>
                         Add Set #<b>{movement.sets.length + 1}</b>
                       </Collapse>
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={2}>
+                  <Stack direction="row" spacing={3}>
                     <TextField
                       variant="standard"
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -638,7 +638,7 @@ export const Editor: FC = () => {
                         }
                       }}
                     >
-                      Delete Set #<b>{movement.sets.length}</b>
+                      Delete
                     </Button>
                   )}
                 </Stack>
