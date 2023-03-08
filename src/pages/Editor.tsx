@@ -39,6 +39,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
+import {WithVariable} from '../components/Variable';
 import { useUser } from '../context';
 import {
   Movement,
@@ -1112,10 +1113,3 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
     {children}
   </Select>
 );
-
-function WithVariable<T>(props: {
-  value: T;
-  children(value: T): JSX.Element | null;
-}): JSX.Element | null {
-  return props.children(props.value);
-}

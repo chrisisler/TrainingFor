@@ -18,13 +18,14 @@ import {
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
-import { limit, orderBy } from 'firebase/firestore';
+import { limit, orderBy, where } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate } from '../api';
+import { WithVariable } from '../components/Variable';
 import { useUser } from '../context';
-import { TrainingLog } from '../types';
+import { Movement, TrainingLog } from '../types';
 import {
   DataState,
   DataStateView,
@@ -41,10 +42,26 @@ export const Account: FC = () => {
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
 
+  // A subset of the users logs to display in detail
   const [logs] = useDataState(
-    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
+    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(5)),
     [user.uid]
   );
+
+  const [movementsByLogId] = useDataState(async () => {
+    if (!DataState.isReady(logs)) {
+      return logs;
+    }
+    const promises = logs.map(_ => API.Movements.getAll(where('logId', '==', _.id)));
+    const movementLists = await Promise.all(promises);
+    const movementsByLogId = new Map<string, Movement[]>(logs.map(_ => [_.id, []]));
+    movementLists.forEach(movementList => {
+      movementList.forEach(m => {
+        movementsByLogId.get(m.logId)?.push(m);
+      });
+    });
+    return movementsByLogId;
+  }, [logs]);
 
   const startNewTrainingLog = useCallback(async () => {
     try {
@@ -115,13 +132,35 @@ export const Account: FC = () => {
                     display="flex"
                     justifyContent="space-between"
                   >
-                    <Stack>
-                      <Typography>
-                        {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
-                      </Typography>
-                      <Typography color="textSecondary">
-                        {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
-                      </Typography>
+                    <Stack spacing={0.5}>
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="baseline"
+                        sx={{ borderBottom: theme => `1px solid ${theme.palette.divider}` }}
+                      >
+                        <Typography>
+                          {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+                        </Typography>
+                        <Typography color="textSecondary" variant="subtitle2">
+                          {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
+                        </Typography>
+                      </Stack>
+                      <DataStateView data={DataState.map(movementsByLogId, _ => _.get(log.id))}>
+                        {movements =>
+                          !movements?.length ? (
+                            <Typography sx={{ color: 'text.secondary' }} variant="overline">
+                              No movements
+                            </Typography>
+                          ) : (
+                            <Stack>
+                              {movements.map(movement => (
+                                <Typography variant="body1"> {movement.name} </Typography>
+                              ))}
+                            </Stack>
+                          )
+                        }
+                      </DataStateView>
                     </Stack>
                     <ChevronRightTwoTone sx={{ color: 'text.secondary' }} fontSize="small" />
                   </Box>
