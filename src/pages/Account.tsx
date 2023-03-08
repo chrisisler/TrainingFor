@@ -23,7 +23,6 @@ import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate } from '../api';
-import { WithVariable } from '../components/Variable';
 import { useUser } from '../context';
 import { Movement, TrainingLog } from '../types';
 import {
