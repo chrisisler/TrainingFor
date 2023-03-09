@@ -4,7 +4,7 @@ import { FC } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { PrivateThemeProvider, UserProvider } from './context';
-import { Authentication, Account, Editor } from './pages';
+import { Authentication, Account, Editor, Programs } from './pages';
 import { DataStateView, Paths, useUserAuthSubscription } from './util';
 
 export const App: FC = () => {
@@ -36,6 +36,7 @@ export const App: FC = () => {
                   <Routes>
                     <Route path={Paths.account} element={<Account />} />
                     <Route path={Paths.editor()} element={<Editor />} />
+                    <Route path={Paths.program} element={<Programs />} />
                     <Route path="*" element={<Navigate to={Paths.account} />} />
                   </Routes>
                 </UserProvider>

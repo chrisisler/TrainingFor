@@ -45,4 +45,5 @@ export const Paths = {
   account: '/account',
   training: '/training',
   editor: (logId = ':logId') => `${Paths.training}/log/${logId}`,
+  program: '/programs',
 } as const;

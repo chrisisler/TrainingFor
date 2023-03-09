@@ -269,7 +269,6 @@ export const Editor: FC = () => {
   const addSetToMovement = useCallback(
     async (movement: Movement) => {
       if (!DataState.isReady(movements)) return;
-      // if (newSetRepCount === 0 || newSetWeight ===0)
       try {
         // Add new set to list of sets for this Movement
         const sets = movement.sets.concat({

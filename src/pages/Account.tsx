@@ -98,7 +98,10 @@ export const Account: FC = () => {
         padding: theme => theme.spacing(2),
       }}
     >
-      <Box display="flex" width="100%" justifyContent="space-between">
+      <Box display="flex" width="100%" justifyContent="space-between" alignItems="baseline">
+        <Button onClick={() => navigate(Paths.program)} variant="text" size="small">
+          Program
+        </Button>
         <Typography variant="overline" color="textSecondary">
           {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
         </Typography>

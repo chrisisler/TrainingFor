@@ -1,5 +1,25 @@
-interface FirestoreDocument {
+export interface FirestoreDocument {
   id: string;
+}
+
+/**
+ * A User interface renamed to avoid clashing with Firestores User interface.
+ */
+export interface ProgramUser extends FirestoreDocument {
+  userUid: string;
+  activeProgramId: string | null;
+  activeProgramName: string | null;
+}
+
+export interface Program extends FirestoreDocument {
+  name: string;
+  authorUserId: string;
+}
+
+export interface LogTemplate extends FirestoreDocument {
+  programId: string;
+  name: string;
+  authorUserId: string;
 }
 
 export interface TrainingLog extends FirestoreDocument {
@@ -23,14 +43,14 @@ export interface TrainingLog extends FirestoreDocument {
  *
  * Upon completion of the RestLog, the user will get points.
  */
-export interface RestLog extends FirestoreDocument {
-  timestamp: number;
-  authorUserId: string;
-  // checkboxes
-  /** The self-reported sufficient sleep quality. */
-  userWokeUpWellRested: boolean;
-  // mood: { NotSure: boolean; Bad: boolean; Neutral: boolean; Good: boolean };
-}
+// export interface RestLog extends FirestoreDocument {
+//   timestamp: number;
+//   authorUserId: string;
+//   // checkboxes
+//   /** The self-reported sufficient sleep quality. */
+//   userWokeUpWellRested: boolean;
+//   // mood: { NotSure: boolean; Bad: boolean; Neutral: boolean; Good: boolean };
+// }
 
 /**
  * Represents the list of all occurrences of a performed Movement.

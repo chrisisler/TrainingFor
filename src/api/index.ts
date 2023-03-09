@@ -14,7 +14,15 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
-import { TrainingLog, Movement, SavedMovement } from '../types';
+import {
+  TrainingLog,
+  Movement,
+  SavedMovement,
+  LogTemplate,
+  ProgramUser,
+  Program,
+  FirestoreDocument,
+} from '../types';
 import { db, DbPath } from './firebase';
 
 export * from './firebase';
@@ -27,27 +35,39 @@ function init() {
     converter<SavedMovement>()
   );
   const movementsRef = collection(db, DbPath.Movements).withConverter(converter<Movement>());
+  // const templatesRef = collection(db, DbPath.Templates).withConverter(converter<LogTemplate>());
+  const programUsersRef = collection(db, DbPath.ProgramUsers).withConverter(converter<ProgramUser>());
+  const programsRef = collection(db, DbPath.Programs).withConverter(converter<Program>());
 
   const TrainingLogs = createAPI<TrainingLog>(trainingLogsRef);
   const SavedMovements = createAPI<SavedMovement>(savedMovementsRef);
   const Movements = createAPI<Movement>(movementsRef);
+  // const Templates = createAPI<LogTemplate>(templatesRef);
+  const ProgramUsers = createAPI<ProgramUser>(programUsersRef);
+  const Programs = createAPI<Program>(programsRef);
 
   return {
     TrainingLogs,
     SavedMovements,
     Movements,
+    // Templates,
+    ProgramUsers,
+    Programs,
 
     collections: {
       movements: movementsRef,
       savedMovements: savedMovementsRef,
       logs: trainingLogsRef,
+      // templates: templatesRef,
+      programUsers: programUsersRef,
+      programs: programsRef,
     },
 
     assignAnonymousDataToGoogleUser,
   };
 }
 
-function createAPI<T extends { id: string }>(collection: CollectionReference<T>) {
+function createAPI<T extends FirestoreDocument>(collection: CollectionReference<T>) {
   return {
     async create(entry: T): Promise<T> {
       const newDocumentRef = await addDoc(collection, entry);

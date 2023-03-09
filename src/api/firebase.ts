@@ -27,7 +27,9 @@ export enum DbPath {
   Logs = 'TrainingLogs',
   Movements = 'Movements',
   SavedMovements = 'SavedMovements',
-  // Templates = 'Templates',
+  Templates = 'Templates',
+  ProgramUsers = 'ProgramUsers',
+  Programs = 'Programs',
 }
 
 export const Authenticate = {
