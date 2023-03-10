@@ -121,9 +121,11 @@ export const Programs: FC = () => {
       programId: program.id,
     });
     // Update programs to reflect newly added day of week (in the drawer-open program)
+    const daysOfWeek = JSON.parse(JSON.stringify(program.daysOfWeek));
+    daysOfWeek[data.dayOfWeek] = newProgramLogTemplateId;
     const updated = await API.Programs.update({
       id: program.id,
-      daysOfWeek: { ...program.daysOfWeek, [data.dayOfWeek]: newProgramLogTemplateId },
+      daysOfWeek,
     });
     setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
     // Update drawer state to reflect DB
@@ -290,6 +292,7 @@ export const Programs: FC = () => {
                               await API.Programs.delete(program.id);
                               setPrograms(programs.filter(p => p.id !== program.id));
                               toast.success('Deleted program.');
+                              programDrawer.onClose();
                             } catch (err) {
                               toast.error(err.message);
                             }
@@ -463,6 +466,7 @@ export const Programs: FC = () => {
               }
             }
           }
+          // TODO update program templates here when closing editor drawer (to show changes from editor)
           editorDrawer.onClose();
         }}
       >
