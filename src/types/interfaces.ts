@@ -1,10 +1,10 @@
+import { Weekdays } from '../util';
+
 export interface FirestoreDocument {
   id: string;
 }
 
-/**
- * A User interface renamed to avoid clashing with Firestores User interface.
- */
+// Saves the user's current program
 export interface ProgramUser extends FirestoreDocument {
   userUid: string;
   activeProgramId: string | null;
@@ -14,12 +14,13 @@ export interface ProgramUser extends FirestoreDocument {
 export interface Program extends FirestoreDocument {
   name: string;
   authorUserId: string;
+  schedule: { [key in Lowercase<Weekdays>]: null | TrainingLog };
 }
 
-export interface LogTemplate extends FirestoreDocument {
+export interface ProgramLogTemplate
+  extends FirestoreDocument,
+    Exclude<TrainingLog, 'timestamp' | 'bodyweight'> {
   programId: string;
-  name: string;
-  authorUserId: string;
 }
 
 export interface TrainingLog extends FirestoreDocument {
@@ -27,15 +28,6 @@ export interface TrainingLog extends FirestoreDocument {
   authorUserId: string;
   /** Currently unitless. */
   bodyweight: number;
-
-  // notes: string;
-
-  /**
-   * A checkmark warmup list the user creates for themself. Makes it easy to
-   * knock things off to get into the good stuff.
-   */
-  // Note: When I was at my best squatting (315+lb for reps) my warmups was distinct from my training.
-  // warmup: { description: string; done: boolean }[];
 }
 
 /**

@@ -18,7 +18,7 @@ import {
   TrainingLog,
   Movement,
   SavedMovement,
-  LogTemplate,
+  ProgramLogTemplate,
   ProgramUser,
   Program,
   FirestoreDocument,
@@ -35,14 +35,14 @@ function init() {
     converter<SavedMovement>()
   );
   const movementsRef = collection(db, DbPath.Movements).withConverter(converter<Movement>());
-  // const templatesRef = collection(db, DbPath.Templates).withConverter(converter<LogTemplate>());
+  const templatesRef = collection(db, DbPath.Templates).withConverter(converter<ProgramLogTemplate>());
   const programUsersRef = collection(db, DbPath.ProgramUsers).withConverter(converter<ProgramUser>());
   const programsRef = collection(db, DbPath.Programs).withConverter(converter<Program>());
 
   const TrainingLogs = createAPI<TrainingLog>(trainingLogsRef);
   const SavedMovements = createAPI<SavedMovement>(savedMovementsRef);
   const Movements = createAPI<Movement>(movementsRef);
-  // const Templates = createAPI<LogTemplate>(templatesRef);
+  const Templates = createAPI<ProgramLogTemplate>(templatesRef);
   const ProgramUsers = createAPI<ProgramUser>(programUsersRef);
   const Programs = createAPI<Program>(programsRef);
 
@@ -50,7 +50,7 @@ function init() {
     TrainingLogs,
     SavedMovements,
     Movements,
-    // Templates,
+    Templates,
     ProgramUsers,
     Programs,
 
@@ -58,7 +58,7 @@ function init() {
       movements: movementsRef,
       savedMovements: savedMovementsRef,
       logs: trainingLogsRef,
-      // templates: templatesRef,
+      templates: templatesRef,
       programUsers: programUsersRef,
       programs: programsRef,
     },
