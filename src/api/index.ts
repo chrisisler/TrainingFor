@@ -35,32 +35,42 @@ function init() {
     converter<SavedMovement>()
   );
   const movementsRef = collection(db, DbPath.Movements).withConverter(converter<Movement>());
-  const templatesRef = collection(db, DbPath.Templates).withConverter(converter<ProgramLogTemplate>());
-  const programUsersRef = collection(db, DbPath.ProgramUsers).withConverter(converter<ProgramUser>());
+  const programLogTemplatesRef = collection(db, DbPath.ProgramLogTemplates).withConverter(
+    converter<ProgramLogTemplate>()
+  );
+  const programUsersRef = collection(db, DbPath.ProgramUsers).withConverter(
+    converter<ProgramUser>()
+  );
   const programsRef = collection(db, DbPath.Programs).withConverter(converter<Program>());
+  const programMovementsRef = collection(db, DbPath.ProgramMovements).withConverter(
+    converter<Movement>()
+  );
 
-  const TrainingLogs = createAPI<TrainingLog>(trainingLogsRef);
-  const SavedMovements = createAPI<SavedMovement>(savedMovementsRef);
-  const Movements = createAPI<Movement>(movementsRef);
-  const Templates = createAPI<ProgramLogTemplate>(templatesRef);
-  const ProgramUsers = createAPI<ProgramUser>(programUsersRef);
-  const Programs = createAPI<Program>(programsRef);
+  const TrainingLogs = createAPI(trainingLogsRef);
+  const SavedMovements = createAPI(savedMovementsRef);
+  const Movements = createAPI(movementsRef);
+  const ProgramLogTemplates = createAPI(programLogTemplatesRef);
+  const ProgramUsers = createAPI(programUsersRef);
+  const Programs = createAPI(programsRef);
+  const ProgramMovements = createAPI(programMovementsRef);
 
   return {
     TrainingLogs,
     SavedMovements,
     Movements,
-    Templates,
+    ProgramLogTemplates,
     ProgramUsers,
     Programs,
+    ProgramMovements,
 
     collections: {
       movements: movementsRef,
       savedMovements: savedMovementsRef,
       logs: trainingLogsRef,
-      templates: templatesRef,
+      programLogTemplates: programLogTemplatesRef,
       programUsers: programUsersRef,
       programs: programsRef,
+      programMovements: programMovementsRef,
     },
 
     assignAnonymousDataToGoogleUser,

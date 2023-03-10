@@ -23,6 +23,12 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
           },
         },
       },
+      MuiCollapse: {
+       defaultProps: {
+         mountOnEnter: true,
+         unmountOnExit: true,
+       } 
+      }
     },
   });
 

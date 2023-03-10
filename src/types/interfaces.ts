@@ -14,13 +14,12 @@ export interface ProgramUser extends FirestoreDocument {
 export interface Program extends FirestoreDocument {
   name: string;
   authorUserId: string;
-  schedule: { [key in Lowercase<Weekdays>]: null | TrainingLog };
+  readonly daysOfWeek: Record<Lowercase<Weekdays>, null | ProgramLogTemplate['id']>;
 }
 
-export interface ProgramLogTemplate
-  extends FirestoreDocument,
-    Exclude<TrainingLog, 'timestamp' | 'bodyweight'> {
+export interface ProgramLogTemplate extends FirestoreDocument {
   programId: string;
+  authorUserId: string;
 }
 
 export interface TrainingLog extends FirestoreDocument {

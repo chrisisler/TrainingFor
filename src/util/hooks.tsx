@@ -62,6 +62,7 @@ export const useDrawer = <T extends unknown>() => {
     },
     onClose: closeMenu,
     getData: () => data,
+    setData,
   };
 };
 
@@ -156,7 +157,12 @@ export const useToast = () => {
     [enqueueSnackbar]
   );
   const error = useCallback(
-    (msg: string, opts: OptionsObject = { variant: 'error' }) => enqueueSnackbar(msg, opts),
+    (msg: string, opts: OptionsObject = { variant: 'error' }) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(msg);
+      }
+      return enqueueSnackbar(msg, opts);
+    },
     [enqueueSnackbar]
   );
 

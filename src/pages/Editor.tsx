@@ -1,7 +1,6 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
-  AddRounded,
   Close,
   CloseRounded,
   DeleteForeverRounded,
@@ -39,7 +38,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
-import {WithVariable} from '../components/Variable';
+import { WithVariable } from '../components/Variable';
 import { useUser } from '../context';
 import {
   Movement,
@@ -69,78 +68,8 @@ import {
 export const Editor: FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const user = useUser();
   const { logId } = useParams<{ logId: string }>();
-  const addMovementDrawer = useMaterialMenu();
-  const sleepDrawer = useMaterialMenu();
-  const addSetMenu = useDrawer<Movement>();
-  const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
-  const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
-  const { anchorEl: _2, ...logDrawer } = useDrawer<undefined>();
-
-  /** Controlled state of the Add Movement input. */
-  const [movementNameQuery, setMovementNameQuery] = useState('');
-  /** Controlled state of the Add Set inputs. */
-  const [newSetWeight, setNewSetWeight] = useState(0);
-  const [newSetRepCount, setNewSetRepCount] = useState(0);
-
-  /** List of movements for this log. */
-  const [movements, setMovements] = useDataState<Movement[]>(async () => {
-    if (logId) {
-      return API.Movements.getAll(where('logId', '==', logId), orderBy('position', 'asc'));
-    }
-    return DataState.Empty;
-  }, [logId]);
-
-  /** List of saved movements from this users collection. */
-  const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(async () => {
-    const savedMovements = await API.SavedMovements.getAll(user.uid);
-    // Sort savedMovements by number of existing Movements with that savedMovementId.
-    const countPromises = savedMovements.map(_ =>
-      getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
-    );
-    const snapshots = await Promise.all(countPromises);
-    const usagesByMovement: number[] = snapshots.map(_ => _.data().count);
-    // Attach `count` to each savedMovement, where count is the number of
-    // existing Movements with that savedMovementId.
-    // Then sort by frequency and recency.
-    return savedMovements
-      .map((sm, index) => Object.assign(sm, { count: usagesByMovement[index] }))
-      .sort((a, b) => b.count - a.count)
-      .sort((a, b) => b.lastSeen - a.lastSeen);
-  }, [user.uid]);
-
-  /** A subset of `savedMovements`. */
-  // debounced movementNameQuery fetch/search for SavedMovements in the DB
-  const [matches, setMatches] = useState<DataState<SavedMovement[]>>(DataState.Empty);
-  useEffect(() => {
-    if (!DataState.isReady(savedMovements)) {
-      return;
-    }
-    if (movementNameQuery === '') {
-      // No search input, so show all SavedMovements
-      setMatches(savedMovements);
-      // Do not fetch, there is no query to search for
-      return;
-    }
-    // if (!(DataState.isReady(matches) && matches.length > 0)) {
-    //   setMatches(DataState.Loading);
-    // }
-    const timeout = setTimeout(async () => {
-      try {
-        const query = movementNameQuery.toLowerCase();
-        const list: SavedMovement[] = savedMovements.filter(m =>
-          m.name.toLowerCase().includes(query)
-        );
-        setMatches(list);
-      } catch (err) {
-        toast.error(err.message);
-        setMatches(DataState.error(err.message));
-      }
-    }, 400);
-    return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [movementNameQuery, savedMovements]);
+  const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
 
   const [log, setLog] = useDataState(async () => {
     if (!logId || !logDrawer.open) return DataState.Empty;
@@ -148,510 +77,24 @@ export const Editor: FC = () => {
     return log;
   }, [logId, logDrawer.open]);
 
-  const addMovementFromNewSavedMovement = useCallback(async () => {
-    if (!logId) {
-      throw TypeError('Unreachable: logId is required');
-    }
-    if (!DataState.isReady(movements)) {
-      return;
-    }
-    try {
-      const timestamp: number = Date.now();
-      const newSavedMovement: SavedMovement = await API.SavedMovements.create({
-        name: movementNameQuery,
-        authorUserId: user.uid,
-        id: '',
-        lastSeen: timestamp,
-      });
-      const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
-      const newMovement: Movement = await API.Movements.create({
-        logId,
-        name: newSavedMovement.name,
-        timestamp,
-        sets: [],
-        authorUserId: user.uid,
-        savedMovementId: newSavedMovement.id,
-        savedMovementName: newSavedMovement.name,
-        position,
-        isFavorited: false,
-        id: '',
-        weightUnit: MovementWeightUnit.Pounds,
-        repCountUnit: MovementRepCountUnit.Reps,
-      });
-      // Update local state to reflect DB changes
-      setMovements(_ => DataState.map(_, prev => prev.concat(newMovement)));
-      setSavedMovements(_ => DataState.map(_, prev => prev.concat(newSavedMovement)));
-      // Close the drawer
-      addMovementDrawer.onClose();
-      // Clear the input
-      setMovementNameQuery('');
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }, [
-    movements,
-    logId,
-    movementNameQuery,
-    user.uid,
-    setMovements,
-    setSavedMovements,
-    addMovementDrawer,
-    toast,
-  ]);
-
-  const addMovementFromExistingSavedMovement = useCallback(
-    async (match: SavedMovement) => {
-      if (!logId) {
-        throw Error('Unreachable: logId is required');
-      }
-      if (!DataState.isReady(movements)) return;
-      if (!DataState.isReady(savedMovements)) return;
-      try {
-        /** The movement data from the last time the user performed this movement. */
-        const [previous] = await API.Movements.getAll(
-          where('savedMovementId', '==', match.id),
-          orderBy('timestamp', 'desc'),
-          limit(1)
-        );
-        const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
-        const now: number = Date.now();
-        // Create a Movement from the match
-        const newMovement: Movement = await API.Movements.create({
-          logId,
-          name: match.name,
-          timestamp: now,
-          // Get the sets for this new movement from prior history
-          // prettier-ignore
-          sets: previous.sets.length === 0 ? [] : previous.sets.map(s => ({
-            ...s,
-            status: MovementSetStatus.Unattempted,
-            uuid: uuidv4(),
-          })),
-          authorUserId: user.uid,
-          savedMovementId: match.id,
-          savedMovementName: match.name,
-          position,
-          isFavorited: false,
-          id: '',
-          weightUnit: previous?.weightUnit ?? MovementWeightUnit.Pounds,
-          repCountUnit: previous?.repCountUnit ?? MovementRepCountUnit.Reps,
-        });
-        // Update lastSeen property
-        await API.SavedMovements.update({
-          id: match.id,
-          lastSeen: now,
-        });
-        // Update local state from DB
-        setMovements(DataState.map(movements, prev => prev.concat(newMovement)));
-        const next = savedMovements.slice();
-        next[next.indexOf(match)].lastSeen = now;
-        setSavedMovements(next);
-        // Close the drawer
-        addMovementDrawer.onClose();
-        // Clear the input
-        setMovementNameQuery('');
-      } catch (error) {
-        toast.error(error.message);
-      }
-    },
-    [
-      addMovementDrawer,
-      logId,
-      movements,
-      savedMovements,
-      setMovements,
-      setSavedMovements,
-      toast,
-      user.uid,
-    ]
-  );
-
-  const addSetToMovement = useCallback(
-    async (movement: Movement) => {
-      if (!DataState.isReady(movements)) return;
-      try {
-        // Add new set to list of sets for this Movement
-        const sets = movement.sets.concat({
-          weight: newSetWeight,
-          repCountActual: newSetRepCount,
-          repCountExpected: newSetRepCount,
-          status: MovementSetStatus.Unattempted,
-          uuid: uuidv4(),
-        });
-        const updated: Movement = await API.Movements.update({
-          sets,
-          id: movement.id,
-        });
-        // Update local state
-        const copy = movements.slice();
-        copy[copy.indexOf(movement)] = updated;
-        setMovements(copy);
-      } catch (error) {
-        toast.error(error.message);
-      }
-    },
-    [movements, newSetRepCount, newSetWeight, setMovements, toast]
-  );
-
-  // If no movements, display an info toast to add a movement to get started
-  useEffect(() => {
-    if (addMovementDrawer.open) return;
-    if (!DataState.isReady(movements) || movements.length > 0) return;
-    toast.info('Add a movement to get started!', {
-      action: () => (
-        <Button onClick={event => addMovementDrawer.onOpen(event)}>
-          <AddRounded />
-        </Button>
-      ),
-    });
-  }, [addMovementDrawer, movements, toast]);
-
-  // Random notice for sleep
-  useEffect(() => {
-    if (!(Math.random() >= 0.98)) return;
-    toast.info('Make sure to get 8 hours of sleep!', {
-      action: () => (
-        <Button onClick={event => sleepDrawer.onOpen(event)}>
-          <HelpRounded />
-        </Button>
-      ),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
-    <>
-      <Box
-        sx={{
-          height: '100%',
-          width: '100%',
-          overflowY: 'scroll',
-          padding: theme => theme.spacing(1, 2, 3, 2),
-        }}
-      >
-        <Box display="flex" width="100%" justifyContent="center">
-          <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
-            <ShortTextRounded />
-          </IconButton>
-        </Box>
-
-        <Stack spacing={2}>
-          <DataStateView data={movements}>
-            {movements => (
-              <>
-                {movements.map((movement: Movement, movementIndex) => (
-                  <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
-                    <Box
-                      display="flex"
-                      alignItems="end"
-                      width="100%"
-                      justifyContent="space-between"
-                    >
-                      {/** alignItems here could be END or BASELINE */}
-                      <Stack
-                        direction="row"
-                        alignItems="end"
-                        justifyContent="space-between"
-                        width="100%"
-                      >
-                        <Box display="flex" alignItems="baseline">
-                          <Typography
-                            fontSize="1.0rem"
-                            sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
-                            onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                            fontWeight={600}
-                          >
-                            {movement.name}
-                          </Typography>
-
-                          {/** Display volume or reps total. */}
-                          {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                          {movement.sets.filter(_ => _.status === MovementSetStatus.Completed)
-                            .length >= 1 && (
-                            <Typography
-                              variant="overline"
-                              sx={{
-                                opacity: 0.7,
-                                color: 'text.secondary',
-                                marginLeft: theme => theme.spacing(1),
-                              }}
-                            >
-                              {Intl.NumberFormat().format(
-                                movement.sets[0].weight > 0
-                                  ? movement.sets.reduce(
-                                      (sum, _) =>
-                                        _.status === MovementSetStatus.Completed
-                                          ? sum + _.repCountActual * _.weight
-                                          : sum,
-                                      0
-                                    )
-                                  : movement.sets.reduce(
-                                      (sum, _) =>
-                                        _.status === MovementSetStatus.Completed
-                                          ? sum + _.repCountActual
-                                          : sum,
-                                      0
-                                    )
-                              )}
-                            </Typography>
-                          )}
-                        </Box>
-                        <IconButton
-                          disableRipple
-                          sx={{ color: 'text.secondary' }}
-                          onClick={event => {
-                            addSetMenu.onOpen(event, movement);
-                            // Set controlled state default values to previous set
-                            if (movement.sets.length > 0) {
-                              const lastSet = movement.sets[movement.sets.length - 1];
-                              setNewSetWeight(lastSet.weight);
-                              setNewSetRepCount(lastSet.repCountActual);
-                            } else {
-                              setNewSetWeight(0);
-                              setNewSetRepCount(0);
-                            }
-                          }}
-                        >
-                          <EditOutlined fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    </Box>
-                    <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row" spacing={1.6}>
-                        {/** Stack of unit control text buttons */}
-                        {movement.sets.length > 0 && (
-                          <Stack
-                            alignItems="end"
-                            spacing={1}
-                            marginRight={-0.5}
-                            marginLeft="-4px"
-                          >
-                            <MovementUnitSelect
-                              value={movement.weightUnit}
-                              onChange={async event => {
-                                try {
-                                  const newWeightUnit = event.target.value as MovementWeightUnit;
-                                  // Update field on the movement
-                                  const updated: Movement = await API.Movements.update({
-                                    id: movement.id,
-                                    weightUnit: newWeightUnit,
-                                  });
-                                  // Update local state
-                                  const copy = movements.slice();
-                                  copy[movementIndex] = updated;
-                                  setMovements(copy);
-                                } catch (error) {
-                                  toast.error(error.message);
-                                }
-                              }}
-                            >
-                              <MenuItem value={MovementWeightUnit.Pounds}>
-                                {MovementWeightUnit.Pounds}
-                              </MenuItem>
-                              <MenuItem value={MovementWeightUnit.Kilograms}>
-                                {MovementWeightUnit.Kilograms}
-                              </MenuItem>
-                            </MovementUnitSelect>
-
-                            <MovementUnitSelect
-                              value={movement.repCountUnit}
-                              onChange={async event => {
-                                try {
-                                  const newRepCountUnit = event.target
-                                    .value as MovementRepCountUnit;
-                                  // Update field on the movement
-                                  const updated: Movement = await API.Movements.update({
-                                    id: movement.id,
-                                    repCountUnit: newRepCountUnit,
-                                  });
-                                  // Update local state
-                                  const copy = movements.slice();
-                                  copy[movementIndex] = updated;
-                                  setMovements(copy);
-                                } catch (error) {
-                                  toast.error(error.message);
-                                }
-                              }}
-                            >
-                              <MenuItem value={MovementRepCountUnit.Reps}>
-                                {MovementRepCountUnit.Reps}
-                              </MenuItem>
-                              <MenuItem value={MovementRepCountUnit.Seconds}>
-                                {MovementRepCountUnit.Seconds}
-                              </MenuItem>
-                              <MenuItem value={MovementRepCountUnit.Minutes}>
-                                {MovementRepCountUnit.Minutes}
-                              </MenuItem>
-                              <MenuItem value={MovementRepCountUnit.Meters}>
-                                {MovementRepCountUnit.Meters}
-                              </MenuItem>
-                            </MovementUnitSelect>
-                          </Stack>
-                        )}
-
-                        {movement.sets.map((movementSet, index) => (
-                          <MovementSetView
-                            key={movementSet.uuid}
-                            movementSet={movementSet}
-                            movement={movement}
-                            index={index}
-                            updateSets={async (mSets: MovementSet[]) => {
-                              try {
-                                // Send changes
-                                const updated = await API.Movements.update({
-                                  id: movement.id,
-                                  sets: mSets,
-                                });
-                                // Update local state
-                                const copy = movements.slice();
-                                copy[movementIndex] = updated;
-                                setMovements(copy);
-                              } catch (error) {
-                                toast.error(error.message);
-                              }
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </Box>
-                  </Stack>
-                ))}
-              </>
-            )}
-          </DataStateView>
-
-          {DataState.isReady(movements) && (
-            <Box display="flex" width="100%" justifyContent="center">
-              <IconButton
-                disableRipple
-                sx={{ opacity: 0.5, color: 'text.secondary' }}
-                size="large"
-                onClick={addMovementDrawer.onOpen}
-              >
-                <PlaylistAddRounded sx={{ fontSize: '1.7rem' }} />
-              </IconButton>
-            </Box>
-          )}
-        </Stack>
+    <Box
+      sx={{
+        height: '100%',
+        width: '100%',
+        overflowY: 'scroll',
+        padding: theme => theme.spacing(1, 2, 3, 2),
+      }}
+    >
+      <Box display="flex" width="100%" justifyContent="center">
+        <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
+          <ShortTextRounded />
+        </IconButton>
       </Box>
 
-      {/** ------------------------- DRAWERS ------------------------- */}
-
-      <Backdrop open={addSetMenu.open} sx={{ color: '#fff' }}>
-        <WithVariable value={addSetMenu.getData()}>
-          {movement =>
-            movement === null ? null : (
-              <Menu
-                open={addSetMenu.open}
-                anchorEl={addSetMenu.anchorEl}
-                onClose={(_event, reason) => {
-                  if (reason === 'backdropClick') {
-                    if (newSetRepCount === 0) {
-                      addSetMenu.onClose();
-                      return;
-                    }
-                    addSetToMovement(movement);
-                    addSetMenu.onClose();
-                    return;
-                  }
-                  // Click was NOT on the backdrop so it was within
-                  // the menu which means the user is clicking
-                  // around in the menu, so do nothing.
-                  return;
-                }}
-              >
-                <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(1, 3) }}>
-                  <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography variant="overline">
-                      <Collapse in={newSetRepCount > 0}>
-                        Click anywhere to add set
-                      </Collapse>
-                      <Collapse in={newSetRepCount === 0}>
-                        Add Set #<b>{movement.sets.length + 1}</b>
-                      </Collapse>
-                    </Typography>
-                  </Box>
-                  <Stack direction="row" spacing={3}>
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetWeight}
-                      onChange={event => setNewSetWeight(+event.target.value)}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        startAdornment: (
-                          <Typography variant="overline" mr={1} alignSelf="end">
-                            {movement.weightUnit}
-                          </Typography>
-                        ),
-                        sx: { fontSize: '1.3rem' },
-                      }}
-                    />
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetRepCount}
-                      onChange={event => setNewSetRepCount(+event.target.value)}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        startAdornment: (
-                          <Typography variant="overline" mr={1} alignSelf="end">
-                            {MovementRepCountUnit[movement.repCountUnit]}
-                          </Typography>
-                        ),
-                        sx: { fontSize: '1.3rem' },
-                      }}
-                    />
-                  </Stack>
-                  <Button
-                    size="large"
-                    variant="contained"
-                    sx={{ color: 'text.secondary', backgroundColor: 'divider' }}
-                    onClick={addSetMenu.onClose}
-                    startIcon={<CloseRounded fontSize="small" />}
-                  >
-                    Close
-                  </Button>
-                  {movement.sets.length > 0 && (
-                    <Button
-                      variant="text"
-                      color="error"
-                      startIcon={<DeleteOutline fontSize="small" />}
-                      onClick={async function deleteSet() {
-                        try {
-                          const last = movement.sets[movement.sets.length - 1];
-                          if (!last) throw TypeError('Unreachable: last');
-                          const updated: Movement = await API.Movements.update({
-                            sets: movement.sets.filter(_ => _.uuid !== last.uuid),
-                            id: movement.id,
-                          });
-                          if (!DataState.isReady(movements)) return;
-                          // Update local state
-                          const copy = movements.slice();
-                          copy[copy.indexOf(movement)] = updated;
-                          setMovements(copy);
-                          // Close the menu
-                          addSetMenu.onClose();
-                        } catch (error) {
-                          toast.error(error.message);
-                        }
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  )}
-                </Stack>
-              </Menu>
-            )
-          }
-        </WithVariable>
-      </Backdrop>
-
-      <SwipeableDrawer {...sleepDrawer} anchor="top">
-        <Collapse in={sleepDrawer.open}>
-          <Typography>Sleep is more important than training and eating.</Typography>
-        </Collapse>
-      </SwipeableDrawer>
+      <DataStateView data={logId || DataState.Empty}>
+        {logId => <EditorInternals logId={logId} />}
+      </DataStateView>
 
       <SwipeableDrawer {...logDrawer.props()} anchor="top">
         <Collapse in={logDrawer.open}>
@@ -735,6 +178,558 @@ export const Editor: FC = () => {
               </Button>
             </Grid>
           </Grid>
+        </Collapse>
+      </SwipeableDrawer>
+    </Box>
+  );
+};
+
+export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = ({
+  logId,
+  isProgramView = false,
+}) => {
+  const toast = useToast();
+  const user = useUser();
+  const addMovementDrawer = useMaterialMenu();
+  const sleepDrawer = useMaterialMenu();
+  const addSetMenu = useDrawer<Movement>();
+  const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
+  const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
+
+  /** Controlled state of the Add Movement input. */
+  const [movementNameQuery, setMovementNameQuery] = useState('');
+  /** Controlled state of the Add Set inputs. */
+  const [newSetWeight, setNewSetWeight] = useState(0);
+  const [newSetRepCount, setNewSetRepCount] = useState(0);
+
+  /** The active collection, based on the usage of this component. */
+  const Movements = useMemo(
+    () => (isProgramView ? API.ProgramMovements : API.Movements),
+    [isProgramView]
+  );
+
+  /** List of movements for this log. */
+  const [movements, setMovements] = useDataState<Movement[]>(async () => {
+    if (logId) {
+      return Movements.getAll(where('logId', '==', logId), orderBy('position', 'asc'));
+    }
+    return DataState.Empty;
+  }, [logId]);
+
+  /** List of saved movements from this users collection. */
+  const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(async () => {
+    const savedMovements = await API.SavedMovements.getAll(user.uid);
+    // Sort savedMovements by number of existing Movements with that savedMovementId.
+    const countPromises = savedMovements.map(_ =>
+      getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
+    );
+    const snapshots = await Promise.all(countPromises);
+    const usagesByMovement: number[] = snapshots.map(_ => _.data().count);
+    // Attach `count` to each savedMovement, where count is the number of
+    // existing Movements with that savedMovementId.
+    // Then sort by frequency and recency.
+    return savedMovements
+      .map((sm, index) => Object.assign(sm, { count: usagesByMovement[index] }))
+      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.lastSeen - a.lastSeen);
+  }, [user.uid]);
+
+  /** A subset of `savedMovements`. */
+  // debounced movementNameQuery fetch/search for SavedMovements in the DB
+  const [matches, setMatches] = useState<DataState<SavedMovement[]>>(DataState.Empty);
+  useEffect(() => {
+    if (!DataState.isReady(savedMovements)) {
+      return;
+    }
+    if (movementNameQuery === '') {
+      // No search input, so show all SavedMovements
+      setMatches(savedMovements);
+      // Do not fetch, there is no query to search for
+      return;
+    }
+    // if (!(DataState.isReady(matches) && matches.length > 0)) {
+    //   setMatches(DataState.Loading);
+    // }
+    const timeout = setTimeout(async () => {
+      try {
+        const query = movementNameQuery.toLowerCase();
+        const list: SavedMovement[] = savedMovements.filter(m =>
+          m.name.toLowerCase().includes(query)
+        );
+        setMatches(list);
+      } catch (err) {
+        toast.error(err.message);
+        setMatches(DataState.error(err.message));
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movementNameQuery, savedMovements]);
+
+  const addMovementFromNewSavedMovement = useCallback(async () => {
+    if (!logId) {
+      throw TypeError('Unreachable: logId is required');
+    }
+    if (!DataState.isReady(movements)) {
+      return;
+    }
+    try {
+      const timestamp: number = Date.now();
+      const newSavedMovement: SavedMovement = await API.SavedMovements.create({
+        name: movementNameQuery,
+        authorUserId: user.uid,
+        id: '',
+        lastSeen: timestamp,
+      });
+      const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
+      const newMovement: Movement = await Movements.create({
+        logId,
+        name: newSavedMovement.name,
+        timestamp,
+        sets: [],
+        authorUserId: user.uid,
+        savedMovementId: newSavedMovement.id,
+        savedMovementName: newSavedMovement.name,
+        position,
+        isFavorited: false,
+        id: '',
+        weightUnit: MovementWeightUnit.Pounds,
+        repCountUnit: MovementRepCountUnit.Reps,
+      });
+      // Update local state to reflect DB changes
+      setMovements(_ => DataState.map(_, prev => prev.concat(newMovement)));
+      setSavedMovements(_ => DataState.map(_, prev => prev.concat(newSavedMovement)));
+      // Close the drawer
+      addMovementDrawer.onClose();
+      // Clear the input
+      setMovementNameQuery('');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }, [
+    Movements,
+    movements,
+    logId,
+    movementNameQuery,
+    user.uid,
+    setMovements,
+    setSavedMovements,
+    addMovementDrawer,
+    toast,
+  ]);
+
+  const addMovementFromExistingSavedMovement = useCallback(
+    async (match: SavedMovement) => {
+      if (!logId) {
+        throw Error('Unreachable: logId is required');
+      }
+      if (!DataState.isReady(movements)) return;
+      if (!DataState.isReady(savedMovements)) return;
+      try {
+        /** The movement data from the last time the user performed this movement. */
+        const [previous] = await Movements.getAll(
+          where('savedMovementId', '==', match.id),
+          orderBy('timestamp', 'desc'),
+          limit(1)
+        );
+        const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
+        const now: number = Date.now();
+        // Create a Movement from the match
+        const newMovement: Movement = await Movements.create({
+          logId,
+          name: match.name,
+          timestamp: now,
+          // Get the sets for this new movement from prior history
+          sets:
+            previous?.sets.map(s => ({
+              ...s,
+              status: MovementSetStatus.Unattempted,
+              uuid: uuidv4(),
+            })) ?? [],
+          authorUserId: user.uid,
+          savedMovementId: match.id,
+          savedMovementName: match.name,
+          position,
+          isFavorited: false,
+          id: '',
+          weightUnit: previous?.weightUnit ?? MovementWeightUnit.Pounds,
+          repCountUnit: previous?.repCountUnit ?? MovementRepCountUnit.Reps,
+        });
+        // Update lastSeen property
+        await API.SavedMovements.update({
+          id: match.id,
+          lastSeen: now,
+        });
+        // Update local state from DB
+        setMovements(DataState.map(movements, prev => prev.concat(newMovement)));
+        const next = savedMovements.slice();
+        next[next.indexOf(match)].lastSeen = now;
+        setSavedMovements(next);
+        // Close the drawer
+        addMovementDrawer.onClose();
+        // Clear the input
+        setMovementNameQuery('');
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [
+      Movements,
+      addMovementDrawer,
+      logId,
+      movements,
+      savedMovements,
+      setMovements,
+      setSavedMovements,
+      toast,
+      user.uid,
+    ]
+  );
+
+  const addSetToMovement = useCallback(
+    async (movement: Movement) => {
+      if (!DataState.isReady(movements)) return;
+      try {
+        // Add new set to list of sets for this Movement
+        const sets = movement.sets.concat({
+          weight: newSetWeight,
+          repCountActual: newSetRepCount,
+          repCountExpected: newSetRepCount,
+          status: MovementSetStatus.Unattempted,
+          uuid: uuidv4(),
+        });
+        const updated: Movement = await Movements.update({
+          sets,
+          id: movement.id,
+        });
+        // Update local state
+        const copy = movements.slice();
+        copy[copy.indexOf(movement)] = updated;
+        setMovements(copy);
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [Movements, movements, newSetRepCount, newSetWeight, setMovements, toast]
+  );
+
+  // Random notice for sleep
+  useEffect(() => {
+    if (isProgramView) return;
+    if (!(Math.random() >= 0.98)) return;
+    toast.info('Make sure to get 8 hours of sleep!', {
+      action: () => (
+        <Button onClick={event => sleepDrawer.onOpen(event)}>
+          <HelpRounded />
+        </Button>
+      ),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <>
+      <Stack spacing={2}>
+        <DataStateView data={movements}>
+          {movements => (
+            <>
+              {movements.map((movement: Movement, movementIndex) => (
+                <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
+                  <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
+                    {/** alignItems here could be END or BASELINE */}
+                    <Stack
+                      direction="row"
+                      alignItems="end"
+                      justifyContent="space-between"
+                      width="100%"
+                    >
+                      <Box display="flex" alignItems="baseline">
+                        <Typography
+                          fontSize="1.0rem"
+                          sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
+                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
+                          fontWeight={600}
+                        >
+                          {movement.name}
+                        </Typography>
+
+                        {/** Display volume or reps total. */}
+                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                        {movement.sets.filter(_ => _.status === MovementSetStatus.Completed)
+                          .length >= 1 && (
+                          <Typography
+                            variant="overline"
+                            sx={{
+                              opacity: 0.7,
+                              color: 'text.secondary',
+                              marginLeft: theme => theme.spacing(1),
+                            }}
+                          >
+                            {Intl.NumberFormat().format(
+                              movement.sets[0].weight > 0
+                                ? movement.sets.reduce(
+                                    (sum, _) =>
+                                      _.status === MovementSetStatus.Completed
+                                        ? sum + _.repCountActual * _.weight
+                                        : sum,
+                                    0
+                                  )
+                                : movement.sets.reduce(
+                                    (sum, _) =>
+                                      _.status === MovementSetStatus.Completed
+                                        ? sum + _.repCountActual
+                                        : sum,
+                                    0
+                                  )
+                            )}
+                          </Typography>
+                        )}
+                      </Box>
+                      <IconButton
+                        disableRipple
+                        sx={{ color: 'text.secondary' }}
+                        onClick={event => {
+                          addSetMenu.onOpen(event, movement);
+                          // Set controlled state default values to previous set
+                          if (movement.sets.length > 0) {
+                            const lastSet = movement.sets[movement.sets.length - 1];
+                            setNewSetWeight(lastSet.weight);
+                            setNewSetRepCount(lastSet.repCountActual);
+                          } else {
+                            setNewSetWeight(0);
+                            setNewSetRepCount(0);
+                          }
+                        }}
+                      >
+                        <EditOutlined fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+                  <Box width="100%" sx={{ overflowX: 'scroll' }}>
+                    <Stack direction="row" spacing={1.6}>
+                      {/** Stack of unit control text buttons */}
+                      {movement.sets.length > 0 && (
+                        <Stack alignItems="end" spacing={1} marginRight={-0.5} marginLeft="-4px">
+                          <MovementUnitSelect
+                            value={movement.weightUnit}
+                            onChange={async event => {
+                              try {
+                                const newWeightUnit = event.target.value as MovementWeightUnit;
+                                // Update field on the movement
+                                const updated: Movement = await Movements.update({
+                                  id: movement.id,
+                                  weightUnit: newWeightUnit,
+                                });
+                                // Update local state
+                                const copy = movements.slice();
+                                copy[movementIndex] = updated;
+                                setMovements(copy);
+                              } catch (error) {
+                                toast.error(error.message);
+                              }
+                            }}
+                          >
+                            <MenuItem value={MovementWeightUnit.Pounds}>
+                              {MovementWeightUnit.Pounds}
+                            </MenuItem>
+                            <MenuItem value={MovementWeightUnit.Kilograms}>
+                              {MovementWeightUnit.Kilograms}
+                            </MenuItem>
+                          </MovementUnitSelect>
+
+                          <MovementUnitSelect
+                            value={movement.repCountUnit}
+                            onChange={async event => {
+                              try {
+                                const newRepCountUnit = event.target.value as MovementRepCountUnit;
+                                // Update field on the movement
+                                const updated: Movement = await Movements.update({
+                                  id: movement.id,
+                                  repCountUnit: newRepCountUnit,
+                                });
+                                // Update local state
+                                const copy = movements.slice();
+                                copy[movementIndex] = updated;
+                                setMovements(copy);
+                              } catch (error) {
+                                toast.error(error.message);
+                              }
+                            }}
+                          >
+                            <MenuItem value={MovementRepCountUnit.Reps}>
+                              {MovementRepCountUnit.Reps}
+                            </MenuItem>
+                            <MenuItem value={MovementRepCountUnit.Seconds}>
+                              {MovementRepCountUnit.Seconds}
+                            </MenuItem>
+                            <MenuItem value={MovementRepCountUnit.Minutes}>
+                              {MovementRepCountUnit.Minutes}
+                            </MenuItem>
+                            <MenuItem value={MovementRepCountUnit.Meters}>
+                              {MovementRepCountUnit.Meters}
+                            </MenuItem>
+                          </MovementUnitSelect>
+                        </Stack>
+                      )}
+
+                      {movement.sets.map((movementSet, index) => (
+                        <MovementSetView
+                          key={movementSet.uuid}
+                          movementSet={movementSet}
+                          movement={movement}
+                          index={index}
+                          updateSets={async (mSets: MovementSet[]) => {
+                            try {
+                              // Send changes
+                              const updated = await Movements.update({
+                                id: movement.id,
+                                sets: mSets,
+                              });
+                              // Update local state
+                              const copy = movements.slice();
+                              copy[movementIndex] = updated;
+                              setMovements(copy);
+                            } catch (error) {
+                              toast.error(error.message);
+                            }
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                </Stack>
+              ))}
+            </>
+          )}
+        </DataStateView>
+
+        {DataState.isReady(movements) && (
+          <Box display="flex" width="100%" justifyContent="center">
+            <IconButton
+              disableRipple
+              sx={{ opacity: 0.5, color: 'text.secondary' }}
+              size="large"
+              onClick={addMovementDrawer.onOpen}
+            >
+              <PlaylistAddRounded sx={{ fontSize: '1.7rem' }} />
+            </IconButton>
+          </Box>
+        )}
+      </Stack>
+
+      {/** ------------------------- DRAWERS ------------------------- */}
+
+      <Backdrop open={addSetMenu.open} sx={{ color: '#fff' }}>
+        <WithVariable value={addSetMenu.getData()}>
+          {movement =>
+            movement === null ? null : (
+              <Menu
+                open={addSetMenu.open}
+                anchorEl={addSetMenu.anchorEl}
+                onClose={(_event, reason) => {
+                  if (reason === 'backdropClick') {
+                    if (newSetRepCount === 0) {
+                      addSetMenu.onClose();
+                      return;
+                    }
+                    addSetToMovement(movement);
+                    addSetMenu.onClose();
+                    return;
+                  }
+                  // Click was NOT on the backdrop so it was within
+                  // the menu which means the user is clicking
+                  // around in the menu, so do nothing.
+                  return;
+                }}
+              >
+                <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(1, 3) }}>
+                  <Box width="100%" textAlign="center" marginBottom="-1rem">
+                    <Typography variant="overline">
+                      <Collapse in={newSetRepCount > 0}>Click anywhere to add set</Collapse>
+                      <Collapse in={newSetRepCount === 0}>
+                        Add Set #<b>{movement.sets.length + 1}</b>
+                      </Collapse>
+                    </Typography>
+                  </Box>
+                  <Stack direction="row" spacing={3}>
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={newSetWeight}
+                      onChange={event => setNewSetWeight(+event.target.value)}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        startAdornment: (
+                          <Typography variant="overline" mr={1} alignSelf="end">
+                            {movement.weightUnit}
+                          </Typography>
+                        ),
+                        sx: { fontSize: '1.3rem' },
+                      }}
+                    />
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={newSetRepCount}
+                      onChange={event => setNewSetRepCount(+event.target.value)}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        startAdornment: (
+                          <Typography variant="overline" mr={1} alignSelf="end">
+                            {MovementRepCountUnit[movement.repCountUnit]}
+                          </Typography>
+                        ),
+                        sx: { fontSize: '1.3rem' },
+                      }}
+                    />
+                  </Stack>
+                  <Button
+                    size="large"
+                    variant="contained"
+                    sx={{ color: 'text.secondary', backgroundColor: 'divider' }}
+                    onClick={addSetMenu.onClose}
+                    startIcon={<CloseRounded fontSize="small" />}
+                  >
+                    Close
+                  </Button>
+                  {movement.sets.length > 0 && (
+                    <Button
+                      variant="text"
+                      color="error"
+                      startIcon={<DeleteOutline fontSize="small" />}
+                      onClick={async function deleteSet() {
+                        try {
+                          const last = movement.sets[movement.sets.length - 1];
+                          if (!last) throw TypeError('Unreachable: last');
+                          const updated: Movement = await Movements.update({
+                            sets: movement.sets.filter(_ => _.uuid !== last.uuid),
+                            id: movement.id,
+                          });
+                          if (!DataState.isReady(movements)) return;
+                          // Update local state
+                          const copy = movements.slice();
+                          copy[copy.indexOf(movement)] = updated;
+                          setMovements(copy);
+                          // Close the menu
+                          addSetMenu.onClose();
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </Stack>
+              </Menu>
+            )
+          }
+        </WithVariable>
+      </Backdrop>
+
+      <SwipeableDrawer {...sleepDrawer} anchor="top">
+        <Collapse in={sleepDrawer.open}>
+          <Typography>Sleep is more important than training and eating.</Typography>
         </Collapse>
       </SwipeableDrawer>
 
@@ -919,7 +914,7 @@ export const Editor: FC = () => {
                       if (newName.length < 3 || newName === movement.name) {
                         return;
                       }
-                      const updated: Movement = await API.Movements.update({
+                      const updated: Movement = await Movements.update({
                         id: movement.id,
                         name: newName,
                       });
@@ -947,7 +942,7 @@ export const Editor: FC = () => {
                   try {
                     const movement = movementMenuDrawer.getData();
                     if (!movement) throw TypeError('Unreachable: rename movement');
-                    await API.Movements.delete(movement.id);
+                    await Movements.delete(movement.id);
                     // Update local state
                     setMovements(
                       DataState.map(movements, _ => _.filter(_ => _.id !== movement.id))

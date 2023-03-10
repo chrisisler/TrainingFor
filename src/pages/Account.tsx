@@ -159,7 +159,9 @@ export const Account: FC = () => {
                           ) : (
                             <Stack>
                               {movements.map(movement => (
-                                <Typography variant="body1"> {movement.name} </Typography>
+                                <Typography variant="body1" key={movement.id}>
+                                  {movement.name}
+                                </Typography>
                               ))}
                             </Stack>
                           )

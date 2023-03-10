@@ -2,20 +2,21 @@ import {
   AddRounded,
   Close,
   DeleteForeverRounded,
+  EditOutlined,
   NavigateBeforeRounded,
   VerifiedRounded,
 } from '@mui/icons-material';
 import {
   Box,
   Button,
-  debounce,
+  Collapse,
   IconButton,
   Stack,
   SwipeableDrawer,
   TextField,
   Typography,
 } from '@mui/material';
-import { where } from 'firebase/firestore';
+import { orderBy, where } from 'firebase/firestore';
 import { FC, useCallback, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { API } from '../api';
 import { WithVariable } from '../components/Variable';
 import { useUser } from '../context';
-import { Program, ProgramUser } from '../types';
+import { Movement, Program } from '../types';
 import {
   DataState,
   DataStateView,
@@ -34,14 +35,19 @@ import {
   useToast,
   Weekdays,
 } from '../util';
+import { EditorInternals } from './Editor';
 
 export const Programs: FC = () => {
   const user = useUser();
   const toast = useToast();
   const navigate = useNavigate();
   const addProgramDrawer = useMaterialMenu();
-  // new drawer will contain
-  const editProgramDrawer = useDrawer<Program>();
+  const programDrawer = useDrawer<Program>();
+  const editorDrawer = useDrawer<{
+    templateId: null | string;
+    dayOfWeek: Lowercase<Weekdays>;
+    index: number;
+  }>();
 
   const [newProgramName, setNewProgramName] = useState('');
 
@@ -64,7 +70,6 @@ export const Programs: FC = () => {
         if (users.length > 0) {
           // There can ONLY BE ONE!
           if (users.length > 1) {
-            toast.info('Deleting hella extra program-users...');
             users.slice(1).forEach(_ => API.ProgramUsers.delete(_.id));
           }
           return users[0];
@@ -79,17 +84,58 @@ export const Programs: FC = () => {
     [user.uid]
   );
 
-  const [programTemplates, setProgramTemplates] = useDataState(async () => {
-    const program = editProgramDrawer.getData();
-    if (!!program && editProgramDrawer.open === true) {
-      return API.Templates.getAll(where('programId', '==', program.id));
+  // ProgramMovements
+  const [programMovementsByDayOfWeek] = useDataState<
+    Record<Lowercase<Weekdays[number]>, null | Movement[]>
+  >(async () => {
+    if (editorDrawer.open) return DataState.Empty;
+    const program = programDrawer.getData();
+    if (!programDrawer.open || !program) return DataState.Empty;
+    const promises = Object.keys(program.daysOfWeek).map(key => {
+      const dayOfWeek = key as Lowercase<Weekdays>;
+      const templateId = program.daysOfWeek[dayOfWeek];
+      if (!templateId) {
+        return { [dayOfWeek]: null };
+      }
+      return API.ProgramMovements.getAll(
+        where('logId', '==', templateId),
+        orderBy('position', 'asc')
+      ).then(movements => ({ [dayOfWeek]: movements }));
+    });
+    return await Promise.all(promises).then(_ => _.reduce((R, x) => Object.assign(R, x), {}));
+  }, [programDrawer.getData(), editorDrawer.open]);
+
+  const [newTemplateId] = useDataState(async () => {
+    if (!editorDrawer.open) return DataState.Empty;
+    const program = programDrawer.getData();
+    const data = editorDrawer.getData();
+    if (!DataState.isReady(programs)) return programs;
+    if (!data || !program) return DataState.Empty;
+    if (data.templateId) {
+      return data.templateId;
     }
-    return DataState.Empty;
-  }, [editProgramDrawer.open]);
+    // Create one and return it
+    const { id: newProgramLogTemplateId } = await API.ProgramLogTemplates.create({
+      id: '',
+      authorUserId: user.uid,
+      programId: program.id,
+    });
+    // Update programs to reflect newly added day of week (in the drawer-open program)
+    const updated = await API.Programs.update({
+      id: program.id,
+      daysOfWeek: { ...program.daysOfWeek, [data.dayOfWeek]: newProgramLogTemplateId },
+    });
+    setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
+    // Update drawer state to reflect DB
+    editorDrawer.setData({ ...data, templateId: newProgramLogTemplateId });
+    // Return new template (id) for users to add movements to since they just
+    // clicked the (add template) button
+    return newProgramLogTemplateId;
+  }, [editorDrawer.getData()?.templateId, programDrawer.getData()]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateActiveProgram = useCallback(
-    debounce(async (program: Program) => {
+    async (program: Program) => {
       if (!DataState.isReady(programUser)) {
         toast.error('Program user not found or ready.');
         return;
@@ -105,7 +151,7 @@ export const Programs: FC = () => {
       } catch (err) {
         toast.error(err.message);
       }
-    }, 1000),
+    },
     [programUser, toast, setProgramUser]
   );
 
@@ -125,7 +171,7 @@ export const Programs: FC = () => {
           <Stack>
             <Typography variant="overline">Program</Typography>
             <Typography variant="body2" color="textSecondary">
-              Take out the guesswork: follow an existing plan, or create your training
+              Take out the guesswork: create your training or follow an existing plan
             </Typography>
           </Stack>
           <Button startIcon={<AddRounded />} onClick={addProgramDrawer.onOpen}>
@@ -157,7 +203,7 @@ export const Programs: FC = () => {
                           : {}),
                       }}
                       onClick={event => {
-                        editProgramDrawer.onOpen(event, program);
+                        programDrawer.onOpen(event, program);
                       }}
                     >
                       <Stack direction="row" justifyContent="space-between">
@@ -188,9 +234,9 @@ export const Programs: FC = () => {
 
       {/** ----------------------------- DRAWERS ----------------------------- */}
 
-      <SwipeableDrawer {...editProgramDrawer.props()} anchor="bottom">
-        <Box minHeight="85vh">
-          <WithVariable value={editProgramDrawer.getData()}>
+      <SwipeableDrawer {...programDrawer.props()} anchor="bottom">
+        <Box height="85vh" key={JSON.stringify(programDrawer.getData())}>
+          <WithVariable value={programDrawer.getData()}>
             {program => {
               if (program === null) {
                 return <>Nothing to show here.</>;
@@ -199,7 +245,7 @@ export const Programs: FC = () => {
                 DataState.isReady(programUser) && programUser.activeProgramId === program?.id;
               const isOwner = user.uid === program.authorUserId;
               return (
-                <Stack spacing={3}>
+                <Stack spacing={2}>
                   <Stack>
                     <Typography
                       variant="overline"
@@ -256,10 +302,10 @@ export const Programs: FC = () => {
                   </Stack>
                   <Button
                     fullWidth
-                    variant="outlined"
+                    variant="text"
                     disabled={isActive}
                     onClick={() => {
-                      const program = editProgramDrawer.getData();
+                      const program = programDrawer.getData();
                       if (!program || !DataState.isReady(programUser)) return;
                       const { activeProgramId, activeProgramName } = programUser;
                       if (activeProgramId === program.id) return;
@@ -274,40 +320,86 @@ export const Programs: FC = () => {
                   >
                     Make active program
                   </Button>
-                  <Stack spacing={2}>
-                    {(
-                      [
-                        program.schedule.sunday,
-                        program.schedule.monday,
-                        program.schedule.tuesday,
-                        program.schedule.wednesday,
-                        program.schedule.thursday,
-                        program.schedule.friday,
-                        program.schedule.saturday,
-                      ] as const
-                    ).map((log, index, logs) => {
-                      const weekday = Object.keys(Weekdays)[index].toLowerCase();
-                      console.log('weekday', weekday);
+                  <Stack spacing={1.5}>
+                    {[
+                      program.daysOfWeek.sunday,
+                      program.daysOfWeek.monday,
+                      program.daysOfWeek.tuesday,
+                      program.daysOfWeek.wednesday,
+                      program.daysOfWeek.thursday,
+                      program.daysOfWeek.friday,
+                      program.daysOfWeek.saturday,
+                    ].map((programLogTemplateId: string | null, index, array) => {
+                      const dayOfWeek = Object.keys(Weekdays)[
+                        index
+                      ].toLowerCase() as Lowercase<Weekdays>;
+                      const dayIndex = array.slice(0, index).filter(Boolean).length + 1;
+                      const dayHasTraining = !!programLogTemplateId;
                       return (
                         <Box
-                          key={weekday}
+                          key={dayOfWeek}
                           sx={{
                             padding: theme => theme.spacing(1, 2),
-                            backgroundColor: theme => theme.palette.divider,
+                            border: theme => `2px solid ${theme.palette.divider}`,
                             borderRadius: 2,
-                          }}
-                          onClick={event => {
-                            toast.info('Unimplemented');
+                            ...(dayHasTraining
+                              ? { backgroundColor: theme => theme.palette.divider }
+                              : {}),
                           }}
                         >
-                          <Stack direction="row" alignItems="center" justifyContent="center">
-                            <Typography width="100%">
-                              {weekday.charAt(0).toUpperCase() + weekday.slice(1)}
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="center"
+                            spacing={2}
+                          >
+                            <Typography
+                              variant="overline"
+                              color={dayHasTraining ? 'textPrimary' : 'textSecondary'}
+                              lineHeight={1}
+                              whiteSpace="nowrap"
+                              mr={dayHasTraining ? -0.2 : undefined}
+                            >
+                              {dayHasTraining ? `Day ${dayIndex}` : 'Rest'}
                             </Typography>
-                            {/** Rest typography or Day N and movements and joined */}
-                            <Typography variant="overline" color="textSecondary">
-                              Rest
-                            </Typography>
+                            <Stack width="100%">
+                              <Typography
+                                fontWeight={200}
+                                fontStyle={dayHasTraining ? 'italic' : void 0}
+                              >
+                                {dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}
+                              </Typography>
+                              <DataStateView data={programMovementsByDayOfWeek}>
+                                {schedule => {
+                                  const movements = schedule[dayOfWeek];
+                                  // Ensure value is not null AND if it is an array, it is not empty
+                                  if (movements === null) {
+                                    return null;
+                                  }
+                                  if (movements.length === 0) {
+                                    toast.error('Unreachable: Template with zero movements.');
+                                    return null;
+                                  }
+                                  return (
+                                    <Typography variant="body2" fontWeight={600}>
+                                      {movements.map(_ => _.name).join(', ')}
+                                    </Typography>
+                                  );
+                                }}
+                              </DataStateView>
+                            </Stack>
+                            <IconButton
+                              sx={{ color: theme => theme.palette.primary.main }}
+                              onClick={event => {
+                                editorDrawer.onOpen(event, {
+                                  templateId: programLogTemplateId,
+                                  dayOfWeek,
+                                  index: dayIndex,
+                                });
+                              }}
+                            >
+                              {dayHasTraining ? <EditOutlined /> : <AddRounded />}
+                            </IconButton>
                           </Stack>
                         </Box>
                       );
@@ -346,6 +438,90 @@ export const Programs: FC = () => {
         </Box>
       </SwipeableDrawer>
 
+      <SwipeableDrawer
+        {...editorDrawer.props()}
+        anchor="bottom"
+        onClose={async () => {
+          const data = editorDrawer.getData();
+          const program = programDrawer.getData();
+          if (!!data && !!program) {
+            const { templateId, dayOfWeek } = data;
+            if (!!templateId) {
+              // If no movements exist in the training template, then delete the
+              // template from the schedule
+              const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
+              if (movements.length === 0) {
+                const [, updated] = await Promise.all([
+                  API.ProgramLogTemplates.delete(templateId),
+                  API.Programs.update({
+                    id: program.id,
+                    daysOfWeek: { ...program.daysOfWeek, [dayOfWeek]: null },
+                  }),
+                ]);
+                if (!DataState.isReady(programs)) throw Error('Unreachable');
+                setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
+              }
+            }
+          }
+          editorDrawer.onClose();
+        }}
+      >
+        <Collapse in={editorDrawer.open}>
+          <Box height="75vh">
+            <WithVariable value={editorDrawer.getData()}>
+              {drawerData => {
+                if (!drawerData) {
+                  return null;
+                }
+                const { dayOfWeek, templateId, index } = drawerData;
+                const capitalized = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+                const name = `${capitalized}, Day ${index}`;
+
+                return (
+                  <Stack spacing={0.5}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="baseline"
+                      sx={{ mt: -1 }}
+                    >
+                      <Typography variant="overline" width="100%">
+                        {name}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => {
+                          if (!window.confirm(`Delete ${name}?`)) return;
+                          toast.info('Unimplemented: Delete template');
+                        }}
+                      >
+                        <DeleteForeverRounded fontSize="small" sx={{ opacity: 0.8 }} />
+                      </IconButton>
+                    </Stack>
+                    <Box
+                      sx={{
+                        height: '100%',
+                        width: '100%',
+                        overflowY: 'scroll',
+                      }}
+                    >
+                      {templateId === null ? (
+                        <DataStateView data={newTemplateId}>
+                          {id => <EditorInternals isProgramView logId={id} />}
+                        </DataStateView>
+                      ) : (
+                        <EditorInternals isProgramView logId={templateId} />
+                      )}
+                    </Box>
+                  </Stack>
+                );
+              }}
+            </WithVariable>
+          </Box>
+        </Collapse>
+      </SwipeableDrawer>
+
       <SwipeableDrawer {...addProgramDrawer} anchor="top">
         <Stack spacing={2}>
           <ReactFocusLock disabled={!addProgramDrawer.open} returnFocus>
@@ -375,7 +551,7 @@ export const Programs: FC = () => {
                   name: newProgramName,
                   authorUserId: user.uid,
                   id: '',
-                  schedule: {
+                  daysOfWeek: {
                     monday: null,
                     tuesday: null,
                     wednesday: null,
