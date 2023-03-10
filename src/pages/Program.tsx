@@ -479,26 +479,9 @@ export const Programs: FC = () => {
 
                 return (
                   <Stack spacing={0.5}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="baseline"
-                      sx={{ mt: -1 }}
-                    >
-                      <Typography variant="overline" width="100%">
-                        {name}
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => {
-                          if (!window.confirm(`Delete ${name}?`)) return;
-                          toast.info('Unimplemented: Delete template');
-                        }}
-                      >
-                        <DeleteForeverRounded fontSize="small" sx={{ opacity: 0.8 }} />
-                      </IconButton>
-                    </Stack>
+                    <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
+                      {name}
+                    </Typography>
                     <Box
                       sx={{
                         height: '100%',
