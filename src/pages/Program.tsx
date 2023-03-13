@@ -43,6 +43,33 @@ export const Programs: FC = () => {
   const navigate = useNavigate();
   const addProgramDrawer = useMaterialMenu();
   const programDrawer = useDrawer<Program>();
+  Object.assign(programDrawer, {
+    async onClose() {
+      const data = editorDrawer.getData();
+      const program = programDrawer.getData();
+      if (!!data && !!program) {
+        const { templateId, dayOfWeek } = data;
+        if (!!templateId) {
+          // If no movements exist in the training template, then delete the
+          // template from the schedule
+          const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
+          if (movements.length === 0) {
+            const [, updated] = await Promise.all([
+              API.ProgramLogTemplates.delete(templateId),
+              API.Programs.update({
+                id: program.id,
+                daysOfWeek: { ...program.daysOfWeek, [dayOfWeek]: null },
+              }),
+            ]);
+            if (!DataState.isReady(programs)) throw Error('Unreachable');
+            setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
+          }
+        }
+      }
+      // TODO update program templates here when closing editor drawer (to show changes from editor)
+      programDrawer.onClose();
+    },
+  });
   const editorDrawer = useDrawer<{
     templateId: null | string;
     dayOfWeek: Lowercase<Weekdays>;
@@ -441,35 +468,7 @@ export const Programs: FC = () => {
         </Box>
       </SwipeableDrawer>
 
-      <SwipeableDrawer
-        {...editorDrawer.props()}
-        anchor="bottom"
-        onClose={async () => {
-          const data = editorDrawer.getData();
-          const program = programDrawer.getData();
-          if (!!data && !!program) {
-            const { templateId, dayOfWeek } = data;
-            if (!!templateId) {
-              // If no movements exist in the training template, then delete the
-              // template from the schedule
-              const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
-              if (movements.length === 0) {
-                const [, updated] = await Promise.all([
-                  API.ProgramLogTemplates.delete(templateId),
-                  API.Programs.update({
-                    id: program.id,
-                    daysOfWeek: { ...program.daysOfWeek, [dayOfWeek]: null },
-                  }),
-                ]);
-                if (!DataState.isReady(programs)) throw Error('Unreachable');
-                setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
-              }
-            }
-          }
-          // TODO update program templates here when closing editor drawer (to show changes from editor)
-          editorDrawer.onClose();
-        }}
-      >
+      <SwipeableDrawer {...editorDrawer.props()} anchor="bottom" onClose={programDrawer.onClose}>
         <Collapse in={editorDrawer.open}>
           <Box height="75vh">
             <WithVariable value={editorDrawer.getData()}>
