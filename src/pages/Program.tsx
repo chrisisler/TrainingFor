@@ -355,9 +355,13 @@ export const Programs: FC = () => {
                       disabled={isActive}
                       onClick={() => {
                         const program = viewedProgram;
-                        if (!program || !DataState.isReady(programUser)) return;
+                        if (!program || !DataState.isReady(programUser)) {
+                          throw Error('Unreachable: ProgramUser not ready.');
+                        }
                         const { activeProgramId, activeProgramName } = programUser;
-                        if (activeProgramId === program.id) return;
+                        if (activeProgramId === program.id) {
+                          toast.info('Program is already active.');
+                        }
                         if (
                           typeof activeProgramId === 'string' &&
                           !window.confirm(`Switch from ${activeProgramName} to ${program.name}?`)
