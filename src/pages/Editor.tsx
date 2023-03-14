@@ -775,12 +775,12 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   <>
                     {matches.length > 0 && (
                       <Collapse in={queryIsEmpty || (!queryIsEmpty && hasFuzzyNameMatch)}>
-                        <Stack spacing={1}>
+                        <Stack spacing={1.25} sx={{ maxHeight: '28vh', overflowY: 'scroll' }}>
                           {matches.map((match: SavedMovement) => (
                             <Box key={match.id} display="flex" justifyContent="space-between">
                               <Typography
                                 sx={{
-                                  padding: theme => theme.spacing(0.5, 1),
+                                  padding: theme => theme.spacing(0.5, 1.25),
                                   borderRadius: 1,
                                   border: '1px solid lightgrey',
                                 }}
