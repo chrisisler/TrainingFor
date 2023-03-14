@@ -21,6 +21,16 @@ export enum Weekdays {
   Saturday = 'Saturday',
 }
 
+export const SORTED_WEEKDAYS = [
+  Weekdays.Sunday,
+  Weekdays.Monday,
+  Weekdays.Tuesday,
+  Weekdays.Wednesday,
+  Weekdays.Thursday,
+  Weekdays.Friday,
+  Weekdays.Saturday,
+];
+
 export enum Months {
   January,
   February,

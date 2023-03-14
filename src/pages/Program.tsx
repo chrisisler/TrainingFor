@@ -13,11 +13,13 @@ import {
   IconButton,
   Stack,
   SwipeableDrawer,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
 import { orderBy, where } from 'firebase/firestore';
-import { FC, useCallback, useState } from 'react';
+import { FC, ReactNode, useCallback, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,6 +31,7 @@ import {
   DataState,
   DataStateView,
   Paths,
+  SORTED_WEEKDAYS,
   useDataState,
   useDrawer,
   useMaterialMenu,
@@ -36,6 +39,13 @@ import {
   Weekdays,
 } from '../util';
 import { EditorInternals } from './Editor';
+
+enum TabIndex {
+  /** List of programs view. */
+  Programs = 0,
+  /** Scheduled movements by day of week view. */
+  Schedule = 1,
+}
 
 export const Programs: FC = () => {
   const user = useUser();
@@ -50,6 +60,8 @@ export const Programs: FC = () => {
   }>();
 
   const [newProgramName, setNewProgramName] = useState('');
+  const [tabValue, setTabValue] = useState(TabIndex.Programs);
+  const [viewedProgram, setViewedProgram] = useState<Program | null>(null);
 
   // Currently only user-local programs are shown, NOT all programs ever made
   // in the app What if we allow non-user-local programs and the owner deletes
@@ -89,9 +101,9 @@ export const Programs: FC = () => {
     Record<Lowercase<Weekdays[number]>, null | Movement[]>
   >(async () => {
     if (editorDrawer.open) return DataState.Empty;
-    const program = programDrawer.getData();
-    if (!programDrawer.open || !program) return DataState.Empty;
-    const promises = Object.keys(program.daysOfWeek).map(key => {
+    const program = viewedProgram;
+    if (!program) return DataState.Empty;
+    const promises = Object.keys(program.daysOfWeek).map(async key => {
       const dayOfWeek = key as Lowercase<Weekdays>;
       const templateId = program.daysOfWeek[dayOfWeek];
       if (!templateId) {
@@ -103,11 +115,11 @@ export const Programs: FC = () => {
       ).then(movements => ({ [dayOfWeek]: movements }));
     });
     return await Promise.all(promises).then(_ => _.reduce((R, x) => Object.assign(R, x), {}));
-  }, [programDrawer.getData(), editorDrawer.open]);
+  }, [editorDrawer.open, viewedProgram]);
 
   const [newTemplateId] = useDataState(async () => {
     if (!editorDrawer.open) return DataState.Empty;
-    const program = programDrawer.getData();
+    const program = viewedProgram;
     const data = editorDrawer.getData();
     if (!DataState.isReady(programs)) return programs;
     if (!data || !program) return DataState.Empty;
@@ -133,7 +145,7 @@ export const Programs: FC = () => {
     // Return new template (id) for users to add movements to since they just
     // clicked the (add template) button
     return newProgramLogTemplateId;
-  }, [editorDrawer.getData()?.templateId, programDrawer.getData()]);
+  }, [editorDrawer.getData()?.templateId, viewedProgram]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateActiveProgram = useCallback(
@@ -163,7 +175,7 @@ export const Programs: FC = () => {
         sx={{
           height: '100vh',
           width: '100vw',
-          padding: theme => theme.spacing(2),
+          padding: theme => theme.spacing(1),
         }}
       >
         <Stack direction="row" width="100" justifyContent="space-between" alignItems="center">
@@ -171,74 +183,109 @@ export const Programs: FC = () => {
             <NavigateBeforeRounded />
           </IconButton>
           <Stack>
-            <Typography variant="overline">Program</Typography>
-            <Typography variant="body2" color="textSecondary">
-              Take out the guesswork: create your training or follow an existing plan
-            </Typography>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs value={tabValue} onChange={(_, next) => setTabValue(next)} aria-label="tabs">
+                <Tab
+                  label="Programs"
+                  {...a11yProps(TabIndex.Programs)}
+                  onClick={() => {
+                    // when clicking Programs tab - back from Schedule tab - ensure the program
+                    // seen when navigating *back* to Schedule tab is the user's active program.
+                    if (!DataState.isReady(programs)) return;
+                    if (!DataState.isReady(programUser)) return;
+                    setViewedProgram(
+                      prev => programs.find(p => p.id === programUser.activeProgramId) || prev
+                    );
+                  }}
+                />
+                <Tab label="Schedule" {...a11yProps(TabIndex.Schedule)} disabled={!viewedProgram} />
+              </Tabs>
+            </Box>
           </Stack>
           <Button startIcon={<AddRounded />} onClick={addProgramDrawer.onOpen}>
             New
           </Button>
         </Stack>
 
-        <DataStateView data={programs}>
-          {programs =>
-            programs.length === 0 ? (
-              <Typography variant="overline" sx={{ textAlign: 'center' }}>
-                Nothing yet
-              </Typography>
-            ) : (
-              <Stack spacing={3} sx={{ padding: theme => theme.spacing(3, 1) }}>
-                {programs.map(program => {
-                  const isActive =
-                    DataState.isReady(programUser) && programUser.activeProgramId === program.id;
-                  return (
-                    <Box
-                      key={program.id}
-                      sx={{
-                        padding: theme => theme.spacing(2),
-                        backgroundColor: theme => theme.palette.divider,
-                        borderRadius: 2,
-                        minHeight: '12vh',
-                        ...(isActive
-                          ? { border: theme => `1px solid ${theme.palette.primary.main}` }
-                          : {}),
-                      }}
-                      onClick={event => {
-                        programDrawer.onOpen(event, program);
-                      }}
-                    >
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography
-                          variant="h6"
-                          sx={{ color: isActive ? 'text.primary' : 'text.secondary' }}
-                          fontWeight={200}
+        <TabPanel value={tabValue} index={TabIndex.Programs}>
+          <DataStateView data={programs}>
+            {programs =>
+              programs.length === 0 ? (
+                <Typography variant="overline" sx={{ textAlign: 'center' }}>
+                  Nothing yet
+                </Typography>
+              ) : (
+                <Stack spacing={3}>
+                  {programs.map(program => {
+                    const isActive =
+                      DataState.isReady(programUser) && programUser.activeProgramId === program.id;
+                    return (
+                      <Box
+                        key={program.id}
+                        sx={{
+                          padding: theme => theme.spacing(2),
+                          backgroundColor: theme => theme.palette.divider,
+                          borderRadius: 2,
+                          minHeight: '12vh',
+                          ...(isActive
+                            ? { border: theme => `1px solid ${theme.palette.primary.main}` }
+                            : {}),
+                        }}
+                        onClick={() => {
+                          setViewedProgram(program);
+                          // Navigate user to tab which shows the program details
+                          setTabValue(TabIndex.Schedule);
+                        }}
+                      >
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography
+                            variant="h6"
+                            sx={{ color: isActive ? 'text.primary' : 'text.secondary' }}
+                            fontWeight={200}
+                          >
+                            {program.name}
+                          </Typography>
+                          {isActive && (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Typography variant="subtitle2" sx={{ opacity: 1.0 }}>
+                                Active
+                              </Typography>
+                              <VerifiedRounded />
+                            </Stack>
+                          )}
+                        </Stack>
+                        <WithVariable
+                          value={SORTED_WEEKDAYS.flatMap(key =>
+                            program.daysOfWeek[key.toLowerCase()] ? key : []
+                          )}
                         >
-                          {program.name}
-                        </Typography>
-                        {isActive && (
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Typography variant="subtitle2" sx={{ opacity: 1.0 }}>
-                              Active
-                            </Typography>
-                            <VerifiedRounded />
-                          </Stack>
-                        )}
-                      </Stack>
-                    </Box>
-                  );
-                })}
-              </Stack>
-            )
-          }
-        </DataStateView>
-      </Box>
+                          {programDays => (
+                            <Box
+                              width="100%"
+                              justifyContent="space-between"
+                              display="flex"
+                              alignItems="baseline"
+                            >
+                              <Typography variant="caption" color="textSecondary">
+                                {programDays.length}x/week
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                <b>{programDays.join(', ')}</b>
+                              </Typography>
+                            </Box>
+                          )}
+                        </WithVariable>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              )
+            }
+          </DataStateView>
+        </TabPanel>
 
-      {/** ----------------------------- DRAWERS ----------------------------- */}
-
-      <SwipeableDrawer {...programDrawer.props()} anchor="bottom">
-        <Box height="85vh" key={JSON.stringify(programDrawer.getData())}>
-          <WithVariable value={programDrawer.getData()}>
+        <TabPanel value={tabValue} index={TabIndex.Schedule}>
+          <WithVariable value={viewedProgram}>
             {program => {
               if (program === null) {
                 return <>Nothing to show here.</>;
@@ -247,23 +294,22 @@ export const Programs: FC = () => {
                 DataState.isReady(programUser) && programUser.activeProgramId === program?.id;
               const isOwner = user.uid === program.authorUserId;
               return (
-                <Stack spacing={2}>
-                  <Stack>
-                    <Typography
-                      variant="overline"
-                      sx={{ textAlign: 'center' }}
-                      color="textSecondary"
-                      marginBottom={-1.5}
-                    >
-                      Active Program:
+                <Stack spacing={3}>
+                  <Stack
+                    spacing={1}
+                    direction="row"
+                    sx={{ justifyContent: 'center', width: '100%' }}
+                  >
+                    <Typography variant="overline" color="textSecondary" lineHeight={1}>
+                      {isActive ? 'Active ' : ''}Program:
                     </Typography>
-                    <Typography variant="overline" sx={{ textAlign: 'center' }}>
+                    <Typography variant="overline" lineHeight={1}>
                       {program.name}
                     </Typography>
                   </Stack>
-                  <Stack direction="row">
-                    {/** Title or Edit input with Delete button if owner */}
-                    {isOwner && isActive && DataState.isReady(programs) && (
+                  {/** Title or Edit input with Delete button if owner */}
+                  {isOwner && isActive && DataState.isReady(programs) && (
+                    <Stack direction="row">
                       <Stack direction="row" spacing={2} alignItems="center" width="100%">
                         <TextField
                           fullWidth
@@ -301,28 +347,30 @@ export const Programs: FC = () => {
                           <DeleteForeverRounded fontSize="small" />
                         </IconButton>
                       </Stack>
-                    )}
-                  </Stack>
-                  <Button
-                    fullWidth
-                    variant="text"
-                    disabled={isActive}
-                    onClick={() => {
-                      const program = programDrawer.getData();
-                      if (!program || !DataState.isReady(programUser)) return;
-                      const { activeProgramId, activeProgramName } = programUser;
-                      if (activeProgramId === program.id) return;
-                      if (
-                        typeof activeProgramId === 'string' &&
-                        !window.confirm(`Switch from ${activeProgramName} to ${program.name}?`)
-                      ) {
-                        return;
-                      }
-                      updateActiveProgram(program);
-                    }}
-                  >
-                    Make active program
-                  </Button>
+                    </Stack>
+                  )}
+                  {!isActive && (
+                    <Button
+                      fullWidth
+                      variant="text"
+                      disabled={isActive}
+                      onClick={() => {
+                        const program = programDrawer.getData();
+                        if (!program || !DataState.isReady(programUser)) return;
+                        const { activeProgramId, activeProgramName } = programUser;
+                        if (activeProgramId === program.id) return;
+                        if (
+                          typeof activeProgramId === 'string' &&
+                          !window.confirm(`Switch from ${activeProgramName} to ${program.name}?`)
+                        ) {
+                          return;
+                        }
+                        updateActiveProgram(program);
+                      }}
+                    >
+                      Make active program
+                    </Button>
+                  )}
                   <Stack spacing={1.5}>
                     {[
                       program.daysOfWeek.sunday,
@@ -380,7 +428,9 @@ export const Programs: FC = () => {
                                     return null;
                                   }
                                   if (movements.length === 0) {
-                                    toast.error('Unreachable: Template with zero movements.');
+                                    // Unreachable because tempaltes with zero movements are supposed
+                                    // to be deleted upon closing of the editor drawer
+                                    // toast.error('Unreachable: Template with zero movements.');
                                     return null;
                                   }
                                   return (
@@ -408,45 +458,21 @@ export const Programs: FC = () => {
                       );
                     })}
                   </Stack>
-
-                  {/**<DataStateView data={programTemplates}>
-                    {programTemplates => (
-                      <Stack spacing={2}>
-                        {programTemplates.map(template => (
-                          <Box
-                            key={template.id}
-                            sx={{
-                              padding: theme => theme.spacing(2),
-                              backgroundColor: theme => theme.palette.grey[100],
-                              borderRadius: 2,
-                              minHeight: '12vh',
-                              ...(isActive
-                                ? { border: theme => `1px solid ${theme.palette.primary.main}` }
-                                : {}),
-                            }}
-                            onClick={event => {
-                              toast.info('Unimplemented');
-                            }}
-                          >
-                            foo
-                          </Box>
-                        ))}
-                      </Stack>
-                    )}
-                  </DataStateView>*/}
                 </Stack>
               );
             }}
           </WithVariable>
-        </Box>
-      </SwipeableDrawer>
+        </TabPanel>
+      </Box>
+
+      {/** ----------------------------- DRAWERS ----------------------------- */}
 
       <SwipeableDrawer
         {...editorDrawer.props()}
         anchor="bottom"
         onClose={async () => {
           const data = editorDrawer.getData();
-          const program = programDrawer.getData();
+          const program = viewedProgram;
           if (!!data && !!program) {
             const { templateId, dayOfWeek } = data;
             if (!!templateId) {
@@ -454,6 +480,7 @@ export const Programs: FC = () => {
               // template from the schedule
               const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
               if (movements.length === 0) {
+                console.log('Deleting template', templateId);
                 const [, updated] = await Promise.all([
                   API.ProgramLogTemplates.delete(templateId),
                   API.Programs.update({
@@ -471,7 +498,7 @@ export const Programs: FC = () => {
         }}
       >
         <Collapse in={editorDrawer.open}>
-          <Box height="75vh">
+          <Box height="80vh">
             <WithVariable value={editorDrawer.getData()}>
               {drawerData => {
                 if (!drawerData) {
@@ -563,3 +590,34 @@ export const Programs: FC = () => {
     </>
   );
 };
+
+// https://mui.com/material-ui/react-tabs/
+const TabPanel: FC<{
+  children: ReactNode;
+  index: TabIndex;
+  value: TabIndex;
+}> = ({ children, value, index }) => (
+  <div
+    role="tabpanel"
+    hidden={value !== index}
+    id={`program-tabpanel-${index}`}
+    aria-labelledby={`program-tab-${index}`}
+  >
+    {value === index && (
+      <Box
+        sx={{
+          padding: theme => theme.spacing(3, 1),
+        }}
+      >
+        {children}
+      </Box>
+    )}
+  </div>
+);
+
+function a11yProps(index: number) {
+  return {
+    id: `program-tab-${index}`,
+    'aria-controls': `program-tabpanel-${index}`,
+  };
+}
