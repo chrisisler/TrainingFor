@@ -52,7 +52,6 @@ export const Programs: FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const addProgramDrawer = useMaterialMenu();
-  const programDrawer = useDrawer<Program>();
   const editorDrawer = useDrawer<{
     templateId: null | string;
     dayOfWeek: Lowercase<Weekdays>;
@@ -338,7 +337,7 @@ export const Programs: FC = () => {
                               await API.Programs.delete(program.id);
                               setPrograms(programs.filter(p => p.id !== program.id));
                               toast.success('Deleted program.');
-                              programDrawer.onClose();
+                              setViewedProgram(null);
                             } catch (err) {
                               toast.error(err.message);
                             }
@@ -355,7 +354,7 @@ export const Programs: FC = () => {
                       variant="text"
                       disabled={isActive}
                       onClick={() => {
-                        const program = programDrawer.getData();
+                        const program = viewedProgram;
                         if (!program || !DataState.isReady(programUser)) return;
                         const { activeProgramId, activeProgramName } = programUser;
                         if (activeProgramId === program.id) return;
