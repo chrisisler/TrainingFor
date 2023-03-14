@@ -556,6 +556,7 @@ export const Programs: FC = () => {
           </ReactFocusLock>
           <Button
             variant="text"
+            disabled={newProgramName.trim().length === 0}
             startIcon={<AddRounded />}
             size="large"
             onClick={async function createProgram() {
