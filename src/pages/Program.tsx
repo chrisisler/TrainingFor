@@ -471,6 +471,9 @@ export const Programs: FC = () => {
         {...editorDrawer.props()}
         anchor="bottom"
         onClose={async () => {
+          if (!DataState.isReady(programs)) {
+            throw Error('Unreachable: Programs not ready.');
+          }
           const data = editorDrawer.getData();
           const program = viewedProgram;
           if (!!data && !!program) {
@@ -480,15 +483,14 @@ export const Programs: FC = () => {
               // template from the schedule
               const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
               if (movements.length === 0) {
-                console.log('Deleting template', templateId);
+                const nextDaysOfWeek = Object.assign(program.daysOfWeek, { [dayOfWeek]: null });
                 const [, updated] = await Promise.all([
                   API.ProgramLogTemplates.delete(templateId),
                   API.Programs.update({
                     id: program.id,
-                    daysOfWeek: { ...program.daysOfWeek, [dayOfWeek]: null },
+                    daysOfWeek: nextDaysOfWeek,
                   }),
                 ]);
-                if (!DataState.isReady(programs)) throw Error('Unreachable');
                 setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
               }
             }
