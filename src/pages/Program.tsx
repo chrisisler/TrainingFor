@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { orderBy, where } from 'firebase/firestore';
-import { FC, ReactNode, useCallback, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
@@ -94,6 +94,16 @@ export const Programs: FC = () => {
       }),
     [user.uid]
   );
+
+  // When page loads viewedProgram is null, when data fetches, update
+  // viewedProgram so the Schedule tab is not disabled.
+  useEffect(() => {
+    if (!DataState.isReady(programUser)) return;
+    if (!DataState.isReady(programs)) return;
+    if (viewedProgram === null && typeof programUser.activeProgramId === 'string') {
+      setViewedProgram(programs.find(p => p.id === programUser.activeProgramId) ?? null);
+    }
+  }, [programUser, programs, viewedProgram]);
 
   // ProgramMovements
   const [programMovementsByDayOfWeek] = useDataState<
