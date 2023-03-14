@@ -644,8 +644,11 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
               >
                 <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(1, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography variant="overline">
-                      <Collapse in={newSetRepCount > 0}>Click anywhere to add set</Collapse>
+                    <Typography
+                      variant="overline"
+                      color={newSetRepCount > 0 ? 'primary' : 'textPrimary'}
+                    >
+                      <Collapse in={newSetRepCount > 0}>Close to add set</Collapse>
                       <Collapse in={newSetRepCount === 0}>
                         Add Set #<b>{movement.sets.length + 1}</b>
                       </Collapse>
@@ -690,7 +693,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     onClick={addSetMenu.onClose}
                     startIcon={<CloseRounded fontSize="small" />}
                   >
-                    Close
+                    Cancel
                   </Button>
                   {movement.sets.length > 0 && (
                     <Button
