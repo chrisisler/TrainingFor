@@ -160,7 +160,7 @@ export const Programs: FC = () => {
           id: programUser.id,
         });
         setProgramUser(updated);
-        toast.success(`Active program set to ${program.name}`);
+        toast.success('Updated active program.');
       } catch (err) {
         toast.error(err.message);
       }
