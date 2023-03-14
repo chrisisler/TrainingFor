@@ -720,7 +720,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                         }
                       }}
                     >
-                      Delete
+                      Delete Set
                     </Button>
                   )}
                 </Stack>
