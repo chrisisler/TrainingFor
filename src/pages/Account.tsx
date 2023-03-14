@@ -1,9 +1,9 @@
 import {
-  ChevronRightTwoTone,
   CreateOutlined,
   Google,
   Launch,
   Logout,
+  NavigateNextRounded,
   ShortTextRounded,
 } from '@mui/icons-material';
 import {
@@ -23,6 +23,7 @@ import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate } from '../api';
+import { SORTED_WEEKDAYS } from '../util';
 import { useUser } from '../context';
 import { Movement, TrainingLog } from '../types';
 import {
@@ -47,7 +48,7 @@ export const Account: FC = () => {
     [user.uid]
   );
 
-  const [movementsByLogId] = useDataState(async () => {
+  const [movementsByLogId] = useDataState<Map<string, Movement[]>>(async () => {
     if (!DataState.isReady(logs)) {
       return logs;
     }
@@ -91,7 +92,7 @@ export const Account: FC = () => {
 
   return (
     <Stack
-      spacing={3}
+      spacing={2}
       sx={{
         height: '100vh',
         width: '100vw',
@@ -128,8 +129,8 @@ export const Account: FC = () => {
                   <Box
                     key={log.id}
                     sx={{
-                      border: theme => `1px solid ${theme.palette.divider}`,
-                      borderRadius: 2,
+                      border: theme => `2px solid ${theme.palette.divider}`,
+                      borderRadius: 1,
                       padding: theme => theme.spacing(2, 3),
                     }}
                     onClick={() => navigate(Paths.editor(log.id))}
@@ -139,14 +140,15 @@ export const Account: FC = () => {
                     <Stack spacing={0.5}>
                       <Stack
                         direction="row"
-                        spacing={2}
+                        spacing={3}
                         alignItems="baseline"
                         sx={{ borderBottom: theme => `1px solid ${theme.palette.divider}` }}
                       >
-                        <Typography>
+                        <Typography variant="body1">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
+                        <Typography variant="overline" color="textSecondary">
                           {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                         </Typography>
-                        <Typography color="textSecondary" variant="subtitle2">
+                        <Typography variant="caption">
                           {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
                         </Typography>
                       </Stack>
@@ -154,21 +156,26 @@ export const Account: FC = () => {
                         {movements =>
                           !movements?.length ? (
                             <Typography sx={{ color: 'text.secondary' }} variant="overline">
-                              No movements
+                              Empty
                             </Typography>
                           ) : (
                             <Stack>
-                              {movements.map(movement => (
-                                <Typography variant="body1" key={movement.id}>
+                              {movements.slice(0, 3).map(movement => (
+                                <Typography variant="body2" key={movement.id} color="textSecondary">
                                   {movement.name}
                                 </Typography>
                               ))}
+                              {movements.length > 3 && (
+                                <Typography variant="body2" color="textSecondary">
+                                  {movements[3].name} ...and {movements.length - 3} more
+                                </Typography>
+                              )}
                             </Stack>
                           )
                         }
                       </DataStateView>
                     </Stack>
-                    <ChevronRightTwoTone sx={{ color: 'text.secondary' }} fontSize="small" />
+                    <NavigateNextRounded sx={{ color: 'text.secondary' }} />
                   </Box>
                 );
               })}
