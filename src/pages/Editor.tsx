@@ -180,7 +180,10 @@ export const Editor: FC = () => {
                   if (!logId) throw Error('Unreachable');
                   if (!window.confirm('Delete Training?')) return;
                   try {
-                    await API.TrainingLogs.delete(logId);
+                    await Promise.all([
+                      API.TrainingLogs.delete(logId),
+                      API.Movements.deleteMany(where('logId', '==', logId)),
+                    ]);
                     logDrawer.onClose();
                     navigate(Paths.account);
                     toast.success('Deleted training.');

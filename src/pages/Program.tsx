@@ -342,9 +342,33 @@ export const Programs: FC = () => {
                         <IconButton
                           color="error"
                           onClick={async function deleteProgram() {
+                            if (!DataState.isReady(programMovementsByDayOfWeek)) {
+                              throw Error('Unreachable');
+                            }
                             if (!window.confirm('Are you sure? This can never be undone.')) return;
                             try {
-                              await API.Programs.delete(program.id);
+                              const _deleteProgram = API.Programs.delete(program.id);
+                              const _updateProgramUser = API.ProgramUsers.update({
+                                id: programUser.id,
+                                activeProgramId: null,
+                                activeProgramName: null,
+                              });
+                              const _deleteProgramLogTemplates = API.ProgramLogTemplates.deleteMany(
+                                where('programId', '==', program.id)
+                              );
+                              const _deleteProgramMovements = Promise.all(
+                                Object.values(program.daysOfWeek)
+                                  .filter(templateId => !!templateId)
+                                  .map(_ =>
+                                    API.ProgramMovements.deleteMany(where('logId', '==', _))
+                                  )
+                              );
+                              await Promise.all([
+                                _deleteProgram,
+                                _updateProgramUser,
+                                _deleteProgramLogTemplates,
+                                _deleteProgramMovements,
+                              ]);
                               setPrograms(programs.filter(p => p.id !== program.id));
                               toast.success('Deleted program.');
                               setViewedProgram(null);

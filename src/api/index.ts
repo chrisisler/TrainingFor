@@ -85,14 +85,6 @@ function createAPI<T extends FirestoreDocument>(collection: CollectionReference<
       return newEntryData;
     },
 
-    async createMany(entries: T[]) {
-      const batch = writeBatch(db);
-      entries.forEach(data => {
-        batch.set(doc(collection), data);
-      });
-      await batch.commit();
-    },
-
     async get(id: string): Promise<T> {
       const documentRef = doc(collection.firestore, collection.path, id);
       const document = await getDoc(documentRef);
@@ -121,6 +113,24 @@ function createAPI<T extends FirestoreDocument>(collection: CollectionReference<
     async delete(id: string): Promise<void> {
       const docRef = doc(collection.firestore, collection.path, id);
       await deleteDoc(docRef);
+    },
+
+    async createMany(entries: T[]): Promise<void> {
+      const batch = writeBatch(db);
+      entries.forEach(data => {
+        batch.set(doc(collection), data);
+      });
+      await batch.commit();
+    },
+
+    async deleteMany(...constraints: QueryConstraint[]): Promise<void> {
+      const batch = writeBatch(db);
+      const q = query(collection, ...constraints);
+      const { docs } = await getDocs(q);
+      docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
     },
   };
 }
