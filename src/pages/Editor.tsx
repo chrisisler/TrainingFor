@@ -55,6 +55,7 @@ import {
   useDataState,
   useDrawer,
   useMaterialMenu,
+  useProgramUser,
   useResizableInputRef,
   useToast,
 } from '../util';
@@ -72,10 +73,12 @@ export const Editor: FC = () => {
   const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
 
   const [log, setLog] = useDataState(async () => {
-    if (!logId || !logDrawer.open) return DataState.Empty;
+    if (!logId) return DataState.Empty;
     const log = await API.TrainingLogs.get(logId);
     return log;
-  }, [logId, logDrawer.open]);
+  }, [logId]);
+
+  const [programUser] = useProgramUser();
 
   return (
     <Box
@@ -86,7 +89,19 @@ export const Editor: FC = () => {
         padding: theme => theme.spacing(1, 2, 3, 2),
       }}
     >
-      <Box display="flex" width="100%" justifyContent="center">
+      <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
+        <DataStateView data={DataState.all(log, programUser)}>
+          {([log, programUser]) => {
+            if (log.programId === programUser.activeProgramId) {
+              return (
+                <Typography variant="overline" color="textSecondary">
+                  {programUser.activeProgramName}
+                </Typography>
+              );
+            }
+            return null;
+          }}
+        </DataStateView>
         <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
           <ShortTextRounded />
         </IconButton>

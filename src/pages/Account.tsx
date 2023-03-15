@@ -1,16 +1,10 @@
-import {
-  CreateOutlined,
-  Google,
-  Launch,
-  Logout,
-  NavigateNextRounded,
-  ShortTextRounded,
-} from '@mui/icons-material';
+import { uuidv4 } from '@firebase/util';
+import { AddRounded, Google, Launch, Logout, NavigateNextRounded } from '@mui/icons-material';
 import {
   Box,
   Button,
   Collapse,
-  Fab,
+  FormHelperText,
   IconButton,
   Stack,
   SwipeableDrawer,
@@ -23,18 +17,20 @@ import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate } from '../api';
-import { SORTED_WEEKDAYS } from '../util';
+import { WithVariable } from '../components';
 import { useUser } from '../context';
-import { Movement, TrainingLog } from '../types';
 import {
   DataState,
   DataStateView,
   Months,
   Paths,
+  SORTED_WEEKDAYS,
   useDataState,
   useMaterialMenu,
+  useProgramUser,
   useToast,
 } from '../util';
+import { Movement, Program } from '../types';
 
 export const Account: FC = () => {
   const user = useUser();
@@ -42,9 +38,21 @@ export const Account: FC = () => {
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
 
+  // Get activeProgramId (if it exists for auth'd user) to power the create new
+  // training log from active program button.
+  const [programUser] = useProgramUser();
+
+  // Get active program (if it exists for auth'd user) to display upcoming training
+  // TODO hooks-ify
+  const [activeProgram] = useDataState(async () => {
+    if (!DataState.isReady(programUser)) return DataState.Empty;
+    if (!programUser.activeProgramId) return DataState.Empty;
+    return API.Programs.get(programUser.activeProgramId);
+  }, [programUser]);
+
   // A subset of the users logs to display in detail
   const [logs] = useDataState(
-    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(5)),
+    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(8)),
     [user.uid]
   );
 
@@ -65,20 +73,40 @@ export const Account: FC = () => {
     return movementsByLogId;
   }, [logs]);
 
-  const startNewTrainingLog = useCallback(async () => {
-    try {
-      const entry: TrainingLog = await API.TrainingLogs.create({
-        timestamp: Date.now(),
-        authorUserId: user.uid,
-        bodyweight: 0,
-        id: '',
-      });
-      navigate(Paths.editor(entry.id));
-      toast.success('Created new training page.');
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }, [user.uid, navigate, toast]);
+  const createTrainingLog = useCallback(
+    async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
+      try {
+        const programId =
+          !!fromTemplateId && DataState.isReady(programUser) && programUser.activeProgramId;
+        const newTrainingLog = await API.TrainingLogs.create({
+          timestamp: Date.now(),
+          authorUserId: user.uid,
+          bodyweight: 0,
+          id: '',
+          programId: programId || null,
+          programLogTemplateId: fromTemplateId || null,
+        });
+        // Copy over movements from the program log template to the log
+        if (!!fromTemplateId) {
+          const programMovements = await API.ProgramMovements.getAll(
+            where('logId', '==', fromTemplateId)
+          );
+          const logMovements: Movement[] = programMovements.map(movement => ({
+            ...movement,
+            logId: newTrainingLog.id,
+            sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
+            timestamp: Date.now(),
+          }));
+          await API.Movements.createMany(logMovements);
+        }
+        navigate(Paths.editor(newTrainingLog.id));
+        toast.success('Created new training page.');
+      } catch (err) {
+        toast.error(err.message);
+      }
+    },
+    [user.uid, navigate, toast, programUser]
+  );
 
   const deauthenticate = useCallback(async () => {
     if (!window.confirm('Sign out?')) return;
@@ -115,6 +143,43 @@ export const Account: FC = () => {
       {/** Count of training logs */}
       {/** Count of total volume */}
 
+      <Stack spacing={2}>
+        {/** If the user has training remaining in this week from their Program, show a button to hit it. */}
+        <WithVariable value={Program.getNextTraining(activeProgram)}>
+          {result => {
+            if (!result) return null;
+            const { templateId, text } = result;
+            return (
+              <Stack>
+                <FormHelperText>Up Next:</FormHelperText>
+                <Button
+                  size="large"
+                  variant="outlined"
+                  onClick={() => createTrainingLog({ fromTemplateId: templateId })}
+                  sx={{ width: '100%' }}
+                  color="primary"
+                  startIcon={<AddRounded />}
+                  endIcon={<NavigateNextRounded />}
+                >
+                  {text}
+                </Button>
+              </Stack>
+            );
+          }}
+        </WithVariable>
+        <Button
+          size="small"
+          variant="text"
+          onClick={() => createTrainingLog({ fromTemplateId: null })}
+          sx={{ width: '100%' }}
+          color="primary"
+          startIcon={<AddRounded />}
+          endIcon={<NavigateNextRounded />}
+        >
+          New Training
+        </Button>
+      </Stack>
+
       <DataStateView data={logs}>
         {logs =>
           logs.length === 0 ? (
@@ -122,7 +187,7 @@ export const Account: FC = () => {
               No training data.
             </Typography>
           ) : (
-            <Stack spacing={2} sx={{ padding: theme => theme.spacing(3, 2) }}>
+            <Stack spacing={2} sx={{ padding: theme => theme.spacing(1) }}>
               {logs.map(log => {
                 const date = new Date(log.timestamp);
                 return (
@@ -142,9 +207,12 @@ export const Account: FC = () => {
                         direction="row"
                         spacing={3}
                         alignItems="baseline"
-                        sx={{ borderBottom: theme => `1px solid ${theme.palette.divider}` }}
+                        sx={{
+                          borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                          whiteSpace: 'nowrap',
+                        }}
                       >
-                        <Typography variant="body1">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
+                        <Typography variant="body2">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
                         <Typography variant="overline" color="textSecondary">
                           {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                         </Typography>
@@ -183,21 +251,6 @@ export const Account: FC = () => {
           )
         }
       </DataStateView>
-
-      <Box
-        display="flex"
-        sx={{ width: '100%', height: '100%', alignItems: 'end', justifyContent: 'center' }}
-      >
-        <Fab
-          variant="extended"
-          onClick={startNewTrainingLog}
-          sx={{ width: '100%' }}
-          color="primary"
-        >
-          <ShortTextRounded sx={{ mr: -1 }} fontSize="large" />
-          <CreateOutlined fontSize="large" />
-        </Fab>
-      </Box>
 
       {/** Button to reassign data from current anon user to google auth'd account */}
       {user.isAnonymous && DataState.isReady(logs) && logs.length > 0 && (

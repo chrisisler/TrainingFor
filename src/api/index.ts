@@ -85,6 +85,14 @@ function createAPI<T extends FirestoreDocument>(collection: CollectionReference<
       return newEntryData;
     },
 
+    async createMany(entries: T[]) {
+      const batch = writeBatch(db);
+      entries.forEach(data => {
+        batch.set(doc(collection), data);
+      });
+      await batch.commit();
+    },
+
     async get(id: string): Promise<T> {
       const documentRef = doc(collection.firestore, collection.path, id);
       const document = await getDoc(documentRef);
@@ -147,3 +155,12 @@ async function assignAnonymousDataToGoogleUser(oldUserId: string, newUserId: str
   });
   await batch.commit();
 }
+
+// async function fn() {
+//   const batch = writeBatch(db);
+//   list.forEach(docData => {
+//     const newDocRef = doc(collection.firestore, collection.path)
+//     batch.set(newDocRef, docData)
+//   });
+//   await batch.commit();
+// }

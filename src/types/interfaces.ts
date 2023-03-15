@@ -1,4 +1,4 @@
-import { Weekdays } from '../util';
+import { DataState, SORTED_WEEKDAYS, Weekdays } from '../util';
 
 export interface FirestoreDocument {
   id: string;
@@ -25,8 +25,16 @@ export interface ProgramLogTemplate extends FirestoreDocument {
 export interface TrainingLog extends FirestoreDocument {
   timestamp: number;
   authorUserId: string;
-  /** Currently unitless. */
+  /**
+   * Currently unitless.
+   */
   bodyweight: number;
+  /**
+   * If this training session is generated from a program, this is the program
+   * ID and template ID for making training logs like this one.
+   */
+  programId: string | null;
+  programLogTemplateId: string | null;
 }
 
 /**
@@ -71,7 +79,7 @@ export interface Movement extends FirestoreDocument {
   timestamp: number;
   /** The ID of the user who made the movement. */
   authorUserId: string;
-  /** The ID of the TrainingLog this Movement belongs to. */
+  /** The ID of the TrainingLog OR ProgramLogTemplate this Movement belongs to. */
   logId: string;
   /** A reference to the ID of the entity representing all instances of this movement. */
   savedMovementId: string;
@@ -118,3 +126,34 @@ export enum MovementWeightUnit {
   Kilograms = 'Kg',
   Pounds = 'Lb',
 }
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Program = {
+  /**
+   * Given a Program, return the ProgramLogTemplate ID from the program
+   * daysOfWeek field for the next upcoming weekday. If today is wednesday and
+   * the program has training on Tue, Thu, and Sat, then the
+   * programLogTemplateId for Thu is returned.
+   */
+  getNextTraining(program: DataState<Program>): { templateId: string; text: string } | null {
+    if (!DataState.isReady(program)) {
+      return null;
+    }
+    const today = SORTED_WEEKDAYS[new Date().getDay()];
+    // From today til end of week
+    const remainingWeekdays = SORTED_WEEKDAYS.slice(SORTED_WEEKDAYS.indexOf(today));
+    for (const _remainingWeekday of remainingWeekdays) {
+      const remainingWeekday = _remainingWeekday.toLowerCase();
+      const templateId = program.daysOfWeek[remainingWeekday];
+      if (templateId) {
+        const days = Object.keys(program.daysOfWeek);
+        const dayIndex = days
+          .filter(d => program.daysOfWeek[d])
+          .slice(0, days.indexOf(remainingWeekday) + 1).length;
+        const text = `${program.name}, ${_remainingWeekday}, Day ${dayIndex}`;
+        return { templateId, text };
+      }
+    }
+    return null;
+  },
+};

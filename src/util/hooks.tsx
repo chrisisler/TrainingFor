@@ -2,8 +2,10 @@ import { User } from 'firebase/auth';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OptionsObject, useSnackbar } from 'notistack';
 
-import { DataState } from '../util';
-import { auth } from '../api';
+import { DataState, useDataState } from '../util';
+import { API, auth } from '../api';
+import { where } from 'firebase/firestore';
+import { useUser } from '../context';
 
 /**
  * Simplifies the usage of Material-UI's SwipeableDrawer and Menu.
@@ -172,4 +174,21 @@ export const useToast = () => {
     warning,
     error,
   };
+};
+
+export const useProgramUser = () => {
+  const user = useUser();
+  return useDataState(
+    () =>
+      API.ProgramUsers.getAll(where('userUid', '==', user.uid)).then(users => {
+        if (users.length > 0) {
+          if (users.length > 1) {
+            return DataState.error('Multiple programUsers found with the same userUid');
+          }
+          return users[0];
+        }
+        return DataState.Empty;
+      }),
+    [user.uid]
+  );
 };
