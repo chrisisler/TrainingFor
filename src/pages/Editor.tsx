@@ -717,7 +717,13 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       variant="overline"
                       color={newSetRepCount > 0 ? 'textPrimary' : 'textSecondary'}
                     >
-                      <Collapse in={newSetRepCount > 0} onClick={() => addSetToMovement(movement)}>
+                      <Collapse
+                        in={newSetRepCount > 0}
+                        onClick={() => {
+                          addSetToMovement(movement);
+                          addSetMenu.onClose();
+                        }}
+                      >
                         Click outside to add set
                       </Collapse>
                       <Collapse in={newSetRepCount === 0}>
