@@ -20,6 +20,7 @@ import {
   Collapse,
   Grid,
   IconButton,
+  InputBase,
   Menu,
   MenuItem,
   Select,
@@ -47,6 +48,7 @@ import {
   SavedMovement,
   MovementSetStatus,
   MovementSet,
+  TrainingLog,
 } from '../types';
 import {
   DataState,
@@ -71,6 +73,7 @@ export const Editor: FC = () => {
   const toast = useToast();
   const { logId } = useParams<{ logId: string }>();
   const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
+  const notesDrawer = useDrawer<TrainingLog>();
 
   const [log, setLog] = useDataState(async () => {
     if (!logId) return DataState.Empty;
@@ -99,7 +102,8 @@ export const Editor: FC = () => {
                 </Typography>
               );
             }
-            return null;
+            // Empty box to maintain spacing.
+            return <Box />;
           }}
         </DataStateView>
         <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
@@ -128,8 +132,10 @@ export const Editor: FC = () => {
             <Grid item xs={4}>
               <Button
                 variant="outlined"
-                onClick={() => {
-                  toast.info('Unimplemented: Update log notes.');
+                disabled={!DataState.isReady(log)}
+                onClick={event => {
+                  if (!DataState.isReady(log)) return;
+                  notesDrawer.onOpen(event, log);
                 }}
               >
                 Note
@@ -198,6 +204,51 @@ export const Editor: FC = () => {
           </Grid>
         </Collapse>
       </SwipeableDrawer>
+
+      <SwipeableDrawer {...notesDrawer.props()} anchor="bottom">
+        <Collapse in={notesDrawer.open}>
+          <NotesDrawerView log={log} setLog={setLog} />
+        </Collapse>
+      </SwipeableDrawer>
+    </Box>
+  );
+};
+
+const NotesDrawerView: FC<{
+  log: DataState<TrainingLog>;
+  setLog(log: TrainingLog): void;
+}> = ({ log, setLog }) => {
+  const [logNote, setLogNote] = useState(DataState.isReady(log) ? log?.note : '');
+  const toast = useToast();
+
+  if (!DataState.isReady(log)) {
+    return null;
+  }
+
+  return (
+    <Box sx={{ height: '50vh', overflowY: 'scroll' }}>
+      <ReactFocusLock returnFocus>
+        <InputBase
+          multiline
+          fullWidth
+          minRows={4}
+          placeholder="Note"
+          value={logNote}
+          onChange={event => setLogNote(event.target.value)}
+          onBlur={async function updateLogNote() {
+            if (DataState.isReady(log) && log.note === logNote) return;
+            try {
+              const updated = await API.TrainingLogs.update({
+                id: log.id,
+                note: logNote,
+              });
+              setLog(updated);
+            } catch (error) {
+              toast.error(error.message);
+            }
+          }}
+        />
+      </ReactFocusLock>
     </Box>
   );
 };

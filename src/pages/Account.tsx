@@ -83,6 +83,7 @@ export const Account: FC = () => {
           authorUserId: user.uid,
           bodyweight: 0,
           id: '',
+          note: '',
           programId: programId || null,
           programLogTemplateId: fromTemplateId || null,
         });

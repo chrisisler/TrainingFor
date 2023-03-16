@@ -35,6 +35,7 @@ export interface TrainingLog extends FirestoreDocument {
    */
   programId: string | null;
   programLogTemplateId: string | null;
+  note: string;
 }
 
 /**
