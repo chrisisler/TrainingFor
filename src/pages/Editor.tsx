@@ -350,7 +350,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       const newSavedMovement: SavedMovement = await API.SavedMovements.create({
         name: movementNameQuery,
         authorUserId: user.uid,
-        id: '',
         lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
@@ -364,7 +363,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         savedMovementName: newSavedMovement.name,
         position,
         isFavorited: false,
-        id: '',
         weightUnit: MovementWeightUnit.Pounds,
         repCountUnit: MovementRepCountUnit.Reps,
       });
@@ -423,7 +421,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
           savedMovementName: match.name,
           position,
           isFavorited: false,
-          id: '',
           weightUnit: previous?.weightUnit ?? MovementWeightUnit.Pounds,
           repCountUnit: previous?.repCountUnit ?? MovementRepCountUnit.Reps,
         });

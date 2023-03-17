@@ -73,7 +73,6 @@ export const Home: FC = () => {
           timestamp: Date.now(),
           authorUserId: user.uid,
           bodyweight: 0,
-          id: '',
           note: '',
           programId: programId || null,
           programLogTemplateId: fromTemplateId || null,

@@ -79,17 +79,18 @@ function init() {
 
 function createAPI<T extends FirestoreDocument>(collection: CollectionReference<T>) {
   return {
-    async create(entry: T): Promise<T> {
+    async create(entry: Omit<T, 'id'>): Promise<T> {
       const newDocumentRef = await addDoc(collection, entry);
-      const newEntryData = { ...entry, id: newDocumentRef.id };
-      return newEntryData;
+      return { ...entry, id: newDocumentRef.id } as T;
     },
 
     async get(id: string): Promise<T> {
       const documentRef = doc(collection.firestore, collection.path, id);
       const document = await getDoc(documentRef);
-      const data = { ...document.data(), id: document.id } as T;
-      return data;
+      if (document.exists()) {
+        return { ...document.data(), id: document.id } as T;
+      }
+      throw Error(`Document with id ${id} does not exist`);
     },
 
     async getAll(param: string | QueryConstraint, ...constraints: QueryConstraint[]): Promise<T[]> {

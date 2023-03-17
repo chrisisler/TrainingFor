@@ -86,7 +86,6 @@ export const Programs: FC = () => {
           return users[0];
         }
         return API.ProgramUsers.create({
-          id: '',
           userUid: user.uid,
           activeProgramId: null,
           activeProgramName: null,
@@ -137,7 +136,6 @@ export const Programs: FC = () => {
     }
     // Create one and return it
     const { id: newProgramLogTemplateId } = await API.ProgramLogTemplates.create({
-      id: '',
       authorUserId: user.uid,
       programId: program.id,
     });
@@ -604,7 +602,6 @@ export const Programs: FC = () => {
                 const created = await API.Programs.create({
                   name: newProgramName,
                   authorUserId: user.uid,
-                  id: '',
                   daysOfWeek: {
                     monday: null,
                     tuesday: null,
