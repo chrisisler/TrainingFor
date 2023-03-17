@@ -39,7 +39,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
-import { WithVariable } from '../components/Variable';
+import { WithVariable } from '../components';
 import { useUser } from '../context';
 import {
   Movement,

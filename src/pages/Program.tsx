@@ -24,7 +24,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
 import { API } from '../api';
-import { WithVariable } from '../components/Variable';
+import { WithVariable } from '../components';
 import { useUser } from '../context';
 import { Movement, Program } from '../types';
 import {
