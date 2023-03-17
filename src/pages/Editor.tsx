@@ -562,7 +562,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       </Box>
                       <IconButton
                         disableRipple
-                        // sx={{ color: 'text.secondary' }}
                         onClick={event => {
                           addSetMenu.onOpen(event, movement);
                           // Set controlled state default values to previous set
@@ -584,7 +583,10 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     <Stack direction="row" spacing={1.6}>
                       {/** Stack of unit control text buttons */}
                       {movement.sets.length > 0 && (
-                        <Stack alignItems="end" spacing={1} marginRight={-0.5} marginLeft="-4px">
+                        <Stack
+                          alignItems="end"
+                          sx={{ margin: theme => theme.spacing(-0.33, -0.5, 0, -0.5) }}
+                        >
                           <MovementUnitSelect
                             value={movement.weightUnit}
                             onChange={async event => {
