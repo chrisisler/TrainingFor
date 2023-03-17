@@ -586,7 +586,7 @@ export const Programs: FC = () => {
               onChange={event => setNewProgramName(event.target.value)}
               InputProps={{
                 endAdornment: !!newProgramName && (
-                  <IconButton disableRipple size="small" onClick={() => setNewProgramName('')}>
+                  <IconButton size="small" onClick={() => setNewProgramName('')}>
                     <Close />
                   </IconButton>
                 ),

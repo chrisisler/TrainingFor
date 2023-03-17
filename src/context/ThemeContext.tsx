@@ -16,6 +16,12 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
       mode: prefersDark ? 'dark' : 'light',
     },
     components: {
+      MuiButtonBase: {
+        defaultProps: {
+          disableRipple: true,
+          disableTouchRipple: true,
+        },
+      },
       MuiSwipeableDrawer: {
         defaultProps: {
           PaperProps: {
@@ -24,11 +30,11 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
         },
       },
       MuiCollapse: {
-       defaultProps: {
-         mountOnEnter: true,
-         unmountOnExit: true,
-       } 
-      }
+        defaultProps: {
+          mountOnEnter: true,
+          unmountOnExit: true,
+        },
+      },
     },
   });
 

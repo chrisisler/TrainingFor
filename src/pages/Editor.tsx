@@ -107,7 +107,6 @@ export const Editor: FC = () => {
           }}
         </DataStateView>
         <IconButton
-          disableRipple
           onClick={event => logDrawer.onOpen(event, void 0)}
           sx={{ color: 'text.secondary' }}
         >
@@ -561,7 +560,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                         </WithVariable>
                       </Box>
                       <IconButton
-                        disableRipple
                         onClick={event => {
                           addSetMenu.onOpen(event, movement);
                           // Set controlled state default values to previous set
@@ -682,12 +680,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button
-              fullWidth
-              disableRipple
-              sx={{ color: 'text.secondary' }}
-              onClick={addMovementDrawer.onOpen}
-            >
+            <Button fullWidth sx={{ color: 'text.secondary' }} onClick={addMovementDrawer.onOpen}>
               <PlaylistAddRounded />
             </Button>
           </Box>
@@ -838,7 +831,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   InputProps={{
                     endAdornment: !!movementNameQuery && (
                       <IconButton
-                        disableRipple
                         size="small"
                         onClick={() => setMovementNameQuery('')}
                       >
