@@ -192,3 +192,12 @@ export const useProgramUser = () => {
     [user.uid]
   );
 };
+
+export const useActiveProgram = () => {
+  const [programUser] = useProgramUser();
+  return useDataState(async () => {
+    if (!DataState.isReady(programUser)) return DataState.Empty;
+    if (!programUser.activeProgramId) return DataState.Empty;
+    return API.Programs.get(programUser.activeProgramId);
+  }, [programUser]);
+};

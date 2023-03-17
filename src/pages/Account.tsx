@@ -25,9 +25,9 @@ import {
   Months,
   Paths,
   SORTED_WEEKDAYS,
+  useActiveProgram,
   useDataState,
   useMaterialMenu,
-  useProgramUser,
   useToast,
 } from '../util';
 import { Movement, Program } from '../types';
@@ -38,17 +38,9 @@ export const Account: FC = () => {
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
 
-  // Get activeProgramId (if it exists for auth'd user) to power the create new
-  // training log from active program button.
-  const [programUser] = useProgramUser();
-
-  // Get active program (if it exists for auth'd user) to display upcoming training
-  // TODO hooks-ify
-  const [activeProgram] = useDataState(async () => {
-    if (!DataState.isReady(programUser)) return DataState.Empty;
-    if (!programUser.activeProgramId) return DataState.Empty;
-    return API.Programs.get(programUser.activeProgramId);
-  }, [programUser]);
+  // Get active program (if it exists for auth'd user) to display upcoming
+  // training AND power the create training log from active program button.
+  const [activeProgram] = useActiveProgram();
 
   // A subset of the users logs to display in detail
   const [logs] = useDataState(
@@ -76,8 +68,7 @@ export const Account: FC = () => {
   const createTrainingLog = useCallback(
     async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
       try {
-        const programId =
-          !!fromTemplateId && DataState.isReady(programUser) && programUser.activeProgramId;
+        const programId = !!fromTemplateId && DataState.isReady(activeProgram) && activeProgram.id;
         const newTrainingLog = await API.TrainingLogs.create({
           timestamp: Date.now(),
           authorUserId: user.uid,
@@ -92,7 +83,7 @@ export const Account: FC = () => {
           const programMovements = await API.ProgramMovements.getAll(
             where('logId', '==', fromTemplateId)
           );
-          const logMovements: Movement[] = programMovements.map(movement => ({
+          const logMovements = programMovements.map(movement => ({
             ...movement,
             logId: newTrainingLog.id,
             sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
@@ -101,12 +92,14 @@ export const Account: FC = () => {
           await API.Movements.createMany(logMovements);
         }
         navigate(Paths.editor(newTrainingLog.id));
-        toast.success('Created new training page.');
+        const extra =
+          !!fromTemplateId && DataState.isReady(activeProgram) && ` for ${activeProgram.name}`;
+        toast.success(`Created new training page${extra}.`);
       } catch (err) {
         toast.error(err.message);
       }
     },
-    [user.uid, navigate, toast, programUser]
+    [activeProgram, user.uid, navigate, toast]
   );
 
   const deauthenticate = useCallback(async () => {
