@@ -188,7 +188,7 @@ export const Programs: FC = () => {
         }}
       >
         <Stack direction="row" width="100" justifyContent="space-between" alignItems="center">
-          <IconButton onClick={() => navigate(Paths.account)} color="primary">
+          <IconButton onClick={() => navigate(Paths.home)} color="primary">
             <NavigateBeforeRounded />
           </IconButton>
           <Stack>

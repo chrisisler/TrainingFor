@@ -1,4 +1,4 @@
 export * from './Authentication';
 export * from './Editor';
-export * from './Account';
+export * from './Home';
 export * from './Program';

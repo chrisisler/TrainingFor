@@ -128,7 +128,7 @@ export const Editor: FC = () => {
             justifyContent="space-evenly"
           >
             <Grid item xs={4}>
-              <Button variant="outlined" onClick={() => navigate(Paths.account)}>
+              <Button variant="outlined" onClick={() => navigate(Paths.home)}>
                 <PersonOutline />
               </Button>
             </Grid>
@@ -194,7 +194,7 @@ export const Editor: FC = () => {
                       API.Movements.deleteMany(where('logId', '==', logId)),
                     ]);
                     logDrawer.onClose();
-                    navigate(Paths.account);
+                    navigate(Paths.home);
                     toast.success('Deleted training.');
                   } catch (error) {
                     toast.error(error.message);

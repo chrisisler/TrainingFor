@@ -32,7 +32,7 @@ import {
 } from '../util';
 import { Movement, Program } from '../types';
 
-export const Account: FC = () => {
+export const Home: FC = () => {
   const user = useUser();
   const navigate = useNavigate();
   const toast = useToast();

@@ -4,7 +4,7 @@ import { FC } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { PrivateThemeProvider, UserProvider } from './context';
-import { Authentication, Account, Editor, Programs } from './pages';
+import { Authentication, Home, Editor, Programs } from './pages';
 import { DataStateView, Paths, useUserAuthSubscription } from './util';
 
 export const App: FC = () => {
@@ -34,10 +34,10 @@ export const App: FC = () => {
               {user => (
                 <UserProvider user={user}>
                   <Routes>
-                    <Route path={Paths.account} element={<Account />} />
+                    <Route path={Paths.home} element={<Home />} />
                     <Route path={Paths.editor()} element={<Editor />} />
                     <Route path={Paths.program} element={<Programs />} />
-                    <Route path="*" element={<Navigate to={Paths.account} />} />
+                    <Route path="*" element={<Navigate to={Paths.home} />} />
                   </Routes>
                 </UserProvider>
               )}
