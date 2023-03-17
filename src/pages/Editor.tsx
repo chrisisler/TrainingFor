@@ -528,35 +528,37 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
                         {/** Display volume or reps total. */}
                         {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                        {movement.sets.filter(_ => _.status === MovementSetStatus.Completed)
-                          .length >= 1 && (
-                          <Typography
-                            variant="overline"
-                            sx={{
-                              opacity: 0.7,
-                              color: 'text.secondary',
-                              marginLeft: theme => theme.spacing(1),
-                            }}
-                          >
-                            {Intl.NumberFormat().format(
-                              movement.sets[0].weight > 0
-                                ? movement.sets.reduce(
-                                    (sum, _) =>
-                                      _.status === MovementSetStatus.Completed
-                                        ? sum + _.repCountActual * _.weight
-                                        : sum,
+                        <WithVariable
+                          value={movement.sets.filter(
+                            _ => _.status === MovementSetStatus.Completed
+                          )}
+                        >
+                          {completedSets => {
+                            if (completedSets.length === 0) {
+                              return null;
+                            }
+                            // total volume or toal reps
+                            const vol =
+                              completedSets[0].weight > 0
+                                ? completedSets.reduce(
+                                    (sum, _) => sum + _.repCountActual * _.weight,
                                     0
                                   )
-                                : movement.sets.reduce(
-                                    (sum, _) =>
-                                      _.status === MovementSetStatus.Completed
-                                        ? sum + _.repCountActual
-                                        : sum,
-                                    0
-                                  )
-                            )}
-                          </Typography>
-                        )}
+                                : completedSets.reduce((sum, _) => sum + _.repCountActual, 0);
+                            return (
+                              <Typography
+                                variant="overline"
+                                sx={{
+                                  opacity: 0.7,
+                                  color: 'text.secondary',
+                                  marginLeft: theme => theme.spacing(1),
+                                }}
+                              >
+                                {Intl.NumberFormat().format(vol)}
+                              </Typography>
+                            );
+                          }}
+                        </WithVariable>
                       </Box>
                       <IconButton
                         disableRipple
