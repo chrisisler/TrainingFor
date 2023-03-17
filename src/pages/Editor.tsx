@@ -830,10 +830,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   onChange={event => setMovementNameQuery(event.target.value)}
                   InputProps={{
                     endAdornment: !!movementNameQuery && (
-                      <IconButton
-                        size="small"
-                        onClick={() => setMovementNameQuery('')}
-                      >
+                      <IconButton size="small" onClick={() => setMovementNameQuery('')}>
                         <Close />
                       </IconButton>
                     ),
