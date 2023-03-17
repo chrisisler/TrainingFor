@@ -8,7 +8,7 @@ import {
   EditOutlined,
   HelpRounded,
   MoreHoriz,
-  Person,
+  PersonOutline,
   PlaylistAddRounded,
   ShortTextRounded,
 } from '@mui/icons-material';
@@ -89,7 +89,7 @@ export const Editor: FC = () => {
         height: '100%',
         width: '100%',
         overflowY: 'scroll',
-        padding: theme => theme.spacing(1, 2, 3, 2),
+        padding: theme => theme.spacing(0.5, 2, 3, 2),
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
@@ -106,7 +106,11 @@ export const Editor: FC = () => {
             return <Box />;
           }}
         </DataStateView>
-        <IconButton disableRipple size="small" onClick={event => logDrawer.onOpen(event, void 0)}>
+        <IconButton
+          disableRipple
+          onClick={event => logDrawer.onOpen(event, void 0)}
+          sx={{ color: 'text.secondary' }}
+        >
           <ShortTextRounded />
         </IconButton>
       </Box>
@@ -126,7 +130,7 @@ export const Editor: FC = () => {
           >
             <Grid item xs={4}>
               <Button variant="outlined" onClick={() => navigate(Paths.account)}>
-                <Person />
+                <PersonOutline />
               </Button>
             </Grid>
             <Grid item xs={4}>
@@ -508,7 +512,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     {/** alignItems here could be END or BASELINE */}
                     <Stack
                       direction="row"
-                      alignItems="end"
+                      alignItems="center"
                       justifyContent="space-between"
                       width="100%"
                     >
@@ -556,7 +560,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       </Box>
                       <IconButton
                         disableRipple
-                        sx={{ color: 'text.secondary' }}
+                        // sx={{ color: 'text.secondary' }}
                         onClick={event => {
                           addSetMenu.onOpen(event, movement);
                           // Set controlled state default values to previous set
@@ -570,7 +574,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           }
                         }}
                       >
-                        <EditOutlined fontSize="small" />
+                        <EditOutlined />
                       </IconButton>
                     </Stack>
                   </Box>
@@ -674,14 +678,14 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
-            <IconButton
+            <Button
+              fullWidth
               disableRipple
-              sx={{ opacity: 0.5, color: 'text.secondary' }}
-              size="large"
+              sx={{ color: 'text.secondary' }}
               onClick={addMovementDrawer.onOpen}
             >
-              <PlaylistAddRounded sx={{ fontSize: '1.7rem' }} />
-            </IconButton>
+              <PlaylistAddRounded />
+            </Button>
           </Box>
         )}
       </Stack>
@@ -824,7 +828,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                 <TextField
                   fullWidth
                   variant="standard"
-                  // label="Search for a movement..."
                   helperText="Select a movement or create one"
                   value={movementNameQuery}
                   onChange={event => setMovementNameQuery(event.target.value)}
