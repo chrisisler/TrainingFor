@@ -55,14 +55,13 @@ export const useDrawer = <T extends unknown>() => {
   );
 
   return {
+    ...getMenu(),
     anchorEl,
-    open: !!anchorEl,
     props: getMenu,
     onOpen(event: React.MouseEvent<HTMLElement>, data: T) {
       setAnchorEl(event.currentTarget);
       setData(data);
     },
-    onClose: closeMenu,
     getData: () => data,
     setData,
   };

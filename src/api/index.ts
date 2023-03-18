@@ -11,6 +11,7 @@ import {
   QueryConstraint,
   updateDoc,
   where,
+  WriteBatch,
   writeBatch,
 } from 'firebase/firestore';
 
@@ -131,6 +132,12 @@ function createAPI<T extends FirestoreDocument>(collection: CollectionReference<
       docs.forEach(doc => {
         batch.delete(doc.ref);
       });
+      await batch.commit();
+    },
+
+    async batch(op: (batch: WriteBatch) => Promise<void>): Promise<void> {
+      const batch = writeBatch(db);
+      op(batch);
       await batch.commit();
     },
   };

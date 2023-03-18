@@ -64,9 +64,6 @@ import {
 
 /**
  * The main page of writing movements to training entries.
- *
- * There is no need for a TrainingLog template system when adding SavedMovements is easy and fast.
- * It should be obvious that a quick "program" can be created from the list of frequent (and recent) movements.
  */
 export const Editor: FC = () => {
   const navigate = useNavigate();
@@ -273,6 +270,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   /** Controlled state of the Add Set inputs. */
   const [newSetWeight, setNewSetWeight] = useState(0);
   const [newSetRepCount, setNewSetRepCount] = useState(0);
+  /** State for re-ordering the list of movements. Holds the Movement to swap places with. */
+  const [movementOrderSwap, setMovementOrderSwap] = useState<null | Movement>(null);
 
   /** The active collection, based on the usage of this component. */
   const Movements = useMemo(
@@ -501,7 +500,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       <Stack spacing={2}>
         <DataStateView data={movements}>
           {movements => (
-            <>
+            <Box key={JSON.stringify(movements)}>
               {movements.map((movement: Movement, movementIndex) => (
                 <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
@@ -671,7 +670,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   </Box>
                 </Stack>
               ))}
-            </>
+            </Box>
           )}
         </DataStateView>
 
@@ -968,9 +967,35 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       </SwipeableDrawer>
 
       {/** Movement Menu Drawer */}
-      <SwipeableDrawer {...movementMenuDrawer.props()} anchor="top">
+      <SwipeableDrawer
+        open={movementMenuDrawer.open}
+        anchor="top"
+        onOpen={movementMenuDrawer.props().onOpen}
+        onClose={async () => {
+          const movement = movementMenuDrawer.getData();
+          if (movementOrderSwap && movement) {
+            Promise.all([
+              Movements.update({ id: movement.id, position: movementOrderSwap.position }),
+              Movements.update({ id: movementOrderSwap.id, position: movement.position }),
+            ])
+              .then(([selectedMovement, swappedWith]) => {
+                // Update local state to reflect DB changes
+                if (!DataState.isReady(movements)) return;
+                const copy = movements.slice();
+                copy[movement.position] = swappedWith;
+                copy[movementOrderSwap.position] = selectedMovement;
+                setMovements(copy);
+              })
+              .catch(err => {
+                toast.error(err.message);
+              });
+          }
+          movementMenuDrawer.onClose();
+          setMovementOrderSwap(null);
+        }}
+      >
         <Collapse in={movementMenuDrawer.open}>
-          <Stack spacing={1} key={JSON.stringify(movementMenuDrawer)}>
+          <Stack spacing={2} key={JSON.stringify(movementMenuDrawer)}>
             <Box>
               <ReactFocusLock disabled={!movementMenuDrawer.open} returnFocus>
                 <TextField
@@ -1027,9 +1052,41 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   }
                 }}
               >
-                Remove
+                Remove Movement
               </Button>
             </Box>
+
+            {/** Re-order / position buttons */}
+            <DataStateView data={movements}>
+              {movements => {
+                if (movements.length <= 1) return null;
+                const selectedMovement = movementMenuDrawer.getData();
+                if (!selectedMovement) return null;
+                return (
+                  <Stack spacing={1.5} direction="row" alignItems="center">
+                    <Typography variant="subtitle2">Order:</Typography>
+                    {movements.map(m => {
+                      return (
+                        <Button
+                          id={m.id}
+                          variant={
+                            m.position === movementOrderSwap?.position ? 'contained' : 'outlined'
+                          }
+                          disabled={selectedMovement.id === m.id}
+                          onClick={() => {
+                            setMovementOrderSwap(m);
+                          }}
+                          // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
+                          sx={{ minWidth: '48px' }}
+                        >
+                          <b>{m.position + 1}</b>
+                        </Button>
+                      );
+                    })}
+                  </Stack>
+                );
+              }}
+            </DataStateView>
           </Stack>
         </Collapse>
       </SwipeableDrawer>
