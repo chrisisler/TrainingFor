@@ -37,8 +37,8 @@ interface DataStateAll {
 export const DataState = {
   Empty: DataStateEmpty,
   Loading: DataStateLoading,
-  error: (message?: string): Error => {
-    return Error(message ?? 'Something went wrong.');
+  error: (message: string): Error => {
+    return Error(message);
   },
   isEmpty<T>(ds: DataState<T>): ds is typeof DataStateEmpty {
     return ds === DataStateEmpty;
@@ -88,11 +88,15 @@ export function useDataState<T>(
     let stale = false;
     getData()
       .then(data => {
-        if (!stale) setDataState(data);
+        if (stale) return;
+        setDataState(data);
       })
       .catch(error => {
-        console.error(error);
-        if (!stale) setDataState(DataState.error(error.message));
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(error);
+        }
+        if (stale) return;
+        setDataState(DataState.error(error.message));
       });
     return () => {
       stale = true;

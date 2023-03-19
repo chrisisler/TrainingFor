@@ -70,7 +70,7 @@ export const Programs: FC = () => {
   // Being lazy on this decision and implementing the least amount possible in
   // order to work is the way we should go. Or, it will likely become obvious
   // with little effort in the future.
-  const [programs, setPrograms] = useDataState(() => API.Programs.getAll(user.uid), []);
+  const [programs, setPrograms] = useDataState(() => API.Programs.getAll(user.uid), [user.uid]);
 
   const [programUser, setProgramUser] = useDataState(
     () =>
@@ -104,7 +104,7 @@ export const Programs: FC = () => {
     }
   }, [programUser, programs, viewedProgram]);
 
-  // ProgramMovements
+  // ProgramMovements from viewedProgram
   const [programMovementsByDayOfWeek] = useDataState<
     Record<Lowercase<Weekdays[number]>, null | Movement[]>
   >(async () => {
@@ -263,7 +263,7 @@ export const Programs: FC = () => {
                         </Stack>
                         <WithVariable
                           value={SORTED_WEEKDAYS.flatMap(key =>
-                            program.daysOfWeek[key.toLowerCase()] ? key : []
+                            program.daysOfWeek[key.toLowerCase()] ? key.slice(0, 3) : []
                           )}
                         >
                           {programDays => (
@@ -368,8 +368,9 @@ export const Programs: FC = () => {
                                 _deleteProgramMovements,
                               ]);
                               setPrograms(programs.filter(p => p.id !== program.id));
-                              toast.success('Deleted program.');
                               setViewedProgram(null);
+                              setTabValue(TabIndex.Programs);
+                              toast.success('Deleted program.');
                             } catch (err) {
                               toast.error(err.message);
                             }
@@ -469,7 +470,11 @@ export const Programs: FC = () => {
                                     return null;
                                   }
                                   return (
-                                    <Typography variant="body2" fontWeight={600}>
+                                    <Typography
+                                      variant="body2"
+                                      fontWeight={600}
+                                      key={movements.toString()}
+                                    >
                                       {movements.map(_ => _.name).join(', ')}
                                     </Typography>
                                   );
@@ -506,31 +511,33 @@ export const Programs: FC = () => {
         {...editorDrawer.props()}
         anchor="bottom"
         onClose={async () => {
-          if (!DataState.isReady(programs)) {
-            throw Error('Unreachable: Programs not ready.');
-          }
-          const data = editorDrawer.getData();
-          const program = viewedProgram;
-          if (!!data && !!program) {
-            const { templateId, dayOfWeek } = data;
-            if (!!templateId) {
-              // If no movements exist in the training template, then delete the
-              // template from the schedule
-              const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
-              if (movements.length === 0) {
-                const nextDaysOfWeek = Object.assign(program.daysOfWeek, { [dayOfWeek]: null });
-                const [, updated] = await Promise.all([
-                  API.ProgramLogTemplates.delete(templateId),
-                  API.Programs.update({
-                    id: program.id,
-                    daysOfWeek: nextDaysOfWeek,
-                  }),
-                ]);
-                setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
-              }
+          if (!DataState.isReady(programs)) return;
+          const context = editorDrawer.getData();
+          if (!!context && !!viewedProgram) {
+            const { templateId, dayOfWeek } = context;
+            // const dayPreviouslyDidNotHaveTraining = !!viewedProgram?.daysOfWeek[dayOfWeek]
+            if (!templateId) return;
+            // If no movements exist in the training template, then delete the
+            // template from the schedule
+            const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
+            if (movements.length === 0) {
+              const nextDaysOfWeek = Object.assign(viewedProgram.daysOfWeek, { [dayOfWeek]: null });
+              const [, updated] = await Promise.all([
+                API.ProgramLogTemplates.delete(templateId),
+                API.Programs.update({
+                  id: viewedProgram.id,
+                  daysOfWeek: nextDaysOfWeek,
+                }),
+              ]);
+              setPrograms(programs.map(p => (p.id === viewedProgram.id ? updated : p)));
+            } else {
+              // Update viewedProgram which updates movement names display
+              setViewedProgram({
+                ...viewedProgram,
+                daysOfWeek: { ...viewedProgram.daysOfWeek, [dayOfWeek]: templateId },
+              });
             }
           }
-          // TODO update program templates here when closing editor drawer (to show changes from editor)
           editorDrawer.onClose();
         }}
       >
@@ -602,6 +609,7 @@ export const Programs: FC = () => {
                 const created = await API.Programs.create({
                   name: newProgramName,
                   authorUserId: user.uid,
+                  timestamp: Date.now(),
                   daysOfWeek: {
                     monday: null,
                     tuesday: null,
@@ -613,6 +621,12 @@ export const Programs: FC = () => {
                   },
                 });
                 setPrograms(programs.concat(created));
+                setNewProgramName('');
+                // Happens after deleting then creating a new program
+                // Do not keep user on "nothing to show here" case view
+                if (tabValue === TabIndex.Schedule) {
+                  setViewedProgram(created);
+                }
                 addProgramDrawer.onClose();
                 toast.success('Program created!');
               } catch (error) {

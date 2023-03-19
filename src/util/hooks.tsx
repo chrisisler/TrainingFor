@@ -153,7 +153,7 @@ export const useToast = () => {
     (msg: string, opts: OptionsObject = { variant: 'info' }) => enqueueSnackbar(msg, opts),
     [enqueueSnackbar]
   );
-  const warning = useCallback(
+  const warn = useCallback(
     (msg: string, opts: OptionsObject = { variant: 'warning' }) => enqueueSnackbar(msg, opts),
     [enqueueSnackbar]
   );
@@ -170,7 +170,7 @@ export const useToast = () => {
   return {
     success,
     info,
-    warning,
+    warn,
     error,
   };
 };
