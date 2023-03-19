@@ -290,17 +290,13 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   /** List of saved movements from this users collection. */
   const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(async () => {
     const savedMovements = await API.SavedMovements.getAll(user.uid);
-    // Sort savedMovements by number of existing Movements with that savedMovementId.
     const countPromises = savedMovements.map(_ =>
       getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
     );
-    const snapshots = await Promise.all(countPromises);
-    const usagesByMovement: number[] = snapshots.map(_ => _.data().count);
-    // Attach `count` to each savedMovement, where count is the number of
-    // existing Movements with that savedMovementId.
-    // Then sort by frequency and recency.
+    const counts = (await Promise.all(countPromises)).map(_ => _.data().count);
+    // Sort by frequency and recency.
     return savedMovements
-      .map((sm, index) => Object.assign(sm, { count: usagesByMovement[index] }))
+      .map((sm, index) => Object.assign(sm, { count: counts[index] }))
       .sort((a, b) => b.count - a.count)
       .sort((a, b) => b.lastSeen - a.lastSeen);
   }, [user.uid]);
@@ -423,11 +419,13 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
           weightUnit: previous?.weightUnit ?? MovementWeightUnit.Pounds,
           repCountUnit: previous?.repCountUnit ?? MovementRepCountUnit.Reps,
         });
-        // Update lastSeen property
-        await API.SavedMovements.update({
-          id: match.id,
-          lastSeen: now,
-        });
+        // Update lastSeen property if adding movement to an actual log
+        if (!isProgramView) {
+          await API.SavedMovements.update({
+            id: match.id,
+            lastSeen: now,
+          });
+        }
         // Update local state from DB
         setMovements(DataState.map(movements, prev => prev.concat(newMovement)));
         const next = savedMovements.slice();
@@ -451,6 +449,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       setSavedMovements,
       toast,
       user.uid,
+      isProgramView,
     ]
   );
 
