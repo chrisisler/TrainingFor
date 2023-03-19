@@ -3,7 +3,7 @@ import {
   Close,
   DeleteForeverRounded,
   EditOutlined,
-  NavigateBeforeRounded,
+  PersonOutline,
   VerifiedRounded,
 } from '@mui/icons-material';
 import {
@@ -187,7 +187,7 @@ export const Programs: FC = () => {
       >
         <Stack direction="row" width="100" justifyContent="space-between" alignItems="center">
           <IconButton onClick={() => navigate(Paths.home)} color="primary">
-            <NavigateBeforeRounded />
+            <PersonOutline />
           </IconButton>
           <Stack>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
