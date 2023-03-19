@@ -907,7 +907,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   fullWidth
                   variant="standard"
                   label="Saved Movement Name"
-                  helperText="Saved Movement will be renamed at the previous screen."
                   defaultValue={savedMovementDrawer.getData()?.name}
                   // Avoiding controlled state this way with onBlur
                   onBlur={async function editSavedMovement(event) {
@@ -1001,7 +1000,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   fullWidth
                   variant="standard"
                   label="Movement Name"
-                  helperText="Movement will be renamed at the previous screen."
                   defaultValue={movementMenuDrawer.getData()?.name}
                   onBlur={async function editMovement(event) {
                     try {
