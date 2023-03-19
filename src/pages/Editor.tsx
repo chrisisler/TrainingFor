@@ -720,7 +720,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           addSetMenu.onClose();
                         }}
                       >
-                        Click outside to add set
+                        Click outside to add set #<b>{movement.sets.length + 1}</b>
                       </Collapse>
                       <Collapse in={newSetRepCount === 0}>
                         Add Set #<b>{movement.sets.length + 1}</b>
