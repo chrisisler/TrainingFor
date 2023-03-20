@@ -520,8 +520,10 @@ export const Programs: FC = () => {
             // If no movements exist in the training template, then delete the
             // template from the schedule
             const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
+            const nextDaysOfWeek = Object.assign(viewedProgram.daysOfWeek, {
+              [dayOfWeek]: movements.length === 0 ? null : templateId,
+            });
             if (movements.length === 0) {
-              const nextDaysOfWeek = Object.assign(viewedProgram.daysOfWeek, { [dayOfWeek]: null });
               const [, updated] = await Promise.all([
                 API.ProgramLogTemplates.delete(templateId),
                 API.Programs.update({
@@ -532,10 +534,7 @@ export const Programs: FC = () => {
               setPrograms(programs.map(p => (p.id === viewedProgram.id ? updated : p)));
             } else {
               // Update viewedProgram which updates movement names display
-              setViewedProgram({
-                ...viewedProgram,
-                daysOfWeek: { ...viewedProgram.daysOfWeek, [dayOfWeek]: templateId },
-              });
+              setViewedProgram(Object.assign(viewedProgram, { daysOfWeek: nextDaysOfWeek }));
             }
           }
           editorDrawer.onClose();
