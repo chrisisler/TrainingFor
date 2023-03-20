@@ -35,7 +35,7 @@ import {
   useMaterialMenu,
   useToast,
 } from '../util';
-import { Movement, Program } from '../types';
+import { Movement } from '../types';
 
 export const Home: FC = () => {
   const user = useUser();
