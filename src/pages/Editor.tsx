@@ -499,7 +499,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       <Stack spacing={2}>
         <DataStateView data={movements}>
           {movements => (
-            <Box key={JSON.stringify(movements)}>
+            <Stack spacing={2}>
               {movements.map((movement: Movement, movementIndex) => (
                 <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
@@ -573,12 +573,12 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     </Stack>
                   </Box>
                   <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                    <Stack direction="row" spacing={1.6}>
+                    <Stack direction="row" spacing={2.0}>
                       {/** Stack of unit control text buttons */}
                       {movement.sets.length > 0 && (
                         <Stack
                           alignItems="end"
-                          sx={{ margin: theme => theme.spacing(-0.33, -0.5, 0, -0.5) }}
+                          sx={{ margin: theme => theme.spacing(-0.5, -0.5, 0, -0.5) }}
                         >
                           <MovementUnitSelect
                             value={movement.weightUnit}
@@ -669,7 +669,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   </Box>
                 </Stack>
               ))}
-            </Box>
+            </Stack>
           )}
         </DataStateView>
 
