@@ -251,14 +251,14 @@ export const Home: FC = () => {
                             </Typography>
                           ) : (
                             <Stack>
-                              {movements.slice(0, 3).map(movement => (
+                              {movements.slice(0, 4).map(movement => (
                                 <Typography variant="body2" key={movement.id} color="textSecondary">
                                   {movement.name}
                                 </Typography>
                               ))}
                               {movements.length > 4 && (
                                 <Typography variant="body2" color="textSecondary">
-                                  {movements[3].name} ...and {movements.length - 4} more
+                                  ...and {movements.length - 4} more
                                 </Typography>
                               )}
                             </Stack>
