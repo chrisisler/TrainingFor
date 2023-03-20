@@ -326,11 +326,16 @@ export const Programs: FC = () => {
                             try {
                               const newName = event.target.value;
                               if (newName.length < 3 || newName === program.name) return;
-                              const updated = await API.Programs.update({
-                                id: program.id,
-                                name: newName,
-                              });
-                              setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
+                              // Get updated references to reflect DB changes in local st8
+                              const [uUser, uProgram] = await Promise.all([
+                                API.ProgramUsers.update({
+                                  id: programUser.id,
+                                  activeProgramName: newName,
+                                }),
+                                API.Programs.update({ id: program.id, name: newName }),
+                              ]);
+                              setPrograms(programs.map(p => (p.id === program.id ? uProgram : p)));
+                              setProgramUser(uUser);
                               toast.info('Updated program name.');
                             } catch (err) {
                               toast.error(err.message);
