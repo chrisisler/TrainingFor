@@ -1,10 +1,16 @@
 import { uuidv4 } from '@firebase/util';
-import { AddRounded, Google, Launch, Logout, NavigateNextRounded } from '@mui/icons-material';
+import {
+  AddCircleOutlineRounded,
+  AddRounded,
+  Google,
+  Launch,
+  Logout,
+  NavigateNextRounded,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
   Collapse,
-  FormHelperText,
   IconButton,
   Stack,
   SwipeableDrawer,
@@ -17,7 +23,6 @@ import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate } from '../api';
-import { WithVariable } from '../components';
 import { useUser } from '../context';
 import {
   DataState,
@@ -37,6 +42,7 @@ export const Home: FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
+  const programTrainingMenu = useMaterialMenu();
 
   // Get active program (if it exists for auth'd user) to display upcoming
   // training AND power the create training log from active program button.
@@ -136,40 +142,64 @@ export const Home: FC = () => {
       {/** Count of training logs */}
       {/** Count of total volume */}
 
-      <Stack spacing={2}>
-        {/** If the user has training remaining in this week from their Program, show a button to hit it. */}
-        <WithVariable value={Program.getNextTraining(activeProgram)}>
-          {result => {
-            if (!result) return null;
-            const { templateId, text } = result;
+      <Stack spacing={3}>
+        {/**
+         * If the user has an active program, show a button to dropdown to
+         * create training from any day of the program.
+         */}
+        <DataStateView data={activeProgram}>
+          {activeProgram => {
             return (
-              <Stack>
-                <FormHelperText>Up Next:</FormHelperText>
+              <Box width="100%">
                 <Button
                   size="large"
-                  variant="outlined"
-                  onClick={() => createTrainingLog({ fromTemplateId: templateId })}
-                  sx={{ width: '100%' }}
-                  color="primary"
-                  startIcon={<AddRounded />}
-                  endIcon={<NavigateNextRounded />}
+                  startIcon={<AddCircleOutlineRounded />}
+                  onClick={programTrainingMenu.onOpen}
+                  variant="contained"
+                  fullWidth
                 >
-                  {text}
+                  Train {activeProgram.name}
                 </Button>
-              </Stack>
+                <SwipeableDrawer {...programTrainingMenu} anchor="top">
+                  <Typography variant="h6" sx={{ p: 1 }} textAlign="center">
+                    {activeProgram.name}
+                  </Typography>
+                  <Stack spacing={3}>
+                    {SORTED_WEEKDAYS.map(day => day.toLowerCase())
+                      .flatMap(day => activeProgram.daysOfWeek[day] ?? []) // filter non-training days
+                      .map((templateId, index) => (
+                        <Button
+                          key={templateId}
+                          size="large"
+                          variant="outlined"
+                          onClick={() => createTrainingLog({ fromTemplateId: templateId })}
+                          startIcon={<AddCircleOutlineRounded />}
+                          endIcon={<NavigateNextRounded />}
+                          sx={{
+                            alignItems: 'center',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          Start Day {index + 1}
+                        </Button>
+                      ))}
+                  </Stack>
+                </SwipeableDrawer>
+              </Box>
             );
           }}
-        </WithVariable>
+        </DataStateView>
+
         <Button
           size="small"
-          variant="text"
+          variant="outlined"
           onClick={() => createTrainingLog({ fromTemplateId: null })}
           sx={{ width: '100%' }}
           color="primary"
           startIcon={<AddRounded />}
-          endIcon={<NavigateNextRounded />}
         >
-          New Training
+          Train From Scratch
         </Button>
       </Stack>
 
