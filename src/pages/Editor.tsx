@@ -528,17 +528,13 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           )}
                         >
                           {completedSets => {
-                            if (completedSets.length === 0) {
-                              return null;
-                            }
-                            // total volume or toal reps
-                            const vol =
-                              completedSets[0].weight > 0
-                                ? completedSets.reduce(
-                                    (sum, _) => sum + _.repCountActual * _.weight,
-                                    0
-                                  )
-                                : completedSets.reduce((sum, _) => sum + _.repCountActual, 0);
+                            const summate =
+                              completedSets?.[0]?.weight === 0
+                                ? (sum: number, _: MovementSet) => sum + _.repCountActual
+                                : (sum: number, _: MovementSet) =>
+                                    sum + _.repCountActual * _.weight;
+                            const completedVol = completedSets.reduce(summate, 0);
+                            const totalVol = movement.sets.reduce(summate, 0);
                             return (
                               <Typography
                                 variant="overline"
@@ -548,7 +544,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                                   marginLeft: theme => theme.spacing(1),
                                 }}
                               >
-                                {Intl.NumberFormat().format(vol)}
+                                {Intl.NumberFormat().format(completedVol)}/
+                                {Intl.NumberFormat().format(totalVol)}
                               </Typography>
                             );
                           }}
