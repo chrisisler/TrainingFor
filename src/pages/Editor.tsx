@@ -544,7 +544,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                                   marginLeft: theme => theme.spacing(1),
                                 }}
                               >
-                                {Intl.NumberFormat().format(completedVol)}/
+                                {!isProgramView && <>{Intl.NumberFormat().format(completedVol)}/</>}
                                 {Intl.NumberFormat().format(totalVol)}
                               </Typography>
                             );
