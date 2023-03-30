@@ -1069,27 +1069,32 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                 const selectedMovement = movementMenuDrawer.getData();
                 if (!selectedMovement) return null;
                 return (
-                  <Stack spacing={1.5} direction="row" alignItems="center">
+                  <Stack
+                    spacing={1.5}
+                    direction="row"
+                    alignItems="center"
+                    sx={{ overflowX: 'scroll' }}
+                  >
                     <Typography variant="subtitle2">Order:</Typography>
-                    {movements.map(m => {
-                      const isSelected = m.position === movementOrderSwap?.position;
+                    {movements.map((movement, movementIndex) => {
+                      const isSelected = movement.position === movementOrderSwap?.position;
                       return (
                         <Button
-                          id={m.id}
+                          id={movement.id}
                           variant={isSelected ? 'contained' : 'outlined'}
-                          disabled={selectedMovement.id === m.id}
+                          disabled={selectedMovement.id === movement.id}
                           onClick={() => {
                             if (isSelected) {
                               // Unselect.
                               setMovementOrderSwap(null);
                             } else {
-                              setMovementOrderSwap(m);
+                              setMovementOrderSwap(movement);
                             }
                           }}
                           // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
                           sx={{ minWidth: '48px' }}
                         >
-                          <b>{m.position + 1}</b>
+                          <b>{movementIndex + 1}</b>
                         </Button>
                       );
                     })}
