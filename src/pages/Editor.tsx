@@ -280,7 +280,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   );
 
   /** List of movements for this log. */
-  const [movements, setMovements] = useDataState<Movement[]>(async () => {
+  const [movements, setMovements, refetchMovements] = useDataState<Movement[]>(async () => {
     if (logId) {
       return Movements.getAll(where('logId', '==', logId), orderBy('position', 'asc'));
     }
@@ -966,24 +966,36 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         open={movementMenuDrawer.open}
         anchor="top"
         onOpen={movementMenuDrawer.props().onOpen}
-        onClose={async () => {
+        onClose={async function reorderMovements() {
           const movement = movementMenuDrawer.getData();
+          if (!DataState.isReady(movements)) return;
           if (movementOrderSwap && movement) {
-            Promise.all([
-              Movements.update({ id: movement.id, position: movementOrderSwap.position }),
-              Movements.update({ id: movementOrderSwap.id, position: movement.position }),
-            ])
-              .then(([selectedMovement, swappedWith]) => {
-                // Update local state to reflect DB changes
-                if (!DataState.isReady(movements)) return;
-                const copy = movements.slice();
-                copy[movement.position] = swappedWith;
-                copy[movementOrderSwap.position] = selectedMovement;
-                setMovements(copy);
-              })
-              .catch(err => {
-                toast.error(err.message);
-              });
+            // movement is the movement clicked
+            // movementOrderSwap is the movement being moved
+            const sourceMv = movement;
+            const sourceIndex = movements.indexOf(sourceMv);
+            const targetMv = movementOrderSwap;
+            const targetIndex = movements.indexOf(targetMv);
+            let updates: Promise<Movement>[] = [];
+            if (sourceMv.position > targetMv.position) {
+              // take items between and move them up
+              updates = movements
+                .slice(targetIndex, sourceIndex + 1)
+                .map(m => Movements.update({ id: m.id, position: m.position + 1 }));
+            } else {
+              // take items between and move them down
+              updates = movements
+                .slice(sourceIndex + 1, targetIndex + 1)
+                .map(m => Movements.update({ id: m.id, position: m.position - 1 }));
+            }
+            // move source to desired destination
+            updates.push(Movements.update({ id: sourceMv.id, position: targetMv.position }));
+            try {
+              await Promise.all(updates);
+              await refetchMovements();
+            } catch (error) {
+              toast.error(error.message);
+            }
           }
           movementMenuDrawer.onClose();
           setMovementOrderSwap(null);
@@ -1060,15 +1072,19 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   <Stack spacing={1.5} direction="row" alignItems="center">
                     <Typography variant="subtitle2">Order:</Typography>
                     {movements.map(m => {
+                      const isSelected = m.position === movementOrderSwap?.position;
                       return (
                         <Button
                           id={m.id}
-                          variant={
-                            m.position === movementOrderSwap?.position ? 'contained' : 'outlined'
-                          }
+                          variant={isSelected ? 'contained' : 'outlined'}
                           disabled={selectedMovement.id === m.id}
                           onClick={() => {
-                            setMovementOrderSwap(m);
+                            if (isSelected) {
+                              // Unselect.
+                              setMovementOrderSwap(null);
+                            } else {
+                              setMovementOrderSwap(m);
+                            }
                           }}
                           // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
                           sx={{ minWidth: '48px' }}

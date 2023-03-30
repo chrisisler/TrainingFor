@@ -97,9 +97,7 @@ export const Home: FC = () => {
           await API.Movements.createMany(logMovements);
         }
         navigate(Paths.editor(newTrainingLog.id));
-        const extra =
-          !!fromTemplateId && DataState.isReady(activeProgram) && ` for ${activeProgram.name}`;
-        toast.success(`Created new training page${extra}.`);
+        toast.success(`Created new training page.`);
       } catch (err) {
         toast.error(err.message);
       }

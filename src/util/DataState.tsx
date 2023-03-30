@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { Loading, Sorry } from '../components';
 
@@ -82,8 +82,19 @@ export const DataState = {
 export function useDataState<T>(
   getData: () => Promise<DataState<T>>,
   deps: readonly unknown[]
-): [DataState<T>, React.Dispatch<React.SetStateAction<DataState<T>>>] {
+): [DataState<T>, React.Dispatch<React.SetStateAction<DataState<T>>>, () => Promise<void>] {
   const [dataState, setDataState] = useState<DataState<T>>(DataState.Loading);
+
+  const refetch = useCallback(async () => {
+    try {
+      const data = await getData();
+      setDataState(data);
+    } catch (error) {
+      setDataState(DataState.error(error.message));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps.concat(getData));
+
   useEffect(() => {
     let stale = false;
     getData()
@@ -103,7 +114,7 @@ export function useDataState<T>(
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
-  return [dataState, setDataState];
+  return [dataState, setDataState, refetch];
 }
 
 export function DataStateView<T>(props: {
