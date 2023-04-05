@@ -256,7 +256,7 @@ export const Home: FC = () => {
                               ))}
                               {movements.length > 4 && (
                                 <Typography variant="body2" color="textSecondary">
-                                  ...and {movements.length - 4} more
+                                  +{movements.length - 4} more
                                 </Typography>
                               )}
                             </Stack>
