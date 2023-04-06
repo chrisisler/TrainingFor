@@ -509,10 +509,10 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     >
                       <Box display="flex" alignItems="baseline">
                         <Typography
-                          fontSize="1.2rem"
+                          fontSize="1.1rem"
                           sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                          fontWeight={400}
+                          fontWeight={600}
                         >
                           {movement.name}
                         </Typography>
