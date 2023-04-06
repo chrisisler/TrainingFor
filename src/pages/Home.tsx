@@ -215,9 +215,9 @@ export const Home: FC = () => {
                   <Box
                     key={log.id}
                     sx={{
-                      border: theme => `2px solid ${theme.palette.divider}`,
+                      backgroundColor: theme => theme.palette.grey[900],
                       borderRadius: 1,
-                      padding: theme => theme.spacing(2, 3),
+                      padding: theme => theme.spacing(2),
                     }}
                     onClick={() => navigate(Paths.editor(log.id))}
                     display="flex"
@@ -233,7 +233,7 @@ export const Home: FC = () => {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        <Typography variant="body2">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
+                        <Typography variant="body1">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
                         <Typography variant="overline" color="textSecondary">
                           {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                         </Typography>
@@ -250,12 +250,12 @@ export const Home: FC = () => {
                           ) : (
                             <Stack>
                               {movements.slice(0, 4).map(movement => (
-                                <Typography variant="body2" key={movement.id} color="textSecondary">
+                                <Typography variant="body1" key={movement.id} color="textSecondary">
                                   {movement.name}
                                 </Typography>
                               ))}
                               {movements.length > 4 && (
-                                <Typography variant="body2" color="textSecondary">
+                                <Typography variant="body1" color="textSecondary">
                                   +{movements.length - 4} more
                                 </Typography>
                               )}
@@ -264,7 +264,7 @@ export const Home: FC = () => {
                         }
                       </DataStateView>
                     </Stack>
-                    <NavigateNextRounded sx={{ color: 'text.secondary' }} />
+                    <NavigateNextRounded sx={{ color: theme => theme.palette.primary.main }} />
                   </Box>
                 );
               })}

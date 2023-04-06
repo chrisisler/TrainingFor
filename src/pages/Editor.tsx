@@ -105,7 +105,6 @@ export const Editor: FC = () => {
         </DataStateView>
         <IconButton
           onClick={event => logDrawer.onOpen(event, void 0)}
-          sx={{ color: 'text.secondary' }}
         >
           <ShortTextRounded />
         </IconButton>
@@ -512,10 +511,10 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     >
                       <Box display="flex" alignItems="baseline">
                         <Typography
-                          fontSize="1.0rem"
+                          fontSize="1.1rem"
                           sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                          fontWeight={600}
+                          fontWeight={400}
                         >
                           {movement.name}
                         </Typography>
@@ -539,7 +538,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                               <Typography
                                 variant="overline"
                                 sx={{
-                                  opacity: 0.7,
                                   color: 'text.secondary',
                                   marginLeft: theme => theme.spacing(1),
                                 }}
@@ -672,7 +670,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button fullWidth sx={{ color: 'text.secondary' }} onClick={addMovementDrawer.onOpen}>
+            <Button fullWidth onClick={addMovementDrawer.onOpen}>
               <PlaylistAddRounded />
             </Button>
           </Box>
@@ -1243,7 +1241,7 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
       textAlign: 'right',
       textTransform: 'uppercase',
       border: 'none',
-      fontSize: '0.7rem',
+      fontSize: '0.8rem',
     }}
     IconComponent={() => null}
     value={value}
