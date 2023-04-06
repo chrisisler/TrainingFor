@@ -12,6 +12,7 @@ import {
   Button,
   Collapse,
   IconButton,
+  Paper,
   Stack,
   SwipeableDrawer,
   Typography,
@@ -212,16 +213,15 @@ export const Home: FC = () => {
               {logs.map(log => {
                 const date = new Date(log.timestamp);
                 return (
-                  <Box
+                  <Paper
                     key={log.id}
+                    elevation={3}
                     sx={{
-                      backgroundColor: theme => theme.palette.grey[900],
-                      borderRadius: 1,
                       padding: theme => theme.spacing(2),
+                      display: 'flex',
+                      justifyContent: 'space-between',
                     }}
                     onClick={() => navigate(Paths.editor(log.id))}
-                    display="flex"
-                    justifyContent="space-between"
                   >
                     <Stack spacing={0.5}>
                       <Stack
@@ -242,30 +242,39 @@ export const Home: FC = () => {
                         </Typography>
                       </Stack>
                       <DataStateView data={DataState.map(movementsByLogId, _ => _.get(log.id))}>
-                        {movements =>
-                          !movements?.length ? (
-                            <Typography sx={{ color: 'text.secondary' }} variant="overline">
-                              Empty
-                            </Typography>
-                          ) : (
+                        {movements => {
+                          if (!movements) return null;
+                          if (movements.length === 0) {
+                            return (
+                              <Typography sx={{ color: 'text.secondary' }} variant="overline">
+                                Empty
+                              </Typography>
+                            );
+                          }
+                          if (movements.length < 6) {
+                            return (
+                              <Stack>
+                                {movements.map(movement => (
+                                  <Typography key={movement.id}>{movement.name}</Typography>
+                                ))}
+                              </Stack>
+                            );
+                          }
+                          return (
                             <Stack>
                               {movements.slice(0, 4).map(movement => (
-                                <Typography variant="body1" key={movement.id} color="textSecondary">
-                                  {movement.name}
-                                </Typography>
+                                <Typography key={movement.id}>{movement.name}</Typography>
                               ))}
                               {movements.length > 4 && (
-                                <Typography variant="body1" color="textSecondary">
-                                  +{movements.length - 4} more
-                                </Typography>
+                                <Typography>+{movements.length - 4} more</Typography>
                               )}
                             </Stack>
-                          )
-                        }
+                          );
+                        }}
                       </DataStateView>
                     </Stack>
                     <NavigateNextRounded sx={{ color: theme => theme.palette.primary.main }} />
-                  </Box>
+                  </Paper>
                 );
               })}
             </Stack>

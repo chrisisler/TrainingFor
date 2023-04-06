@@ -103,9 +103,7 @@ export const Editor: FC = () => {
             return <Box />;
           }}
         </DataStateView>
-        <IconButton
-          onClick={event => logDrawer.onOpen(event, void 0)}
-        >
+        <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
           <ShortTextRounded />
         </IconButton>
       </Box>
@@ -511,7 +509,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     >
                       <Box display="flex" alignItems="baseline">
                         <Typography
-                          fontSize="1.1rem"
+                          fontSize="1.2rem"
                           sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
                           fontWeight={400}
@@ -542,7 +540,9 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                                   marginLeft: theme => theme.spacing(1),
                                 }}
                               >
-                                {!isProgramView && <>{Intl.NumberFormat().format(completedVol)}/</>}
+                                {!isProgramView && completedVol !== totalVol && (
+                                  <>{Intl.NumberFormat().format(completedVol)}/</>
+                                )}
                                 {Intl.NumberFormat().format(totalVol)}
                               </Typography>
                             );
