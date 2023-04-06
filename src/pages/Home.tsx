@@ -51,7 +51,7 @@ export const Home: FC = () => {
 
   // A subset of the users logs to display in detail
   const [logs] = useDataState(
-    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(8)),
+    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
     [user.uid]
   );
 
