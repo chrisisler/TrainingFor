@@ -6,7 +6,6 @@ import {
   DeleteForeverRounded,
   DeleteOutline,
   EditOutlined,
-  HelpRounded,
   MoreHoriz,
   PersonOutline,
   PlaylistAddRounded,
@@ -257,7 +256,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const toast = useToast();
   const user = useUser();
   const addMovementDrawer = useMaterialMenu();
-  const sleepDrawer = useMaterialMenu();
   const addSetMenu = useDrawer<Movement>();
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
@@ -478,20 +476,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
     },
     [Movements, movements, newSetRepCountMax, newSetRepCountMin, newSetWeight, setMovements, toast]
   );
-
-  // Random notice for sleep
-  useEffect(() => {
-    if (isProgramView) return;
-    if (!(Math.random() >= 0.98)) return;
-    toast.info('Make sure to get 8 hours of sleep!', {
-      action: () => (
-        <Button onClick={event => sleepDrawer.onOpen(event)}>
-          <HelpRounded />
-        </Button>
-      ),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <>
@@ -831,12 +815,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
           }
         </WithVariable>
       </Backdrop>
-
-      <SwipeableDrawer {...sleepDrawer} anchor="top">
-        <Collapse in={sleepDrawer.open}>
-          <Typography>Sleep is more important than training and eating.</Typography>
-        </Collapse>
-      </SwipeableDrawer>
 
       <SwipeableDrawer {...addMovementDrawer} anchor="top">
         <Collapse in={addMovementDrawer.open}>
