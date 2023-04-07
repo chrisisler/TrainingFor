@@ -5,6 +5,7 @@ import {
   CloseRounded,
   DeleteForeverRounded,
   DeleteOutline,
+  DeleteRounded,
   EditOutlined,
   MoreHoriz,
   PersonOutline,
@@ -694,9 +695,9 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   return;
                 }}
               >
-                <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 3) }}>
+                <Stack spacing={3} sx={{ padding: theme => theme.spacing(2, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography variant="overline" color="textSecondary">
+                    <Typography variant="overline">
                       <Collapse
                         in={newSetRepCountMin > 0}
                         onClick={() => {
@@ -704,7 +705,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           addSetMenu.onClose();
                         }}
                       >
-                        Tap outside to <b>add set {movement.sets.length + 1}</b>
+                        Tap anywhere to <b>add set {movement.sets.length + 1}</b>
                       </Collapse>
                       <Collapse in={newSetRepCountMin === 0}>
                         Add Set <b>{movement.sets.length + 1}</b>
@@ -720,7 +721,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                         {MovementRepCountUnit[movement.repCountUnit]}
                       </Typography>
                     </Stack>
-                    <Stack spacing={2}>
+                    <Stack spacing={3}>
                       <TextField
                         variant="standard"
                         inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -776,43 +777,72 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       </Box>
                     </Stack>
                   </Stack>
-                  <Button
-                    size="large"
-                    variant="outlined"
-                    sx={{ color: 'text.secondary', backgroundColor: 'divider', border: 0 }}
-                    onClick={addSetMenu.onClose}
-                    startIcon={<CloseRounded fontSize="small" />}
-                  >
-                    Cancel
-                  </Button>
-                  {movement.sets.length > 0 && (
+                  <Stack spacing={2}>
                     <Button
-                      variant="text"
-                      sx={{ color: 'text.secondary' }}
-                      startIcon={<DeleteOutline fontSize="small" />}
-                      onClick={async function deleteSet() {
-                        try {
-                          const last = movement.sets[movement.sets.length - 1];
-                          if (!last) throw TypeError('Unreachable: last');
-                          const updated: Movement = await Movements.update({
-                            sets: movement.sets.filter(_ => _.uuid !== last.uuid),
-                            id: movement.id,
-                          });
-                          if (!DataState.isReady(movements)) return;
-                          // Update local state
-                          const copy = movements.slice();
-                          copy[copy.indexOf(movement)] = updated;
-                          setMovements(copy);
-                          // Close the menu
-                          addSetMenu.onClose();
-                        } catch (error) {
-                          toast.error(error.message);
-                        }
-                      }}
+                      size="large"
+                      variant="outlined"
+                      sx={{ color: 'text.secondary', backgroundColor: 'divider', border: 0 }}
+                      onClick={addSetMenu.onClose}
+                      startIcon={<CloseRounded fontSize="small" />}
                     >
-                      Delete Set
+                      Cancel
                     </Button>
-                  )}
+                    {movement.sets.length > 0 && (
+                      <Button
+                        variant="text"
+                        sx={{ color: 'text.secondary' }}
+                        startIcon={<DeleteOutline fontSize="small" />}
+                        onClick={async function deleteSet() {
+                          try {
+                            const last = movement.sets[movement.sets.length - 1];
+                            if (!last) throw TypeError('Unreachable: last');
+                            const updated: Movement = await Movements.update({
+                              sets: movement.sets.filter(_ => _.uuid !== last.uuid),
+                              id: movement.id,
+                            });
+                            if (!DataState.isReady(movements)) return;
+                            // Update local state
+                            const copy = movements.slice();
+                            copy[copy.indexOf(movement)] = updated;
+                            setMovements(copy);
+                            // Close the menu
+                            addSetMenu.onClose();
+                          } catch (error) {
+                            toast.error(error.message);
+                          }
+                        }}
+                      >
+                        Delete Set
+                      </Button>
+                    )}
+                    {movement.sets.length > 1 && (
+                      <Button
+                        size="small"
+                        variant="text"
+                        sx={{ color: 'text.secondary' }}
+                        startIcon={<DeleteRounded fontSize="small" />}
+                        onClick={async function deleteAllSets() {
+                          try {
+                            const updated: Movement = await Movements.update({
+                              sets: [],
+                              id: movement.id,
+                            });
+                            if (!DataState.isReady(movements)) return;
+                            // Update local state
+                            const copy = movements.slice();
+                            copy[copy.indexOf(movement)] = updated;
+                            setMovements(copy);
+                            // Close the menu
+                            addSetMenu.onClose();
+                          } catch (error) {
+                            toast.error(error.message);
+                          }
+                        }}
+                      >
+                        Delete All Sets
+                      </Button>
+                    )}
+                  </Stack>
                 </Stack>
               </Menu>
             )
