@@ -1181,7 +1181,8 @@ const MovementSetView: FC<{
       // intervals, a method that has been determined to yield the greatest
       // effort from the subject. The subject does not receive a reward each
       // time they perform a desired behavior but at seemingly random intervals.
-      if (Math.random() > 0.66) {
+      const isLastSet = movement.sets.length === index + 1;
+      if (isLastSet && Math.random() > 0.66) {
         setConfetti(true);
       }
     } else if (repCountActual === 0) {
@@ -1257,7 +1258,9 @@ const MovementSetView: FC<{
           ? movementSet.repCountActual
           : `${movementSet.repCountExpected}-${movementSet.repCountMaxExpected}`}
       </IconButton>
-      {confetti && <ConfettiExplosion particleCount={45} width={400} force={0.4} />}
+      {confetti && (
+        <ConfettiExplosion particleCount={150} width={500} force={0.6} />
+      )}
     </Stack>
   );
 };
