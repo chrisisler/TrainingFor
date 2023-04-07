@@ -694,7 +694,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   return;
                 }}
               >
-                <Stack spacing={3} sx={{ padding: theme => theme.spacing(2) }}>
+                <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
                     <Typography variant="overline" color="textSecondary">
                       <Collapse
@@ -711,71 +711,75 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       </Collapse>
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={2.5} alignItems="center">
-                    <Typography variant="overline" mr={1} alignSelf="end">
-                      {movement.weightUnit}
-                    </Typography>
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetWeight}
-                      onChange={event => setNewSetWeight(+event.target.value)}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        sx: { fontSize: '1.3rem' },
-                      }}
-                    />
-                    <Typography variant="overline" mr={1} alignSelf="end">
-                      {MovementRepCountUnit[movement.repCountUnit]}
-                    </Typography>
-                    <Box display="flex">
+                  <Stack direction="row">
+                    <Stack spacing={3} marginTop={0.8} marginRight={2}>
+                      <Typography variant="overline" alignSelf="end">
+                        {movement.weightUnit}
+                      </Typography>
+                      <Typography variant="overline" alignSelf="end">
+                        {MovementRepCountUnit[movement.repCountUnit]}
+                      </Typography>
+                    </Stack>
+                    <Stack spacing={2}>
                       <TextField
                         variant="standard"
                         inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetRepCountMin}
-                        onChange={event => {
-                          const val = +event.target.value;
-                          if (val > newSetRepCountMax) {
+                        value={newSetWeight}
+                        onChange={event => setNewSetWeight(+event.target.value)}
+                        onFocus={event => event.currentTarget.select()}
+                        InputProps={{
+                          sx: { fontSize: '1.3rem', width: '75px' },
+                        }}
+                      />
+                      <Box display="flex">
+                        <TextField
+                          variant="standard"
+                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                          value={newSetRepCountMin}
+                          onChange={event => {
+                            const val = +event.target.value;
+                            if (val > newSetRepCountMax) {
+                              setNewSetRepCountMax(val);
+                            }
+                            setNewSetRepCountMin(val);
+                          }}
+                          onFocus={event => event.currentTarget.select()}
+                          InputProps={{
+                            sx: { fontSize: '1.3rem', width: '75px' },
+                          }}
+                          // Set max to min * 2
+                          onBlur={event => {
+                            const val = +event.target.value;
+                            if (isNaN(val)) return;
+                            setNewSetRepCountMax(val * 2);
+                          }}
+                        />
+                        <TextField
+                          variant="standard"
+                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                          value={newSetRepCountMax}
+                          error={newSetRepCountMax < newSetRepCountMin}
+                          onChange={event => {
+                            const val = +event.target.value;
                             setNewSetRepCountMax(val);
-                          }
-                          setNewSetRepCountMin(val);
-                        }}
-                        onFocus={event => event.currentTarget.select()}
-                        InputProps={{
-                          sx: { fontSize: '1.3rem' },
-                        }}
-                        // Set max to min * 2
-                        onBlur={event => {
-                          const val = +event.target.value;
-                          if (isNaN(val)) return;
-                          setNewSetRepCountMax(val * 2);
-                        }}
-                      />
-                      <TextField
-                        variant="standard"
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetRepCountMax}
-                        error={newSetRepCountMax < newSetRepCountMin}
-                        onChange={event => {
-                          const val = +event.target.value;
-                          setNewSetRepCountMax(val);
-                        }}
-                        onFocus={event => event.currentTarget.select()}
-                        InputProps={{
-                          sx: { fontSize: '1.3rem' },
-                          startAdornment: (
-                            <Typography variant="body2" color="textSecondary" ml={-2.5} mr={2.5}>
-                              to
-                            </Typography>
-                          ),
-                        }}
-                      />
-                    </Box>
+                          }}
+                          onFocus={event => event.currentTarget.select()}
+                          InputProps={{
+                            sx: { fontSize: '1.3rem', width: '75px' },
+                            startAdornment: (
+                              <Typography variant="body1" color="textSecondary" ml={-3} mr={3}>
+                                -
+                              </Typography>
+                            ),
+                          }}
+                        />
+                      </Box>
+                    </Stack>
                   </Stack>
                   <Button
                     size="large"
                     variant="outlined"
-                    sx={{ color: 'text.primary', borderColor: 'text.secondary' }}
+                    sx={{ color: 'text.secondary', backgroundColor: 'divider', border: 0 }}
                     onClick={addSetMenu.onClose}
                     startIcon={<CloseRounded fontSize="small" />}
                   >
@@ -784,7 +788,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   {movement.sets.length > 0 && (
                     <Button
                       variant="text"
-                      color="error"
+                      sx={{ color: 'text.secondary' }}
                       startIcon={<DeleteOutline fontSize="small" />}
                       onClick={async function deleteSet() {
                         try {
@@ -1236,9 +1240,7 @@ const MovementSetView: FC<{
           ? movementSet.repCountActual
           : `${movementSet.repCountExpected}-${movementSet.repCountMaxExpected}`}
       </IconButton>
-      {confetti && (
-        <ConfettiExplosion particleCount={150} width={500} force={0.6} />
-      )}
+      {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
     </Stack>
   );
 };
