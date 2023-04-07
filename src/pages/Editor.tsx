@@ -31,7 +31,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
@@ -660,7 +660,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button fullWidth onClick={addMovementDrawer.onOpen}>
-              <PlaylistAddRounded sx={{ color: 'text.secondary' }}/>
+              <PlaylistAddRounded sx={{ color: 'text.secondary' }} />
             </Button>
           </Box>
         )}
@@ -878,12 +878,13 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
             <DataStateView data={matches}>
               {matches => {
                 const queryIsEmpty = movementNameQuery === '';
-                const hasFoundExactName = matches.some(_ => _.name === movementNameQuery);
-                const hasFuzzyNameMatch = matches.some(_ => _.name.includes(movementNameQuery));
+                const query = movementNameQuery.toLowerCase();
+                const hasFoundExactName = matches.some(_ => _.name === query);
+                const hasFuzzyNameMatch = matches.some(_ => _.name.toLowerCase().includes(query));
                 return (
                   <>
                     {matches.length > 0 && (
-                      <Collapse in={queryIsEmpty || (!queryIsEmpty && hasFuzzyNameMatch)}>
+                      <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
                         <Stack spacing={1.25} sx={{ maxHeight: '28vh', overflowY: 'scroll' }}>
                           {matches.map((match: SavedMovement) => (
                             <Box key={match.id} display="flex" justifyContent="space-between">
@@ -897,14 +898,21 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                               >
                                 {match.name}
                               </Typography>
-                              <IconButton
-                                sx={{ color: theme => theme.palette.text.secondary }}
-                                onClick={event => {
-                                  savedMovementDrawer.onOpen(event, match);
-                                }}
-                              >
-                                <MoreHoriz fontSize="small" />
-                              </IconButton>
+                              <Box sx={{ whiteSpace: 'nowrap' }}>
+                                <Typography variant="caption" color="textSecondary">
+                                  {formatDistanceToNowStrict(new Date(match.lastSeen), {
+                                    addSuffix: true,
+                                  })}
+                                </Typography>
+                                <IconButton
+                                  sx={{ color: theme => theme.palette.text.secondary }}
+                                  onClick={event => {
+                                    savedMovementDrawer.onOpen(event, match);
+                                  }}
+                                >
+                                  <MoreHoriz fontSize="small" />
+                                </IconButton>
+                              </Box>
                             </Box>
                           ))}
                         </Stack>
