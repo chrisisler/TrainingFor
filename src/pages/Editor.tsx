@@ -729,7 +729,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                         onChange={event => setNewSetWeight(+event.target.value)}
                         onFocus={event => event.currentTarget.select()}
                         InputProps={{
-                          sx: { fontSize: '1.3rem', width: '75px' },
+                          sx: { fontSize: '1.5rem', width: '75px' },
                         }}
                       />
                       <Box display="flex">
@@ -746,7 +746,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           }}
                           onFocus={event => event.currentTarget.select()}
                           InputProps={{
-                            sx: { fontSize: '1.3rem', width: '75px' },
+                            sx: { fontSize: '1.5rem', width: '75px' },
                           }}
                           // Set max to min * 2
                           onBlur={event => {
@@ -766,7 +766,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           }}
                           onFocus={event => event.currentTarget.select()}
                           InputProps={{
-                            sx: { fontSize: '1.3rem', width: '75px' },
+                            sx: { fontSize: '1.5rem', width: '75px' },
                             startAdornment: (
                               <Typography variant="body1" color="textSecondary" ml={-3} mr={3}>
                                 -
