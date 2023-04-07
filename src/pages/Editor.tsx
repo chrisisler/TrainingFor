@@ -266,7 +266,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const [movementNameQuery, setMovementNameQuery] = useState('');
   /** Controlled state of the Add Set inputs. */
   const [newSetWeight, setNewSetWeight] = useState(0);
-  const [newSetRepCount, setNewSetRepCount] = useState(0);
+  const [newSetRepCountMin, setNewSetRepCountMin] = useState(0);
+  const [newSetRepCountMax, setNewSetRepCountMax] = useState(0);
   /** State for re-ordering the list of movements. Holds the Movement to swap places with. */
   const [movementOrderSwap, setMovementOrderSwap] = useState<null | Movement>(null);
 
@@ -457,8 +458,9 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         // Add new set to list of sets for this Movement
         const sets = movement.sets.concat({
           weight: newSetWeight,
-          repCountActual: newSetRepCount,
-          repCountExpected: newSetRepCount,
+          repCountActual: newSetRepCountMax,
+          repCountExpected: newSetRepCountMin,
+          repCountMaxExpected: newSetRepCountMax,
           status: MovementSetStatus.Unattempted,
           uuid: uuidv4(),
         });
@@ -474,7 +476,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         toast.error(error.message);
       }
     },
-    [Movements, movements, newSetRepCount, newSetWeight, setMovements, toast]
+    [Movements, movements, newSetRepCountMax, newSetRepCountMin, newSetWeight, setMovements, toast]
   );
 
   // Random notice for sleep
@@ -553,13 +555,15 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                         onClick={event => {
                           addSetMenu.onOpen(event, movement);
                           // Set controlled state default values to previous set
-                          if (movement.sets.length > 0) {
-                            const lastSet = movement.sets[movement.sets.length - 1];
+                          const lastSet = movement.sets[movement.sets.length - 1];
+                          if (!!lastSet && lastSet.status === MovementSetStatus.Completed) {
                             setNewSetWeight(lastSet.weight);
-                            setNewSetRepCount(lastSet.repCountActual);
+                            setNewSetRepCountMin(lastSet.repCountExpected);
+                            setNewSetRepCountMax(lastSet.repCountMaxExpected);
                           } else {
                             setNewSetWeight(0);
-                            setNewSetRepCount(0);
+                            setNewSetRepCountMin(0);
+                            setNewSetRepCountMax(0);
                           }
                         }}
                       >
@@ -688,8 +692,12 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                 anchorEl={addSetMenu.anchorEl}
                 onClose={(_event, reason) => {
                   if (reason === 'backdropClick') {
-                    if (newSetRepCount === 0) {
+                    if (newSetRepCountMin === 0) {
                       addSetMenu.onClose();
+                      return;
+                    }
+                    if (newSetRepCountMax < newSetRepCountMin) {
+                      toast.error('Maximum must be less than minimum.');
                       return;
                     }
                     addSetToMovement(movement);
@@ -702,27 +710,27 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   return;
                 }}
               >
-                <Stack spacing={3} width="75vw" sx={{ padding: theme => theme.spacing(1, 3) }}>
+                <Stack spacing={3} sx={{ padding: theme => theme.spacing(2) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography
-                      variant="overline"
-                      color={newSetRepCount > 0 ? 'textPrimary' : 'textSecondary'}
-                    >
+                    <Typography variant="overline" color="textSecondary">
                       <Collapse
-                        in={newSetRepCount > 0}
+                        in={newSetRepCountMin > 0}
                         onClick={() => {
                           addSetToMovement(movement);
                           addSetMenu.onClose();
                         }}
                       >
-                        Click outside to add set #<b>{movement.sets.length + 1}</b>
+                        Tap outside to <b>add set {movement.sets.length + 1}</b>
                       </Collapse>
-                      <Collapse in={newSetRepCount === 0}>
-                        Add Set #<b>{movement.sets.length + 1}</b>
+                      <Collapse in={newSetRepCountMin === 0}>
+                        Add Set <b>{movement.sets.length + 1}</b>
                       </Collapse>
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={3}>
+                  <Stack direction="row" spacing={2.5} alignItems="center">
+                    <Typography variant="overline" mr={1} alignSelf="end">
+                      {movement.weightUnit}
+                    </Typography>
                     <TextField
                       variant="standard"
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -730,34 +738,60 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       onChange={event => setNewSetWeight(+event.target.value)}
                       onFocus={event => event.currentTarget.select()}
                       InputProps={{
-                        startAdornment: (
-                          <Typography variant="overline" mr={1} alignSelf="end">
-                            {movement.weightUnit}
-                          </Typography>
-                        ),
                         sx: { fontSize: '1.3rem' },
                       }}
                     />
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetRepCount}
-                      onChange={event => setNewSetRepCount(+event.target.value)}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        startAdornment: (
-                          <Typography variant="overline" mr={1} alignSelf="end">
-                            {MovementRepCountUnit[movement.repCountUnit]}
-                          </Typography>
-                        ),
-                        sx: { fontSize: '1.3rem' },
-                      }}
-                    />
+                    <Typography variant="overline" mr={1} alignSelf="end">
+                      {MovementRepCountUnit[movement.repCountUnit]}
+                    </Typography>
+                    <Box display="flex">
+                      <TextField
+                        variant="standard"
+                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                        value={newSetRepCountMin}
+                        onChange={event => {
+                          const val = +event.target.value;
+                          if (val > newSetRepCountMax) {
+                            setNewSetRepCountMax(val);
+                          }
+                          setNewSetRepCountMin(val);
+                        }}
+                        onFocus={event => event.currentTarget.select()}
+                        InputProps={{
+                          sx: { fontSize: '1.3rem' },
+                        }}
+                        // Set max to min * 2
+                        onBlur={event => {
+                          const val = +event.target.value;
+                          if (isNaN(val)) return;
+                          setNewSetRepCountMax(val * 2);
+                        }}
+                      />
+                      <TextField
+                        variant="standard"
+                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                        value={newSetRepCountMax}
+                        error={newSetRepCountMax < newSetRepCountMin}
+                        onChange={event => {
+                          const val = +event.target.value;
+                          setNewSetRepCountMax(val);
+                        }}
+                        onFocus={event => event.currentTarget.select()}
+                        InputProps={{
+                          sx: { fontSize: '1.3rem' },
+                          startAdornment: (
+                            <Typography variant="body2" color="textSecondary" ml={-2.5} mr={2.5}>
+                              to
+                            </Typography>
+                          ),
+                        }}
+                      />
+                    </Box>
                   </Stack>
                   <Button
                     size="large"
-                    variant="contained"
-                    sx={{ color: 'text.secondary', backgroundColor: 'divider' }}
+                    variant="outlined"
+                    sx={{ color: 'text.primary', borderColor: 'text.secondary' }}
                     onClick={addSetMenu.onClose}
                     startIcon={<CloseRounded fontSize="small" />}
                   >
@@ -1119,6 +1153,8 @@ const MovementSetView: FC<{
   const [weight, setWeight] = useState(movementSet.weight);
   const [confetti, setConfetti] = useState(false);
 
+  const setIsCompleted = movementSet.status === MovementSetStatus.Completed;
+
   const dynamicRepCountButtonStyle = useMemo(
     () =>
       movementSet.status === MovementSetStatus.Completed
@@ -1136,10 +1172,10 @@ const MovementSetView: FC<{
   );
 
   const decrementRepCount = useCallback(() => {
-    const { repCountActual, repCountExpected, status } = movementSet;
+    const { repCountActual, repCountExpected, status, repCountMaxExpected } = movementSet;
     setConfetti(false);
     // First click: Unattempted status -> Completed status
-    if (repCountActual === repCountExpected && status === MovementSetStatus.Unattempted) {
+    if (repCountActual === repCountMaxExpected && status === MovementSetStatus.Unattempted) {
       movement.sets[index].status = MovementSetStatus.Completed;
       // Intermittent reinforcement is the delivery of a reward at irregular
       // intervals, a method that has been determined to yield the greatest
@@ -1209,12 +1245,17 @@ const MovementSetView: FC<{
           paddingX: theme =>
             theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1.33 : 2),
           borderRadius: 1,
+          whiteSpace: 'nowrap',
         }}
         // Handles dynamic styling based on repCount button for a movement set
         style={dynamicRepCountButtonStyle}
         onClick={decrementRepCount}
       >
-        {movementSet.repCountActual}
+        {typeof movementSet.repCountMaxExpected === 'undefined' ||
+        setIsCompleted ||
+        movementSet.repCountExpected === movementSet.repCountMaxExpected
+          ? movementSet.repCountActual
+          : `${movementSet.repCountExpected}-${movementSet.repCountMaxExpected}`}
       </IconButton>
       {confetti && <ConfettiExplosion particleCount={45} width={400} force={0.4} />}
     </Stack>

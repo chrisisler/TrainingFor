@@ -102,10 +102,12 @@ export interface MovementSet {
   uuid: string;
   status: MovementSetStatus;
   weight: number;
-  /** The number of reps actually achieved in this set. */
+  /** Number of reps satisfactorily executed. */
   repCountActual: number;
-  /** The number of reps expected to achieve in this set. */
+  /** Minimum number of reps expected to achieve. */
   repCountExpected: number;
+  /** Maximum number of reps expected to achieve. */
+  repCountMaxExpected: number;
 }
 
 export enum MovementSetStatus {
