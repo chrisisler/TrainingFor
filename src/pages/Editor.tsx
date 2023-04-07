@@ -540,11 +540,11 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                         onClick={event => {
                           addSetMenu.onOpen(event, movement);
                           // Set controlled state default values to previous set
-                          const lastSet = movement.sets[movement.sets.length - 1];
-                          if (!!lastSet && lastSet.status === MovementSetStatus.Completed) {
+                          if (movement.sets.length > 0) {
+                            const lastSet = movement.sets[movement.sets.length - 1];
                             setNewSetWeight(lastSet.weight);
                             setNewSetRepCountMin(lastSet.repCountExpected);
-                            setNewSetRepCountMax(lastSet.repCountMaxExpected);
+                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || 0);
                           } else {
                             setNewSetWeight(0);
                             setNewSetRepCountMin(0);
