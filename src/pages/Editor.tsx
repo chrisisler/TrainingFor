@@ -660,7 +660,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button fullWidth onClick={addMovementDrawer.onOpen}>
-              <PlaylistAddRounded />
+              <PlaylistAddRounded sx={{ color: 'text.secondary' }}/>
             </Button>
           </Box>
         )}
