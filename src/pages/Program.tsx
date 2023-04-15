@@ -1,4 +1,5 @@
 import {
+  AddCircleOutline,
   AddRounded,
   Close,
   DeleteForeverRounded,
@@ -209,7 +210,11 @@ export const Programs: FC = () => {
               </Tabs>
             </Box>
           </Stack>
-          <Button startIcon={<AddRounded />} onClick={addProgramDrawer.onOpen}>
+          <Button
+            startIcon={<AddRounded />}
+            onClick={addProgramDrawer.onOpen}
+            sx={{ visibility: tabValue === TabIndex.Programs ? 'auto' : 'hidden' }}
+          >
             New
           </Button>
         </Stack>
@@ -300,6 +305,15 @@ export const Programs: FC = () => {
               const isActive =
                 DataState.isReady(programUser) && programUser.activeProgramId === program?.id;
               const isOwner = user.uid === program.authorUserId;
+              const sortedProgramTemplates = [
+                program.daysOfWeek.sunday,
+                program.daysOfWeek.monday,
+                program.daysOfWeek.tuesday,
+                program.daysOfWeek.wednesday,
+                program.daysOfWeek.thursday,
+                program.daysOfWeek.friday,
+                program.daysOfWeek.saturday,
+              ];
               return (
                 <Stack spacing={3}>
                   <Stack
@@ -412,96 +426,121 @@ export const Programs: FC = () => {
                       Make active program
                     </Button>
                   )}
-                  <Stack spacing={1.5}>
-                    {[
-                      program.daysOfWeek.sunday,
-                      program.daysOfWeek.monday,
-                      program.daysOfWeek.tuesday,
-                      program.daysOfWeek.wednesday,
-                      program.daysOfWeek.thursday,
-                      program.daysOfWeek.friday,
-                      program.daysOfWeek.saturday,
-                    ].map((programLogTemplateId: string | null, index, array) => {
-                      const dayOfWeek = Object.keys(Weekdays)[
-                        index
-                      ].toLowerCase() as Lowercase<Weekdays>;
-                      const dayIndex = array.slice(0, index).filter(Boolean).length + 1;
-                      const dayHasTraining = !!programLogTemplateId;
-                      return (
-                        <Box
-                          key={dayOfWeek}
-                          sx={{
-                            padding: theme => theme.spacing(1, 2),
-                            border: theme => `2px solid ${theme.palette.divider}`,
-                            borderRadius: 2,
-                            ...(dayHasTraining
-                              ? { backgroundColor: theme => theme.palette.divider }
-                              : {}),
-                          }}
-                        >
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            justifyContent="center"
-                            spacing={2}
+                  <Stack spacing={2}>
+                    {sortedProgramTemplates.map(
+                      (programLogTemplateId: string | null, index, array) => {
+                        const dayOfWeek = Object.keys(Weekdays)[
+                          index
+                        ].toLowerCase() as Lowercase<Weekdays>;
+                        const dayIndex = array.slice(0, index).filter(Boolean).length + 1;
+                        const dayHasTraining = !!programLogTemplateId;
+                        // Render only existing training days.
+                        // No need for ability to swap workout days when workouts are
+                        // not fixed to a particular day. "Day 1/2/3" much more flexible
+                        // then "Tuesday Training"
+                        if (!dayHasTraining) return null;
+                        return (
+                          <Box
+                            key={dayOfWeek}
+                            sx={{
+                              padding: theme => theme.spacing(1, 2),
+                              border: theme => `2px solid ${theme.palette.divider}`,
+                              borderRadius: 2,
+                            }}
                           >
-                            <Typography
-                              variant="overline"
-                              color={dayHasTraining ? 'textPrimary' : 'textSecondary'}
-                              lineHeight={1}
-                              whiteSpace="nowrap"
-                              mr={dayHasTraining ? -0.2 : undefined}
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              justifyContent="center"
+                              spacing={2}
                             >
-                              {dayHasTraining ? `Day ${dayIndex}` : 'Rest'}
-                            </Typography>
-                            <Stack width="100%">
                               <Typography
-                                fontWeight={200}
-                                fontStyle={dayHasTraining ? 'italic' : void 0}
+                                variant="overline"
+                                color={dayHasTraining ? 'textPrimary' : 'textSecondary'}
+                                lineHeight={1}
+                                whiteSpace="nowrap"
+                                mr={dayHasTraining ? -0.2 : undefined}
                               >
-                                {dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}
+                                {dayHasTraining ? `Day ${dayIndex}` : 'Rest'}
                               </Typography>
-                              <DataStateView data={programMovementsByDayOfWeek}>
-                                {schedule => {
-                                  const movements = schedule[dayOfWeek];
-                                  // Ensure value is not null AND if it is an array, it is not empty
-                                  if (movements === null) {
-                                    return null;
-                                  }
-                                  if (movements.length === 0) {
-                                    // Unreachable because tempaltes with zero movements are supposed
-                                    // to be deleted upon closing of the editor drawer
-                                    // toast.error('Unreachable: Template with zero movements.');
-                                    return null;
-                                  }
-                                  return (
-                                    <Typography
-                                      variant="body2"
-                                      fontWeight={600}
-                                      key={movements.toString()}
-                                    >
-                                      {movements.map(_ => _.name).join(', ')}
-                                    </Typography>
-                                  );
+                              <Stack width="100%">
+                                <DataStateView data={programMovementsByDayOfWeek}>
+                                  {schedule => {
+                                    const movements = schedule[dayOfWeek];
+                                    // Ensure value is not null AND if it is an array, it is not empty
+                                    if (movements === null) {
+                                      return null;
+                                    }
+                                    if (movements.length === 0) {
+                                      // Unreachable because tempaltes with zero movements are supposed
+                                      // to be deleted upon closing of the editor drawer
+                                      // toast.error('Unreachable: Template with zero movements.');
+                                      return null;
+                                    }
+                                    return (
+                                      <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                        key={movements.toString()}
+                                      >
+                                        {movements.map(_ => _.name).join(', ')}
+                                      </Typography>
+                                    );
+                                  }}
+                                </DataStateView>
+                              </Stack>
+                              <IconButton
+                                sx={{ color: theme => theme.palette.primary.main }}
+                                onClick={event => {
+                                  editorDrawer.onOpen(event, {
+                                    templateId: programLogTemplateId,
+                                    dayOfWeek,
+                                    index: dayIndex,
+                                  });
                                 }}
-                              </DataStateView>
+                              >
+                                <EditOutlined />
+                              </IconButton>
                             </Stack>
-                            <IconButton
-                              sx={{ color: theme => theme.palette.primary.main }}
-                              onClick={event => {
-                                editorDrawer.onOpen(event, {
-                                  templateId: programLogTemplateId,
-                                  dayOfWeek,
-                                  index: dayIndex,
-                                });
-                              }}
-                            >
-                              {dayHasTraining ? <EditOutlined /> : <AddRounded />}
-                            </IconButton>
-                          </Stack>
-                        </Box>
-                      );
-                    })}
+                          </Box>
+                        );
+                      }
+                    )}
+
+                    <Box
+                      sx={{
+                        padding: theme => theme.spacing(1, 2),
+                        // border: theme => `1px solid ${theme.palette.divider}`,
+                        // borderRadius: 2,
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        onClick={event => {
+                          // Gets the correct next empty day FOR NEW PROGRAMS
+                          const index = sortedProgramTemplates.findIndex(id => id === null);
+                          const dayOfWeek = SORTED_WEEKDAYS[index].toLowerCase();
+                          editorDrawer.onOpen(event, {
+                            templateId: null,
+                            dayOfWeek: dayOfWeek as Lowercase<Weekdays>,
+                            index: sortedProgramTemplates.filter(Boolean).length + 1,
+                          });
+                        }}
+                      >
+                        <WithVariable value={sortedProgramTemplates.filter(x => !x).length}>
+                          {num => (
+                            <Typography variant="overline" color="textSecondary">
+                              {num} rest days
+                            </Typography>
+                          )}
+                        </WithVariable>
+                        <IconButton sx={{ color: theme => theme.palette.primary.main }}>
+                          <AddCircleOutline />
+                        </IconButton>
+                      </Stack>
+                    </Box>
                   </Stack>
                 </Stack>
               );
@@ -552,14 +591,11 @@ export const Programs: FC = () => {
                 if (!drawerData) {
                   return null;
                 }
-                const { dayOfWeek, templateId, index } = drawerData;
-                const capitalized = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
-                const name = `${capitalized}, Day ${index}`;
-
+                const { templateId, index } = drawerData;
                 return (
                   <Stack spacing={0.5}>
                     <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
-                      {name}
+                      Day {index}
                     </Typography>
                     <Box
                       sx={{
