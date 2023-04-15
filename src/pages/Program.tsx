@@ -12,6 +12,7 @@ import {
   Button,
   Collapse,
   IconButton,
+  Paper,
   Stack,
   SwipeableDrawer,
   Tab,
@@ -426,7 +427,7 @@ export const Programs: FC = () => {
                       Make active program
                     </Button>
                   )}
-                  <Stack spacing={2}>
+                  <Stack spacing={3}>
                     {sortedProgramTemplates.map(
                       (programLogTemplateId: string | null, index, array) => {
                         const dayOfWeek = Object.keys(Weekdays)[
@@ -440,12 +441,13 @@ export const Programs: FC = () => {
                         // then "Tuesday Training"
                         if (!dayHasTraining) return null;
                         return (
-                          <Box
+                          <Paper
                             key={dayOfWeek}
+                            elevation={2}
                             sx={{
-                              padding: theme => theme.spacing(1, 2),
-                              border: theme => `2px solid ${theme.palette.divider}`,
-                              borderRadius: 2,
+                              padding: theme => theme.spacing(2),
+                              // backgroundColor: theme => theme.palette.divider,
+                              // borderRadius: 2,
                             }}
                           >
                             <Stack
@@ -478,13 +480,17 @@ export const Programs: FC = () => {
                                       return null;
                                     }
                                     return (
-                                      <Typography
-                                        variant="body2"
-                                        fontWeight={600}
-                                        key={movements.toString()}
-                                      >
-                                        {movements.map(_ => _.name).join(', ')}
-                                      </Typography>
+                                      <>
+                                        {movements.map(movement => (
+                                          <Typography
+                                            variant="body2"
+                                            key={movement.id}
+                                            fontWeight={600}
+                                          >
+                                            {movement.name}
+                                          </Typography>
+                                        ))}
+                                      </>
                                     );
                                   }}
                                 </DataStateView>
@@ -502,7 +508,7 @@ export const Programs: FC = () => {
                                 <EditOutlined />
                               </IconButton>
                             </Stack>
-                          </Box>
+                          </Paper>
                         );
                       }
                     )}
@@ -510,25 +516,9 @@ export const Programs: FC = () => {
                     <Box
                       sx={{
                         padding: theme => theme.spacing(1, 2),
-                        // border: theme => `1px solid ${theme.palette.divider}`,
-                        // borderRadius: 2,
                       }}
                     >
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        onClick={event => {
-                          // Gets the correct next empty day FOR NEW PROGRAMS
-                          const index = sortedProgramTemplates.findIndex(id => id === null);
-                          const dayOfWeek = SORTED_WEEKDAYS[index].toLowerCase();
-                          editorDrawer.onOpen(event, {
-                            templateId: null,
-                            dayOfWeek: dayOfWeek as Lowercase<Weekdays>,
-                            index: sortedProgramTemplates.filter(Boolean).length + 1,
-                          });
-                        }}
-                      >
+                      <Stack direction="row" alignItems="center" justifyContent="space-between">
                         <WithVariable value={sortedProgramTemplates.filter(x => !x).length}>
                           {num => (
                             <Typography variant="overline" color="textSecondary">
@@ -536,7 +526,19 @@ export const Programs: FC = () => {
                             </Typography>
                           )}
                         </WithVariable>
-                        <IconButton sx={{ color: theme => theme.palette.primary.main }}>
+                        <IconButton
+                          sx={{ color: theme => theme.palette.primary.main }}
+                          onClick={event => {
+                            // Gets the correct next empty day FOR NEW PROGRAMS
+                            const index = sortedProgramTemplates.findIndex(id => id === null);
+                            const dayOfWeek = SORTED_WEEKDAYS[index].toLowerCase();
+                            editorDrawer.onOpen(event, {
+                              templateId: null,
+                              dayOfWeek: dayOfWeek as Lowercase<Weekdays>,
+                              index: sortedProgramTemplates.filter(Boolean).length + 1,
+                            });
+                          }}
+                        >
                           <AddCircleOutline />
                         </IconButton>
                       </Stack>
