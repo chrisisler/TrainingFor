@@ -85,17 +85,25 @@ export const Home: FC = () => {
           programLogTemplateId: fromTemplateId || null,
         });
         // Copy over movements from the program log template to the log
-        if (!!fromTemplateId) {
+        const logIsCreatedFromProgramTemplate = !!fromTemplateId;
+        if (logIsCreatedFromProgramTemplate) {
           const programMovements = await API.ProgramMovements.getAll(
             where('logId', '==', fromTemplateId)
           );
-          const logMovements = programMovements.map(movement => ({
+          const logMovements: Movement[] = programMovements.map(movement => ({
             ...movement,
             logId: newTrainingLog.id,
             sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
             timestamp: Date.now(),
           }));
-          await API.Movements.createMany(logMovements);
+          await Promise.all([
+            // Create movements in the new log
+            API.Movements.createMany(logMovements),
+            // Update lastSeen property for each movement's savedMovement parent
+            logMovements.map(_ =>
+              API.SavedMovements.update({ id: _.savedMovementId, lastSeen: _.timestamp })
+            ),
+          ]);
         }
         navigate(Paths.editor(newTrainingLog.id));
         toast.success(`Created new training page.`);

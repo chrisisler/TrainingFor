@@ -83,7 +83,7 @@ export interface Movement extends FirestoreDocument {
   authorUserId: string;
   /** The ID of the TrainingLog OR ProgramLogTemplate this Movement belongs to. */
   logId: string;
-  /** A reference to the ID of the entity representing all instances of this movement. */
+  /** The ID of the parent/entry representing all instances of this movement. */
   savedMovementId: string;
   /** The name of the SavedMovement this Movement belongs to. */
   savedMovementName: string;
