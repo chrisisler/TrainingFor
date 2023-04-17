@@ -223,7 +223,7 @@ const NotesDrawerView: FC<{
   }
 
   return (
-    <Box sx={{ height: '50vh', overflowY: 'scroll' }}>
+    <Box sx={{ height: '60vh', overflowY: 'scroll' }}>
       <ReactFocusLock returnFocus>
         <InputBase
           multiline
