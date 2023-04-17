@@ -124,48 +124,6 @@ export const Home: FC = () => {
     }
   }, [toast]);
 
-  // Get all savedMovements for the user,
-  // For each savedMovement, get the movements with that savedMovementId, sorted by timestamp desc, take one (limit 1)
-  // set the savedMovement lastSeen as the timestamp of the first movement
-  useEffect(() => {
-    API.SavedMovements.getAll(user.uid)
-      .then(savedMovements => {
-        const promises = savedMovements.map(savedMovement =>
-          API.Movements.getAll(
-            where('savedMovementId', '==', savedMovement.id),
-            orderBy('timestamp', 'desc'),
-            limit(1)
-          )
-        );
-        return Promise.all(promises);
-      })
-      .then(ms => {
-        // per savedmovement
-        const promises = ms.flatMap(_ms => {
-          // if not latest movement, do nothing
-          if (_ms.length === 0) return [];
-          // if latest movement exists, take timestamp and set it as the api.savedmovement.lastseen value
-          const head = _ms[0];
-          if (!head) return [];
-          const lastSeen = head.timestamp;
-          if (!lastSeen) return [];
-          return API.SavedMovements.update({
-            id: head.savedMovementId,
-            lastSeen,
-          });
-        });
-        return Promise.all(promises);
-      })
-      .then(xs => {
-        console.log('xs', xs);
-        toast.success('savedMovements updated! :)');
-      })
-      .catch(err => {
-        toast.error(err.message);
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <Stack
       spacing={2}
