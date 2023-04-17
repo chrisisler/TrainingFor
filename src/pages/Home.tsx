@@ -20,7 +20,7 @@ import {
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { limit, orderBy, where } from 'firebase/firestore';
-import { FC, useCallback, useEffect } from 'react';
+import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate } from '../api';
