@@ -885,7 +885,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   <>
                     {matches.length > 0 && (
                       <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
-                        <Stack spacing={1.25} sx={{ maxHeight: '28vh', overflowY: 'scroll' }}>
+                        <Stack spacing={1.25} sx={{ maxHeight: '35vh', overflowY: 'scroll' }}>
                           {matches.map((match: SavedMovement) => (
                             <Box key={match.id} display="flex" justifyContent="space-between">
                               <Typography
