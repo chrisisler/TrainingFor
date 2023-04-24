@@ -62,6 +62,8 @@ import {
   useToast,
 } from '../util';
 
+const DIFF_CHAR = 'to';
+
 /**
  * The main page of writing movements to training entries.
  */
@@ -563,67 +565,15 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       {movement.sets.length > 0 && (
                         <Stack
                           alignItems="end"
-                          sx={{ margin: theme => theme.spacing(-0.5, -0.5, 0, -0.5) }}
+                          sx={{ margin: theme => theme.spacing(-0.5, -0.5, 0, 0) }}
                         >
-                          <MovementUnitSelect
-                            value={movement.weightUnit}
-                            onChange={async event => {
-                              try {
-                                const newWeightUnit = event.target.value as MovementWeightUnit;
-                                // Update field on the movement
-                                const updated: Movement = await Movements.update({
-                                  id: movement.id,
-                                  weightUnit: newWeightUnit,
-                                });
-                                // Update local state
-                                const copy = movements.slice();
-                                copy[movementIndex] = updated;
-                                setMovements(copy);
-                              } catch (error) {
-                                toast.error(error.message);
-                              }
-                            }}
-                          >
-                            <MenuItem value={MovementWeightUnit.Pounds}>
-                              {MovementWeightUnit.Pounds}
-                            </MenuItem>
-                            <MenuItem value={MovementWeightUnit.Kilograms}>
-                              {MovementWeightUnit.Kilograms}
-                            </MenuItem>
-                          </MovementUnitSelect>
+                          <Typography variant="overline" alignSelf="end">
+                            {movement.weightUnit}
+                          </Typography>
 
-                          <MovementUnitSelect
-                            value={movement.repCountUnit}
-                            onChange={async event => {
-                              try {
-                                const newRepCountUnit = event.target.value as MovementRepCountUnit;
-                                // Update field on the movement
-                                const updated: Movement = await Movements.update({
-                                  id: movement.id,
-                                  repCountUnit: newRepCountUnit,
-                                });
-                                // Update local state
-                                const copy = movements.slice();
-                                copy[movementIndex] = updated;
-                                setMovements(copy);
-                              } catch (error) {
-                                toast.error(error.message);
-                              }
-                            }}
-                          >
-                            <MenuItem value={MovementRepCountUnit.Reps}>
-                              {MovementRepCountUnit.Reps}
-                            </MenuItem>
-                            <MenuItem value={MovementRepCountUnit.Seconds}>
-                              {MovementRepCountUnit.Seconds}
-                            </MenuItem>
-                            <MenuItem value={MovementRepCountUnit.Minutes}>
-                              {MovementRepCountUnit.Minutes}
-                            </MenuItem>
-                            <MenuItem value={MovementRepCountUnit.Meters}>
-                              {MovementRepCountUnit.Meters}
-                            </MenuItem>
-                          </MovementUnitSelect>
+                          <Typography variant="overline" alignSelf="end">
+                            {MovementRepCountUnit[movement.repCountUnit]}
+                          </Typography>
                         </Stack>
                       )}
 
@@ -668,10 +618,11 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                 );
                 if (allSetsDone) {
                   setConfetti(true);
-                  toast.success('Good shit! I mean, congrations!!');
+                  const word = Math.random() > 0.5 ? 'effort' : 's**t';
+                  toast.success(`Good ${word}! I mean, congrations!!`);
                   return;
                 }
-                toast.info('Must complete all sets finish.');
+                toast.info('Must complete all sets to finish.');
               }}
             >
               Finish
@@ -715,7 +666,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
               >
                 <Stack spacing={3} sx={{ padding: theme => theme.spacing(2, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography variant="overline">
+                    <Typography variant="overline" sx={{ fontStyle: 'italic' }}>
                       <Collapse
                         in={newSetRepCountMin > 0}
                         onClick={() => {
@@ -732,12 +683,70 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   </Box>
                   <Stack direction="row">
                     <Stack spacing={3} marginTop={0.8} marginRight={2}>
-                      <Typography variant="overline" alignSelf="end">
-                        {movement.weightUnit}
-                      </Typography>
-                      <Typography variant="overline" alignSelf="end">
-                        {MovementRepCountUnit[movement.repCountUnit]}
-                      </Typography>
+                      <MovementUnitSelect
+                        value={movement.weightUnit}
+                        onChange={async event => {
+                          try {
+                            const newWeightUnit = event.target.value as MovementWeightUnit;
+                            // Update field on the movement
+                            const updated: Movement = await Movements.update({
+                              id: movement.id,
+                              weightUnit: newWeightUnit,
+                            });
+                            if (!DataState.isReady(movements)) {
+                              return;
+                            }
+                            // Update local state
+                            const copy = movements.slice();
+                            copy[copy.indexOf(movement)] = updated;
+                            setMovements(copy);
+                          } catch (error) {
+                            toast.error(error.message);
+                          }
+                        }}
+                      >
+                        <MenuItem value={MovementWeightUnit.Pounds}>
+                          {MovementWeightUnit.Pounds}
+                        </MenuItem>
+                        <MenuItem value={MovementWeightUnit.Kilograms}>
+                          {MovementWeightUnit.Kilograms}
+                        </MenuItem>
+                      </MovementUnitSelect>
+                      <MovementUnitSelect
+                        value={movement.repCountUnit}
+                        onChange={async event => {
+                          try {
+                            const newRepCountUnit = event.target.value as MovementRepCountUnit;
+                            // Update field on the movement
+                            const updated: Movement = await Movements.update({
+                              id: movement.id,
+                              repCountUnit: newRepCountUnit,
+                            });
+                            if (!DataState.isReady(movements)) {
+                              return;
+                            }
+                            // Update local state
+                            const copy = movements.slice();
+                            copy[copy.indexOf(movement)] = updated;
+                            setMovements(copy);
+                          } catch (error) {
+                            toast.error(error.message);
+                          }
+                        }}
+                      >
+                        <MenuItem value={MovementRepCountUnit.Reps}>
+                          {MovementRepCountUnit.Reps}
+                        </MenuItem>
+                        <MenuItem value={MovementRepCountUnit.Seconds}>
+                          {MovementRepCountUnit.Seconds}
+                        </MenuItem>
+                        <MenuItem value={MovementRepCountUnit.Minutes}>
+                          {MovementRepCountUnit.Minutes}
+                        </MenuItem>
+                        <MenuItem value={MovementRepCountUnit.Meters}>
+                          {MovementRepCountUnit.Meters}
+                        </MenuItem>
+                      </MovementUnitSelect>
                     </Stack>
                     <Stack spacing={3}>
                       <TextField
@@ -786,8 +795,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           InputProps={{
                             sx: { fontSize: '1.5rem', width: '75px' },
                             startAdornment: (
-                              <Typography variant="body1" color="textSecondary" ml={-3} mr={3}>
-                                -
+                              <Typography variant="body2" color="textSecondary" ml={-3} mr={3}>
+                                {DIFF_CHAR}
                               </Typography>
                             ),
                           }}
@@ -1187,6 +1196,7 @@ const MovementSetView: FC<{
 }> = ({ movementSet, movement, updateSets, index }) => {
   const resizeWeightInput = useResizableInputRef();
   const theme = useTheme();
+  const toast = useToast();
 
   const [weight, setWeight] = useState(movementSet.weight);
   const [confetti, setConfetti] = useState(false);
@@ -1223,6 +1233,7 @@ const MovementSetView: FC<{
       if (isLastSet && Math.random() > 0.66) {
         setConfetti(true);
       }
+      toast.info('Tap the pencil icon to add another set.');
     } else if (repCountActual === 0) {
       // Last click: Completed status -> Unattempted status && reset reps achieved
       movement.sets[index].status = MovementSetStatus.Unattempted;
@@ -1232,7 +1243,7 @@ const MovementSetView: FC<{
       movement.sets[index].repCountActual -= 1;
     }
     updateSets([...movement.sets]);
-  }, [index, movement.sets, movementSet, updateSets]);
+  }, [index, movement.sets, movementSet, updateSets, toast]);
 
   return (
     <Stack>
@@ -1292,9 +1303,15 @@ const MovementSetView: FC<{
       >
         {typeof movementSet.repCountMaxExpected === 'undefined' ||
         setIsCompleted ||
-        movementSet.repCountExpected === movementSet.repCountMaxExpected
-          ? movementSet.repCountActual
-          : `${movementSet.repCountExpected}-${movementSet.repCountMaxExpected}`}
+        movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+          movementSet.repCountActual
+        ) : (
+          <>
+            <Typography>{movementSet.repCountExpected}</Typography>
+            <Typography fontSize="0.8rem" ml={0.5} mr={0.5}>{DIFF_CHAR}</Typography>
+            <Typography>{movementSet.repCountMaxExpected}</Typography>
+          </>
+        )}
       </IconButton>
       {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
     </Stack>
