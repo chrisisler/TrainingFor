@@ -269,6 +269,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const [newSetRepCountMax, setNewSetRepCountMax] = useState(0);
   /** State for re-ordering the list of movements. Holds the Movement to swap places with. */
   const [movementOrderSwap, setMovementOrderSwap] = useState<null | Movement>(null);
+  const [confetti, setConfetti] = useState(false);
 
   /** The active collection, based on the usage of this component. */
   const Movements = useMemo(
@@ -659,6 +660,23 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
+            <Button
+              fullWidth
+              onClick={() => {
+                const allSetsDone = movements.every(m =>
+                  m.sets.every(s => s.status === MovementSetStatus.Completed)
+                );
+                if (allSetsDone) {
+                  setConfetti(true);
+                  toast.success('Good shit! I mean, congrations!!');
+                  return;
+                }
+                toast.info('Must complete all sets finish.');
+              }}
+            >
+              Finish
+            </Button>
+            {confetti && <ConfettiExplosion particleCount={150} width={500} force={1} />}
             <Button fullWidth onClick={addMovementDrawer.onOpen}>
               <PlaylistAddRounded sx={{ color: 'text.secondary' }} />
             </Button>
