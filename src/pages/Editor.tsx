@@ -1308,7 +1308,9 @@ const MovementSetView: FC<{
         ) : (
           <>
             <Typography>{movementSet.repCountExpected}</Typography>
-            <Typography fontSize="0.8rem" ml={0.5} mr={0.5}>{DIFF_CHAR}</Typography>
+            <Typography fontSize="0.8rem" ml={0.5} mr={0.5}>
+              {DIFF_CHAR}
+            </Typography>
             <Typography>{movementSet.repCountMaxExpected}</Typography>
           </>
         )}
@@ -1333,11 +1335,11 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
       },
     }}
     sx={{
-      color: theme => theme.palette.text.secondary,
       width: '100%',
       textAlign: 'right',
       textTransform: 'uppercase',
-      border: 'none',
+      border: theme => `1px solid ${theme.palette.divider}`,
+      borderRadius: 1,
       fontSize: '0.8rem',
     }}
     IconComponent={() => null}
