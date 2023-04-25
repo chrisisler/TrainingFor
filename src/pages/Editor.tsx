@@ -1220,7 +1220,7 @@ const MovementSetView: FC<{
   );
 
   const decrementRepCount = useCallback(() => {
-    const { repCountActual, repCountExpected, status, repCountMaxExpected } = movementSet;
+    const { repCountActual, status, repCountMaxExpected } = movementSet;
     setConfetti(false);
     // First click: Unattempted status -> Completed status
     if (repCountActual === repCountMaxExpected && status === MovementSetStatus.Unattempted) {
@@ -1233,11 +1233,13 @@ const MovementSetView: FC<{
       if (isLastSet && Math.random() > 0.66) {
         setConfetti(true);
       }
-      toast.info('Tap the pencil icon to add another set.');
+      if (isLastSet) {
+        toast.info('Tap the pencil icon to add another set.');
+      }
     } else if (repCountActual === 0) {
       // Last click: Completed status -> Unattempted status && reset reps achieved
       movement.sets[index].status = MovementSetStatus.Unattempted;
-      movement.sets[index].repCountActual = repCountExpected;
+      movement.sets[index].repCountActual = repCountMaxExpected;
     } else if (status === MovementSetStatus.Completed) {
       // Not first or last click: Decrement number of successful reps
       movement.sets[index].repCountActual -= 1;
