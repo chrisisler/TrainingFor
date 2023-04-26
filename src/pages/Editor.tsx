@@ -696,6 +696,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                             if (!DataState.isReady(movements)) {
                               return;
                             }
+                            addSetMenu.setData(updated);
                             // Update local state
                             const copy = movements.slice();
                             copy[copy.indexOf(movement)] = updated;
@@ -725,6 +726,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                             if (!DataState.isReady(movements)) {
                               return;
                             }
+                            addSetMenu.setData(updated);
                             // Update local state
                             const copy = movements.slice();
                             copy[copy.indexOf(movement)] = updated;
@@ -1333,7 +1335,7 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
     variant="standard"
     SelectDisplayProps={{
       style: {
-        padding: '8px',
+        padding: '8px 11px',
       },
     }}
     sx={{
