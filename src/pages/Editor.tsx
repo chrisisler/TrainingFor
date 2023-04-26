@@ -674,7 +674,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           addSetMenu.onClose();
                         }}
                       >
-                        Tap anywhere to <b>add set {movement.sets.length + 1}</b>
+                        Tap outside to <b>add set {movement.sets.length + 1}</b>
                       </Collapse>
                       <Collapse in={newSetRepCountMin === 0}>
                         Add Set <b>{movement.sets.length + 1}</b>
