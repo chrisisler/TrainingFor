@@ -1233,7 +1233,8 @@ const MovementSetView: FC<{
       // intervals, a method that has been determined to yield the greatest
       // effort from the subject. The subject does not receive a reward each
       // time they perform a desired behavior but at seemingly random intervals.
-      const isLastSet = movement.sets.length === index + 1;
+      const isLastSet =
+        movement.sets.filter(s => s.status === MovementSetStatus.Completed).length === index + 1;
       if (isLastSet && Math.random() > 0.66) {
         setConfetti(true);
       }
