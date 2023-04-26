@@ -26,7 +26,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
 import { API } from '../api';
-import { WithVariable } from '../components';
+import { NotesDrawer, WithVariable } from '../components';
 import { useUser } from '../context';
 import { Movement, Program } from '../types';
 import {
@@ -54,6 +54,7 @@ export const Programs: FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const addProgramDrawer = useMaterialMenu();
+  const programNoteDrawer = useMaterialMenu();
   const editorDrawer = useDrawer<{
     templateId: null | string;
     dayOfWeek: Lowercase<Weekdays>;
@@ -211,13 +212,16 @@ export const Programs: FC = () => {
               </Tabs>
             </Box>
           </Stack>
-          <Button
-            startIcon={<AddRounded />}
-            onClick={addProgramDrawer.onOpen}
-            sx={{ visibility: tabValue === TabIndex.Programs ? 'auto' : 'hidden' }}
-          >
-            New
-          </Button>
+          {tabValue === TabIndex.Programs && (
+            <Button startIcon={<AddRounded />} onClick={addProgramDrawer.onOpen}>
+              New
+            </Button>
+          )}
+          {tabValue === TabIndex.Schedule && viewedProgram?.authorUserId === user.uid && (
+            <Button variant="outlined" onClick={programNoteDrawer.onOpen}>
+              Note
+            </Button>
+          )}
         </Stack>
 
         <TabPanel value={tabValue} index={TabIndex.Programs}>
@@ -553,6 +557,24 @@ export const Programs: FC = () => {
 
       {/** ----------------------------- DRAWERS ----------------------------- */}
 
+      <SwipeableDrawer {...programNoteDrawer} anchor="bottom">
+        <Collapse in={programNoteDrawer.open}>
+          {!!viewedProgram && (
+            <NotesDrawer
+              note={viewedProgram?.note || ''}
+              onBlur={async (next: string) => {
+                try {
+                  const updated = await API.Programs.update({ id: viewedProgram.id, note: next });
+                  setViewedProgram(updated);
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+            />
+          )}
+        </Collapse>
+      </SwipeableDrawer>
+
       <SwipeableDrawer
         {...editorDrawer.props()}
         anchor="bottom"
@@ -652,6 +674,7 @@ export const Programs: FC = () => {
                   name: newProgramName,
                   authorUserId: user.uid,
                   timestamp: Date.now(),
+                  note: '',
                   daysOfWeek: {
                     monday: null,
                     tuesday: null,

@@ -20,7 +20,6 @@ import {
   Collapse,
   Grid,
   IconButton,
-  InputBase,
   Menu,
   MenuItem,
   Select,
@@ -39,7 +38,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
-import { WithVariable } from '../components';
+import { NotesDrawer, WithVariable } from '../components';
 import { useUser } from '../context';
 import {
   Movement,
@@ -206,48 +205,24 @@ export const Editor: FC = () => {
 
       <SwipeableDrawer {...notesDrawer.props()} anchor="bottom">
         <Collapse in={notesDrawer.open}>
-          <NotesDrawerView log={log} setLog={setLog} />
+          {DataState.isReady(log) && (
+            <NotesDrawer
+              note={log?.note || ''}
+              onBlur={async (next: string) => {
+                try {
+                  const updated = await API.TrainingLogs.update({
+                    id: log.id,
+                    note: next,
+                  });
+                  setLog(updated);
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+            />
+          )}
         </Collapse>
       </SwipeableDrawer>
-    </Box>
-  );
-};
-
-const NotesDrawerView: FC<{
-  log: DataState<TrainingLog>;
-  setLog(log: TrainingLog): void;
-}> = ({ log, setLog }) => {
-  const [logNote, setLogNote] = useState(DataState.isReady(log) ? log?.note : '');
-  const toast = useToast();
-
-  if (!DataState.isReady(log)) {
-    return null;
-  }
-
-  return (
-    <Box sx={{ height: '60vh', overflowY: 'scroll' }}>
-      <ReactFocusLock returnFocus>
-        <InputBase
-          multiline
-          fullWidth
-          minRows={4}
-          placeholder="Note"
-          value={logNote}
-          onChange={event => setLogNote(event.target.value)}
-          onBlur={async function updateLogNote() {
-            if (DataState.isReady(log) && log.note === logNote) return;
-            try {
-              const updated = await API.TrainingLogs.update({
-                id: log.id,
-                note: logNote,
-              });
-              setLog(updated);
-            } catch (error) {
-              toast.error(error.message);
-            }
-          }}
-        />
-      </ReactFocusLock>
     </Box>
   );
 };

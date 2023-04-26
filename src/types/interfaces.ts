@@ -16,6 +16,7 @@ export interface Program extends FirestoreDocument {
   authorUserId: string;
   readonly daysOfWeek: Record<Lowercase<Weekdays>, null | ProgramLogTemplate['id']>;
   timestamp: number;
+  note: string;
 }
 
 export interface ProgramLogTemplate extends FirestoreDocument {
