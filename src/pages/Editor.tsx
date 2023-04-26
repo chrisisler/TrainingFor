@@ -64,7 +64,7 @@ import {
 const DIFF_CHAR = 'to';
 
 /**
- * The main page of writing movements to training entries.
+ * Wrapper page for editing training entries.
  */
 export const Editor: FC = () => {
   const navigate = useNavigate();
@@ -72,6 +72,7 @@ export const Editor: FC = () => {
   const { logId } = useParams<{ logId: string }>();
   const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
   const notesDrawer = useDrawer<TrainingLog>();
+  const [programUser] = useProgramUser();
 
   const [log, setLog] = useDataState(async () => {
     if (!logId) return DataState.Empty;
@@ -79,7 +80,30 @@ export const Editor: FC = () => {
     return log;
   }, [logId]);
 
-  const [programUser] = useProgramUser();
+  const [movements] = useDataState<Movement[]>(async () => {
+    if (!logDrawer.open || !logId) {
+      return DataState.Empty;
+    }
+    return API.Movements.getAll(where('logId', '==', logId));
+  }, [logDrawer.open, logId]);
+
+  const [confetti, setConfetti] = useState(false);
+
+  const finishTrainingLog = useCallback(async () => {
+    if (!logId) {
+      toast.error('Log not found');
+      return;
+    }
+    try {
+      const updated = await API.TrainingLogs.update({
+        id: logId,
+        isFinished: true,
+      });
+      setLog(updated);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }, [logId, toast, setLog]);
 
   return (
     <Box
@@ -178,6 +202,28 @@ export const Editor: FC = () => {
             </Grid>
             <Grid item xs={4}>
               <Button
+                variant="outlined"
+                onClick={async () => {
+                  if (!DataState.isReady(movements)) return;
+                  const allSetsDone = movements.every(m =>
+                    m.sets.every(s => s.status === MovementSetStatus.Completed)
+                  );
+                  if (allSetsDone) {
+                    await finishTrainingLog();
+                    setConfetti(true);
+                    const word = Math.random() > 0.5 ? 'effort' : 's**t';
+                    toast.success(`Good ${word}! I mean, congrations!!`);
+                    return;
+                  }
+                  toast.info('Must complete all grey sets to finish.');
+                }}
+              >
+                Finish
+              </Button>
+              {confetti && <ConfettiExplosion particleCount={150} width={500} force={1} />}
+            </Grid>
+            <Grid item xs={4}>
+              <Button
                 color="error"
                 variant="outlined"
                 onClick={async () => {
@@ -246,7 +292,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const [newSetRepCountMax, setNewSetRepCountMax] = useState(0);
   /** State for re-ordering the list of movements. Holds the Movement to swap places with. */
   const [movementOrderSwap, setMovementOrderSwap] = useState<null | Movement>(null);
-  const [confetti, setConfetti] = useState(false);
 
   /** The active collection, based on the usage of this component. */
   const Movements = useMemo(
@@ -585,24 +630,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button
-              fullWidth
-              onClick={() => {
-                const allSetsDone = movements.every(m =>
-                  m.sets.every(s => s.status === MovementSetStatus.Completed)
-                );
-                if (allSetsDone) {
-                  setConfetti(true);
-                  const word = Math.random() > 0.5 ? 'effort' : 's**t';
-                  toast.success(`Good ${word}! I mean, congrations!!`);
-                  return;
-                }
-                toast.info('Must complete all sets to finish.');
-              }}
-            >
-              Finish
-            </Button>
-            {confetti && <ConfettiExplosion particleCount={150} width={500} force={1} />}
             <Button fullWidth onClick={addMovementDrawer.onOpen}>
               <PlaylistAddRounded sx={{ color: 'text.secondary' }} />
             </Button>

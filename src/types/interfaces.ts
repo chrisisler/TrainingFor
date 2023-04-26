@@ -38,6 +38,10 @@ export interface TrainingLog extends FirestoreDocument {
   programId: string | null;
   programLogTemplateId: string | null;
   note: string;
+  /**
+   * Flag for whether the entry is formally finished.
+   */
+  isFinished: boolean;
 }
 
 /**
