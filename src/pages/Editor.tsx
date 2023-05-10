@@ -22,6 +22,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Paper,
   Select,
   SelectProps,
   Stack,
@@ -506,7 +507,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       <Stack spacing={2}>
         <DataStateView data={movements}>
           {movements => (
-            <Stack spacing={2}>
+            <Stack spacing={3}>
               {movements.map((movement: Movement, movementIndex) => (
                 <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
@@ -579,13 +580,32 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       </IconButton>
                     </Stack>
                   </Box>
+                  {/** queues display */}
+                  {false && (
+                    <Paper
+                      elevation={1}
+                      sx={{
+                        marginBottom: theme => theme.spacing(1),
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          margin: theme => theme.spacing(1, 2),
+                        }}
+                      >
+                        Look at the floor. Pin the feet. Squeeze the elbows together.
+                      </Typography>
+                    </Paper>
+                  )}
                   <Box width="100%" sx={{ overflowX: 'scroll' }}>
                     <Stack direction="row" spacing={2.0}>
                       {/** Stack of unit control text display */}
                       {movement.sets.length > 0 && (
                         <Stack
                           alignItems="end"
-                          sx={{ margin: theme => theme.spacing(-0.5, -0.5, 0, 0) }}
+                          sx={{ margin: theme => theme.spacing(0, -0.5, 0, 0) }}
                         >
                           <Typography variant="overline" alignSelf="end">
                             {movement.weightUnit}
@@ -1234,7 +1254,8 @@ const MovementSetView: FC<{
       // effort from the subject. The subject does not receive a reward each
       // time they perform a desired behavior but at seemingly random intervals.
       const isLastSet =
-        movement.sets.filter(s => s.status === MovementSetStatus.Completed).length === index + 1;
+        movement.sets.filter(s => s.status === MovementSetStatus.Completed).length ===
+          movement.sets.length && movement.sets.length === index + 1;
       if (isLastSet && Math.random() > 0.66) {
         setConfetti(true);
       }
