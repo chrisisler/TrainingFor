@@ -581,7 +581,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   </Box>
                   <Box width="100%" sx={{ overflowX: 'scroll' }}>
                     <Stack direction="row" spacing={2.0}>
-                      {/** Stack of unit control text buttons */}
+                      {/** Stack of unit control text display */}
                       {movement.sets.length > 0 && (
                         <Stack
                           alignItems="end"
@@ -1281,7 +1281,7 @@ const MovementSetView: FC<{
           color:
             weight === 0 || movementSet.status === MovementSetStatus.Unattempted
               ? theme.palette.text.secondary
-              : theme.palette.text.primary,
+              : theme.palette.success.light,
           backgroundColor: 'transparent',
           width: '3ch',
           border: 'none',
