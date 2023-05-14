@@ -937,35 +937,50 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                     {matches.length > 0 && (
                       <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
                         <Stack spacing={1.25} sx={{ maxHeight: '35vh', overflowY: 'scroll' }}>
-                          {matches.map((match: SavedMovement) => (
-                            <Box key={match.id} display="flex" justifyContent="space-between">
-                              <Typography
-                                sx={{
-                                  padding: theme => theme.spacing(0.5, 1.25),
-                                  borderRadius: 1,
-                                  border: '1px solid lightgrey',
-                                }}
-                                onClick={() => addMovementFromExistingSavedMovement(match)}
-                              >
-                                {match.name}
-                              </Typography>
-                              <Box sx={{ whiteSpace: 'nowrap' }}>
-                                <Typography variant="caption" color="textSecondary">
-                                  {formatDistanceToNowStrict(new Date(match.lastSeen), {
-                                    addSuffix: true,
-                                  })}
-                                </Typography>
-                                <IconButton
-                                  sx={{ color: theme => theme.palette.text.secondary }}
-                                  onClick={event => {
-                                    savedMovementDrawer.onOpen(event, match);
+                          {matches.map((match: SavedMovement) => {
+                            const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
+                              addSuffix: true,
+                            });
+                            const isMoreThan72HoursAgo =
+                              new Date().getTime() - new Date(match.lastSeen).getTime() >
+                              72 * 60 * 60 * 1000;
+                            return (
+                              <Box key={match.id} display="flex" justifyContent="space-between">
+                                <Typography
+                                  sx={{
+                                    padding: theme => theme.spacing(0.5, 1.25),
+                                    borderRadius: 1,
+                                    border: '1px solid lightgrey',
                                   }}
+                                  onClick={() => addMovementFromExistingSavedMovement(match)}
                                 >
-                                  <MoreHoriz fontSize="small" />
-                                </IconButton>
+                                  {match.name}
+                                </Typography>
+                                <Box sx={{ whiteSpace: 'nowrap' }}>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: theme =>
+                                        isMoreThan72HoursAgo
+                                          ? theme.palette.text.secondary
+                                          : theme.palette.success.main,
+                                        fontWeight: isMoreThan72HoursAgo ? 'normal' : 'bold',
+                                    }}
+                                  >
+                                    {distance}
+                                  </Typography>
+                                  <IconButton
+                                    sx={{ color: theme => theme.palette.text.secondary }}
+                                    onClick={event => {
+                                      savedMovementDrawer.onOpen(event, match);
+                                    }}
+                                  >
+                                    <MoreHoriz fontSize="small" />
+                                  </IconButton>
+                                </Box>
                               </Box>
-                            </Box>
-                          ))}
+                            );
+                          })}
                         </Stack>
                       </Collapse>
                     )}
