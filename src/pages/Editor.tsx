@@ -120,7 +120,10 @@ export const Editor: FC = () => {
           {([log, programUser]) => {
             if (log.programId === programUser.activeProgramId) {
               return (
-                <Typography variant="overline" color="textSecondary">
+                <Typography
+                  variant="overline"
+                  sx={{ color: theme => theme.palette.success.main, fontStyle: 'italic' }}
+                >
                   {programUser.activeProgramName}
                 </Typography>
               );
@@ -964,7 +967,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                                         isMoreThan72HoursAgo
                                           ? theme.palette.text.secondary
                                           : theme.palette.success.main,
-                                        fontWeight: isMoreThan72HoursAgo ? 'normal' : 'bold',
+                                      fontWeight: isMoreThan72HoursAgo ? 'normal' : 'bold',
                                     }}
                                   >
                                     {distance}
