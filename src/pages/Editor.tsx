@@ -965,9 +965,9 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                                     sx={{
                                       color: theme =>
                                         isMoreThan72HoursAgo
-                                          ? theme.palette.text.secondary
-                                          : theme.palette.success.main,
-                                      fontWeight: isMoreThan72HoursAgo ? 'normal' : 'bold',
+                                          ? theme.palette.success.main
+                                          : theme.palette.text.secondary,
+                                      fontWeight: isMoreThan72HoursAgo ? 'bold' : 'normal',
                                     }}
                                   >
                                     {distance}
