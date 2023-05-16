@@ -944,8 +944,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                             const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
                               addSuffix: true,
                             });
-                            const isMoreThan72HoursAgo =
-                              new Date().getTime() - new Date(match.lastSeen).getTime() >
+                            const isLessThan72HoursAgo =
+                              new Date().getTime() - new Date(match.lastSeen).getTime() <
                               72 * 60 * 60 * 1000;
                             return (
                               <Box key={match.id} display="flex" justifyContent="space-between">
@@ -964,10 +964,11 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                                     variant="caption"
                                     sx={{
                                       color: theme =>
-                                        isMoreThan72HoursAgo
-                                          ? theme.palette.success.main
-                                          : theme.palette.text.secondary,
-                                      fontWeight: isMoreThan72HoursAgo ? 'bold' : 'normal',
+                                        isLessThan72HoursAgo
+                                          ? theme.palette.text.secondary
+                                          : theme.palette.success.main,
+                                      // fontWeight: isLessThan72HoursAgo ? 'normal' : 'bold',
+                                      filter: 'grayscale(30%)',
                                     }}
                                   >
                                     {distance}
