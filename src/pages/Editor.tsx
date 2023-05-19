@@ -1,6 +1,7 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
+  CheckRounded,
   Close,
   CloseRounded,
   DeleteForeverRounded,
@@ -1239,7 +1240,6 @@ const MovementSetView: FC<{
 }> = ({ movementSet, movement, updateSets, index }) => {
   const resizeWeightInput = useResizableInputRef();
   const theme = useTheme();
-  const toast = useToast();
 
   const [weight, setWeight] = useState(movementSet.weight);
   const [confetti, setConfetti] = useState(false);
@@ -1250,47 +1250,17 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.06),
+            backgroundColor: alpha(theme.palette.success.light, 0.07),
             // Avoid jarring when switching between Unattempted and Completed
             borderBottom: `2px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,
           }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.03),
+            backgroundColor: alpha(theme.palette.divider, 0.04),
             borderBottom: `2px solid ${theme.palette.divider}`,
           },
     [movementSet.status, theme]
   );
-
-  const decrementRepCount = useCallback(() => {
-    const { repCountActual, status, repCountMaxExpected } = movementSet;
-    setConfetti(false);
-    // First click: Unattempted status -> Completed status
-    if (repCountActual === repCountMaxExpected && status === MovementSetStatus.Unattempted) {
-      movement.sets[index].status = MovementSetStatus.Completed;
-      // Intermittent reinforcement is the delivery of a reward at irregular
-      // intervals, a method that has been determined to yield the greatest
-      // effort from the subject. The subject does not receive a reward each
-      // time they perform a desired behavior but at seemingly random intervals.
-      const isLastSet =
-        movement.sets.filter(s => s.status === MovementSetStatus.Completed).length ===
-          movement.sets.length && movement.sets.length === index + 1;
-      if (isLastSet && Math.random() > 0.66) {
-        setConfetti(true);
-      }
-      if (isLastSet) {
-        toast.info('Tap the pencil icon to add another set.');
-      }
-    } else if (repCountActual === 0) {
-      // Last click: Completed status -> Unattempted status && reset reps achieved
-      movement.sets[index].status = MovementSetStatus.Unattempted;
-      movement.sets[index].repCountActual = repCountMaxExpected;
-    } else if (status === MovementSetStatus.Completed) {
-      // Not first or last click: Decrement number of successful reps
-      movement.sets[index].repCountActual -= 1;
-    }
-    updateSets([...movement.sets]);
-  }, [index, movement.sets, movementSet, updateSets, toast]);
 
   return (
     <Stack>
@@ -1336,32 +1306,61 @@ const MovementSetView: FC<{
         }}
       />
 
-      <IconButton
+      <Select
+        // Handles dynamic styling based on repCount button for a movement set
+        style={dynamicRepCountButtonStyle}
         sx={{
-          paddingY: theme => theme.spacing(1),
-          paddingX: theme =>
-            theme.spacing(movementSet.repCountActual.toString().length > 1 ? 1.33 : 2),
           borderRadius: 1,
           whiteSpace: 'nowrap',
         }}
-        // Handles dynamic styling based on repCount button for a movement set
-        style={dynamicRepCountButtonStyle}
-        onClick={decrementRepCount}
+        disableUnderline
+        variant="standard"
+        SelectDisplayProps={{
+          style: {
+            padding: `8px ${
+              setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '8px' : '11px'
+            }`,
+            textAlign: 'center',
+            fontSize: '1.2rem',
+            lineHeight: 1.4,
+          },
+        }}
+        IconComponent={() => null}
+        value={movementSet.repCountActual}
+        onChange={async event => {
+          const { repCountMaxExpected } = movementSet;
+          const value = event.target.value;
+          if (Number.isNaN(+value) && value === 'RESET') {
+            // reset to OG value
+            movement.sets[index].status = MovementSetStatus.Unattempted;
+            movement.sets[index].repCountActual = repCountMaxExpected;
+          } else {
+            // update to new value
+            movement.sets[index].repCountActual = +value;
+            movement.sets[index].status = MovementSetStatus.Completed;
+            if (Math.random() > 0.66) {
+              setConfetti(true);
+            }
+          }
+          updateSets([...movement.sets]);
+        }}
+        renderValue={value => value.toString()}
       >
-        {typeof movementSet.repCountMaxExpected === 'undefined' ||
-        setIsCompleted ||
-        movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
-          movementSet.repCountActual
-        ) : (
-          <>
-            <Typography>{movementSet.repCountExpected}</Typography>
-            <Typography fontSize="0.8rem" ml={0.5} mr={0.5}>
-              {DIFF_CHAR}
-            </Typography>
-            <Typography>{movementSet.repCountMaxExpected}</Typography>
-          </>
-        )}
-      </IconButton>
+        {/** add icon to menu item*/}
+        <MenuItem value={'RESET'}>
+          {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()} {movementSet.repCountMaxExpected}
+        </MenuItem>
+        {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected */}
+        {Array.from({ length: movementSet.repCountMaxExpected })
+          .map((_, i) => i)
+          .reverse()
+          .map(i => (
+            <MenuItem value={i} key={i} sx={{ justifyContent: 'space-between' }}>
+              <CheckRounded sx={{ opacity: 0.5, color: theme => theme.palette.success.main }} />
+              {i}
+            </MenuItem>
+          ))}
+      </Select>
       {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
     </Stack>
   );
