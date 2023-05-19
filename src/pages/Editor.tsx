@@ -690,9 +690,12 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                   return;
                 }}
               >
-                <Stack spacing={3} sx={{ padding: theme => theme.spacing(2, 3) }}>
+                <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 3) }}>
                   <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography variant="overline" sx={{ fontStyle: 'italic' }}>
+                    <Typography
+                      variant="overline"
+                      sx={{ color: theme => theme.palette.primary.main }}
+                    >
                       <Collapse
                         in={newSetRepCountMin > 0}
                         onClick={() => {
@@ -794,6 +797,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           value={newSetRepCountMin}
                           onChange={event => {
                             const val = +event.target.value;
+                            // auto-set max to min if min > max
                             if (val > newSetRepCountMax) {
                               setNewSetRepCountMax(val);
                             }
@@ -802,12 +806,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           onFocus={event => event.currentTarget.select()}
                           InputProps={{
                             sx: { fontSize: '1.5rem', width: '75px' },
-                          }}
-                          // Set max to min * 2
-                          onBlur={event => {
-                            const val = +event.target.value;
-                            if (isNaN(val)) return;
-                            setNewSetRepCountMax(val * 2);
                           }}
                         />
                         <TextField
