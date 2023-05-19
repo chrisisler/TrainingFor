@@ -1319,7 +1319,7 @@ const MovementSetView: FC<{
               setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '8px' : '11px'
             }`,
             textAlign: 'center',
-            fontSize: '1.2rem',
+            fontSize: '1.5rem',
             lineHeight: 1.4,
           },
         }}
