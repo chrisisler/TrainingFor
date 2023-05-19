@@ -11,6 +11,7 @@ import {
   MoreHoriz,
   PersonOutline,
   PlaylistAddRounded,
+  RefreshRounded,
   ShortTextRounded,
 } from '@mui/icons-material';
 import {
@@ -1320,7 +1321,7 @@ const MovementSetView: FC<{
             }`,
             textAlign: 'center',
             fontSize: '1.5rem',
-            lineHeight: 1.4,
+            minHeight: 'auto',
           },
         }}
         IconComponent={() => null}
@@ -1342,10 +1343,21 @@ const MovementSetView: FC<{
           }
           updateSets([...movement.sets]);
         }}
-        renderValue={value => value.toString()}
+        renderValue={value =>
+          typeof movementSet.repCountMaxExpected === 'undefined' ||
+          movementSet.status === MovementSetStatus.Completed ||
+          movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+            value.toString()
+          ) : (
+            <Typography>
+              {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
+              {movementSet.repCountMaxExpected}
+            </Typography>
+          )
+        }
       >
-        {/** add icon to menu item*/}
         <MenuItem value={'RESET'}>
+          <RefreshRounded sx={{ mr: 1.5, color: theme => theme.palette.text.secondary }} />{' '}
           {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()} {movementSet.repCountMaxExpected}
         </MenuItem>
         {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected */}
