@@ -1361,7 +1361,7 @@ const MovementSetView: FC<{
           {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()} {movementSet.repCountMaxExpected}
         </MenuItem>
         {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected */}
-        {Array.from({ length: movementSet.repCountMaxExpected })
+        {Array.from({ length: movementSet.repCountMaxExpected + 1 })
           .map((_, i) => i)
           .reverse()
           .map(i => (
