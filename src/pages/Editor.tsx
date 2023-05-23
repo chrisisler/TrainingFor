@@ -1326,6 +1326,24 @@ const MovementSetView: FC<{
         }}
         IconComponent={() => null}
         value={movementSet.repCountActual}
+        inputProps={{
+          id: movementSet.uuid,
+        }}
+        // This onClose catches when the user selects the rep value that is the
+        // same value as the repCountMaxExpected (which onChange does not
+        // catch, since that is apparently not considered a _change_).
+        onClose={() => {
+          const el = document.getElementById(movementSet.uuid);
+          if (!(el instanceof HTMLInputElement) || Number.isNaN(+el?.value)) {
+            return;
+          }
+          const value = +el.value;
+          if (movementSet.repCountMaxExpected !== value) return;
+          if (movementSet.status === MovementSetStatus.Unattempted) {
+            movement.sets[index].status = MovementSetStatus.Completed;
+            updateSets([...movement.sets]);
+          }
+        }}
         onChange={async event => {
           const { repCountMaxExpected } = movementSet;
           const value = event.target.value;
@@ -1360,8 +1378,8 @@ const MovementSetView: FC<{
           <RefreshRounded sx={{ mr: 1.5, color: theme => theme.palette.text.secondary }} />{' '}
           {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()} {movementSet.repCountMaxExpected}
         </MenuItem>
-        {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected */}
-        {Array.from({ length: movementSet.repCountMaxExpected + 1 })
+        {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected + N */}
+        {Array.from({ length: movementSet.repCountMaxExpected + 6 })
           .map((_, i) => i)
           .reverse()
           .map(i => (
