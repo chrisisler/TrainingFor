@@ -71,6 +71,7 @@ export interface TrainingLog extends FirestoreDocument {
 export interface SavedMovement extends FirestoreDocument {
   name: string;
   authorUserId: string;
+  note: string;
   /** The timestamp this SaveMovement was *last* put into a log (may have been deleted). */
   lastSeen: number;
 }
@@ -97,7 +98,6 @@ export interface Movement extends FirestoreDocument {
   repCountUnit: MovementRepCountUnit;
   isFavorited: boolean;
   sets: MovementSet[];
-  // queues: string[]; // Does this belong on SavedMovement instead?
 }
 
 /**

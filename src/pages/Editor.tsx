@@ -369,6 +369,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
     try {
       const timestamp: number = Date.now();
       const newSavedMovement: SavedMovement = await API.SavedMovements.create({
+        note: '',
         name: movementNameQuery,
         authorUserId: user.uid,
         lastSeen: timestamp,
@@ -585,25 +586,23 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                       </IconButton>
                     </Stack>
                   </Box>
-                  {/** queues display */}
-                  {false && (
-                    <Paper
-                      elevation={1}
-                      sx={{
-                        marginBottom: theme => theme.spacing(1),
-                      }}
+
+                  {DataState.isReady(savedMovements) && (
+                    <WithVariable
+                      value={savedMovements.find(_ => _.id === movement.savedMovementId)}
                     >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'text.secondary',
-                          margin: theme => theme.spacing(1, 2),
-                        }}
-                      >
-                        Look at the floor. Pin the feet. Squeeze the elbows together.
-                      </Typography>
-                    </Paper>
+                      {savedMovement =>
+                        !savedMovement?.note?.length ? null : (
+                          <Paper elevation={1} sx={{ marginBottom: theme => theme.spacing(1) }}>
+                            <Typography variant="body2" sx={{ margin: theme => theme.spacing(1) }}>
+                              {savedMovement.note}
+                            </Typography>
+                          </Paper>
+                        )
+                      }
+                    </WithVariable>
                   )}
+
                   <Box width="100%" sx={{ overflowX: 'scroll' }}>
                     <Stack direction="row" spacing={2.0}>
                       {/** Stack of unit control text display */}
@@ -1224,6 +1223,40 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                 );
               }}
             </DataStateView>
+
+            {/** Edit note for SavedMovement */}
+            {DataState.isReady(savedMovements) && (
+              <WithVariable
+                value={savedMovements.find(
+                  m => m.id === movementMenuDrawer.getData()?.savedMovementId
+                )}
+              >
+                {savedMovement => {
+                  if (!savedMovement) return null;
+                  return (
+                    <NotesDrawer
+                      note={savedMovement?.note || ''}
+                      sx={{ height: '18vh' }}
+                      onBlur={async (nextNote: string) => {
+                        try {
+                          // Update SavedMovement with new note
+                          const updated = await API.SavedMovements.update({
+                            id: savedMovement.id,
+                            note: nextNote,
+                          });
+                          // Update local state
+                          const copy = [...savedMovements];
+                          copy[copy.indexOf(savedMovement)] = updated;
+                          setSavedMovements(copy);
+                        } catch (err) {
+                          toast.error(err.message);
+                        }
+                      }}
+                    />
+                  );
+                }}
+              </WithVariable>
+            )}
           </Stack>
         </Collapse>
       </SwipeableDrawer>

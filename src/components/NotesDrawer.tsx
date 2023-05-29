@@ -6,11 +6,12 @@ export const NotesDrawer: FC<{
   note: string;
   /** Function to update onBlur. `note` is the final value. */
   onBlur(note: string): void;
-}> = ({ note, onBlur }) => {
+  sx?: React.CSSProperties;
+}> = ({ note, onBlur, sx = {} }) => {
   const [state, setState] = useState(note);
 
   return (
-    <Box sx={{ height: '60vh', overflowY: 'scroll' }}>
+    <Box sx={{ height: '60vh', overflowY: 'scroll', ...sx }}>
       <ReactFocusLock returnFocus>
         <InputBase
           multiline
