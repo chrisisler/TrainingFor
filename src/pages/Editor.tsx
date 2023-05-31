@@ -1321,7 +1321,7 @@ const MovementSetView: FC<{
         style={{
           height: '100%',
           color:
-            weight === 0 || movementSet.status === MovementSetStatus.Unattempted
+            movementSet.status === MovementSetStatus.Unattempted
               ? theme.palette.text.secondary
               : theme.palette.success.light,
           backgroundColor: 'transparent',
