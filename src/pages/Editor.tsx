@@ -1284,12 +1284,12 @@ const MovementSetView: FC<{
         ? {
             backgroundColor: alpha(theme.palette.success.light, 0.07),
             // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `2px solid ${theme.palette.success.light}`,
+            borderBottom: `3px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,
           }
         : {
             backgroundColor: alpha(theme.palette.divider, 0.04),
-            borderBottom: `2px solid ${theme.palette.divider}`,
+            borderBottom: `3px solid ${theme.palette.divider}`,
           },
     [movementSet.status, theme]
   );
@@ -1350,7 +1350,7 @@ const MovementSetView: FC<{
         SelectDisplayProps={{
           style: {
             padding: `8px ${
-              setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '8px' : '11px'
+              setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '10px' : '13px'
             }`,
             textAlign: 'center',
             fontSize: '1.5rem',
