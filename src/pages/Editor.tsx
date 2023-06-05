@@ -79,20 +79,17 @@ export const Editor: FC = () => {
   const notesDrawer = useDrawer<TrainingLog>();
   const [programUser] = useProgramUser();
 
+  const [confetti, setConfetti] = useState(false);
+
   const [log, setLog] = useDataState(async () => {
     if (!logId) return DataState.Empty;
-    const log = await API.TrainingLogs.get(logId);
-    return log;
+    return API.TrainingLogs.get(logId);
   }, [logId]);
 
   const [movements] = useDataState<Movement[]>(async () => {
-    if (!logDrawer.open || !logId) {
-      return DataState.Empty;
-    }
+    if (!logDrawer.open || !logId) return DataState.Empty;
     return API.Movements.getAll(where('logId', '==', logId));
   }, [logDrawer.open, logId]);
-
-  const [confetti, setConfetti] = useState(false);
 
   const finishTrainingLog = useCallback(async () => {
     if (!logId) {
@@ -297,7 +294,6 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const addSetMenu = useDrawer<Movement>();
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
-  const theme = useTheme();
 
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
@@ -315,6 +311,18 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
     () => (isProgramView ? API.ProgramMovements : API.Movements),
     [isProgramView]
   );
+
+  /** List of movements for the selected SavedMovement, if the history drawer is open. */
+  const [savedMovementHistory] = useDataState<Movement[]>(async () => {
+    if (savedMovementDrawer.open === false) return DataState.Empty;
+    if (tabValue !== TabIndex.History) return DataState.Empty;
+    const savedMovement = savedMovementDrawer.getData();
+    if (!savedMovement) return DataState.Empty;
+    return API.Movements.getAll(
+      where('savedMovementId', '==', savedMovement.id),
+      orderBy('timestamp', 'desc')
+    );
+  }, [savedMovementDrawer.open, tabValue]);
 
   /** List of movements for this log. */
   const [movements, setMovements, refetchMovements] = useDataState<Movement[]>(async () => {
@@ -553,13 +561,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           )}
                         >
                           {completedSets => {
-                            const summate =
-                              completedSets?.[0]?.weight === 0
-                                ? (sum: number, _: MovementSet) => sum + _.repCountActual
-                                : (sum: number, _: MovementSet) =>
-                                    sum + _.repCountActual * _.weight;
-                            const completedVol = completedSets.reduce(summate, 0);
-                            const totalVol = movement.sets.reduce(summate, 0);
+                            const completedVol = MovementSet.summate(completedSets);
+                            const totalVol = MovementSet.summate(movement.sets);
                             return (
                               <Typography
                                 variant="overline"
@@ -956,7 +959,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           {matches.map((match: SavedMovement) => {
                             const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
                               addSuffix: true,
-                            });
+                            }).replace(/ (\w)\w+ /i, '$1 ');
                             const isLessThan72HoursAgo =
                               new Date().getTime() - new Date(match.lastSeen).getTime() <
                               72 * 60 * 60 * 1000;
@@ -1030,7 +1033,15 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       </SwipeableDrawer>
 
       {/** SavedMovement Update + Delete Drawer with History tab */}
-      <SwipeableDrawer {...savedMovementDrawer.props()} anchor="top">
+      <SwipeableDrawer
+        {...savedMovementDrawer.props()}
+        anchor="top"
+        onClose={() => {
+          savedMovementDrawer.onClose();
+          // Reset back to original
+          setTabValue(TabIndex.Edit);
+        }}
+      >
         <Collapse in={savedMovementDrawer.open}>
           <Box
             width="100%"
@@ -1113,8 +1124,67 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
             </Stack>
           </TabPanel>
           <TabPanel value={tabValue} index={TabIndex.History}>
-            {/** history */}
-            history here.
+            <WithVariable value={savedMovementDrawer.getData()}>
+              {savedMovement => {
+                if (!savedMovement || !DataState.isReady(savedMovementHistory)) return null;
+                return (
+                  <Stack spacing={1}>
+                    <Typography variant="h6" fontWeight="bold">
+                      {savedMovement.name}
+                    </Typography>
+                    {/** Graph of volume over time, w/ dates */}
+                    <Stack
+                      spacing={1}
+                      sx={{
+                        maxHeight: '30vh',
+                        overflowY: 'scroll',
+                        '& > *:nth-child(even)': {
+                          backgroundColor: theme => theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      {savedMovementHistory.map((movement, index, { length }) => (
+                        <Stack
+                          key={movement.id}
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          width="100%"
+                          onClick={void 0} // TODO
+                          sx={{
+                            padding: theme => theme.spacing(1),
+                          }}
+                        >
+                          <Stack direction="row" display="flex" alignItems="center" spacing={2}>
+                            <Typography variant="overline" color="textSecondary">
+                              {length - index}
+                            </Typography>
+                            <Typography color="body2">
+                              {format(new Date(movement.timestamp), 'MMM M')}
+                            </Typography>
+                          </Stack>
+                          <Typography variant="overline">
+                            {Intl.NumberFormat().format(
+                              MovementSet.summate(
+                                movement.sets.filter(s => s.status === MovementSetStatus.Completed)
+                              )
+                            )}{' '}
+                            {movement.sets?.[0]?.weight === 0
+                              ? movement.repCountUnit
+                              : movement.weightUnit}
+                          </Typography>
+                          <Typography variant="body2">
+                            {formatDistanceToNowStrict(new Date(movement.timestamp), {
+                              addSuffix: true,
+                            }).replace(/ (\w)\w+ /i, '$1 ')}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Stack>
+                );
+              }}
+            </WithVariable>
           </TabPanel>
         </Collapse>
       </SwipeableDrawer>

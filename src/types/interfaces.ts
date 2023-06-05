@@ -166,3 +166,15 @@ export const Program = {
     return null;
   },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const MovementSet = {
+  summate(sets: MovementSet[]): number {
+    // Sums up the weight if there is weight or just reps if no weight is found.
+    const reducer =
+      sets?.[0]?.weight === 0
+        ? (sum: number, _: MovementSet) => sum + _.repCountActual
+        : (sum: number, _: MovementSet) => sum + _.repCountActual * _.weight;
+    return sets.reduce(reducer, 0);
+  },
+};
