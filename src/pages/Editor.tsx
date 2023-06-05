@@ -284,16 +284,19 @@ enum TabIndex {
   History = 1,
 }
 
-export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = ({
-  logId,
-  isProgramView = false,
-}) => {
+export const EditorInternals: FC<{
+  logId: string;
+  isProgramView?: boolean;
+  readOnly?: boolean;
+}> = ({ logId, isProgramView = false, readOnly = false }) => {
   const toast = useToast();
   const user = useUser();
   const addMovementDrawer = useMaterialMenu();
   const addSetMenu = useDrawer<Movement>();
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
+  /** Holds the ID of the trainingLog attached to the inspected movement history. */
+  const { anchorEl: _2, ...historyLogDrawer } = useDrawer<Movement>();
 
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
@@ -532,7 +535,13 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
       <Stack spacing={2}>
         <DataStateView data={movements}>
           {movements => (
-            <Stack spacing={3}>
+            <Stack
+              spacing={3}
+              sx={
+                // Block all mouse clicks/evets when in readOnly mode
+                readOnly ? { '& *': { pointerEvents: 'none' } } : void 0
+              }
+            >
               {movements.map((movement: Movement, movementIndex) => (
                 <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
@@ -666,7 +675,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
           )}
         </DataStateView>
 
-        {DataState.isReady(movements) && (
+        {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button onClick={addMovementDrawer.onOpen}>
               <AddRounded sx={{ color: 'text.secondary', fontSize: '1.6rem' }} />
@@ -1150,7 +1159,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
                           justifyContent="space-between"
                           alignItems="center"
                           width="100%"
-                          onClick={void 0} // TODO
+                          onClick={event => historyLogDrawer.onOpen(event, movement)}
                           sx={{
                             padding: theme => theme.spacing(1),
                           }}
@@ -1186,6 +1195,26 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
               }}
             </WithVariable>
           </TabPanel>
+        </Collapse>
+      </SwipeableDrawer>
+
+      <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom">
+        <Collapse in={historyLogDrawer.open}>
+          <Box height="80vh">
+            <WithVariable value={historyLogDrawer.getData()}>
+              {movement => {
+                if (!movement) return null;
+                return (
+                  <Stack spacing={0.5}>
+                    <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
+                      {format(new Date(movement.timestamp), 'MMM M')}
+                    </Typography>
+                    <EditorInternals readOnly logId={movement.logId} />
+                  </Stack>
+                );
+              }}
+            </WithVariable>
+          </Box>
         </Collapse>
       </SwipeableDrawer>
 
