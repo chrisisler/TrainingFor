@@ -1,7 +1,7 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
-  AddCircleOutlineRounded,
+  AddRounded,
   CheckRounded,
   Close,
   CloseRounded,
@@ -655,7 +655,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button onClick={addMovementDrawer.onOpen}>
-              <AddCircleOutlineRounded sx={{ color: 'text.secondary' }} />
+              <AddRounded sx={{ color: 'text.secondary', fontSize: '1.6rem' }} />
             </Button>
           </Box>
         )}
