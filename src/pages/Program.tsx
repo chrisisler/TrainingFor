@@ -21,12 +21,12 @@ import {
   Typography,
 } from '@mui/material';
 import { orderBy, where } from 'firebase/firestore';
-import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
 import { API } from '../api';
-import { NotesDrawer, WithVariable } from '../components';
+import { tabA11yProps, NotesDrawer, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
 import { Movement, Program } from '../types';
 import {
@@ -197,7 +197,7 @@ export const Programs: FC = () => {
               <Tabs value={tabValue} onChange={(_, next) => setTabValue(next)} aria-label="tabs">
                 <Tab
                   label="Programs"
-                  {...a11yProps(TabIndex.Programs)}
+                  {...tabA11yProps(TabIndex.Programs)}
                   onClick={() => {
                     // when clicking Programs tab - back from Schedule tab - ensure the program
                     // seen when navigating *back* to Schedule tab is the user's active program.
@@ -208,7 +208,11 @@ export const Programs: FC = () => {
                     );
                   }}
                 />
-                <Tab label="Schedule" {...a11yProps(TabIndex.Schedule)} disabled={!viewedProgram} />
+                <Tab
+                  label="Schedule"
+                  {...tabA11yProps(TabIndex.Schedule)}
+                  disabled={!viewedProgram}
+                />
               </Tabs>
             </Box>
           </Stack>
@@ -706,34 +710,3 @@ export const Programs: FC = () => {
     </>
   );
 };
-
-// https://mui.com/material-ui/react-tabs/
-const TabPanel: FC<{
-  children: ReactNode;
-  index: TabIndex;
-  value: TabIndex;
-}> = ({ children, value, index }) => (
-  <div
-    role="tabpanel"
-    hidden={value !== index}
-    id={`program-tabpanel-${index}`}
-    aria-labelledby={`program-tab-${index}`}
-  >
-    {value === index && (
-      <Box
-        sx={{
-          padding: theme => theme.spacing(3, 1),
-        }}
-      >
-        {children}
-      </Box>
-    )}
-  </div>
-);
-
-function a11yProps(index: number) {
-  return {
-    id: `program-tab-${index}`,
-    'aria-controls': `program-tabpanel-${index}`,
-  };
-}

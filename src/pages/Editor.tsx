@@ -29,6 +29,8 @@ import {
   SelectProps,
   Stack,
   SwipeableDrawer,
+  Tab,
+  Tabs,
   TextField,
   Typography,
   useTheme,
@@ -41,7 +43,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API } from '../api';
-import { NotesDrawer, WithVariable } from '../components';
+import { NotesDrawer, tabA11yProps, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
 import {
   Movement,
@@ -135,7 +137,7 @@ export const Editor: FC = () => {
           }}
         </DataStateView>
         <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
-          <ShortTextRounded sx={{ color: 'text.primary'  }} />
+          <ShortTextRounded sx={{ color: 'text.primary' }} />
         </IconButton>
       </Box>
 
@@ -279,6 +281,12 @@ export const Editor: FC = () => {
   );
 };
 
+/** Built for the SavedMovement edit/update menu with history tab. */
+enum TabIndex {
+  Edit = 0,
+  History = 1,
+}
+
 export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = ({
   logId,
   isProgramView = false,
@@ -289,6 +297,7 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const addSetMenu = useDrawer<Movement>();
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
+  const theme = useTheme();
 
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
@@ -298,6 +307,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
   const [newSetRepCountMax, setNewSetRepCountMax] = useState(0);
   /** State for re-ordering the list of movements. Holds the Movement to swap places with. */
   const [movementOrderSwap, setMovementOrderSwap] = useState<null | Movement>(null);
+  /** For SavedMovement edit/update menu. */
+  const [tabValue, setTabValue] = useState(TabIndex.Edit);
 
   /** The active collection, based on the usage of this component. */
   const Movements = useMemo(
@@ -910,7 +921,10 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
           <Stack spacing={1} key={JSON.stringify(addMovementDrawer)}>
             <Box>
               {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
-              <ReactFocusLock disabled={!addMovementDrawer.open} returnFocus>
+              <ReactFocusLock
+                disabled={!addMovementDrawer.open || savedMovementDrawer.open}
+                returnFocus
+              >
                 <TextField
                   fullWidth
                   variant="standard"
@@ -1015,70 +1029,93 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
         </Collapse>
       </SwipeableDrawer>
 
-      {/** SavedMovement Update + Delete Drawer */}
+      {/** SavedMovement Update + Delete Drawer with History tab */}
       <SwipeableDrawer {...savedMovementDrawer.props()} anchor="top">
         <Collapse in={savedMovementDrawer.open}>
-          <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
-            <Box>
-              <ReactFocusLock disabled={!savedMovementDrawer.open} returnFocus>
-                <TextField
-                  fullWidth
-                  variant="standard"
-                  label="Saved Movement Name"
-                  defaultValue={savedMovementDrawer.getData()?.name}
-                  // Avoiding controlled state this way with onBlur
-                  onBlur={async function editSavedMovement(event) {
-                    try {
-                      const savedMovement = savedMovementDrawer.getData();
-                      if (!savedMovement) return;
-                      const newName = event.target.value;
-                      if (newName.length < 3 || newName === savedMovement.name) {
-                        return;
+          <Box
+            width="100%"
+            justifyContent="center"
+            alignItems="center"
+            display="flex"
+            sx={{ marginTop: '-1rem' }}
+          >
+            <Tabs
+              variant="fullWidth"
+              value={tabValue}
+              onChange={(_, next) => setTabValue(next)}
+              aria-label="tabs"
+            >
+              <Tab label="EDIT" {...tabA11yProps(TabIndex.Edit)} />
+              <Tab label="HISTORY" {...tabA11yProps(TabIndex.History)} />
+            </Tabs>
+          </Box>
+          <TabPanel value={tabValue} index={TabIndex.Edit}>
+            <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
+              <Box>
+                <ReactFocusLock disabled={!savedMovementDrawer.open} returnFocus>
+                  <TextField
+                    fullWidth
+                    variant="standard"
+                    label="Saved Movement Name"
+                    defaultValue={savedMovementDrawer.getData()?.name}
+                    // Avoiding controlled state this way with onBlur
+                    onBlur={async function editSavedMovement(event) {
+                      try {
+                        const savedMovement = savedMovementDrawer.getData();
+                        if (!savedMovement) return;
+                        const newName = event.target.value;
+                        if (newName.length < 3 || newName === savedMovement.name) {
+                          return;
+                        }
+                        const updated: SavedMovement = await API.SavedMovements.update({
+                          id: savedMovement.id,
+                          name: newName,
+                        });
+                        // Update local state
+                        if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
+                        const next = savedMovements.slice();
+                        next[next.indexOf(savedMovement)] = updated;
+                        setSavedMovements(next);
+                        // Close drawer
+                        savedMovementDrawer.onClose();
+                      } catch (error) {
+                        toast.error(error.message);
                       }
-                      const updated: SavedMovement = await API.SavedMovements.update({
-                        id: savedMovement.id,
-                        name: newName,
-                      });
+                    }}
+                  />
+                </ReactFocusLock>
+              </Box>
+              <Box>
+                <Button
+                  color="error"
+                  startIcon={<DeleteForeverRounded />}
+                  onClick={async function deleteSavedMovement() {
+                    try {
+                      if (!window.confirm('Are you sure you want to delete this?')) return;
+                      const savedMovement = savedMovementDrawer.getData();
+                      if (!savedMovement) throw Error('Unreachable: deleteSavedMovement');
+                      await API.SavedMovements.delete(savedMovement.id);
                       // Update local state
-                      if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
-                      const next = savedMovements.slice();
-                      next[next.indexOf(savedMovement)] = updated;
-                      setSavedMovements(next);
+                      setSavedMovements(
+                        DataState.map(savedMovements, _ => _.filter(_ => _.id !== savedMovement.id))
+                      );
                       // Close drawer
                       savedMovementDrawer.onClose();
+                      toast.success(`Deleted ${savedMovement.name}`);
                     } catch (error) {
                       toast.error(error.message);
                     }
                   }}
-                />
-              </ReactFocusLock>
-            </Box>
-            <Box>
-              <Button
-                color="error"
-                startIcon={<DeleteForeverRounded />}
-                onClick={async function deleteSavedMovement() {
-                  try {
-                    if (!window.confirm('Are you sure you want to delete this?')) return;
-                    const savedMovement = savedMovementDrawer.getData();
-                    if (!savedMovement) throw Error('Unreachable: deleteSavedMovement');
-                    await API.SavedMovements.delete(savedMovement.id);
-                    // Update local state
-                    setSavedMovements(
-                      DataState.map(savedMovements, _ => _.filter(_ => _.id !== savedMovement.id))
-                    );
-                    // Close drawer
-                    savedMovementDrawer.onClose();
-                    toast.success(`Deleted ${savedMovement.name}`);
-                  } catch (error) {
-                    toast.error(error.message);
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </Box>
-          </Stack>
+                >
+                  Delete
+                </Button>
+              </Box>
+            </Stack>
+          </TabPanel>
+          <TabPanel value={tabValue} index={TabIndex.History}>
+            {/** history */}
+            history here.
+          </TabPanel>
         </Collapse>
       </SwipeableDrawer>
 
