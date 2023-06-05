@@ -1315,8 +1315,16 @@ const MovementSetView: FC<{
             throw Error('Unreachable: weight input is NaN');
           }
           const value = +event.target.value;
-          movement.sets[index].weight = value;
-          updateSets([...movement.sets]);
+          let next = movement.sets.slice();
+          // Cascade new weight value to sets after this one if this weight = 0
+          if (movementSet.weight === 0 && index < next.length - 1) {
+            next.slice(index + 1).forEach(_ => {
+              _.weight = value;
+              _.uuid = uuidv4();
+            });
+          }
+          next[index].weight = value;
+          updateSets(next);
         }}
         style={{
           height: '100%',
