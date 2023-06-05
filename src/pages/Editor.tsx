@@ -1,6 +1,7 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
+  AddCircleOutlineRounded,
   CheckRounded,
   Close,
   CloseRounded,
@@ -10,7 +11,6 @@ import {
   EditOutlined,
   MoreHoriz,
   PersonOutline,
-  PlaylistAddRounded,
   RefreshRounded,
   ShortTextRounded,
 } from '@mui/icons-material';
@@ -135,7 +135,7 @@ export const Editor: FC = () => {
           }}
         </DataStateView>
         <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
-          <ShortTextRounded />
+          <ShortTextRounded sx={{ color: 'text.primary'  }} />
         </IconButton>
       </Box>
 
@@ -654,8 +654,8 @@ export const EditorInternals: FC<{ logId: string; isProgramView?: boolean }> = (
 
         {DataState.isReady(movements) && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button fullWidth onClick={addMovementDrawer.onOpen}>
-              <PlaylistAddRounded sx={{ color: 'text.secondary' }} />
+            <Button onClick={addMovementDrawer.onOpen}>
+              <AddCircleOutlineRounded sx={{ color: 'text.secondary' }} />
             </Button>
           </Box>
         )}
