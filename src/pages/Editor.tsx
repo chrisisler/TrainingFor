@@ -35,7 +35,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
@@ -176,7 +176,11 @@ export const Editor: FC = () => {
                   toast.info('Unimplemented: Update log timestamp.');
                 }}
               >
-                {DataState.isReady(log) ? <>{format(new Date(log.timestamp), 'MMM M')}</> : <></>}
+                {DataState.isReady(log) && (
+                  <WithVariable value={new Date(log.timestamp)}>
+                    {date => <>{Months[date.getMonth()] + ' ' + date.getDate()}</>}
+                  </WithVariable>
+                )}
               </Button>
             </Grid>
             <Grid item xs={4}>
@@ -1178,7 +1182,9 @@ export const EditorInternals: FC<{
                             <Typography variant="overline">
                               {Intl.NumberFormat().format(
                                 MovementSet.summate(
-                                  movement.sets.filter(s => s.status === MovementSetStatus.Completed)
+                                  movement.sets.filter(
+                                    s => s.status === MovementSetStatus.Completed
+                                  )
                                 )
                               )}{' '}
                               {movement.sets?.[0]?.weight === 0
@@ -1208,10 +1214,11 @@ export const EditorInternals: FC<{
             <WithVariable value={historyLogDrawer.getData()}>
               {movement => {
                 if (!movement) return null;
+                const date = new Date(movement.timestamp);
                 return (
                   <Stack spacing={0.5}>
                     <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
-                      {format(new Date(movement.timestamp), 'MMM M')}
+                      {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                     </Typography>
                     <EditorInternals readOnly logId={movement.logId} />
                   </Stack>
