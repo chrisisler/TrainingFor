@@ -57,6 +57,7 @@ import {
 import {
   DataState,
   DataStateView,
+  Months,
   Paths,
   useDataState,
   useDrawer,
@@ -1152,43 +1153,46 @@ export const EditorInternals: FC<{
                         },
                       }}
                     >
-                      {savedMovementHistory.map((movement, index, { length }) => (
-                        <Stack
-                          key={movement.id}
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          width="100%"
-                          onClick={event => historyLogDrawer.onOpen(event, movement)}
-                          sx={{
-                            padding: theme => theme.spacing(1),
-                          }}
-                        >
-                          <Stack direction="row" display="flex" alignItems="center" spacing={2}>
-                            <Typography variant="overline" color="textSecondary">
-                              {length - index}
+                      {savedMovementHistory.map((movement, index, { length }) => {
+                        const date = new Date(movement.timestamp);
+                        return (
+                          <Stack
+                            key={movement.id}
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            width="100%"
+                            onClick={event => historyLogDrawer.onOpen(event, movement)}
+                            sx={{
+                              padding: theme => theme.spacing(1),
+                            }}
+                          >
+                            <Stack direction="row" display="flex" alignItems="center" spacing={2}>
+                              <Typography variant="overline" color="textSecondary">
+                                {length - index}
+                              </Typography>
+                              <Typography color="body2">
+                                {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+                              </Typography>
+                            </Stack>
+                            <Typography variant="overline">
+                              {Intl.NumberFormat().format(
+                                MovementSet.summate(
+                                  movement.sets.filter(s => s.status === MovementSetStatus.Completed)
+                                )
+                              )}{' '}
+                              {movement.sets?.[0]?.weight === 0
+                                ? movement.repCountUnit
+                                : movement.weightUnit}
                             </Typography>
-                            <Typography color="body2">
-                              {format(new Date(movement.timestamp), 'MMM M')}
+                            <Typography variant="body2">
+                              {formatDistanceToNowStrict(date, {
+                                addSuffix: true,
+                              }).replace(/ (\w)\w+ /i, '$1 ')}
                             </Typography>
                           </Stack>
-                          <Typography variant="overline">
-                            {Intl.NumberFormat().format(
-                              MovementSet.summate(
-                                movement.sets.filter(s => s.status === MovementSetStatus.Completed)
-                              )
-                            )}{' '}
-                            {movement.sets?.[0]?.weight === 0
-                              ? movement.repCountUnit
-                              : movement.weightUnit}
-                          </Typography>
-                          <Typography variant="body2">
-                            {formatDistanceToNowStrict(new Date(movement.timestamp), {
-                              addSuffix: true,
-                            }).replace(/ (\w)\w+ /i, '$1 ')}
-                          </Typography>
-                        </Stack>
-                      ))}
+                        );
+                      })}
                     </Stack>
                   </Stack>
                 );
