@@ -178,7 +178,7 @@ export const Editor: FC = () => {
               >
                 {DataState.isReady(log) && (
                   <WithVariable value={new Date(log.timestamp)}>
-                    {date => <>{Months[date.getMonth()] + ' ' + date.getDate()}</>}
+                    {date => <>{Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}</>}
                   </WithVariable>
                 )}
               </Button>
@@ -1150,7 +1150,7 @@ export const EditorInternals: FC<{
                     <Stack
                       spacing={1}
                       sx={{
-                        maxHeight: '30vh',
+                        maxHeight: '40vh',
                         overflowY: 'scroll',
                         '& > *:nth-child(even)': {
                           backgroundColor: theme => theme.palette.action.hover,
