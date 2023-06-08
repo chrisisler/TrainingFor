@@ -1134,10 +1134,16 @@ export const EditorInternals: FC<{
             </Stack>
           </TabPanel>
           <TabPanel value={tabValue} index={TabIndex.History}>
-            <SavedMovementHistory
-              savedMovement={savedMovementDrawer.getData()}
-              openLogDrawer={historyLogDrawer.onOpen}
-            />
+            <WithVariable value={savedMovementDrawer.getData()}>
+              {savedMovement =>
+                savedMovement === null ? null : (
+                  <SavedMovementHistory
+                    savedMovement={savedMovement}
+                    openLogDrawer={historyLogDrawer.onOpen}
+                  />
+                )
+              }
+            </WithVariable>
           </TabPanel>
         </Collapse>
       </SwipeableDrawer>
@@ -1582,19 +1588,19 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
 );
 
 const SavedMovementHistory: FC<{
-  savedMovement: Pick<SavedMovement, 'id' | 'name'> | null;
-  /** Behavior on movement click. */
+  savedMovement: Pick<SavedMovement, 'id' | 'name'>;
   openLogDrawer: (event: React.MouseEvent<HTMLElement>, movement: Movement) => void;
 }> = ({ savedMovement, openLogDrawer }) => {
-  const [movementsHistory] = useDataState<Movement[]>(async () => {
-    if (!savedMovement) return DataState.Empty;
-    return API.Movements.getAll(
-      where('savedMovementId', '==', savedMovement.id),
-      orderBy('timestamp', 'desc')
-    );
-  }, [savedMovement]);
+  const [movementsHistory] = useDataState<Movement[]>(
+    () =>
+      API.Movements.getAll(
+        where('savedMovementId', '==', savedMovement.id),
+        orderBy('timestamp', 'desc')
+      ),
+    [savedMovement.id]
+  );
 
-  if (!savedMovement || !DataState.isReady(movementsHistory)) return null;
+  if (!DataState.isReady(movementsHistory)) return null;
 
   return (
     <Stack spacing={1}>
