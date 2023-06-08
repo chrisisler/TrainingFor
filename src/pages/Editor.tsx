@@ -320,18 +320,6 @@ export const EditorInternals: FC<{
     [isProgramView]
   );
 
-  /** List of movements for the selected SavedMovement, if the history drawer is open. */
-  const [savedMovementHistory] = useDataState<Movement[]>(async () => {
-    if (savedMovementDrawer.open === false) return DataState.Empty;
-    if (tabValue !== TabIndex.History) return DataState.Empty;
-    const savedMovement = savedMovementDrawer.getData();
-    if (!savedMovement) return DataState.Empty;
-    return API.Movements.getAll(
-      where('savedMovementId', '==', savedMovement.id),
-      orderBy('timestamp', 'desc')
-    );
-  }, [savedMovementDrawer.open, tabValue]);
-
   /** List of movements for this log. */
   const [movements, setMovements, refetchMovements] = useDataState<Movement[]>(async () => {
     if (logId) {
@@ -683,7 +671,15 @@ export const EditorInternals: FC<{
         {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button onClick={addMovementDrawer.onOpen}>
-              <AddRounded sx={{ color: 'text.secondary', fontSize: '1.6rem' }} />
+              <AddRounded
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '1.6rem',
+                  // Move away from everything else
+                  mt: 2,
+                  mb: 2,
+                }}
+              />
             </Button>
           </Box>
         )}
@@ -1138,76 +1134,15 @@ export const EditorInternals: FC<{
             </Stack>
           </TabPanel>
           <TabPanel value={tabValue} index={TabIndex.History}>
-            <WithVariable value={savedMovementDrawer.getData()}>
-              {savedMovement => {
-                if (!savedMovement || !DataState.isReady(savedMovementHistory)) return null;
-                return (
-                  <Stack spacing={1}>
-                    <Typography variant="h6" fontWeight="bold">
-                      {savedMovement.name}
-                    </Typography>
-                    {/** Graph of volume over time, w/ dates */}
-                    <Stack
-                      spacing={1}
-                      sx={{
-                        maxHeight: '40vh',
-                        overflowY: 'scroll',
-                        '& > *:nth-child(even)': {
-                          backgroundColor: theme => theme.palette.action.hover,
-                        },
-                      }}
-                    >
-                      {savedMovementHistory.map((movement, index, { length }) => {
-                        const date = new Date(movement.timestamp);
-                        return (
-                          <Stack
-                            key={movement.id}
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems="center"
-                            width="100%"
-                            onClick={event => historyLogDrawer.onOpen(event, movement)}
-                            sx={{
-                              padding: theme => theme.spacing(1),
-                            }}
-                          >
-                            <Stack direction="row" display="flex" alignItems="center" spacing={2}>
-                              <Typography variant="overline" color="textSecondary">
-                                {length - index}
-                              </Typography>
-                              <Typography color="body2">
-                                {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
-                              </Typography>
-                            </Stack>
-                            <Typography variant="overline">
-                              {Intl.NumberFormat().format(
-                                MovementSet.summate(
-                                  movement.sets.filter(
-                                    s => s.status === MovementSetStatus.Completed
-                                  )
-                                )
-                              )}{' '}
-                              {movement.sets?.[0]?.weight === 0
-                                ? movement.repCountUnit
-                                : movement.weightUnit}
-                            </Typography>
-                            <Typography variant="body2">
-                              {formatDistanceToNowStrict(date, {
-                                addSuffix: true,
-                              }).replace(/ (\w)\w+ /i, '$1 ')}
-                            </Typography>
-                          </Stack>
-                        );
-                      })}
-                    </Stack>
-                  </Stack>
-                );
-              }}
-            </WithVariable>
+            <SavedMovementHistory
+              savedMovement={savedMovementDrawer.getData()}
+              openLogDrawer={historyLogDrawer.onOpen}
+            />
           </TabPanel>
         </Collapse>
       </SwipeableDrawer>
 
+      {/** In-editor display of editor from the TrainingLog from the movement from the SavedMovement history. */}
       <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom">
         <Collapse in={historyLogDrawer.open}>
           <Box height="80vh">
@@ -1270,141 +1205,175 @@ export const EditorInternals: FC<{
         }}
       >
         <Collapse in={movementMenuDrawer.open}>
-          <Stack spacing={2} key={JSON.stringify(movementMenuDrawer)}>
-            <Box>
-              <ReactFocusLock disabled={!movementMenuDrawer.open} returnFocus>
-                <TextField
-                  fullWidth
-                  variant="standard"
-                  label="Movement Name"
-                  defaultValue={movementMenuDrawer.getData()?.name}
-                  onBlur={async function editMovement(event) {
+          <Box
+            width="100%"
+            justifyContent="center"
+            alignItems="center"
+            display="flex"
+            sx={{ marginTop: '-1rem' }}
+          >
+            <Tabs
+              variant="fullWidth"
+              value={tabValue}
+              onChange={(_, next) => setTabValue(next)}
+              aria-label="tabs"
+            >
+              <Tab label="EDIT" {...tabA11yProps(TabIndex.Edit)} />
+              <Tab label="HISTORY" {...tabA11yProps(TabIndex.History)} />
+            </Tabs>
+          </Box>
+          <TabPanel value={tabValue} index={TabIndex.Edit}>
+            <Stack spacing={2} key={JSON.stringify(movementMenuDrawer)}>
+              <Box>
+                <ReactFocusLock disabled={!movementMenuDrawer.open} returnFocus>
+                  <TextField
+                    fullWidth
+                    variant="standard"
+                    label="Movement Name"
+                    defaultValue={movementMenuDrawer.getData()?.name}
+                    onBlur={async function editMovement(event) {
+                      try {
+                        const movement = movementMenuDrawer.getData();
+                        if (!movement) return;
+                        const newName = event.target.value;
+                        if (newName.length < 3 || newName === movement.name) {
+                          return;
+                        }
+                        const updated: Movement = await Movements.update({
+                          id: movement.id,
+                          name: newName,
+                        });
+                        // Update local state
+                        if (!DataState.isReady(movements)) throw Error('Unreachable');
+                        const next = movements.slice();
+                        next[next.indexOf(movement)] = updated;
+                        setMovements(next);
+                        // Close drawer
+                        movementMenuDrawer.onClose();
+                        toast.success(`Movement renamed to ${newName}`);
+                      } catch (error) {
+                        toast.error(error.message);
+                      }
+                    }}
+                  />
+                </ReactFocusLock>
+              </Box>
+              <Box>
+                <Button
+                  color="error"
+                  startIcon={<DeleteOutline />}
+                  onClick={async () => {
+                    if (!window.confirm('Are you sure?')) return;
                     try {
                       const movement = movementMenuDrawer.getData();
-                      if (!movement) return;
-                      const newName = event.target.value;
-                      if (newName.length < 3 || newName === movement.name) {
-                        return;
-                      }
-                      const updated: Movement = await Movements.update({
-                        id: movement.id,
-                        name: newName,
-                      });
+                      if (!movement) throw TypeError('Unreachable: rename movement');
+                      await Movements.delete(movement.id);
                       // Update local state
-                      if (!DataState.isReady(movements)) throw Error('Unreachable');
-                      const next = movements.slice();
-                      next[next.indexOf(movement)] = updated;
-                      setMovements(next);
+                      setMovements(
+                        DataState.map(movements, _ => _.filter(_ => _.id !== movement.id))
+                      );
                       // Close drawer
                       movementMenuDrawer.onClose();
-                      toast.success(`Movement renamed to ${newName}`);
                     } catch (error) {
                       toast.error(error.message);
                     }
                   }}
-                />
-              </ReactFocusLock>
-            </Box>
-            <Box>
-              <Button
-                color="error"
-                startIcon={<DeleteOutline />}
-                onClick={async () => {
-                  if (!window.confirm('Are you sure?')) return;
-                  try {
-                    const movement = movementMenuDrawer.getData();
-                    if (!movement) throw TypeError('Unreachable: rename movement');
-                    await Movements.delete(movement.id);
-                    // Update local state
-                    setMovements(
-                      DataState.map(movements, _ => _.filter(_ => _.id !== movement.id))
-                    );
-                    // Close drawer
-                    movementMenuDrawer.onClose();
-                  } catch (error) {
-                    toast.error(error.message);
-                  }
-                }}
-              >
-                Remove Movement
-              </Button>
-            </Box>
+                >
+                  Remove Movement
+                </Button>
+              </Box>
 
-            {/** Re-order / position buttons */}
-            <DataStateView data={movements}>
-              {movements => {
-                if (movements.length <= 1) return null;
-                const selectedMovement = movementMenuDrawer.getData();
-                if (!selectedMovement) return null;
-                return (
-                  <Stack
-                    spacing={1.5}
-                    direction="row"
-                    alignItems="center"
-                    sx={{ overflowX: 'scroll' }}
-                  >
-                    <Typography variant="subtitle2">Order:</Typography>
-                    {movements.map((movement, movementIndex) => {
-                      const isSelected = movement.position === movementOrderSwap?.position;
-                      return (
-                        <Button
-                          id={movement.id}
-                          variant={isSelected ? 'contained' : 'outlined'}
-                          disabled={selectedMovement.id === movement.id}
-                          onClick={() => {
-                            if (isSelected) {
-                              // Unselect.
-                              setMovementOrderSwap(null);
-                            } else {
-                              setMovementOrderSwap(movement);
-                            }
-                          }}
-                          // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
-                          sx={{ minWidth: '48px' }}
-                        >
-                          <b>{movementIndex + 1}</b>
-                        </Button>
-                      );
-                    })}
-                  </Stack>
-                );
-              }}
-            </DataStateView>
-
-            {/** Edit note for SavedMovement */}
-            {DataState.isReady(savedMovements) && (
-              <WithVariable
-                value={savedMovements.find(
-                  m => m.id === movementMenuDrawer.getData()?.savedMovementId
-                )}
-              >
-                {savedMovement => {
-                  if (!savedMovement) return null;
+              {/** Re-order / position buttons */}
+              <DataStateView data={movements}>
+                {movements => {
+                  if (movements.length <= 1) return null;
+                  const selectedMovement = movementMenuDrawer.getData();
+                  if (!selectedMovement) return null;
                   return (
-                    <NotesDrawer
-                      note={savedMovement?.note || ''}
-                      sx={{ height: '18vh' }}
-                      onBlur={async (nextNote: string) => {
-                        try {
-                          // Update SavedMovement with new note
-                          const updated = await API.SavedMovements.update({
-                            id: savedMovement.id,
-                            note: nextNote,
-                          });
-                          // Update local state
-                          const copy = [...savedMovements];
-                          copy[copy.indexOf(savedMovement)] = updated;
-                          setSavedMovements(copy);
-                        } catch (err) {
-                          toast.error(err.message);
-                        }
-                      }}
-                    />
+                    <Stack
+                      spacing={1.5}
+                      direction="row"
+                      alignItems="center"
+                      sx={{ overflowX: 'scroll' }}
+                    >
+                      <Typography variant="subtitle2">Order:</Typography>
+                      {movements.map((movement, movementIndex) => {
+                        const isSelected = movement.position === movementOrderSwap?.position;
+                        return (
+                          <Button
+                            id={movement.id}
+                            variant={isSelected ? 'contained' : 'outlined'}
+                            disabled={selectedMovement.id === movement.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                // Unselect.
+                                setMovementOrderSwap(null);
+                              } else {
+                                setMovementOrderSwap(movement);
+                              }
+                            }}
+                            // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
+                            sx={{ minWidth: '48px' }}
+                          >
+                            <b>{movementIndex + 1}</b>
+                          </Button>
+                        );
+                      })}
+                    </Stack>
                   );
                 }}
-              </WithVariable>
-            )}
-          </Stack>
+              </DataStateView>
+
+              {/** Edit note for SavedMovement */}
+              {DataState.isReady(savedMovements) && (
+                <WithVariable
+                  value={savedMovements.find(
+                    m => m.id === movementMenuDrawer.getData()?.savedMovementId
+                  )}
+                >
+                  {savedMovement => {
+                    if (!savedMovement) return null;
+                    return (
+                      <NotesDrawer
+                        note={savedMovement?.note || ''}
+                        sx={{ height: '18vh' }}
+                        onBlur={async (nextNote: string) => {
+                          try {
+                            // Update SavedMovement with new note
+                            const updated = await API.SavedMovements.update({
+                              id: savedMovement.id,
+                              note: nextNote,
+                            });
+                            // Update local state
+                            const copy = [...savedMovements];
+                            copy[copy.indexOf(savedMovement)] = updated;
+                            setSavedMovements(copy);
+                          } catch (err) {
+                            toast.error(err.message);
+                          }
+                        }}
+                      />
+                    );
+                  }}
+                </WithVariable>
+              )}
+            </Stack>
+          </TabPanel>
+          <TabPanel value={tabValue} index={TabIndex.History}>
+            <WithVariable value={movementMenuDrawer.getData()}>
+              {movement =>
+                movement === null ? null : (
+                  <SavedMovementHistory
+                    savedMovement={{
+                      id: movement.savedMovementId,
+                      name: movement.savedMovementName,
+                    }}
+                    openLogDrawer={historyLogDrawer.onOpen}
+                  />
+                )
+              }
+            </WithVariable>
+          </TabPanel>
         </Collapse>
       </SwipeableDrawer>
     </>
@@ -1611,3 +1580,77 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
     {children}
   </Select>
 );
+
+const SavedMovementHistory: FC<{
+  savedMovement: Pick<SavedMovement, 'id' | 'name'> | null;
+  /** Behavior on movement click. */
+  openLogDrawer: (event: React.MouseEvent<HTMLElement>, movement: Movement) => void;
+}> = ({ savedMovement, openLogDrawer }) => {
+  const [movementsHistory] = useDataState<Movement[]>(async () => {
+    if (!savedMovement) return DataState.Empty;
+    return API.Movements.getAll(
+      where('savedMovementId', '==', savedMovement.id),
+      orderBy('timestamp', 'desc')
+    );
+  }, [savedMovement]);
+
+  if (!savedMovement || !DataState.isReady(movementsHistory)) return null;
+
+  return (
+    <Stack spacing={1}>
+      <Typography variant="h6" fontWeight="bold">
+        {savedMovement.name}
+      </Typography>
+      {/** Graph of volume over time, w/ dates */}
+      <Stack
+        spacing={1}
+        sx={{
+          maxHeight: '40vh',
+          overflowY: 'scroll',
+          '& > *:nth-child(even)': {
+            backgroundColor: theme => theme.palette.action.hover,
+          },
+        }}
+      >
+        {movementsHistory.map((movement, index, { length }) => {
+          const date = new Date(movement.timestamp);
+          return (
+            <Stack
+              key={movement.id}
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              width="100%"
+              onClick={event => openLogDrawer(event, movement)}
+              sx={{
+                padding: theme => theme.spacing(1),
+              }}
+            >
+              <Stack direction="row" display="flex" alignItems="center" spacing={2}>
+                <Typography variant="overline" color="textSecondary">
+                  {length - index}
+                </Typography>
+                <Typography color="body2">
+                  {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+                </Typography>
+              </Stack>
+              <Typography variant="overline">
+                {Intl.NumberFormat().format(
+                  MovementSet.summate(
+                    movement.sets.filter(s => s.status === MovementSetStatus.Completed)
+                  )
+                )}{' '}
+                {movement.sets?.[0]?.weight === 0 ? movement.repCountUnit : movement.weightUnit}
+              </Typography>
+              <Typography variant="body2">
+                {formatDistanceToNowStrict(date, {
+                  addSuffix: true,
+                }).replace(/ (\w)\w+ /i, '$1 ')}
+              </Typography>
+            </Stack>
+          );
+        })}
+      </Stack>
+    </Stack>
+  );
+};
