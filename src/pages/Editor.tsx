@@ -1518,7 +1518,8 @@ const MovementSetView: FC<{
             // update to new value
             movement.sets[index].repCountActual = +value;
             movement.sets[index].status = MovementSetStatus.Completed;
-            if (Math.random() > 0.66) {
+            const isLastSet = index === movement.sets.length - 1;
+            if (Math.random() > 0.85 && isLastSet) {
               setConfetti(true);
             }
           }
