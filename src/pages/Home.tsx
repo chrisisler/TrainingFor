@@ -17,7 +17,7 @@ import {
   SwipeableDrawer,
   Typography,
 } from '@mui/material';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { limit, orderBy, where } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
@@ -51,7 +51,7 @@ export const Home: FC = () => {
 
   // A subset of the users logs to display in detail
   const [logs] = useDataState(
-    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
+    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(50)),
     [user.uid]
   );
 
@@ -135,7 +135,7 @@ export const Home: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="baseline">
-        <Button onClick={() => navigate(Paths.program)} variant="text" size="small">
+        <Button onClick={() => navigate(Paths.program)} variant="text">
           Program
         </Button>
         <Typography variant="overline" color="textSecondary">
@@ -150,7 +150,7 @@ export const Home: FC = () => {
       {/** Count of training logs */}
       {/** Count of total volume */}
 
-      <Stack spacing={3}>
+      <Stack spacing={3} sx={{ padding: theme => theme.spacing(3, 2) }}>
         {/**
          * If the user has an active program, show a button to dropdown to
          * create training from any day of the program.
@@ -161,12 +161,12 @@ export const Home: FC = () => {
               <Box width="100%">
                 <Button
                   size="large"
-                  startIcon={<AddCircleOutlineRounded />}
+                  startIcon={<AddRounded />}
                   onClick={programTrainingMenu.onOpen}
-                  variant="contained"
+                  variant="outlined"
                   fullWidth
                 >
-                  Train {activeProgram.name}
+                  Programmed Training
                 </Button>
                 <SwipeableDrawer {...programTrainingMenu} anchor="top">
                   <Typography variant="h6" sx={{ p: 1 }} textAlign="center">
@@ -200,14 +200,13 @@ export const Home: FC = () => {
         </DataStateView>
 
         <Button
-          size="small"
           variant="outlined"
           onClick={() => createTrainingLog({ fromTemplateId: null })}
-          sx={{ width: '100%' }}
           color="primary"
           startIcon={<AddRounded />}
+          fullWidth
         >
-          Train From Scratch
+          Training
         </Button>
       </Stack>
 
@@ -218,38 +217,29 @@ export const Home: FC = () => {
               No training data.
             </Typography>
           ) : (
-            <Stack spacing={2} sx={{ padding: theme => theme.spacing(1) }}>
-              {logs.map(log => {
+            <Stack spacing={5} sx={{ padding: theme => theme.spacing(0) }}>
+              {logs.map((log, logIndex, { length }) => {
                 const date = new Date(log.timestamp);
                 return (
                   <Paper
                     key={log.id}
-                    elevation={3}
+                    elevation={0}
                     sx={{
-                      padding: theme => theme.spacing(2),
+                      borderTop: theme => `2px solid ${theme.palette.divider}`,
+                      padding: theme => theme.spacing(3),
                       display: 'flex',
                       justifyContent: 'space-between',
                     }}
                     onClick={() => navigate(Paths.editor(log.id))}
                   >
-                    <Stack spacing={0.5}>
-                      <Stack
-                        direction="row"
-                        spacing={3}
-                        alignItems="baseline"
-                        sx={{
-                          borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                          whiteSpace: 'nowrap',
-                        }}
+                    <Stack spacing={1}>
+                      <Typography
+                        variant="h6"
+                        fontStyle="italic"
+                        sx={{ color: 'divider', fontWeight: 'bold' }}
                       >
-                        <Typography variant="body1">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
-                        <Typography variant="overline" color="textSecondary">
-                          {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
-                        </Typography>
-                        <Typography variant="caption">
-                          {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
-                        </Typography>
-                      </Stack>
+                        Training Log #{length - logIndex}
+                      </Typography>
                       <DataStateView data={DataState.map(movementsByLogId, _ => _.get(log.id))}>
                         {movements => {
                           if (!movements) return null;
@@ -281,8 +271,38 @@ export const Home: FC = () => {
                           );
                         }}
                       </DataStateView>
+                      {/** "In the morning", "At night" display */}
+                      <Typography variant="overline" color="textSecondary">
+                        {format(new Date(log.timestamp), 'BBBB')}
+                      </Typography>
+                      {/** Assumes the the log index is less than the limit for logs fetched. */}
+                      {log?.note && (
+                        <Typography variant="caption" color="textSecondary">
+                          {log.note.slice(0, 50) + (log.note.length > 50 ? '...' : '')}
+                        </Typography>
+                      )}
                     </Stack>
-                    <NavigateNextRounded sx={{ color: theme => theme.palette.primary.main }} />
+                    <Stack spacing={2}>
+                      <Box
+                        display="flex"
+                        justifyContent="flex-end"
+                        whiteSpace="nowrap"
+                        alignItems="center"
+                      >
+                        <Typography variant="body1" color="textSecondary" mr={1}>
+                          {Months[date.getMonth()] + ' ' + date.getDate()}
+                        </Typography>
+                        <NavigateNextRounded fontSize="large" sx={{ color: 'text.secondary' }} />
+                      </Box>
+                      <Stack>
+                        <Typography variant="caption" fontStyle="italic">
+                          {SORTED_WEEKDAYS[date.getDay()]}
+                        </Typography>
+                        <Typography variant="body1" color="textSecondary" whiteSpace="nowrap">
+                          {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
+                        </Typography>
+                      </Stack>
+                    </Stack>
                   </Paper>
                 );
               })}
