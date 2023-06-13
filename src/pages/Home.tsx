@@ -138,7 +138,8 @@ export const Home: FC = () => {
         <Button onClick={() => navigate(Paths.program)} variant="text">
           Program
         </Button>
-        <Typography variant="overline" color="textSecondary">
+        <Typography variant="caption">
+          Welcome,{' '}
           {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
         </Typography>
         <IconButton size="small" onClick={deauthenticate}>
