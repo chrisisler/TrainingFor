@@ -279,7 +279,7 @@ export const Home: FC = () => {
                       {/** Assumes the the log index is less than the limit for logs fetched. */}
                       {log?.note && (
                         <Typography variant="caption" color="textSecondary">
-                          {log.note.slice(0, 50) + (log.note.length > 50 ? '...' : '')}
+                          {log.note.slice(0, 75) + (log.note.length > 75 ? '...' : '')}
                         </Typography>
                       )}
                     </Stack>
