@@ -546,14 +546,24 @@ export const EditorInternals: FC<{
                       width="100%"
                     >
                       <Box display="flex" alignItems="baseline">
-                        <Typography
-                          fontSize="1.1rem"
+                        <Stack
                           sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                          fontWeight={600}
                         >
-                          {movement.name}
-                        </Typography>
+                          <Typography fontSize="1.1rem" fontWeight={600}>
+                            {movement.name}
+                          </Typography>
+                          {isProgramView && (
+                            <Typography variant="caption" color="textSecondary">
+                              Added{' '}
+                              {formatDistanceToNowStrict(new Date(movement.timestamp), {
+                                addSuffix: true,
+                              })
+                                .replace(/ (\w)\w+ /i, '$1 ')
+                                .replace('m ', 'mo ')}
+                            </Typography>
+                          )}
+                        </Stack>
 
                         {/** Display volume or reps total. */}
                         {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
@@ -969,7 +979,9 @@ export const EditorInternals: FC<{
                           {matches.map((match: SavedMovement) => {
                             const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
                               addSuffix: true,
-                            }).replace(/ (\w)\w+ /i, '$1 ');
+                            })
+                              .replace(/ (\w)\w+ /i, '$1 ')
+                              .replace('m ', 'mo ');
                             const isLessThan72HoursAgo =
                               new Date().getTime() - new Date(match.lastSeen).getTime() <
                               72 * 60 * 60 * 1000;
@@ -1652,7 +1664,9 @@ const SavedMovementHistory: FC<{
               <Typography variant="body2">
                 {formatDistanceToNowStrict(date, {
                   addSuffix: true,
-                }).replace(/ (\w)\w+ /i, '$1 ')}
+                })
+                  .replace(/ (\w)\w+ /i, '$1 ')
+                  .replace('m ', 'mo ')}
               </Typography>
             </Stack>
           );
