@@ -1353,8 +1353,9 @@ export const EditorInternals: FC<{
                     if (!savedMovement) return null;
                     return (
                       <NotesDrawer
+                        noFocusLock
                         note={savedMovement?.note || ''}
-                        sx={{ height: '18vh' }}
+                        sx={{ height: '16vh' }}
                         onBlur={async (nextNote: string) => {
                           try {
                             // Update SavedMovement with new note
