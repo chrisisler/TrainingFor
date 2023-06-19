@@ -120,18 +120,22 @@ export const Editor: FC = () => {
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
         <DataStateView data={DataState.all(log, programUser)}>
           {([log, programUser]) => {
-            if (log.programId === programUser.activeProgramId) {
-              return (
-                <Typography
-                  variant="overline"
-                  sx={{ color: theme => theme.palette.success.main, fontStyle: 'italic' }}
-                >
-                  {programUser.activeProgramName}
+            const date = new Date(log.timestamp);
+            return (
+              <Stack>
+                <Typography variant="caption" color="textSecondary">
+                  {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                 </Typography>
-              );
-            }
-            // Empty box to maintain spacing.
-            return <Box />;
+                {log.programId === programUser.activeProgramId && (
+                  <Typography
+                    variant="overline"
+                    sx={{ color: theme => theme.palette.success.main, fontStyle: 'italic' }}
+                  >
+                    {programUser.activeProgramName}
+                  </Typography>
+                )}
+              </Stack>
+            );
           }}
         </DataStateView>
         <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
