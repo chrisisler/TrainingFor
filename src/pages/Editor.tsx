@@ -684,7 +684,7 @@ export const EditorInternals: FC<{
 
         {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button onClick={addMovementDrawer.onOpen}>
+            <Button onClick={addMovementDrawer.onOpen} size="small">
               <AddRounded
                 sx={{
                   color: 'text.secondary',
