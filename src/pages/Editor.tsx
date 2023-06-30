@@ -975,7 +975,15 @@ export const EditorInternals: FC<{
         </WithVariable>
       </Backdrop>
 
-      <SwipeableDrawer {...addMovementDrawer} anchor="top">
+      <SwipeableDrawer
+        {...addMovementDrawer}
+        anchor="top"
+        onClose={() => {
+          addMovementDrawer.onClose();
+          // clear input on close
+          setMovementNameQuery('');
+        }}
+      >
         <Collapse in={addMovementDrawer.open}>
           {/** Top 3-8 recommendations */}
 
