@@ -830,32 +830,37 @@ export const EditorInternals: FC<{
                           }}
                         />
                         {/** Shortcut buttons to add set with weight as a down set or up set */}
-                        {movement.sets[0]?.weight > 0 && (
-                          <>
-                            <Button
-                              sx={{ color: 'text.secondary' }}
-                              onClick={() => {
-                                let w = movement.sets[0].weight * 0.75;
-                                // Round to intervals of 5
-                                w = Math.round(w / 5) * 5;
-                                setNewSetWeight(w);
-                              }}
-                            >
-                              75%
-                            </Button>
-                            <Button
-                              sx={{ color: 'text.secondary' }}
-                              onClick={() => {
-                                let w = movement.sets[0].weight * 1.10;
-                                // Round to intervals of 5
-                                w = Math.round(w / 5) * 5;
-                                setNewSetWeight(w);
-                              }}
-                            >
-                              110%
-                            </Button>
-                          </>
-                        )}
+                        <WithVariable value={movement.sets[movement.sets.length - 1]}>
+                          {lastSet => {
+                            if (!lastSet || lastSet.weight === 0) return null;
+                            return (
+                              <>
+                                <Button
+                                  sx={{ color: 'text.secondary' }}
+                                  onClick={() => {
+                                    let nextWeight = lastSet.weight * 0.75;
+                                    // Round to intervals of 5
+                                    nextWeight = Math.round(nextWeight / 5) * 5;
+                                    setNewSetWeight(nextWeight);
+                                  }}
+                                >
+                                  75%
+                                </Button>
+                                <Button
+                                  sx={{ color: 'text.secondary' }}
+                                  onClick={() => {
+                                    let nextWeight = lastSet.weight * 1.1;
+                                    // Round to intervals of 5
+                                    nextWeight = Math.round(nextWeight / 5) * 5;
+                                    setNewSetWeight(nextWeight);
+                                  }}
+                                >
+                                  110%
+                                </Button>
+                              </>
+                            );
+                          }}
+                        </WithVariable>
                       </Box>
                       <Box display="flex">
                         <TextField
