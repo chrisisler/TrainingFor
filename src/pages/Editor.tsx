@@ -818,16 +818,45 @@ export const EditorInternals: FC<{
                       </MovementUnitSelect>
                     </Stack>
                     <Stack spacing={3}>
-                      <TextField
-                        variant="standard"
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetWeight}
-                        onChange={event => setNewSetWeight(+event.target.value)}
-                        onFocus={event => event.currentTarget.select()}
-                        InputProps={{
-                          sx: { fontSize: '1.5rem', width: '75px' },
-                        }}
-                      />
+                      <Box display="flex">
+                        <TextField
+                          variant="standard"
+                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                          value={newSetWeight}
+                          onChange={event => setNewSetWeight(+event.target.value)}
+                          onFocus={event => event.currentTarget.select()}
+                          InputProps={{
+                            sx: { fontSize: '1.5rem', width: '60px' },
+                          }}
+                        />
+                        {/** Shortcut buttons to add set with weight as a down set or up set */}
+                        {movement.sets[0]?.weight > 0 && (
+                          <>
+                            <Button
+                              sx={{ color: 'text.secondary' }}
+                              onClick={() => {
+                                let w = movement.sets[0].weight * 0.75;
+                                // Round to intervals of 5
+                                w = Math.round(w / 5) * 5;
+                                setNewSetWeight(w);
+                              }}
+                            >
+                              75%
+                            </Button>
+                            <Button
+                              sx={{ color: 'text.secondary' }}
+                              onClick={() => {
+                                let w = movement.sets[0].weight * 1.10;
+                                // Round to intervals of 5
+                                w = Math.round(w / 5) * 5;
+                                setNewSetWeight(w);
+                              }}
+                            >
+                              110%
+                            </Button>
+                          </>
+                        )}
+                      </Box>
                       <Box display="flex">
                         <TextField
                           variant="standard"
