@@ -1281,38 +1281,36 @@ export const EditorInternals: FC<{
           <TabPanel value={tabValue} index={TabIndex.Edit}>
             <Stack spacing={2} key={JSON.stringify(movementMenuDrawer)}>
               <Box>
-                <ReactFocusLock disabled={!movementMenuDrawer.open} returnFocus>
-                  <TextField
-                    fullWidth
-                    variant="standard"
-                    label="Movement Name"
-                    defaultValue={movementMenuDrawer.getData()?.name}
-                    onBlur={async function editMovement(event) {
-                      try {
-                        const movement = movementMenuDrawer.getData();
-                        if (!movement) return;
-                        const newName = event.target.value;
-                        if (newName.length < 3 || newName === movement.name) {
-                          return;
-                        }
-                        const updated: Movement = await Movements.update({
-                          id: movement.id,
-                          name: newName,
-                        });
-                        // Update local state
-                        if (!DataState.isReady(movements)) throw Error('Unreachable');
-                        const next = movements.slice();
-                        next[next.indexOf(movement)] = updated;
-                        setMovements(next);
-                        // Close drawer
-                        movementMenuDrawer.onClose();
-                        toast.success(`Movement renamed to ${newName}`);
-                      } catch (error) {
-                        toast.error(error.message);
+                <TextField
+                  fullWidth
+                  variant="standard"
+                  label="Movement Name"
+                  defaultValue={movementMenuDrawer.getData()?.name}
+                  onBlur={async function editMovement(event) {
+                    try {
+                      const movement = movementMenuDrawer.getData();
+                      if (!movement) return;
+                      const newName = event.target.value;
+                      if (newName.length < 3 || newName === movement.name) {
+                        return;
                       }
-                    }}
-                  />
-                </ReactFocusLock>
+                      const updated: Movement = await Movements.update({
+                        id: movement.id,
+                        name: newName,
+                      });
+                      // Update local state
+                      if (!DataState.isReady(movements)) throw Error('Unreachable');
+                      const next = movements.slice();
+                      next[next.indexOf(movement)] = updated;
+                      setMovements(next);
+                      // Close drawer
+                      movementMenuDrawer.onClose();
+                      toast.success(`Movement renamed to ${newName}`);
+                    } catch (error) {
+                      toast.error(error.message);
+                    }
+                  }}
+                />
               </Box>
               <Box>
                 <Button
