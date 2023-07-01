@@ -57,7 +57,7 @@ import {
 import {
   DataState,
   DataStateView,
-  Months,
+  dateDisplay,
   Paths,
   useDataState,
   useDrawer,
@@ -119,24 +119,21 @@ export const Editor: FC = () => {
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
         <DataStateView data={DataState.all(log, programUser)}>
-          {([log, programUser]) => {
-            const date = new Date(log.timestamp);
-            return (
-              <Stack>
-                <Typography variant="caption" color="textSecondary">
-                  {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+          {([log, programUser]) => (
+            <Stack>
+              <Typography variant="caption" color="textSecondary">
+                {dateDisplay(new Date(log.timestamp))}
+              </Typography>
+              {log.programId === programUser.activeProgramId && (
+                <Typography
+                  variant="overline"
+                  sx={{ color: theme => theme.palette.success.main, fontStyle: 'italic' }}
+                >
+                  {programUser.activeProgramName}
                 </Typography>
-                {log.programId === programUser.activeProgramId && (
-                  <Typography
-                    variant="overline"
-                    sx={{ color: theme => theme.palette.success.main, fontStyle: 'italic' }}
-                  >
-                    {programUser.activeProgramName}
-                  </Typography>
-                )}
-              </Stack>
-            );
-          }}
+              )}
+            </Stack>
+          )}
         </DataStateView>
         <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
           <ShortTextRounded sx={{ color: 'text.primary' }} />
@@ -182,7 +179,7 @@ export const Editor: FC = () => {
               >
                 {DataState.isReady(log) && (
                   <WithVariable value={new Date(log.timestamp)}>
-                    {date => <>{Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}</>}
+                    {date => <>{dateDisplay(date)}</>}
                   </WithVariable>
                 )}
               </Button>
@@ -1213,11 +1210,10 @@ export const EditorInternals: FC<{
             <WithVariable value={historyLogDrawer.getData()}>
               {movement => {
                 if (!movement) return null;
-                const date = new Date(movement.timestamp);
                 return (
                   <Stack spacing={0.5}>
                     <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
-                      {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+                      {dateDisplay(new Date(movement.timestamp))}
                     </Typography>
                     <EditorInternals readOnly logId={movement.logId} />
                   </Stack>
@@ -1680,8 +1676,7 @@ const SavedMovementHistory: FC<{
       {heaviest && heaviestDate && (
         <Typography variant="caption">
           Heaviest was {heaviest}
-          {movementsHistory[0].weightUnit} on{' '}
-          {Months[heaviestDate.getMonth()].slice(0, 3) + ' ' + heaviestDate.getDate()}.
+          {movementsHistory[0].weightUnit} on {dateDisplay(heaviestDate)}.
         </Typography>
       )}
       <Stack
@@ -1713,7 +1708,7 @@ const SavedMovementHistory: FC<{
                   {length - index}
                 </Typography>
                 <Typography color="body2">
-                  {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
+                  {dateDisplay(date)}
                 </Typography>
               </Stack>
               <Typography variant="overline">
