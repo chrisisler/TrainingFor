@@ -169,6 +169,9 @@ export const Program = {
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MovementSet = {
+  /**
+   * Compute volume of a given list of sets.
+   */
   summate(sets: MovementSet[]): number {
     // Sums up the weight if there is weight or just reps if no weight is found.
     const reducer =

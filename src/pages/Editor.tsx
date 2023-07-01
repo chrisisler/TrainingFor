@@ -1660,12 +1660,30 @@ const SavedMovementHistory: FC<{
 
   if (!DataState.isReady(movementsHistory)) return null;
 
+  let heaviest = 0;
+  let heaviestDate: Date | null = null;
+  for (const movement of movementsHistory) {
+    for (const set of movement.sets) {
+      if (set.weight > heaviest) {
+        heaviest = set.weight;
+        heaviestDate = new Date(movement.timestamp);
+      }
+    }
+  }
+
   return (
     <Stack spacing={1}>
       <Typography variant="h6" fontWeight="bold">
         {savedMovement.name}
       </Typography>
       {/** Graph of volume over time, w/ dates */}
+      {heaviest && heaviestDate && (
+        <Typography variant="caption">
+          Heaviest was {heaviest}
+          {movementsHistory[0].weightUnit} on{' '}
+          {Months[heaviestDate.getMonth()].slice(0, 3) + ' ' + heaviestDate.getDate()}.
+        </Typography>
+      )}
       <Stack
         spacing={1}
         sx={{
