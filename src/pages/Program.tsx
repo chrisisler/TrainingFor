@@ -290,9 +290,6 @@ export const Programs: FC = () => {
                               <Typography variant="caption" color="textSecondary">
                                 {programDays.length}x/week
                               </Typography>
-                              <Typography variant="caption" color="textSecondary">
-                                <b>{programDays.join(', ')}</b>
-                              </Typography>
                             </Box>
                           )}
                         </WithVariable>

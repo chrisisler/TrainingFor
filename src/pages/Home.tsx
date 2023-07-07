@@ -56,14 +56,13 @@ export const Home: FC = () => {
   );
 
   const [movementsByLogId] = useDataState<Map<string, Movement[]>>(async () => {
-    if (!DataState.isReady(logs)) {
-      return logs;
-    }
-    const promises = logs.map(_ =>
-      API.Movements.getAll(where('logId', '==', _.id), orderBy('position', 'asc'))
+    if (!DataState.isReady(logs)) return logs;
+    const movementLists = await Promise.all(
+      logs.map(_ => API.Movements.getAll(where('logId', '==', _.id), orderBy('position', 'asc')))
     );
-    const movementLists = await Promise.all(promises);
+    // Construct empty map to hold sorted movements
     const movementsByLogId = new Map<string, Movement[]>(logs.map(_ => [_.id, []]));
+    // Populate
     movementLists.forEach(movementList => {
       movementList.forEach(m => {
         movementsByLogId.get(m.logId)?.push(m);
