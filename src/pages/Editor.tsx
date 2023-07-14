@@ -124,7 +124,7 @@ export const Editor: FC = () => {
                 {dateDisplay(new Date(log.timestamp))}
               </Typography>
               {log.programId === programUser.activeProgramId && (
-                <Typography variant="overline" sx={{ color: theme => theme.palette.divider }}>
+                <Typography variant="overline" sx={{ color: theme => alpha(theme.palette.text.secondary, 0.3) }}>
                   <b>{programUser.activeProgramName}</b>
                 </Typography>
               )}
