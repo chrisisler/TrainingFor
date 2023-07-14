@@ -24,7 +24,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Paper,
   Select,
   SelectProps,
   Stack,
@@ -545,10 +544,18 @@ export const EditorInternals: FC<{
                     >
                       <Box display="flex" alignItems="baseline">
                         <Stack
-                          sx={{ padding: theme => theme.spacing(0.5, 0.5, 0.5, 0.5) }}
+                          sx={{ padding: theme => theme.spacing(0.5, 0.0) }}
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
                         >
-                          <Typography fontSize="1.1rem" fontWeight={600}>
+                          <Typography
+                            fontSize="1.2rem"
+                            fontWeight={200}
+                            sx={{
+                              backgroundColor: theme => alpha(theme.palette.divider, 0.02),
+                              padding: theme => theme.spacing(0.0, 1.0),
+                              borderRadius: 1,
+                            }}
+                          >
                             {movement.name}
                           </Typography>
                           {isProgramView && (
@@ -617,11 +624,13 @@ export const EditorInternals: FC<{
                     >
                       {savedMovement =>
                         !savedMovement?.note?.length ? null : (
-                          <Paper elevation={1} sx={{ marginBottom: theme => theme.spacing(1) }}>
-                            <Typography variant="body2" sx={{ margin: theme => theme.spacing(1) }}>
-                              {savedMovement.note}
-                            </Typography>
-                          </Paper>
+                          <Typography
+                            variant="body1"
+                            sx={{ margin: theme => theme.spacing(1) }}
+                            fontWeight={200}
+                          >
+                            {'>'} {savedMovement.note}
+                          </Typography>
                         )
                       }
                     </WithVariable>
