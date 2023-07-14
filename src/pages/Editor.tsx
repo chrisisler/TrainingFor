@@ -120,16 +120,13 @@ export const Editor: FC = () => {
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
         <DataStateView data={DataState.all(log, programUser)}>
           {([log, programUser]) => (
-            <Stack>
+            <Stack direction="row" spacing={1} alignItems="baseline">
               <Typography variant="caption" color="textSecondary">
                 {dateDisplay(new Date(log.timestamp))}
               </Typography>
               {log.programId === programUser.activeProgramId && (
-                <Typography
-                  variant="overline"
-                  sx={{ color: theme => theme.palette.success.main, fontStyle: 'italic' }}
-                >
-                  {programUser.activeProgramName}
+                <Typography variant="overline" sx={{ color: theme => theme.palette.divider }}>
+                  <b>{programUser.activeProgramName}</b>
                 </Typography>
               )}
             </Stack>
@@ -1707,9 +1704,7 @@ const SavedMovementHistory: FC<{
                 <Typography variant="overline" color="textSecondary">
                   {length - index}
                 </Typography>
-                <Typography color="body2">
-                  {dateDisplay(date)}
-                </Typography>
+                <Typography color="body2">{dateDisplay(date)}</Typography>
               </Stack>
               <Typography variant="overline">
                 {Intl.NumberFormat().format(
