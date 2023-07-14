@@ -1018,7 +1018,7 @@ export const EditorInternals: FC<{
                   <>
                     {matches.length > 0 && (
                       <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
-                        <Stack spacing={1.25} sx={{ maxHeight: '35vh', overflowY: 'scroll' }}>
+                        <Stack spacing={1.25} sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
                           {matches.map((match: SavedMovement) => {
                             const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
                               addSuffix: true,
