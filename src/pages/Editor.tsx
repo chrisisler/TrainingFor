@@ -119,12 +119,12 @@ export const Editor: FC = () => {
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
         <DataStateView data={DataState.all(log, programUser)}>
           {([log, programUser]) => (
-            <Stack direction="row" spacing={1} alignItems="baseline">
+            <Stack direction="row" spacing={1.5} alignItems="baseline">
               <Typography variant="caption" color="textSecondary">
                 {dateDisplay(new Date(log.timestamp))}
               </Typography>
               {log.programId === programUser.activeProgramId && (
-                <Typography variant="overline" sx={{ color: theme => alpha(theme.palette.text.secondary, 0.3) }}>
+                <Typography variant="overline" sx={{ color: theme => alpha(theme.palette.text.secondary, 0.4) }}>
                   <b>{programUser.activeProgramName}</b>
                 </Typography>
               )}
@@ -548,7 +548,7 @@ export const EditorInternals: FC<{
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
                         >
                           <Typography
-                            fontSize="1.2rem"
+                            fontSize="1.3rem"
                             fontWeight={200}
                             sx={{
                               backgroundColor: theme => alpha(theme.palette.divider, 0.02),
@@ -691,7 +691,7 @@ export const EditorInternals: FC<{
               <AddRounded
                 sx={{
                   color: 'text.secondary',
-                  fontSize: '1.6rem',
+                  fontSize: '1.5rem',
                   // Move away from everything else
                   mt: 2,
                   mb: 2,
