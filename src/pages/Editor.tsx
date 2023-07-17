@@ -558,16 +558,6 @@ export const EditorInternals: FC<{
                           >
                             {movement.name}
                           </Typography>
-                          {isProgramView && (
-                            <Typography variant="caption" color="textSecondary">
-                              Added{' '}
-                              {formatDistanceToNowStrict(new Date(movement.timestamp), {
-                                addSuffix: true,
-                              })
-                                .replace(/ (\w)\w+ /i, '$1 ')
-                                .replace('m ', 'mo ')}
-                            </Typography>
-                          )}
                         </Stack>
 
                         {/** Display volume or reps total. */}
