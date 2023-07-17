@@ -235,8 +235,9 @@ export const Programs: FC = () => {
         </Stack>
 
         <TabPanel value={tabValue} index={TabIndex.Programs}>
-          <DataStateView data={programs}>
-            {programs =>
+        {/** Pause display until viewedProgram is ready */}
+          <DataStateView data={DataState.all(programs, viewedProgram ?? DataState.Loading)}>
+            {([programs]) =>
               programs.length === 0 ? (
                 <Typography variant="overline" sx={{ textAlign: 'center' }}>
                   Nothing yet
