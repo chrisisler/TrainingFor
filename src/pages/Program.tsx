@@ -103,7 +103,13 @@ export const Programs: FC = () => {
     if (!DataState.isReady(programUser)) return;
     if (!DataState.isReady(programs)) return;
     if (viewedProgram === null && typeof programUser.activeProgramId === 'string') {
-      setViewedProgram(programs.find(p => p.id === programUser.activeProgramId) ?? null);
+      // The user's default/chosen program
+      const userProgram = programs.find(p => p.id === programUser.activeProgramId);
+      setViewedProgram(userProgram ?? null);
+      // Auto-select the Schedule tab
+      if (userProgram) {
+        setTabValue(TabIndex.Schedule);
+      }
     }
   }, [programUser, programs, viewedProgram]);
 
