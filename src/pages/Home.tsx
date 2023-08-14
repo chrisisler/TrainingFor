@@ -17,14 +17,16 @@ import {
   SwipeableDrawer,
   Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { limit, orderBy, where } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { API, auth, Authenticate } from '../api';
+import { API, auth, Authenticate, DbPath } from '../api';
 import { useUser } from '../context';
+import { Movement, ProgramLogTemplate } from '../types';
 import {
   DataState,
   DataStateView,
@@ -36,7 +38,6 @@ import {
   useMaterialMenu,
   useToast,
 } from '../util';
-import { Movement } from '../types';
 
 export const Home: FC = () => {
   const user = useUser();
@@ -48,6 +49,20 @@ export const Home: FC = () => {
   // Get active program (if it exists for auth'd user) to display upcoming
   // training AND power the create training log from active program button.
   const [activeProgram] = useActiveProgram();
+
+  const templates = DataState.from<ProgramLogTemplate[]>(
+    useQuery({
+      enabled: DataState.isReady(activeProgram),
+      queryKey: [DbPath.ProgramLogTemplates, user.uid],
+      queryFn: () => {
+        if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
+        return API.ProgramLogTemplates.getAll(
+          user.uid,
+          where('programId', '==', activeProgram.templateIds)
+        );
+      },
+    })
+  );
 
   // A subset of the users logs to display in detail
   const [logs] = useDataState(
@@ -155,8 +170,8 @@ export const Home: FC = () => {
          * If the user has an active program, show a button to dropdown to
          * create training from any day of the program.
          */}
-        <DataStateView data={activeProgram}>
-          {activeProgram => {
+        <DataStateView data={DataState.all(activeProgram, templates)}>
+          {([activeProgram, templates]) => {
             return (
               <Box width="100%">
                 <Button
@@ -172,27 +187,25 @@ export const Home: FC = () => {
                   <Typography variant="h6" sx={{ p: 1 }} textAlign="center">
                     {activeProgram.name}
                   </Typography>
-                  {/**<Stack spacing={3}>
-                    {SORTED_WEEKDAYS.map(day => day.toLowerCase())
-                      .flatMap(day => activeProgram.daysOfWeek[day] ?? []) // filter non-training days
-                      .map((templateId, index) => (
-                        <Button
-                          key={templateId}
-                          size="large"
-                          variant="outlined"
-                          onClick={() => createTrainingLog({ fromTemplateId: templateId })}
-                          startIcon={<AddCircleOutlineRounded />}
-                          endIcon={<NavigateNextRounded />}
-                          sx={{
-                            alignItems: 'center',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          Start Day {index + 1}
-                        </Button>
-                      ))}
-                  </Stack>*/}
+                  <Stack spacing={3}>
+                    {templates.map(template => (
+                      <Button
+                        key={template.id}
+                        size="large"
+                        variant="outlined"
+                        onClick={() => createTrainingLog({ fromTemplateId: template.id })}
+                        startIcon={<AddCircleOutlineRounded />}
+                        endIcon={<NavigateNextRounded />}
+                        sx={{
+                          alignItems: 'center',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        Train {template.name}
+                      </Button>
+                    ))}
+                  </Stack>
                 </SwipeableDrawer>
               </Box>
             );
