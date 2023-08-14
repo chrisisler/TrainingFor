@@ -172,7 +172,7 @@ export const Home: FC = () => {
                   <Typography variant="h6" sx={{ p: 1 }} textAlign="center">
                     {activeProgram.name}
                   </Typography>
-                  <Stack spacing={3}>
+                  {/**<Stack spacing={3}>
                     {SORTED_WEEKDAYS.map(day => day.toLowerCase())
                       .flatMap(day => activeProgram.daysOfWeek[day] ?? []) // filter non-training days
                       .map((templateId, index) => (
@@ -192,7 +192,7 @@ export const Home: FC = () => {
                           Start Day {index + 1}
                         </Button>
                       ))}
-                  </Stack>
+                  </Stack>*/}
                 </SwipeableDrawer>
               </Box>
             );

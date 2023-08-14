@@ -1,17 +1,9 @@
 import {
-  addDoc,
   collection,
-  CollectionReference,
-  deleteDoc,
-  doc,
   FirestoreDataConverter,
-  getDoc,
   getDocs,
   query,
-  QueryConstraint,
-  updateDoc,
   where,
-  WriteBatch,
   writeBatch,
 } from 'firebase/firestore';
 
@@ -22,8 +14,8 @@ import {
   ProgramLogTemplate,
   ProgramUser,
   Program,
-  FirestoreDocument,
 } from '../types';
+import { createAPI } from './client';
 import { db, DbPath } from './firebase';
 
 export * from './firebase';
@@ -78,71 +70,6 @@ function init() {
   };
 }
 
-function createAPI<T extends FirestoreDocument>(collection: CollectionReference<T>) {
-  return {
-    async create(entry: Omit<T, 'id'>): Promise<T> {
-      const newDocumentRef = await addDoc(collection, entry);
-      return { ...entry, id: newDocumentRef.id } as T;
-    },
-
-    async get(id: string): Promise<T> {
-      const documentRef = doc(collection.firestore, collection.path, id);
-      const document = await getDoc(documentRef);
-      if (document.exists()) {
-        return { ...document.data(), id: document.id } as T;
-      }
-      throw Error(`Document with id ${id} does not exist`);
-    },
-
-    async getAll(param: string | QueryConstraint, ...constraints: QueryConstraint[]): Promise<T[]> {
-      // Convert given userId to a query constraint OR use the one given.
-      const queryConstraint =
-        typeof param === 'string' ? where('authorUserId', '==', param) : param;
-      const q = query(collection, queryConstraint, ...constraints);
-      const { docs } = await getDocs(q);
-      return docs.map(doc => ({ ...doc.data(), id: doc.id } as T));
-    },
-
-    async update(entry: Partial<T> & { id: string }): Promise<T> {
-      const docRef = doc(collection.firestore, collection.path, entry.id);
-      // https://github.com/firebase/firebase-js-sdk/issues/5853
-      await updateDoc(docRef, { ...entry });
-      // Get the latest data and return it
-      const document = await getDoc(docRef);
-      return { ...document.data(), id: document.id } as T;
-    },
-
-    async delete(id: string): Promise<void> {
-      const docRef = doc(collection.firestore, collection.path, id);
-      await deleteDoc(docRef);
-    },
-
-    async createMany(entries: T[]): Promise<void> {
-      const batch = writeBatch(db);
-      entries.forEach(data => {
-        batch.set(doc(collection), data);
-      });
-      await batch.commit();
-    },
-
-    async deleteMany(...constraints: QueryConstraint[]): Promise<void> {
-      const batch = writeBatch(db);
-      const q = query(collection, ...constraints);
-      const { docs } = await getDocs(q);
-      docs.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
-    },
-
-    async batch(op: (batch: WriteBatch) => Promise<void>): Promise<void> {
-      const batch = writeBatch(db);
-      op(batch);
-      await batch.commit();
-    },
-  };
-}
-
 function converter<T>(): FirestoreDataConverter<T> {
   return {
     toFirestore: data => data,
@@ -173,12 +100,3 @@ async function assignAnonymousDataToGoogleUser(oldUserId: string, newUserId: str
   });
   await batch.commit();
 }
-
-// async function fn() {
-//   const batch = writeBatch(db);
-//   list.forEach(docData => {
-//     const newDocRef = doc(collection.firestore, collection.path)
-//     batch.set(newDocRef, docData)
-//   });
-//   await batch.commit();
-// }

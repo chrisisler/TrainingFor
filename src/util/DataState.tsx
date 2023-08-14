@@ -37,8 +37,8 @@ interface DataStateAll {
 export const DataState = {
   Empty: DataStateEmpty,
   Loading: DataStateLoading,
-  error: (message: string): Error => {
-    return Error(message);
+  error: (message: unknown): Error => {
+    return Error(typeof message === 'string' ? message : String(message));
   },
   isEmpty<T>(ds: DataState<T>): ds is typeof DataStateEmpty {
     return ds === DataStateEmpty;
@@ -56,17 +56,11 @@ export const DataState = {
     if (!DataState.isReady(ds)) return ds as DataState<U>;
     return fn(ds);
   },
-  unwrapOr<T, U>(ds: DataState<T>, alt: U): T | U {
-    if (DataState.isReady(ds)) return ds;
-    return alt;
-  },
-  /**
-   * Return the contained value or throw an Error if it is in any non-ready
-   * state.
-   */
-  unwrap<T>(ds: DataState<T>): T {
-    if (DataState.isReady(ds)) return ds;
-    throw Error('Called `DataState.unwrap(x)` on not ready data');
+  from<T>(state: { isLoading: boolean; error: unknown; data: T | undefined }): DataState<T> {
+    if (state.isLoading) return DataState.Loading;
+    if (state.error) return DataState.error(state.error);
+    if (state.data === undefined) return DataState.Empty;
+    return state.data;
   },
   /**
    * Converts an array of DataState into a DataState<T[]>.

@@ -1,4 +1,5 @@
 import { Box, Collapse } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import { FC } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
@@ -6,6 +7,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { PrivateThemeProvider, UserProvider } from './context';
 import { Authentication, Home, Editor, Programs } from './pages';
 import { DataStateView, Paths, useUserAuthSubscription } from './util';
+
+const queryClient = new QueryClient();
 
 export const App: FC = () => {
   /** When this value is DataState.Empty, the user is not authenticated. */
@@ -33,12 +36,14 @@ export const App: FC = () => {
             >
               {user => (
                 <UserProvider user={user}>
-                  <Routes>
-                    <Route path={Paths.home} element={<Home />} />
-                    <Route path={Paths.editor()} element={<Editor />} />
-                    <Route path={Paths.program} element={<Programs />} />
-                    <Route path="*" element={<Navigate to={Paths.home} />} />
-                  </Routes>
+                  <QueryClientProvider client={queryClient}>
+                    <Routes>
+                      <Route path={Paths.home} element={<Home />} />
+                      <Route path={Paths.editor()} element={<Editor />} />
+                      <Route path={Paths.program} element={<Programs />} />
+                      <Route path="*" element={<Navigate to={Paths.home} />} />
+                    </Routes>
+                  </QueryClientProvider>
                 </UserProvider>
               )}
             </DataStateView>

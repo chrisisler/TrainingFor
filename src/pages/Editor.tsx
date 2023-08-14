@@ -124,7 +124,10 @@ export const Editor: FC = () => {
                 {dateDisplay(new Date(log.timestamp))}
               </Typography>
               {log.programId === programUser.activeProgramId && (
-                <Typography variant="overline" sx={{ color: theme => alpha(theme.palette.text.secondary, 0.4) }}>
+                <Typography
+                  variant="overline"
+                  sx={{ color: theme => alpha(theme.palette.text.secondary, 0.4) }}
+                >
                   <b>{programUser.activeProgramName}</b>
                 </Typography>
               )}
@@ -527,10 +530,8 @@ export const EditorInternals: FC<{
           {movements => (
             <Stack
               spacing={3}
-              sx={
-                // Block all mouse clicks/evets when in readOnly mode
-                readOnly ? { '& *': { pointerEvents: 'none' } } : void 0
-              }
+              // Block all mouse clicks/events when in readOnly mode
+              sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             >
               {movements.map((movement: Movement, movementIndex) => (
                 <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>

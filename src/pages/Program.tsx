@@ -1,10 +1,10 @@
 import {
-  AddCircleOutline,
   AddRounded,
   Close,
   DeleteForeverRounded,
   EditOutlined,
   PersonOutline,
+  PlaylistAddRounded,
   VerifiedRounded,
 } from '@mui/icons-material';
 import {
@@ -20,15 +20,17 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { orderBy, where } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
+import { getCountFromServer, orderBy, query, where } from 'firebase/firestore';
 import { FC, useCallback, useEffect, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
-import { API } from '../api';
+import { API, DbPath } from '../api';
+import { useAPI } from '../api/client';
 import { tabA11yProps, NotesDrawer, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
-import { Movement, Program } from '../types';
+import { Movement, Program, ProgramLogTemplate } from '../types';
 import {
   DataState,
   DataStateView,
@@ -38,7 +40,6 @@ import {
   useDrawer,
   useMaterialMenu,
   useToast,
-  Weekdays,
 } from '../util';
 import { EditorInternals } from './Editor';
 
@@ -57,23 +58,30 @@ export const Programs: FC = () => {
   const programNoteDrawer = useMaterialMenu();
   const editorDrawer = useDrawer<{
     templateId: null | string;
-    dayOfWeek: Lowercase<Weekdays>;
-    index: number;
   }>();
 
   const [newProgramName, setNewProgramName] = useState('');
   const [tabValue, setTabValue] = useState(TabIndex.Programs);
   const [viewedProgram, setViewedProgram] = useState<Program | null>(null);
 
-  // Currently only user-local programs are shown, NOT all programs ever made
-  // in the app What if we allow non-user-local programs and the owner deletes
-  // one while it is still in use? What if the owner updates the name? Should
-  // non-user-owned programs be copied into their own DB collection upon
-  // activation? What if they were just testing it out and switch back quickly?
-  // Being lazy on this decision and implementing the least amount possible in
-  // order to work is the way we should go. Or, it will likely become obvious
-  // with little effort in the future.
-  const [programs, setPrograms] = useDataState(() => API.Programs.getAll(user.uid), [user.uid]);
+  const TemplatesAPI = useAPI(API.ProgramLogTemplates, DbPath.ProgramLogTemplates);
+  const ProgramsAPI = useAPI(API.Programs, DbPath.Programs);
+  const programs = DataState.from<Program[]>(
+    useQuery({
+      queryKey: [DbPath.Programs, user.uid],
+      queryFn: () =>
+        API.Programs.getAll(user.uid).then(list =>
+          list.map((p: Program) => {
+            // If data is in old pre-migration format, update it to use templateIds
+            if ('daysOfWeek' in p && !!p.daysOfWeek && typeof p.daysOfWeek === 'object') {
+              // @ts-ignore
+              p.templateIds = SORTED_WEEKDAYS.flatMap(w => p.daysOfWeek[w.toLowerCase()] ?? []);
+            }
+            return p;
+          })
+        ),
+    })
+  );
 
   const [programUser, setProgramUser] = useDataState(
     () =>
@@ -97,6 +105,20 @@ export const Programs: FC = () => {
     [user.uid]
   );
 
+  const templates = DataState.from<ProgramLogTemplate[]>(
+    useQuery({
+      enabled: DataState.isReady(programUser),
+      queryKey: [DbPath.ProgramLogTemplates, user.uid],
+      queryFn: () => {
+        if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
+        return API.ProgramLogTemplates.getAll(
+          user.uid,
+          where('programId', '==', programUser.activeProgramId)
+        );
+      },
+    })
+  );
+
   // When page loads viewedProgram is null, when data fetches, update
   // viewedProgram so the Schedule tab is not disabled.
   useEffect(() => {
@@ -114,25 +136,26 @@ export const Programs: FC = () => {
   }, [programUser, programs, viewedProgram]);
 
   // ProgramMovements from viewedProgram
-  const [programMovementsByDayOfWeek] = useDataState<
-    Record<Lowercase<Weekdays[number]>, null | Movement[]>
-  >(async () => {
-    if (editorDrawer.open) return DataState.Empty;
-    const program = viewedProgram;
-    if (!program) return DataState.Empty;
-    const promises = Object.keys(program.daysOfWeek).map(async key => {
-      const dayOfWeek = key as Lowercase<Weekdays>;
-      const templateId = program.daysOfWeek[dayOfWeek];
-      if (!templateId) {
-        return { [dayOfWeek]: null };
-      }
-      return API.ProgramMovements.getAll(
-        where('logId', '==', templateId),
-        orderBy('position', 'asc')
-      ).then(movements => ({ [dayOfWeek]: movements }));
-    });
-    return await Promise.all(promises).then(_ => _.reduce((R, x) => Object.assign(R, x), {}));
-  }, [editorDrawer.open, viewedProgram]);
+  const programMovementsByTemplateId = DataState.from<Record<string, Movement[]>>(
+    useQuery({
+      queryKey: [],
+      enabled: !editorDrawer.open && !!viewedProgram,
+      queryFn: async () => {
+        if (!viewedProgram) return {};
+        // For templates in program fetch each movement for that template
+        const promises = viewedProgram.templateIds.map(templateId =>
+          API.ProgramMovements.getAll(where('logId', '==', templateId), orderBy('position', 'asc'))
+        );
+        const movementsByTemplateId = await Promise.all(promises);
+        // Map movements to template ID
+        return viewedProgram.templateIds
+          .map((templateId, index) => ({
+            [templateId]: movementsByTemplateId[index],
+          }))
+          .reduce((a, b) => Object.assign(a, b), {});
+      },
+    })
+  );
 
   const [newTemplateId] = useDataState(async () => {
     if (!editorDrawer.open) return DataState.Empty;
@@ -140,26 +163,19 @@ export const Programs: FC = () => {
     const data = editorDrawer.getData();
     if (!DataState.isReady(programs)) return programs;
     if (!data || !program) return DataState.Empty;
-    if (data.templateId) {
-      return data.templateId;
-    }
-    // Create one and return it
+    if (data.templateId) return data.templateId;
     const { id: newProgramLogTemplateId } = await API.ProgramLogTemplates.create({
       authorUserId: user.uid,
       programId: program.id,
+      name: '',
     });
     // Update programs to reflect newly added day of week (in the drawer-open program)
-    const daysOfWeek = JSON.parse(JSON.stringify(program.daysOfWeek));
-    daysOfWeek[data.dayOfWeek] = newProgramLogTemplateId;
-    const updated = await API.Programs.update({
+    await ProgramsAPI.update({
       id: program.id,
-      daysOfWeek,
+      templateIds: program.templateIds.concat(newProgramLogTemplateId),
     });
-    setPrograms(programs.map(p => (p.id === program.id ? updated : p)));
-    // Update drawer state to reflect DB
+    // Update drawer state to reflect DB changes
     editorDrawer.setData({ ...data, templateId: newProgramLogTemplateId });
-    // Return new template (id) for users to add movements to since they just
-    // clicked the (add template) button
     return newProgramLogTemplateId;
   }, [editorDrawer.getData()?.templateId, viewedProgram]);
 
@@ -235,7 +251,7 @@ export const Programs: FC = () => {
         </Stack>
 
         <TabPanel value={tabValue} index={TabIndex.Programs}>
-        {/** Pause display until viewedProgram is ready */}
+          {/** Pause display until viewedProgram is ready */}
           <DataStateView data={DataState.all(programs, viewedProgram ?? DataState.Loading)}>
             {([programs]) =>
               programs.length === 0 ? (
@@ -282,7 +298,8 @@ export const Programs: FC = () => {
                             </Stack>
                           )}
                         </Stack>
-                        <WithVariable
+                        {/** TODO */}
+                        {/**<WithVariable
                           value={SORTED_WEEKDAYS.flatMap(key =>
                             program.daysOfWeek[key.toLowerCase()] ? key.slice(0, 3) : []
                           )}
@@ -299,7 +316,7 @@ export const Programs: FC = () => {
                               </Typography>
                             </Box>
                           )}
-                        </WithVariable>
+                        </WithVariable>*/}
                       </Box>
                     );
                   })}
@@ -318,15 +335,6 @@ export const Programs: FC = () => {
               const isActive =
                 DataState.isReady(programUser) && programUser.activeProgramId === program?.id;
               const isOwner = user.uid === program.authorUserId;
-              const sortedProgramTemplates = [
-                program.daysOfWeek.sunday,
-                program.daysOfWeek.monday,
-                program.daysOfWeek.tuesday,
-                program.daysOfWeek.wednesday,
-                program.daysOfWeek.thursday,
-                program.daysOfWeek.friday,
-                program.daysOfWeek.saturday,
-              ];
               return (
                 <Stack spacing={3}>
                   <Stack
@@ -353,16 +361,12 @@ export const Programs: FC = () => {
                             try {
                               const newName = event.target.value;
                               if (newName.length < 3 || newName === program.name) return;
-                              // Get updated references to reflect DB changes in local st8
-                              const [uUser, uProgram] = await Promise.all([
-                                API.ProgramUsers.update({
-                                  id: programUser.id,
-                                  activeProgramName: newName,
-                                }),
-                                API.Programs.update({ id: program.id, name: newName }),
-                              ]);
-                              setPrograms(programs.map(p => (p.id === program.id ? uProgram : p)));
+                              const uUser = await API.ProgramUsers.update({
+                                id: programUser.id,
+                                activeProgramName: newName,
+                              });
                               setProgramUser(uUser);
+                              ProgramsAPI.update({ id: program.id, name: newName });
                               toast.info('Updated program name.');
                             } catch (err) {
                               toast.error(err.message);
@@ -372,41 +376,45 @@ export const Programs: FC = () => {
                         <IconButton
                           color="error"
                           onClick={async function deleteProgram() {
-                            if (!DataState.isReady(programMovementsByDayOfWeek)) {
-                              throw Error('Unreachable');
-                            }
-                            if (!window.confirm('Are you sure? This can never be undone.')) return;
-                            try {
-                              const _deleteProgram = API.Programs.delete(program.id);
-                              const _updateProgramUser = API.ProgramUsers.update({
-                                id: programUser.id,
-                                activeProgramId: null,
-                                activeProgramName: null,
-                              });
-                              const _deleteProgramLogTemplates = API.ProgramLogTemplates.deleteMany(
-                                where('programId', '==', program.id)
-                              );
-                              const _deleteProgramMovements = Promise.all(
-                                Object.values(program.daysOfWeek)
-                                  .filter(templateId => !!templateId)
-                                  .map(_ =>
-                                    API.ProgramMovements.deleteMany(where('logId', '==', _))
-                                  )
-                              );
-                              await Promise.all([
-                                _deleteProgram,
-                                _updateProgramUser,
-                                _deleteProgramLogTemplates,
-                                _deleteProgramMovements,
-                              ]);
-                              setPrograms(programs.filter(p => p.id !== program.id));
-                              setViewedProgram(null);
-                              setTabValue(TabIndex.Programs);
-                              toast.success('Deleted program.');
-                            } catch (err) {
-                              toast.error(err.message);
-                            }
+                            // TODO
+                            alert('Unimplemented!');
                           }}
+                          // onClick={async function deleteProgram() {
+                          //   if (!DataState.isReady(programMovementsByDayOfWeek)) {
+                          //     throw Error('Unreachable');
+                          //   }
+                          //   if (!window.confirm('Are you sure? This can never be undone.')) return;
+                          //   try {
+                          //     const _deleteProgram = API.Programs.delete(program.id);
+                          //     const _updateProgramUser = API.ProgramUsers.update({
+                          //       id: programUser.id,
+                          //       activeProgramId: null,
+                          //       activeProgramName: null,
+                          //     });
+                          //     const _deleteProgramLogTemplates = API.ProgramLogTemplates.deleteMany(
+                          //       where('programId', '==', program.id)
+                          //     );
+                          //     const _deleteProgramMovements = Promise.all(
+                          //       Object.values(program.daysOfWeek)
+                          //         .filter(templateId => !!templateId)
+                          //         .map(_ =>
+                          //           API.ProgramMovements.deleteMany(where('logId', '==', _))
+                          //         )
+                          //     );
+                          //     await Promise.all([
+                          //       _deleteProgram,
+                          //       _updateProgramUser,
+                          //       _deleteProgramLogTemplates,
+                          //       _deleteProgramMovements,
+                          //     ]);
+                          //     setPrograms(programs.filter(p => p.id !== program.id));
+                          //     setViewedProgram(null);
+                          //     setTabValue(TabIndex.Programs);
+                          //     toast.success('Deleted program.');
+                          //   } catch (err) {
+                          //     toast.error(err.message);
+                          //   }
+                          // }}
                         >
                           <DeleteForeverRounded fontSize="small" />
                         </IconButton>
@@ -440,118 +448,78 @@ export const Programs: FC = () => {
                     </Button>
                   )}
                   <Stack spacing={3}>
-                    {sortedProgramTemplates.map(
-                      (programLogTemplateId: string | null, index, array) => {
-                        const dayOfWeek = Object.keys(Weekdays)[
-                          index
-                        ].toLowerCase() as Lowercase<Weekdays>;
-                        const dayIndex = array.slice(0, index).filter(Boolean).length + 1;
-                        const dayHasTraining = !!programLogTemplateId;
-                        // Render only existing training days.
-                        // No need for ability to swap workout days when workouts are
-                        // not fixed to a particular day. "Day 1/2/3" much more flexible
-                        // then "Tuesday Training"
-                        if (!dayHasTraining) return null;
-                        return (
-                          <Paper
-                            key={dayOfWeek}
-                            elevation={2}
-                            sx={{
-                              padding: theme => theme.spacing(2),
-                              // backgroundColor: theme => theme.palette.divider,
-                              // borderRadius: 2,
-                            }}
-                          >
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="center"
-                              spacing={2}
-                            >
-                              <Typography
-                                variant="overline"
-                                color={dayHasTraining ? 'textPrimary' : 'textSecondary'}
-                                lineHeight={1}
-                                whiteSpace="nowrap"
-                                mr={dayHasTraining ? -0.2 : undefined}
-                              >
-                                {dayHasTraining ? `Day ${dayIndex}` : 'Rest'}
-                              </Typography>
-                              <Stack width="100%">
-                                <DataStateView data={programMovementsByDayOfWeek}>
-                                  {schedule => {
-                                    const movements = schedule[dayOfWeek];
-                                    // Ensure value is not null AND if it is an array, it is not empty
-                                    if (movements === null) {
-                                      return null;
-                                    }
-                                    if (movements.length === 0) {
-                                      // Unreachable because tempaltes with zero movements are supposed
-                                      // to be deleted upon closing of the editor drawer
-                                      // toast.error('Unreachable: Template with zero movements.');
-                                      return null;
-                                    }
-                                    return (
-                                      <>
-                                        {movements.map(movement => (
-                                          <Typography
-                                            variant="body2"
-                                            key={movement.id}
-                                            fontWeight={600}
-                                          >
-                                            {movement.name}
-                                          </Typography>
-                                        ))}
-                                      </>
-                                    );
-                                  }}
-                                </DataStateView>
-                              </Stack>
-                              <IconButton
-                                sx={{ color: theme => theme.palette.primary.main }}
-                                onClick={event => {
-                                  editorDrawer.onOpen(event, {
-                                    templateId: programLogTemplateId,
-                                    dayOfWeek,
-                                    index: dayIndex,
-                                  });
+                    {program.templateIds.map((templateId, index) => {
+                      return (
+                        <Paper
+                          key={templateId}
+                          elevation={1}
+                          sx={{
+                            padding: theme => theme.spacing(2),
+                          }}
+                        >
+                          <Stack alignItems="center" justifyContent="center" spacing={3}>
+                            <DataStateView data={templates}>
+                              {templates => (
+                                <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
+                                  {templates.find(t => t.id === templateId)?.name ||
+                                    `Day ${index + 1}`}
+                                </Typography>
+                              )}
+                            </DataStateView>
+                            <Stack>
+                              <DataStateView data={programMovementsByTemplateId}>
+                                {programMovementsByTemplateId => {
+                                  const movements = programMovementsByTemplateId[templateId];
+                                  if (movements === null) return null;
+                                  if (movements.length === 0) return null;
+                                  return (
+                                    <>
+                                      {movements.map(movement => (
+                                        <Typography
+                                          variant="body2"
+                                          key={movement.id}
+                                          fontWeight={600}
+                                        >
+                                          {movement.name}
+                                        </Typography>
+                                      ))}
+                                    </>
+                                  );
                                 }}
-                              >
-                                <EditOutlined />
-                              </IconButton>
+                              </DataStateView>
                             </Stack>
-                          </Paper>
-                        );
-                      }
-                    )}
+                            <IconButton
+                              sx={{ color: theme => theme.palette.primary.main }}
+                              onClick={event => {
+                                editorDrawer.onOpen(event, {
+                                  templateId: templateId,
+                                });
+                              }}
+                            >
+                              <EditOutlined />
+                            </IconButton>
+                          </Stack>
+                        </Paper>
+                      );
+                    })}
 
-                    <Box
-                      sx={{
-                        padding: theme => theme.spacing(1, 2),
-                      }}
-                    >
-                      <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <WithVariable value={sortedProgramTemplates.filter(x => !x).length}>
-                          {num => (
-                            <Typography variant="overline" color="textSecondary">
-                              {num} rest days
-                            </Typography>
-                          )}
-                        </WithVariable>
+                    <Box sx={{ padding: theme => theme.spacing(1, 2) }}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="center"
+                        width="100%"
+                      >
+                        <Box />
                         <IconButton
                           sx={{ color: theme => theme.palette.primary.main }}
                           onClick={event => {
-                            // Gets the correct next empty day FOR NEW PROGRAMS
-                            const index = sortedProgramTemplates.findIndex(id => id === null);
-                            const dayOfWeek = SORTED_WEEKDAYS[index].toLowerCase();
                             editorDrawer.onOpen(event, {
                               templateId: null,
-                              dayOfWeek: dayOfWeek as Lowercase<Weekdays>,
-                              index: sortedProgramTemplates.filter(Boolean).length + 1,
                             });
                           }}
                         >
-                          <AddCircleOutline />
+                          <PlaylistAddRounded />
                         </IconButton>
                       </Stack>
                     </Box>
@@ -587,31 +555,42 @@ export const Programs: FC = () => {
         {...editorDrawer.props()}
         anchor="bottom"
         onClose={async () => {
-          if (!DataState.isReady(programs)) return;
           const context = editorDrawer.getData();
           if (!!context && !!viewedProgram) {
-            const { templateId, dayOfWeek } = context;
-            // const dayPreviouslyDidNotHaveTraining = !!viewedProgram?.daysOfWeek[dayOfWeek]
+            const { templateId } = context;
             if (!templateId) return;
-            // If no movements exist in the training template, then delete the
-            // template from the schedule
-            const movements = await API.ProgramMovements.getAll(where('logId', '==', templateId));
-            const nextDaysOfWeek = Object.assign(viewedProgram.daysOfWeek, {
-              [dayOfWeek]: movements.length === 0 ? null : templateId,
-            });
-            if (movements.length === 0) {
-              const [, updated] = await Promise.all([
-                API.ProgramLogTemplates.delete(templateId),
-                API.Programs.update({
+            // If no movements exist in this template, delete it.
+            const noMovements = await getCountFromServer(
+              query(API.collections.programMovements, where('logId', '==', templateId))
+            ).then(_ => _.data().count === 0);
+            if (noMovements) {
+              await Promise.all([
+                TemplatesAPI.delete(templateId),
+                ProgramsAPI.update({
                   id: viewedProgram.id,
-                  daysOfWeek: nextDaysOfWeek,
+                  templateIds: viewedProgram.templateIds.filter(id => id !== templateId),
                 }),
               ]);
-              setPrograms(programs.map(p => (p.id === viewedProgram.id ? updated : p)));
-            } else {
-              // Update viewedProgram which updates movement names display
-              setViewedProgram(Object.assign(viewedProgram, { daysOfWeek: nextDaysOfWeek }));
             }
+            // TODO
+            // Should work. Test it out.
+
+            // const nextDaysOfWeek = Object.assign(viewedProgram.daysOfWeek, {
+            //   [dayOfWeek]: movements.length === 0 ? null : templateId,
+            // });
+            // if (movements.length === 0) {
+            //   const [, updated] = await Promise.all([
+            //     API.ProgramLogTemplates.delete(templateId),
+            //     API.Programs.update({
+            //       id: viewedProgram.id,
+            //       daysOfWeek: nextDaysOfWeek,
+            //     }),
+            //   ]);
+            //   setPrograms(programs.map(p => (p.id === viewedProgram.id ? updated : p)));
+            // } else {
+            //   // Update viewedProgram which updates movement names display
+            //   setViewedProgram(Object.assign(viewedProgram, { daysOfWeek: nextDaysOfWeek }));
+            // }
           }
           editorDrawer.onClose();
         }}
@@ -620,15 +599,27 @@ export const Programs: FC = () => {
           <Box height="80vh">
             <WithVariable value={editorDrawer.getData()}>
               {drawerData => {
-                if (!drawerData) {
-                  return null;
-                }
-                const { templateId, index } = drawerData;
+                if (!drawerData) return null;
+                const { templateId } = drawerData;
                 return (
-                  <Stack spacing={0.5}>
-                    <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
-                      Day {index}
-                    </Typography>
+                  <Stack spacing={1}>
+                    <TextField
+                      sx={{ alignSelf: 'end' }}
+                      placeholder="Template Name"
+                      variant="standard"
+                      onBlur={async event => {
+                        if (!templateId) throw Error('Unreachable: templateId not found.');
+                        try {
+                          const newName = event.target.value;
+                          TemplatesAPI.update({
+                            id: templateId,
+                            name: newName,
+                          });
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    />
                     <Box
                       sx={{
                         height: '100%',
@@ -678,22 +669,13 @@ export const Programs: FC = () => {
             onClick={async function createProgram() {
               if (!DataState.isReady(programs)) return;
               try {
-                const created = await API.Programs.create({
+                const created = await ProgramsAPI.create({
                   name: newProgramName,
                   authorUserId: user.uid,
                   timestamp: Date.now(),
                   note: '',
-                  daysOfWeek: {
-                    monday: null,
-                    tuesday: null,
-                    wednesday: null,
-                    thursday: null,
-                    friday: null,
-                    saturday: null,
-                    sunday: null,
-                  },
+                  templateIds: [],
                 });
-                setPrograms(programs.concat(created));
                 setNewProgramName('');
                 // Happens after deleting then creating a new program
                 // Do not keep user on "nothing to show here" case view
