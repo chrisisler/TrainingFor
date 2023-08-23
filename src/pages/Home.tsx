@@ -44,7 +44,6 @@ export const Home: FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
-  const programTrainingMenu = useMaterialMenu();
 
   // Get active program if it exists for auth'd user
   const [activeProgram] = useActiveProgram();
