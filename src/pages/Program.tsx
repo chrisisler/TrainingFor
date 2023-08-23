@@ -26,8 +26,7 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
-import { API, DbPath } from '../api';
-import { useAPI } from '../api/client';
+import { API, DbPath, useAPI } from '../api';
 import { tabA11yProps, NotesDrawer, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
 import { Movement, Program, ProgramLogTemplate } from '../types';
@@ -35,7 +34,6 @@ import {
   DataState,
   DataStateView,
   Paths,
-  SORTED_WEEKDAYS,
   useDataState,
   useDrawer,
   useMaterialMenu,
@@ -66,20 +64,14 @@ export const Programs: FC = () => {
 
   const TemplatesAPI = useAPI(API.ProgramLogTemplates, DbPath.ProgramLogTemplates);
   const ProgramsAPI = useAPI(API.Programs, DbPath.Programs);
+
   const programs = DataState.from<Program[]>(
     useQuery({
       queryKey: [DbPath.Programs, user.uid],
-      queryFn: () =>
-        API.Programs.getAll(user.uid).then(list =>
-          list.map((p: Program) => {
-            // If data is in old pre-migration format, update it to use templateIds
-            if ('daysOfWeek' in p && !!p.daysOfWeek && typeof p.daysOfWeek === 'object') {
-              // @ts-ignore
-              p.templateIds = SORTED_WEEKDAYS.flatMap(w => p.daysOfWeek[w.toLowerCase()] ?? []);
-            }
-            return p;
-          })
-        ),
+      queryFn: async () => {
+        const list = await API.Programs.getAll(user.uid);
+        return list.map(p => Program.makeTemplateId(p));
+      },
     })
   );
 
@@ -138,20 +130,18 @@ export const Programs: FC = () => {
   // ProgramMovements from viewedProgram
   const programMovementsByTemplateId = DataState.from<Record<string, Movement[]>>(
     useQuery({
-      queryKey: [],
+      queryKey: [DbPath.ProgramMovements, user.uid, viewedProgram],
       enabled: !editorDrawer.open && !!viewedProgram,
       queryFn: async () => {
         if (!viewedProgram) return {};
-        // For templates in program fetch each movement for that template
+        // For each log template fetch each movement
         const promises = viewedProgram.templateIds.map(templateId =>
           API.ProgramMovements.getAll(where('logId', '==', templateId), orderBy('position', 'asc'))
         );
         const movementsByTemplateId = await Promise.all(promises);
-        // Map movements to template ID
+        // Group lists of movements by templateId
         return viewedProgram.templateIds
-          .map((templateId, index) => ({
-            [templateId]: movementsByTemplateId[index],
-          }))
+          .map((templateId, index) => ({ [templateId]: movementsByTemplateId[index] }))
           .reduce((a, b) => Object.assign(a, b), {});
       },
     })
@@ -177,7 +167,7 @@ export const Programs: FC = () => {
     // Update drawer state to reflect DB changes
     editorDrawer.setData({ ...data, templateId: newProgramLogTemplateId });
     return newProgramLogTemplateId;
-  }, [editorDrawer.getData()?.templateId, viewedProgram]);
+  }, [editorDrawer.getData()?.templateId, viewedProgram, user.uid, ProgramsAPI]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateActiveProgram = useCallback(
@@ -252,11 +242,11 @@ export const Programs: FC = () => {
 
         <TabPanel value={tabValue} index={TabIndex.Programs}>
           {/** Pause display until viewedProgram is ready */}
-          <DataStateView data={DataState.all(programs, viewedProgram ?? DataState.Loading)}>
+          <DataStateView data={DataState.all(programs, viewedProgram)}>
             {([programs]) =>
               programs.length === 0 ? (
-                <Typography variant="overline" sx={{ textAlign: 'center' }}>
-                  Nothing yet
+                <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+                  Add a program to get started.
                 </Typography>
               ) : (
                 <Stack spacing={3}>
@@ -298,25 +288,6 @@ export const Programs: FC = () => {
                             </Stack>
                           )}
                         </Stack>
-                        {/** TODO */}
-                        {/**<WithVariable
-                          value={SORTED_WEEKDAYS.flatMap(key =>
-                            program.daysOfWeek[key.toLowerCase()] ? key.slice(0, 3) : []
-                          )}
-                        >
-                          {programDays => (
-                            <Box
-                              width="100%"
-                              justifyContent="space-between"
-                              display="flex"
-                              alignItems="baseline"
-                            >
-                              <Typography variant="caption" color="textSecondary">
-                                {programDays.length}x/week
-                              </Typography>
-                            </Box>
-                          )}
-                        </WithVariable>*/}
                       </Box>
                     );
                   })}
@@ -376,45 +347,31 @@ export const Programs: FC = () => {
                         <IconButton
                           color="error"
                           onClick={async function deleteProgram() {
-                            // TODO
-                            alert('Unimplemented!');
+                            try {
+                              await Promise.all([
+                                API.Programs.delete(program.id),
+                                API.ProgramUsers.update({
+                                  id: programUser.id,
+                                  activeProgramId: null,
+                                  activeProgramName: null,
+                                }),
+                                API.ProgramLogTemplates.deleteMany(
+                                  where('programId', '==', program.id)
+                                ),
+                                ...[
+                                  program.templateIds.map(_ =>
+                                    API.ProgramMovements.deleteMany(where('logId', '==', _))
+                                  ),
+                                ],
+                              ]);
+                              // setPrograms(programs.filter(p => p.id !== program.id));
+                              setViewedProgram(null);
+                              setTabValue(TabIndex.Programs);
+                              toast.success('Deleted program.');
+                            } catch (err) {
+                              toast.error(err.message);
+                            }
                           }}
-                          // onClick={async function deleteProgram() {
-                          //   if (!DataState.isReady(programMovementsByDayOfWeek)) {
-                          //     throw Error('Unreachable');
-                          //   }
-                          //   if (!window.confirm('Are you sure? This can never be undone.')) return;
-                          //   try {
-                          //     const _deleteProgram = API.Programs.delete(program.id);
-                          //     const _updateProgramUser = API.ProgramUsers.update({
-                          //       id: programUser.id,
-                          //       activeProgramId: null,
-                          //       activeProgramName: null,
-                          //     });
-                          //     const _deleteProgramLogTemplates = API.ProgramLogTemplates.deleteMany(
-                          //       where('programId', '==', program.id)
-                          //     );
-                          //     const _deleteProgramMovements = Promise.all(
-                          //       Object.values(program.daysOfWeek)
-                          //         .filter(templateId => !!templateId)
-                          //         .map(_ =>
-                          //           API.ProgramMovements.deleteMany(where('logId', '==', _))
-                          //         )
-                          //     );
-                          //     await Promise.all([
-                          //       _deleteProgram,
-                          //       _updateProgramUser,
-                          //       _deleteProgramLogTemplates,
-                          //       _deleteProgramMovements,
-                          //     ]);
-                          //     setPrograms(programs.filter(p => p.id !== program.id));
-                          //     setViewedProgram(null);
-                          //     setTabValue(TabIndex.Programs);
-                          //     toast.success('Deleted program.');
-                          //   } catch (err) {
-                          //     toast.error(err.message);
-                          //   }
-                          // }}
                         >
                           <DeleteForeverRounded fontSize="small" />
                         </IconButton>
@@ -470,7 +427,7 @@ export const Programs: FC = () => {
                               <DataStateView data={programMovementsByTemplateId}>
                                 {programMovementsByTemplateId => {
                                   const movements = programMovementsByTemplateId[templateId];
-                                  if (movements === null) return null;
+                                  if (!movements) return null;
                                   if (movements.length === 0) return null;
                                   return (
                                     <>
@@ -540,7 +497,7 @@ export const Programs: FC = () => {
               note={viewedProgram?.note || ''}
               onBlur={async (next: string) => {
                 try {
-                  const updated = await API.Programs.update({ id: viewedProgram.id, note: next });
+                  const updated = await ProgramsAPI.update({ id: viewedProgram.id, note: next });
                   setViewedProgram(updated);
                 } catch (error) {
                   toast.error(error.message);
@@ -559,6 +516,7 @@ export const Programs: FC = () => {
           if (!!context && !!viewedProgram) {
             const { templateId } = context;
             if (!templateId) return;
+            const { templateIds } = viewedProgram;
             // If no movements exist in this template, delete it.
             const noMovements = await getCountFromServer(
               query(API.collections.programMovements, where('logId', '==', templateId))
@@ -568,29 +526,16 @@ export const Programs: FC = () => {
                 TemplatesAPI.delete(templateId),
                 ProgramsAPI.update({
                   id: viewedProgram.id,
-                  templateIds: viewedProgram.templateIds.filter(id => id !== templateId),
+                  templateIds: templateIds.filter(id => id !== templateId),
                 }),
               ]);
+            } else {
+              // Update viewedProgram which updates movement names display
+              setViewedProgram({
+                ...viewedProgram,
+                templateIds: templateIds.concat(templateId),
+              });
             }
-            // TODO
-            // Should work. Test it out.
-
-            // const nextDaysOfWeek = Object.assign(viewedProgram.daysOfWeek, {
-            //   [dayOfWeek]: movements.length === 0 ? null : templateId,
-            // });
-            // if (movements.length === 0) {
-            //   const [, updated] = await Promise.all([
-            //     API.ProgramLogTemplates.delete(templateId),
-            //     API.Programs.update({
-            //       id: viewedProgram.id,
-            //       daysOfWeek: nextDaysOfWeek,
-            //     }),
-            //   ]);
-            //   setPrograms(programs.map(p => (p.id === viewedProgram.id ? updated : p)));
-            // } else {
-            //   // Update viewedProgram which updates movement names display
-            //   setViewedProgram(Object.assign(viewedProgram, { daysOfWeek: nextDaysOfWeek }));
-            // }
           }
           editorDrawer.onClose();
         }}
@@ -606,6 +551,10 @@ export const Programs: FC = () => {
                     <TextField
                       sx={{ alignSelf: 'end' }}
                       placeholder="Template Name"
+                      defaultValue={
+                        DataState.isReady(templates) &&
+                        templates.find(t => t.id === templateId)?.name
+                      }
                       variant="standard"
                       onBlur={async event => {
                         if (!templateId) throw Error('Unreachable: templateId not found.');

@@ -19,6 +19,7 @@ import { createAPI } from './client';
 import { db, DbPath } from './firebase';
 
 export * from './firebase';
+export * from './client';
 
 export const API = init();
 

@@ -1,3 +1,5 @@
+import { SORTED_WEEKDAYS } from '../util';
+
 export interface FirestoreDocument {
   id: string;
 }
@@ -150,5 +152,17 @@ export const MovementSet = {
         ? (sum: number, _: MovementSet) => sum + _.repCountActual
         : (sum: number, _: MovementSet) => sum + _.repCountActual * _.weight;
     return sets.reduce(reducer, 0);
+  },
+};
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const Program = {
+  makeTemplateId(p: Program): Program {
+    // If data is in old pre-migration format, update it to use templateIds
+    if ('daysOfWeek' in p && !!p.daysOfWeek && typeof p.daysOfWeek === 'object') {
+      // @ts-ignore
+      p.templateIds = SORTED_WEEKDAYS.flatMap(w => p.daysOfWeek[w.toLowerCase()] ?? []);
+    }
+    return p;
   },
 };

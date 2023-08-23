@@ -6,6 +6,7 @@ import { DataState, useDataState } from '../util';
 import { API, auth } from '../api';
 import { where } from 'firebase/firestore';
 import { useUser } from '../context';
+import { Program } from '../types';
 
 /**
  * Simplifies the usage of Material-UI's SwipeableDrawer and Menu.
@@ -197,6 +198,6 @@ export const useActiveProgram = () => {
   return useDataState(async () => {
     if (!DataState.isReady(programUser)) return DataState.Empty;
     if (!programUser.activeProgramId) return DataState.Empty;
-    return API.Programs.get(programUser.activeProgramId);
+    return API.Programs.get(programUser.activeProgramId).then(p => Program.makeTemplateId(p));
   }, [programUser]);
 };

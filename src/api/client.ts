@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  addDoc,
   CollectionReference,
   deleteDoc,
   doc,
@@ -8,10 +7,10 @@ import {
   getDocs,
   query,
   QueryConstraint,
+  setDoc,
   updateDoc,
   where,
   writeBatch,
-  WriteBatch,
 } from 'firebase/firestore';
 
 import { useUser } from '../context';
@@ -52,11 +51,6 @@ export function useAPI<T extends { id: string }>(
     onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
   });
 
-  // const q = DataState.from(useQuery({
-  //   queryKey: [dbPath, user.uid],
-  //   queryFn: () => apiClient.getAll(),
-  // }))
-
   return {
     create,
     update,
@@ -67,8 +61,10 @@ export function useAPI<T extends { id: string }>(
 export function createAPI<T extends FirestoreDocument>(collection: CollectionReference<T>) {
   return {
     async create(entry: Omit<T, 'id'>): Promise<T> {
-      const newDocumentRef = await addDoc(collection, entry);
-      return { ...entry, id: newDocumentRef.id } as T;
+      const newDoc = doc(collection);
+      const fields = Object.assign(entry, { id: newDoc.id }) as T;
+      await setDoc(newDoc, fields);
+      return fields;
     },
 
     async get(id: string): Promise<T> {
@@ -118,12 +114,6 @@ export function createAPI<T extends FirestoreDocument>(collection: CollectionRef
       docs.forEach(doc => {
         batch.delete(doc.ref);
       });
-      await batch.commit();
-    },
-
-    async batch(op: (batch: WriteBatch) => Promise<void>): Promise<void> {
-      const batch = writeBatch(db);
-      op(batch);
       await batch.commit();
     },
   };

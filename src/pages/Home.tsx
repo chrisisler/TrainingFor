@@ -46,19 +46,18 @@ export const Home: FC = () => {
   const reauthDrawer = useMaterialMenu();
   const programTrainingMenu = useMaterialMenu();
 
-  // Get active program (if it exists for auth'd user) to display upcoming
-  // training AND power the create training log from active program button.
+  // Get active program if it exists for auth'd user
   const [activeProgram] = useActiveProgram();
 
   const templates = DataState.from<ProgramLogTemplate[]>(
     useQuery({
       enabled: DataState.isReady(activeProgram),
-      queryKey: [DbPath.ProgramLogTemplates, user.uid],
+      queryKey: [DbPath.ProgramLogTemplates, user.uid, activeProgram],
       queryFn: () => {
         if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
         return API.ProgramLogTemplates.getAll(
           user.uid,
-          where('programId', '==', activeProgram.templateIds)
+          where('id', 'in', activeProgram.templateIds)
         );
       },
     })
@@ -145,6 +144,8 @@ export const Home: FC = () => {
       sx={{
         height: '100vh',
         width: '100vw',
+        maxWidth: theme => theme.breakpoints.values.sm,
+        margin: '0 auto',
         padding: theme => theme.spacing(2),
       }}
     >
@@ -161,65 +162,40 @@ export const Home: FC = () => {
         </IconButton>
       </Box>
 
-      {/** Count of unique saved movements */}
-      {/** Count of training logs */}
-      {/** Count of total volume */}
-
-      <Stack spacing={3} sx={{ padding: theme => theme.spacing(3, 2) }}>
-        {/**
-         * If the user has an active program, show a button to dropdown to
-         * create training from any day of the program.
-         */}
+      <Stack spacing={2} sx={{ padding: theme => theme.spacing(1) }}>
         <DataStateView data={DataState.all(activeProgram, templates)}>
           {([activeProgram, templates]) => {
             return (
-              <Box width="100%">
-                <Button
-                  size="large"
-                  startIcon={<AddRounded />}
-                  onClick={programTrainingMenu.onOpen}
-                  variant="outlined"
-                  fullWidth
-                >
-                  Programmed Training
-                </Button>
-                <SwipeableDrawer {...programTrainingMenu} anchor="top">
-                  <Typography variant="h6" sx={{ p: 1 }} textAlign="center">
-                    {activeProgram.name}
-                  </Typography>
-                  <Stack spacing={3}>
-                    {templates.map(template => (
-                      <Button
-                        key={template.id}
-                        size="large"
-                        variant="outlined"
-                        onClick={() => createTrainingLog({ fromTemplateId: template.id })}
-                        startIcon={<AddCircleOutlineRounded />}
-                        endIcon={<NavigateNextRounded />}
-                        sx={{
-                          alignItems: 'center',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        Train {template.name}
-                      </Button>
-                    ))}
-                  </Stack>
-                </SwipeableDrawer>
-              </Box>
+              <>
+                <Typography variant="overline">{activeProgram.name}</Typography>
+                {templates.map(template => (
+                  <Button
+                    key={template.id}
+                    size="large"
+                    variant="outlined"
+                    onClick={() => createTrainingLog({ fromTemplateId: template.id })}
+                    startIcon={<AddCircleOutlineRounded />}
+                    endIcon={<NavigateNextRounded />}
+                    sx={{
+                      alignItems: 'center',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    Train {template.name}
+                  </Button>
+                ))}
+              </>
             );
           }}
         </DataStateView>
 
         <Button
-          variant="outlined"
-          onClick={() => createTrainingLog({ fromTemplateId: null })}
-          color="primary"
           startIcon={<AddRounded />}
-          fullWidth
+          onClick={() => createTrainingLog({ fromTemplateId: null })}
+          endIcon={<NavigateNextRounded />}
         >
-          Training
+          From Scratch
         </Button>
       </Stack>
 
