@@ -139,7 +139,7 @@ export const Home: FC = () => {
 
   return (
     <Stack
-      spacing={2}
+      spacing={1}
       sx={{
         height: '100vh',
         width: '100vw',
@@ -161,7 +161,7 @@ export const Home: FC = () => {
         </IconButton>
       </Box>
 
-      <Stack spacing={2} sx={{ padding: theme => theme.spacing(1) }}>
+      <Stack spacing={2} sx={{ padding: theme => theme.spacing(0, 1, 1) }}>
         <DataStateView data={DataState.all(activeProgram, templates)}>
           {([activeProgram, templates]) => {
             return (
@@ -188,7 +188,6 @@ export const Home: FC = () => {
             );
           }}
         </DataStateView>
-
         <Button
           startIcon={<AddRounded />}
           onClick={() => createTrainingLog({ fromTemplateId: null })}

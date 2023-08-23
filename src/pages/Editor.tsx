@@ -77,6 +77,7 @@ export const Editor: FC = () => {
   const { logId } = useParams<{ logId: string }>();
   const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
   const notesDrawer = useDrawer<TrainingLog>();
+  const programDrawer = useDrawer<string>();
   const [programUser] = useProgramUser();
 
   const [confetti, setConfetti] = useState(false);
@@ -127,6 +128,10 @@ export const Editor: FC = () => {
                 <Typography
                   variant="overline"
                   sx={{ color: theme => alpha(theme.palette.text.secondary, 0.4) }}
+                  onClick={event => {
+                    if (!log.programLogTemplateId) throw Error('Unreachable: Empty template ID.');
+                    programDrawer.onOpen(event, log.programLogTemplateId);
+                  }}
                 >
                   <b>{programUser.activeProgramName}</b>
                 </Typography>
@@ -138,6 +143,28 @@ export const Editor: FC = () => {
           <ShortTextRounded sx={{ color: 'text.primary' }} />
         </IconButton>
       </Box>
+
+      <SwipeableDrawer {...programDrawer.props()} anchor="bottom">
+        <WithVariable value={programDrawer.getData()}>
+          {logProgramId => {
+            if (!logProgramId) return null;
+            return (
+              <Box
+                sx={{
+                  height: '80vh',
+                  width: '100%',
+                  overflowY: 'scroll',
+                }}
+              >
+                <Typography variant="overline" fontWeight={600}>
+                  Editing Program Template...
+                </Typography>
+                <EditorInternals isProgramView logId={logProgramId} />
+              </Box>
+            );
+          }}
+        </WithVariable>
+      </SwipeableDrawer>
 
       <DataStateView data={logId || DataState.Empty}>
         {logId => <EditorInternals logId={logId} />}
