@@ -9,6 +9,7 @@ import {
   DeleteOutline,
   DeleteRounded,
   EditOutlined,
+  FindReplaceRounded,
   MoreHoriz,
   PersonOutline,
   RefreshRounded,
@@ -325,11 +326,11 @@ export const EditorInternals: FC<{
 }> = ({ logId, isProgramView = false, readOnly = false }) => {
   const toast = useToast();
   const user = useUser();
-  const addMovementDrawer = useMaterialMenu();
+  // Data is null when *adding*; when *replacing*, it's the replacing Movement.
+  const { anchorEl: _3, ...addMovementDrawer } = useDrawer<null | Movement>();
   const addSetMenu = useDrawer<Movement>();
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
-  /** Holds the ID of the trainingLog attached to the inspected movement history. */
   const { anchorEl: _2, ...historyLogDrawer } = useDrawer<Movement>();
 
   /** Controlled state of the Add Movement input. */
@@ -707,7 +708,7 @@ export const EditorInternals: FC<{
 
         {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button onClick={addMovementDrawer.onOpen} size="small">
+            <Button onClick={event => addMovementDrawer.onOpen(event, null)} size="small">
               <AddRounded
                 sx={{
                   color: 'text.secondary',
@@ -999,8 +1000,9 @@ export const EditorInternals: FC<{
       </Backdrop>
 
       <SwipeableDrawer
-        {...addMovementDrawer}
-        anchor="top"
+        {...addMovementDrawer.props()}
+        anchor={addMovementDrawer.getData() === null ? 'top' : 'bottom'}
+        sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}
         onClose={() => {
           addMovementDrawer.onClose();
           // clear input on close
@@ -1020,7 +1022,7 @@ export const EditorInternals: FC<{
                 <TextField
                   fullWidth
                   variant="standard"
-                  helperText="Select a movement or create one"
+                  helperText="Select a movement"
                   value={movementNameQuery}
                   onChange={event => setMovementNameQuery(event.target.value)}
                   InputProps={{
@@ -1040,6 +1042,7 @@ export const EditorInternals: FC<{
                 const query = movementNameQuery.toLowerCase();
                 const hasFoundExactName = matches.some(_ => _.name === query);
                 const hasFuzzyNameMatch = matches.some(_ => _.name.toLowerCase().includes(query));
+                const isReplacingMovement = !!addMovementDrawer.getData();
                 return (
                   <>
                     {matches.length > 0 && (
@@ -1062,7 +1065,14 @@ export const EditorInternals: FC<{
                                     borderRadius: 1,
                                     border: '1px solid lightgrey',
                                   }}
-                                  onClick={() => addMovementFromExistingSavedMovement(match)}
+                                  onClick={() => {
+                                    const movement = addMovementDrawer.getData();
+                                    if (movement) {
+                                      console.log({ movement, match });
+                                      return;
+                                    }
+                                    addMovementFromExistingSavedMovement(match);
+                                  }}
                                 >
                                   {match.name}
                                 </Typography>
@@ -1095,7 +1105,7 @@ export const EditorInternals: FC<{
                         </Stack>
                       </Collapse>
                     )}
-                    <Collapse in={!queryIsEmpty && !hasFoundExactName}>
+                    <Collapse in={!queryIsEmpty && !hasFoundExactName && !isReplacingMovement}>
                       <Box
                         sx={{
                           display: 'flex',
@@ -1342,7 +1352,7 @@ export const EditorInternals: FC<{
                   }}
                 />
               </Box>
-              <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Button
                   color="error"
                   startIcon={<DeleteOutline />}
@@ -1363,7 +1373,17 @@ export const EditorInternals: FC<{
                     }
                   }}
                 >
-                  Remove Movement
+                  Remove
+                </Button>
+                <Button
+                  startIcon={<FindReplaceRounded />}
+                  onClick={event => {
+                    const movement = movementMenuDrawer.getData();
+                    if (!movement) throw Error('Unreachable: Movement not found.');
+                    addMovementDrawer.onOpen(event, movement);
+                  }}
+                >
+                  Replace
                 </Button>
               </Box>
 
