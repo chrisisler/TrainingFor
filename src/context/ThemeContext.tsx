@@ -25,7 +25,11 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
       MuiSwipeableDrawer: {
         defaultProps: {
           PaperProps: {
-            sx: { padding: theme => theme.spacing(3, 3) },
+            sx: {
+              padding: theme => theme.spacing(3, 3),
+              maxWidth: theme => theme.breakpoints.values.sm,
+              margin: '0 auto',
+            },
           },
         },
       },

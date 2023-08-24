@@ -112,7 +112,9 @@ export const Editor: FC = () => {
     <Box
       sx={{
         height: '100%',
-        width: '100%',
+        width: '100vw',
+        maxWidth: theme => theme.breakpoints.values.sm,
+        margin: '0 auto',
         overflowY: 'scroll',
         padding: theme => theme.spacing(0.5, 2, 3, 2),
       }}
