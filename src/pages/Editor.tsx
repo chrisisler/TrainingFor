@@ -428,7 +428,7 @@ export const EditorInternals: FC<{
         lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
-      const newMovement: Movement = await MovementsQueryAPI.create({
+      await MovementsQueryAPI.create({
         logId,
         name: newSavedMovement.name,
         timestamp,
@@ -538,7 +538,7 @@ export const EditorInternals: FC<{
           status: MovementSetStatus.Unattempted,
           uuid: uuidv4(),
         });
-        const updated: Movement = await MovementsMutationAPI.update({
+        await MovementsMutationAPI.update({
           sets,
           id: movement.id,
         });
@@ -929,7 +929,7 @@ export const EditorInternals: FC<{
                           try {
                             const last = movement.sets[movement.sets.length - 1];
                             if (!last) throw TypeError('Unreachable: last');
-                            const updated: Movement = await MovementsMutationAPI.update({
+                            await MovementsMutationAPI.update({
                               sets: movement.sets.filter(_ => _.uuid !== last.uuid),
                               id: movement.id,
                             });
@@ -952,7 +952,7 @@ export const EditorInternals: FC<{
                         startIcon={<DeleteRounded fontSize="small" />}
                         onClick={async function deleteAllSets() {
                           try {
-                            const updated: Movement = await MovementsMutationAPI.update({
+                            await MovementsMutationAPI.update({
                               sets: [],
                               id: movement.id,
                             });
@@ -1043,21 +1043,26 @@ export const EditorInternals: FC<{
                                   }}
                                   onClick={async () => {
                                     const movement = addMovementDrawer.getData();
-                                    if (movement) {
-                                      const { position } = movement;
-                                      try {
-                                        await Promise.all([
-                                          MovementsMutationAPI.delete(movement.id),
-                                          addMovementFromExistingSavedMovement(match, { position }),
-                                        ]);
-                                        movementMenuDrawer.onClose();
-                                        toast.info('Movement replaced.');
-                                      } catch (error) {
-                                        toast.error(error.message);
-                                      }
+                                    if (movement === null) {
+                                      addMovementFromExistingSavedMovement(match);
                                       return;
                                     }
-                                    addMovementFromExistingSavedMovement(match);
+                                    if (!DataState.isReady(movements)) return;
+                                    if (movements.some(_ => _.savedMovementId === match.id)) {
+                                      toast.warn(`${match.name} has already been added.`);
+                                      return;
+                                    }
+                                    const { position } = movement;
+                                    try {
+                                      await Promise.all([
+                                        MovementsMutationAPI.delete(movement.id),
+                                        addMovementFromExistingSavedMovement(match, { position }),
+                                      ]);
+                                      movementMenuDrawer.onClose();
+                                      toast.info('Movement replaced.');
+                                    } catch (error) {
+                                      toast.error(error.message);
+                                    }
                                   }}
                                 >
                                   {match.name}
@@ -1320,7 +1325,7 @@ export const EditorInternals: FC<{
                       if (newName.length < 3 || newName === movement.name) {
                         return;
                       }
-                      const updated: Movement = await MovementsMutationAPI.update({
+                      await MovementsMutationAPI.update({
                         id: movement.id,
                         name: newName,
                       });
@@ -1353,6 +1358,7 @@ export const EditorInternals: FC<{
                   Remove
                 </Button>
                 <Button
+                  sx={{ color: theme => theme.palette.text.secondary }}
                   startIcon={<FindReplaceRounded />}
                   onClick={event => {
                     const movement = movementMenuDrawer.getData();
@@ -1383,6 +1389,7 @@ export const EditorInternals: FC<{
                         return (
                           <Button
                             id={movement.id}
+                            key={movement.id}
                             variant={isSelected ? 'contained' : 'outlined'}
                             disabled={selectedMovement.id === movement.id}
                             onClick={() => {
