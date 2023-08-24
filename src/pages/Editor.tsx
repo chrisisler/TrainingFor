@@ -35,6 +35,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
@@ -42,7 +43,7 @@ import ConfettiExplosion from 'react-confetti-explosion';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { API } from '../api';
+import { API, DbPath, useAPI } from '../api';
 import { NotesDrawer, tabA11yProps, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
 import {
@@ -61,7 +62,6 @@ import {
   Paths,
   useDataState,
   useDrawer,
-  useMaterialMenu,
   useProgramUser,
   useResizableInputRef,
   useToast,
@@ -344,19 +344,27 @@ export const EditorInternals: FC<{
   /** For SavedMovement edit/update menu. */
   const [tabValue, setTabValue] = useState(TabIndex.Edit);
 
+  const ProgramMovements = useAPI(API.ProgramMovements, DbPath.ProgramMovements);
+  const Movements = useAPI(API.Movements, DbPath.Movements);
+
   /** The active collection, based on the usage of this component. */
-  const Movements = useMemo(
+  const MovementsQueryAPI = useMemo(
     () => (isProgramView ? API.ProgramMovements : API.Movements),
     [isProgramView]
   );
+  const MovementsMutationAPI = useMemo(
+    () => (isProgramView ? ProgramMovements : Movements),
+    [isProgramView, Movements, ProgramMovements]
+  );
 
-  /** List of movements for this log. */
-  const [movements, setMovements, refetchMovements] = useDataState<Movement[]>(async () => {
-    if (logId) {
-      return Movements.getAll(where('logId', '==', logId), orderBy('position', 'asc'));
-    }
-    return DataState.Empty;
-  }, [logId]);
+  const movements = DataState.from<Movement[]>(
+    useQuery({
+      enabled: !!logId,
+      queryKey: [DbPath.Movements, user.uid], // May have to add Dbpath.ProgramMovements for invalidation
+      queryFn: () =>
+        MovementsQueryAPI.getAll(where('logId', '==', logId), orderBy('position', 'asc')),
+    })
+  );
 
   /** List of saved movements from this users collection. */
   const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(async () => {
@@ -420,7 +428,7 @@ export const EditorInternals: FC<{
         lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
-      const newMovement: Movement = await Movements.create({
+      const newMovement: Movement = await MovementsQueryAPI.create({
         logId,
         name: newSavedMovement.name,
         timestamp,
@@ -434,7 +442,6 @@ export const EditorInternals: FC<{
         repCountUnit: MovementRepCountUnit.Reps,
       });
       // Update local state to reflect DB changes
-      setMovements(_ => DataState.map(_, prev => prev.concat(newMovement)));
       setSavedMovements(_ => DataState.map(_, prev => prev.concat(newSavedMovement)));
       // Close the drawer
       addMovementDrawer.onClose();
@@ -444,35 +451,31 @@ export const EditorInternals: FC<{
       toast.error(error.message);
     }
   }, [
-    Movements,
+    MovementsQueryAPI,
     movements,
     logId,
     movementNameQuery,
     user.uid,
-    setMovements,
     setSavedMovements,
     addMovementDrawer,
     toast,
   ]);
 
   const addMovementFromExistingSavedMovement = useCallback(
-    async (match: SavedMovement) => {
-      if (!logId) {
-        throw Error('Unreachable: logId is required');
-      }
+    async (match: SavedMovement, overrides: Partial<Movement> = {}): Promise<void> => {
+      if (!logId) throw Error('Unreachable: logId is required');
       if (!DataState.isReady(movements)) return;
       if (!DataState.isReady(savedMovements)) return;
       try {
         /** The movement data from the last time the user performed this movement. */
-        const [previous] = await Movements.getAll(
+        const [previous] = await MovementsQueryAPI.getAll(
           where('savedMovementId', '==', match.id),
           orderBy('timestamp', 'desc'),
           limit(1)
         );
         const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
         const now: number = Date.now();
-        // Create a Movement from the match
-        const newMovement: Movement = await Movements.create({
+        await MovementsMutationAPI.create({
           logId,
           name: match.name,
           timestamp: now,
@@ -490,16 +493,13 @@ export const EditorInternals: FC<{
           isFavorited: false,
           weightUnit: previous?.weightUnit ?? MovementWeightUnit.Pounds,
           repCountUnit: previous?.repCountUnit ?? MovementRepCountUnit.Reps,
+          ...overrides,
         });
         // Update lastSeen property if adding movement to an actual log
         if (!isProgramView) {
-          await API.SavedMovements.update({
-            id: match.id,
-            lastSeen: now,
-          });
+          await API.SavedMovements.update({ id: match.id, lastSeen: now });
         }
         // Update local state from DB
-        setMovements(DataState.map(movements, prev => prev.concat(newMovement)));
         const next = savedMovements.slice();
         next[next.indexOf(match)].lastSeen = now;
         setSavedMovements(next);
@@ -512,12 +512,12 @@ export const EditorInternals: FC<{
       }
     },
     [
-      Movements,
+      MovementsQueryAPI,
+      MovementsMutationAPI,
       addMovementDrawer,
       logId,
       movements,
       savedMovements,
-      setMovements,
       setSavedMovements,
       toast,
       user.uid,
@@ -538,19 +538,15 @@ export const EditorInternals: FC<{
           status: MovementSetStatus.Unattempted,
           uuid: uuidv4(),
         });
-        const updated: Movement = await Movements.update({
+        const updated: Movement = await MovementsMutationAPI.update({
           sets,
           id: movement.id,
         });
-        // Update local state
-        const copy = movements.slice();
-        copy[copy.indexOf(movement)] = updated;
-        setMovements(copy);
       } catch (error) {
         toast.error(error.message);
       }
     },
-    [Movements, movements, newSetRepCountMax, newSetRepCountMin, newSetWeight, setMovements, toast]
+    [MovementsMutationAPI, movements, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
   );
 
   return (
@@ -684,14 +680,10 @@ export const EditorInternals: FC<{
                           updateSets={async (mSets: MovementSet[]) => {
                             try {
                               // Send changes
-                              const updated = await Movements.update({
+                              await MovementsMutationAPI.update({
                                 id: movement.id,
                                 sets: mSets,
                               });
-                              // Update local state
-                              const copy = movements.slice();
-                              copy[movementIndex] = updated;
-                              setMovements(copy);
                             } catch (error) {
                               toast.error(error.message);
                             }
@@ -780,7 +772,7 @@ export const EditorInternals: FC<{
                           try {
                             const newWeightUnit = event.target.value as MovementWeightUnit;
                             // Update field on the movement
-                            const updated: Movement = await Movements.update({
+                            const updated: Movement = await MovementsMutationAPI.update({
                               id: movement.id,
                               weightUnit: newWeightUnit,
                             });
@@ -788,10 +780,6 @@ export const EditorInternals: FC<{
                               return;
                             }
                             addSetMenu.setData(updated);
-                            // Update local state
-                            const copy = movements.slice();
-                            copy[copy.indexOf(movement)] = updated;
-                            setMovements(copy);
                           } catch (error) {
                             toast.error(error.message);
                           }
@@ -810,7 +798,7 @@ export const EditorInternals: FC<{
                           try {
                             const newRepCountUnit = event.target.value as MovementRepCountUnit;
                             // Update field on the movement
-                            const updated: Movement = await Movements.update({
+                            const updated: Movement = await MovementsMutationAPI.update({
                               id: movement.id,
                               repCountUnit: newRepCountUnit,
                             });
@@ -818,10 +806,6 @@ export const EditorInternals: FC<{
                               return;
                             }
                             addSetMenu.setData(updated);
-                            // Update local state
-                            const copy = movements.slice();
-                            copy[copy.indexOf(movement)] = updated;
-                            setMovements(copy);
                           } catch (error) {
                             toast.error(error.message);
                           }
@@ -945,15 +929,11 @@ export const EditorInternals: FC<{
                           try {
                             const last = movement.sets[movement.sets.length - 1];
                             if (!last) throw TypeError('Unreachable: last');
-                            const updated: Movement = await Movements.update({
+                            const updated: Movement = await MovementsMutationAPI.update({
                               sets: movement.sets.filter(_ => _.uuid !== last.uuid),
                               id: movement.id,
                             });
                             if (!DataState.isReady(movements)) return;
-                            // Update local state
-                            const copy = movements.slice();
-                            copy[copy.indexOf(movement)] = updated;
-                            setMovements(copy);
                             // Close the menu
                             addSetMenu.onClose();
                           } catch (error) {
@@ -972,15 +952,11 @@ export const EditorInternals: FC<{
                         startIcon={<DeleteRounded fontSize="small" />}
                         onClick={async function deleteAllSets() {
                           try {
-                            const updated: Movement = await Movements.update({
+                            const updated: Movement = await MovementsMutationAPI.update({
                               sets: [],
                               id: movement.id,
                             });
                             if (!DataState.isReady(movements)) return;
-                            // Update local state
-                            const copy = movements.slice();
-                            copy[copy.indexOf(movement)] = updated;
-                            setMovements(copy);
                             // Close the menu
                             addSetMenu.onClose();
                           } catch (error) {
@@ -1065,10 +1041,20 @@ export const EditorInternals: FC<{
                                     borderRadius: 1,
                                     border: '1px solid lightgrey',
                                   }}
-                                  onClick={() => {
+                                  onClick={async () => {
                                     const movement = addMovementDrawer.getData();
                                     if (movement) {
-                                      console.log({ movement, match });
+                                      const { position } = movement;
+                                      try {
+                                        await Promise.all([
+                                          MovementsMutationAPI.delete(movement.id),
+                                          addMovementFromExistingSavedMovement(match, { position }),
+                                        ]);
+                                        movementMenuDrawer.onClose();
+                                        toast.info('Movement replaced.');
+                                      } catch (error) {
+                                        toast.error(error.message);
+                                      }
                                       return;
                                     }
                                     addMovementFromExistingSavedMovement(match);
@@ -1084,7 +1070,6 @@ export const EditorInternals: FC<{
                                         isLessThan72HoursAgo
                                           ? theme.palette.text.secondary
                                           : theme.palette.success.main,
-                                      // fontWeight: isLessThan72HoursAgo ? 'normal' : 'bold',
                                       filter: 'grayscale(30%)',
                                     }}
                                   >
@@ -1280,18 +1265,19 @@ export const EditorInternals: FC<{
               // take items between and move them up
               updates = movements
                 .slice(targetIndex, sourceIndex + 1)
-                .map(m => Movements.update({ id: m.id, position: m.position + 1 }));
+                .map(m => MovementsMutationAPI.update({ id: m.id, position: m.position + 1 }));
             } else {
               // take items between and move them down
               updates = movements
                 .slice(sourceIndex + 1, targetIndex + 1)
-                .map(m => Movements.update({ id: m.id, position: m.position - 1 }));
+                .map(m => MovementsMutationAPI.update({ id: m.id, position: m.position - 1 }));
             }
             // move source to desired destination
-            updates.push(Movements.update({ id: sourceMv.id, position: targetMv.position }));
+            updates.push(
+              MovementsMutationAPI.update({ id: sourceMv.id, position: targetMv.position })
+            );
             try {
               await Promise.all(updates);
-              await refetchMovements();
             } catch (error) {
               toast.error(error.message);
             }
@@ -1334,15 +1320,10 @@ export const EditorInternals: FC<{
                       if (newName.length < 3 || newName === movement.name) {
                         return;
                       }
-                      const updated: Movement = await Movements.update({
+                      const updated: Movement = await MovementsMutationAPI.update({
                         id: movement.id,
                         name: newName,
                       });
-                      // Update local state
-                      if (!DataState.isReady(movements)) throw Error('Unreachable');
-                      const next = movements.slice();
-                      next[next.indexOf(movement)] = updated;
-                      setMovements(next);
                       // Close drawer
                       movementMenuDrawer.onClose();
                       toast.success(`Movement renamed to ${newName}`);
@@ -1361,11 +1342,7 @@ export const EditorInternals: FC<{
                     try {
                       const movement = movementMenuDrawer.getData();
                       if (!movement) throw TypeError('Unreachable: rename movement');
-                      await Movements.delete(movement.id);
-                      // Update local state
-                      setMovements(
-                        DataState.map(movements, _ => _.filter(_ => _.id !== movement.id))
-                      );
+                      await MovementsMutationAPI.delete(movement.id);
                       // Close drawer
                       movementMenuDrawer.onClose();
                     } catch (error) {
