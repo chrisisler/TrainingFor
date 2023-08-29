@@ -149,8 +149,8 @@ export const Editor: FC = () => {
 
       <SwipeableDrawer {...programDrawer.props()} anchor="bottom">
         <WithVariable value={programDrawer.getData()}>
-          {logProgramId => {
-            if (!logProgramId) return null;
+          {programLogTemplateId => {
+            if (!programLogTemplateId) return null;
             return (
               <Box
                 sx={{
@@ -162,7 +162,7 @@ export const Editor: FC = () => {
                 <Typography variant="overline" fontWeight={600}>
                   Editing Program Template...
                 </Typography>
-                <EditorInternals isProgramView logId={logProgramId} />
+                <EditorInternals isProgramView logId={programLogTemplateId} />
               </Box>
             );
           }}
@@ -360,7 +360,7 @@ export const EditorInternals: FC<{
   const movements = DataState.from<Movement[]>(
     useQuery({
       enabled: !!logId,
-      queryKey: [DbPath.Movements, user.uid], // May have to add Dbpath.ProgramMovements for invalidation
+      queryKey: [isProgramView ? DbPath.ProgramMovements : DbPath.Movements, user.uid, logId],
       queryFn: () =>
         MovementsQueryAPI.getAll(where('logId', '==', logId), orderBy('position', 'asc')),
     })
