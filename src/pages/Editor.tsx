@@ -575,7 +575,7 @@ export const EditorInternals: FC<{
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
                         >
                           <Typography
-                            fontSize="1.3rem"
+                            fontSize="1.4rem"
                             fontWeight={200}
                             sx={{
                               backgroundColor: theme => alpha(theme.palette.divider, 0.02),
