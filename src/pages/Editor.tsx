@@ -654,12 +654,15 @@ export const EditorInternals: FC<{
                   )}
 
                   <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                    <Stack direction="row" spacing={2.0}>
+                    <Stack direction="row">
                       {/** Stack of unit control text display */}
                       {movement.sets.length > 0 && (
                         <Stack
                           alignItems="end"
-                          sx={{ margin: theme => theme.spacing(0, -0.5, 0, 0) }}
+                          sx={{
+                            // Spacing away from set blocks
+                            paddingRight: theme => theme.spacing(2),
+                          }}
                         >
                           <Typography variant="overline" alignSelf="end">
                             {movement.weightUnit}
@@ -1542,7 +1545,6 @@ const MovementSetView: FC<{
           border: 'none',
           outline: 'none',
           margin: '0 auto',
-          // textAlign: 'center',
           padding: '2px 4px',
           fontFamily: 'monospace',
           fontWeight: 500,
@@ -1562,8 +1564,8 @@ const MovementSetView: FC<{
         variant="standard"
         SelectDisplayProps={{
           style: {
-            padding: `8px ${
-              setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '10px' : '13px'
+            padding: `10px ${
+              setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
             }`,
             textAlign: 'center',
             fontSize: '1.5rem',
