@@ -1,13 +1,15 @@
 import { uuidv4 } from '@firebase/util';
 import {
-  AddCircleOutlineRounded,
   AddRounded,
   Google,
   Launch,
+  LightModeTwoTone,
   Logout,
   NavigateNextRounded,
+  NightsStayTwoTone,
 } from '@mui/icons-material';
 import {
+  alpha,
   Box,
   Button,
   Collapse,
@@ -18,7 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { limit, orderBy, where } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
@@ -173,7 +175,7 @@ export const Home: FC = () => {
                     size="large"
                     variant="outlined"
                     onClick={() => createTrainingLog({ fromTemplateId: template.id })}
-                    startIcon={<AddCircleOutlineRounded />}
+                    startIcon={<AddRounded />}
                     endIcon={<NavigateNextRounded />}
                     sx={{
                       alignItems: 'center',
@@ -204,29 +206,65 @@ export const Home: FC = () => {
               No training data.
             </Typography>
           ) : (
-            <Stack spacing={5} sx={{ padding: theme => theme.spacing(0) }}>
-              {logs.map((log, logIndex, { length }) => {
+            <Stack spacing={4} sx={{ padding: theme => theme.spacing(0) }}>
+              {logs.map(log => {
                 const date = new Date(log.timestamp);
+                const programName = DataState.isReady(activeProgram) ? activeProgram.name : '';
+                const templateName =
+                  (DataState.isReady(templates) &&
+                    templates.find(t => t.id === log.programLogTemplateId)?.name) ||
+                  '';
                 return (
                   <Paper
                     key={log.id}
                     elevation={0}
-                    sx={{
-                      borderTop: theme => `2px solid ${theme.palette.divider}`,
-                      padding: theme => theme.spacing(3),
-                      display: 'flex',
-                      justifyContent: 'space-between',
+                    sx={theme => {
+                      const gradientBg = theme.make.background(
+                        alpha(theme.palette.primary.main, 0.05),
+                        theme.palette.background.default
+                      );
+                      return {
+                        // border: `1px solid ${theme.palette.divider}`,
+                        padding: theme.spacing(3),
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        background: gradientBg,
+                      };
                     }}
                     onClick={() => navigate(Paths.editor(log.id))}
                   >
-                    <Stack spacing={1}>
-                      <Typography
-                        variant="h6"
-                        fontStyle="italic"
-                        sx={{ color: 'divider', fontWeight: 'bold' }}
-                      >
-                        Training Log #{length - logIndex}
-                      </Typography>
+                    <Stack spacing={2}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        {/** Large icon for day/night (evening situation) */}
+                        {date.getHours() > 18 ? (
+                          <NightsStayTwoTone sx={{ fontSize: '3rem' }} />
+                        ) : (
+                          <LightModeTwoTone sx={{ fontSize: '3rem' }} />
+                        )}
+                        {/** Bold program name + template name if Log is from template */}
+                        {templateName && programName && (
+                          <Stack>
+                            <Typography variant="overline" lineHeight={1.5}>
+                              <b>{programName}</b>
+                            </Typography>
+                            <Typography variant="overline" lineHeight={1.5}>
+                              <em>{templateName}</em>
+                            </Typography>
+                          </Stack>
+                        )}
+                      </Stack>
+                      <Stack direction="row" spacing={1} alignItems="center" whiteSpace="nowrap">
+                        {/** Bold + large + all caps name of day */}
+                        <Typography fontWeight={600}>{SORTED_WEEKDAYS[date.getDay()]}</Typography>
+                        <Typography variant="body2" fontStyle="italic" color="text.secondary">
+                          {formatDistanceToNowStrict(new Date(log.timestamp), {
+                            addSuffix: true,
+                          })
+                            .replace(/ (\w)\w+ /i, '$1 ')
+                            .replace('m ', 'mo ')}
+                        </Typography>
+                      </Stack>
+                      {/** regular list of movements */}
                       <DataStateView data={DataState.map(movementsByLogId, _ => _.get(log.id))}>
                         {movements => {
                           if (!movements) return null;
@@ -258,10 +296,6 @@ export const Home: FC = () => {
                           );
                         }}
                       </DataStateView>
-                      {/** "In the morning", "At night" display */}
-                      <Typography variant="overline" color="textSecondary">
-                        {format(new Date(log.timestamp), 'BBBB')}
-                      </Typography>
                       {/** Assumes the the log index is less than the limit for logs fetched. */}
                       {log?.note && (
                         <Typography variant="caption" color="textSecondary">
@@ -269,27 +303,19 @@ export const Home: FC = () => {
                         </Typography>
                       )}
                     </Stack>
-                    <Stack spacing={2}>
-                      <Box
-                        display="flex"
-                        justifyContent="flex-end"
-                        whiteSpace="nowrap"
-                        alignItems="center"
-                      >
-                        <Typography variant="body1" color="textSecondary" mr={1}>
-                          {Months[date.getMonth()] + ' ' + date.getDate()}
+                    <Box
+                      display="flex"
+                      justifyContent="flex-end"
+                      whiteSpace="nowrap"
+                      alignItems="start"
+                    >
+                      <Stack direction="row" alignItems="center">
+                        <Typography variant="body2" textTransform="uppercase">
+                          {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                         </Typography>
-                        <NavigateNextRounded fontSize="large" sx={{ color: 'text.secondary' }} />
-                      </Box>
-                      <Stack>
-                        <Typography variant="caption" fontStyle="italic">
-                          {SORTED_WEEKDAYS[date.getDay()]}
-                        </Typography>
-                        <Typography variant="body1" color="textSecondary" whiteSpace="nowrap">
-                          {formatDistanceToNowStrict(new Date(log.timestamp), { addSuffix: true })}
-                        </Typography>
+                        <NavigateNextRounded sx={{ color: 'text.primary' }} fontSize="large" />
                       </Stack>
-                    </Stack>
+                    </Box>
                   </Paper>
                 );
               })}

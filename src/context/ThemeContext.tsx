@@ -3,9 +3,16 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { FC, ReactNode } from 'react';
 
 declare module '@mui/material/styles' {
-  interface Theme {}
-  // allow configuration using `createTheme`
-  interface ThemeOptions {}
+  interface Theme {
+    make: {
+      background(color1: string, color2: string): string;
+    };
+  }
+  interface ThemeOptions {
+    make: {
+      background(color1: string, color2: string): string;
+    };
+  }
 }
 
 export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) => {
@@ -38,6 +45,11 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
           mountOnEnter: true,
           unmountOnExit: true,
         },
+      },
+    },
+    make: {
+      background(color1: string, color2: string): string {
+        return `linear-gradient(60deg, ${color1} 35%, ${color2} 95%)`;
       },
     },
   });
