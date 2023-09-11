@@ -17,18 +17,6 @@ import { useUser } from '../context';
 import { FirestoreDocument } from '../types';
 import { db, DbPath } from './firebase';
 
-/**
- * @example
- *
- * // create, update, and delete
- * const LogsAPI = useAPI(API.TrainingLogs, DbPath.Logs)
- *
- * // read
- * const logs = DataState.from(useQuery(({
- *   queryKey: [DbPath.Logs, user.uid],
- *   queryFn: () => API.TrainingLogs.getAll()
- * })))
- */
 export function useAPI<T extends { id: string }>(
   apiClient: ReturnType<typeof createAPI<T>>,
   dbPath: DbPath
@@ -51,10 +39,16 @@ export function useAPI<T extends { id: string }>(
     onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
   });
 
+  const { mutateAsync: deleteMany } = useMutation({
+    mutationFn: apiClient.deleteMany,
+    onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
+  })
+
   return {
     create,
     update,
     delete: _delete,
+    deleteMany,
   };
 }
 

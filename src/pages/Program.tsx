@@ -26,10 +26,10 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
-import { API, DbPath, useAPI } from '../api';
+import { API, DbPath, useStore } from '../api';
 import { tabA11yProps, NotesDrawer, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
-import { Movement, Program, ProgramLogTemplate } from '../types';
+import { Movement, Program } from '../types';
 import {
   DataState,
   DataStateView,
@@ -62,54 +62,12 @@ export const Programs: FC = () => {
   const [tabValue, setTabValue] = useState(TabIndex.Programs);
   const [viewedProgram, setViewedProgram] = useState<Program | null>(null);
 
-  const TemplatesAPI = useAPI(API.ProgramLogTemplates, DbPath.ProgramLogTemplates);
-  const ProgramsAPI = useAPI(API.Programs, DbPath.Programs);
-
-  const programs = DataState.from<Program[]>(
-    useQuery({
-      queryKey: [DbPath.Programs, user.uid],
-      queryFn: async () => {
-        const list = await API.Programs.getAll(user.uid);
-        return list.map(p => Program.makeTemplateId(p));
-      },
-    })
-  );
-
-  const [programUser, setProgramUser] = useDataState(
-    () =>
-      API.ProgramUsers.getAll(where('userUid', '==', user.uid)).then(users => {
-        // If there is no entry in ProgramUsers for the current user, create
-        // one and use that to keep track of the active program for the user.
-        // Programs cannot be unselected.
-        if (users.length > 0) {
-          // There can ONLY BE ONE!
-          if (users.length > 1) {
-            users.slice(1).forEach(_ => API.ProgramUsers.delete(_.id));
-          }
-          return users[0];
-        }
-        return API.ProgramUsers.create({
-          userUid: user.uid,
-          activeProgramId: null,
-          activeProgramName: null,
-        });
-      }),
-    [user.uid]
-  );
-
-  const templates = DataState.from<ProgramLogTemplate[]>(
-    useQuery({
-      enabled: DataState.isReady(programUser),
-      queryKey: [DbPath.ProgramLogTemplates, user.uid],
-      queryFn: () => {
-        if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
-        return API.ProgramLogTemplates.getAll(
-          user.uid,
-          where('programId', '==', programUser.activeProgramId)
-        );
-      },
-    })
-  );
+  const ProgramsAPI = useStore(store => store.ProgramsAPI);
+  const ProgramUsersAPI = useStore(store => store.ProgramUsersAPI);
+  const TemplatesAPI = useStore(store => store.ProgramLogTemplatesAPI);
+  const programUser = useStore(store => store.programUser);
+  const templates = useStore(store => store.templates);
+  const programs = useStore(store => store.programs);
 
   // When page loads viewedProgram is null, when data fetches, update
   // viewedProgram so the Schedule tab is not disabled.
@@ -154,7 +112,7 @@ export const Programs: FC = () => {
     if (!DataState.isReady(programs)) return programs;
     if (!data || !program) return DataState.Empty;
     if (data.templateId) return data.templateId;
-    const { id: newProgramLogTemplateId } = await API.ProgramLogTemplates.create({
+    const { id: newProgramLogTemplateId } = await TemplatesAPI.create({
       authorUserId: user.uid,
       programId: program.id,
       name: '',
@@ -177,18 +135,17 @@ export const Programs: FC = () => {
         return;
       }
       try {
-        const updated = await API.ProgramUsers.update({
+        await ProgramUsersAPI.update({
           activeProgramName: program.name,
           activeProgramId: program.id,
           id: programUser.id,
         });
-        setProgramUser(updated);
         toast.success('Updated active program.');
       } catch (err) {
         toast.error(err.message);
       }
     },
-    [programUser, toast, setProgramUser]
+    [toast, ProgramUsersAPI, programUser]
   );
 
   return (
@@ -332,11 +289,10 @@ export const Programs: FC = () => {
                             try {
                               const newName = event.target.value;
                               if (newName.length < 3 || newName === program.name) return;
-                              const uUser = await API.ProgramUsers.update({
+                              await ProgramUsersAPI.update({
                                 id: programUser.id,
                                 activeProgramName: newName,
                               });
-                              setProgramUser(uUser);
                               ProgramsAPI.update({ id: program.id, name: newName });
                               toast.info('Updated program name.');
                             } catch (err) {

@@ -19,24 +19,21 @@ import {
   SwipeableDrawer,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
-import { limit, orderBy, where } from 'firebase/firestore';
+import { where } from 'firebase/firestore';
 import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { API, auth, Authenticate, DbPath } from '../api';
+import { API, auth, Authenticate, useStore } from '../api';
 import { useUser } from '../context';
-import { Movement, ProgramLogTemplate } from '../types';
+import { Movement } from '../types';
 import {
   DataState,
   DataStateView,
   Months,
   Paths,
   SORTED_WEEKDAYS,
-  useActiveProgram,
-  useDataState,
   useMaterialMenu,
   useToast,
 } from '../util';
@@ -47,50 +44,17 @@ export const Home: FC = () => {
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
 
-  // Get active program if it exists for auth'd user
-  const [activeProgram] = useActiveProgram();
-
-  const templates = DataState.from<ProgramLogTemplate[]>(
-    useQuery({
-      enabled: DataState.isReady(activeProgram),
-      queryKey: [DbPath.ProgramLogTemplates, user.uid, activeProgram],
-      queryFn: () => {
-        if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
-        return API.ProgramLogTemplates.getAll(
-          user.uid,
-          where('id', 'in', activeProgram.templateIds)
-        );
-      },
-    })
-  );
-
-  // A subset of the users logs to display in detail
-  const [logs] = useDataState(
-    () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(100)),
-    [user.uid]
-  );
-
-  const [movementsByLogId] = useDataState<Map<string, Movement[]>>(async () => {
-    if (!DataState.isReady(logs)) return logs;
-    const movementLists = await Promise.all(
-      logs.map(_ => API.Movements.getAll(where('logId', '==', _.id), orderBy('position', 'asc')))
-    );
-    // Construct empty map to hold sorted movements
-    const movementsByLogId = new Map<string, Movement[]>(logs.map(_ => [_.id, []]));
-    // Populate
-    movementLists.forEach(movementList => {
-      movementList.forEach(m => {
-        movementsByLogId.get(m.logId)?.push(m);
-      });
-    });
-    return movementsByLogId;
-  }, [logs]);
+  const activeProgram = useStore(store => store.activeProgram);
+  const logs = useStore(store => store.logs);
+  const movementsByLogId = useStore(store => store.movementsByLogId);
+  const templates = useStore(store => store.templates);
+  const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
 
   const createTrainingLog = useCallback(
     async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
       try {
         const programId = !!fromTemplateId && DataState.isReady(activeProgram) && activeProgram.id;
-        const newTrainingLog = await API.TrainingLogs.create({
+        const newTrainingLog = await TrainingLogsAPI.create({
           timestamp: Date.now(),
           authorUserId: user.uid,
           bodyweight: 0,
@@ -126,7 +90,7 @@ export const Home: FC = () => {
         toast.error(err.message);
       }
     },
-    [activeProgram, user.uid, navigate, toast]
+    [activeProgram, user.uid, navigate, toast, TrainingLogsAPI]
   );
 
   const deauthenticate = useCallback(async () => {

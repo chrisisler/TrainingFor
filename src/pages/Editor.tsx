@@ -35,15 +35,14 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { getCountFromServer, limit, orderBy, query, where } from 'firebase/firestore';
+import { limit, orderBy, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { API, DbPath, useAPI } from '../api';
+import { API, useStore } from '../api';
 import { NotesDrawer, tabA11yProps, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
 import {
@@ -60,9 +59,7 @@ import {
   DataStateView,
   dateDisplay,
   Paths,
-  useDataState,
   useDrawer,
-  useProgramUser,
   useResizableInputRef,
   useToast,
 } from '../util';
@@ -79,19 +76,19 @@ export const Editor: FC = () => {
   const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
   const notesDrawer = useDrawer<TrainingLog>();
   const programDrawer = useDrawer<string>();
-  const [programUser] = useProgramUser();
 
   const [confetti, setConfetti] = useState(false);
 
-  const [log, setLog] = useDataState(async () => {
+  const log = useStore(store => {
     if (!logId) return DataState.Empty;
-    return API.TrainingLogs.get(logId);
-  }, [logId]);
-
-  const [movements] = useDataState<Movement[]>(async () => {
-    if (!logDrawer.open || !logId) return DataState.Empty;
-    return API.Movements.getAll(where('logId', '==', logId));
-  }, [logDrawer.open, logId]);
+    return DataState.map(store.logs, logs => logs.find(_ => _.id === logId) ?? DataState.Empty);
+  });
+  const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
+  const programUser = useStore(store => store.programUser);
+  const movements = useStore(store => {
+    if (!logId) return DataState.Empty;
+    return store.useMovements(logId);
+  });
 
   const finishTrainingLog = useCallback(async () => {
     if (!logId) {
@@ -99,15 +96,14 @@ export const Editor: FC = () => {
       return;
     }
     try {
-      const updated = await API.TrainingLogs.update({
+      await TrainingLogsAPI.update({
         id: logId,
         isFinished: true,
       });
-      setLog(updated);
     } catch (err) {
       toast.error(err.message);
     }
-  }, [logId, toast, setLog]);
+  }, [logId, toast, TrainingLogsAPI]);
 
   return (
     <Box
@@ -228,11 +224,10 @@ export const Editor: FC = () => {
                   const newBodyweight = +event.target.value;
                   if (newBodyweight === log.bodyweight) return;
                   try {
-                    const updated = await API.TrainingLogs.update({
+                    await TrainingLogsAPI.update({
                       id: log.id,
                       bodyweight: newBodyweight,
                     });
-                    setLog(updated);
                     toast.success('Updated bodyweight.');
                   } catch (error) {
                     toast.error(error.message);
@@ -270,10 +265,7 @@ export const Editor: FC = () => {
                   if (!logId) throw Error('Unreachable');
                   if (!window.confirm('Delete Training?')) return;
                   try {
-                    await Promise.all([
-                      API.TrainingLogs.delete(logId),
-                      API.Movements.deleteMany(where('logId', '==', logId)),
-                    ]);
+                    await TrainingLogsAPI.delete(logId);
                     logDrawer.onClose();
                     navigate(Paths.home);
                     toast.success('Deleted training.');
@@ -296,11 +288,10 @@ export const Editor: FC = () => {
               note={log?.note || ''}
               onBlur={async (next: string) => {
                 try {
-                  const updated = await API.TrainingLogs.update({
+                  await TrainingLogsAPI.update({
                     id: log.id,
                     note: next,
                   });
-                  setLog(updated);
                 } catch (error) {
                   toast.error(error.message);
                 }
@@ -344,8 +335,11 @@ export const EditorInternals: FC<{
   /** For SavedMovement edit/update menu. */
   const [tabValue, setTabValue] = useState(TabIndex.Edit);
 
-  const ProgramMovements = useAPI(API.ProgramMovements, DbPath.ProgramMovements);
-  const Movements = useAPI(API.Movements, DbPath.Movements);
+  const ProgramMovements = useStore(store => store.ProgramMovementsAPI);
+  const Movements = useStore(store => store.MovementsAPI);
+  const savedMovements = useStore(store => store.savedMovements);
+  const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
+  const movements = useStore(store => store.useMovements(logId, isProgramView));
 
   /** The active collection, based on the usage of this component. */
   const MovementsQueryAPI = useMemo(
@@ -357,59 +351,20 @@ export const EditorInternals: FC<{
     [isProgramView, Movements, ProgramMovements]
   );
 
-  const movements = DataState.from<Movement[]>(
-    useQuery({
-      enabled: !!logId,
-      queryKey: [isProgramView ? DbPath.ProgramMovements : DbPath.Movements, user.uid, logId],
-      queryFn: () =>
-        MovementsQueryAPI.getAll(where('logId', '==', logId), orderBy('position', 'asc')),
-    })
-  );
-
-  /** List of saved movements from this users collection. */
-  const [savedMovements, setSavedMovements] = useDataState<SavedMovement[]>(async () => {
-    const savedMovements = await API.SavedMovements.getAll(user.uid);
-    const countPromises = savedMovements.map(_ =>
-      getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
-    );
-    const counts = (await Promise.all(countPromises)).map(_ => _.data().count);
-    // Sort by frequency and recency.
-    return savedMovements
-      .map((sm, index) => Object.assign(sm, { count: counts[index] }))
-      .sort((a, b) => b.count - a.count)
-      .sort((a, b) => b.lastSeen - a.lastSeen);
-  }, [user.uid]);
-
-  /** A subset of `savedMovements`. */
-  // debounced movementNameQuery fetch/search for SavedMovements in the DB
+  // Handle debounced search for SavedMovements
   const [matches, setMatches] = useState<DataState<SavedMovement[]>>(DataState.Empty);
   useEffect(() => {
-    if (!DataState.isReady(savedMovements)) {
-      return;
-    }
+    if (!DataState.isReady(savedMovements)) return;
     if (movementNameQuery === '') {
       // No search input, so show all SavedMovements
       setMatches(savedMovements);
-      // Do not fetch, there is no query to search for
       return;
     }
-    // if (!(DataState.isReady(matches) && matches.length > 0)) {
-    //   setMatches(DataState.Loading);
-    // }
-    const timeout = setTimeout(async () => {
-      try {
-        const query = movementNameQuery.toLowerCase();
-        const list: SavedMovement[] = savedMovements.filter(m =>
-          m.name.toLowerCase().includes(query)
-        );
-        setMatches(list);
-      } catch (err) {
-        toast.error(err.message);
-        setMatches(DataState.error(err.message));
-      }
+    const t = setTimeout(async () => {
+      const query = movementNameQuery.toLowerCase();
+      setMatches(savedMovements.filter(_ => _.name.toLowerCase().includes(query)));
     }, 400);
-    return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => clearTimeout(t);
   }, [movementNameQuery, savedMovements]);
 
   const addMovementFromNewSavedMovement = useCallback(async () => {
@@ -421,14 +376,15 @@ export const EditorInternals: FC<{
     }
     try {
       const timestamp: number = Date.now();
-      const newSavedMovement: SavedMovement = await API.SavedMovements.create({
+      const newSavedMovement: SavedMovement = await SavedMovementsAPI.create({
         note: '',
         name: movementNameQuery,
         authorUserId: user.uid,
         lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
-      await MovementsQueryAPI.create({
+      // TODO Should this be MovementsMutationAPI???
+      await MovementsMutationAPI.create({
         logId,
         name: newSavedMovement.name,
         timestamp,
@@ -441,8 +397,6 @@ export const EditorInternals: FC<{
         weightUnit: MovementWeightUnit.Pounds,
         repCountUnit: MovementRepCountUnit.Reps,
       });
-      // Update local state to reflect DB changes
-      setSavedMovements(_ => DataState.map(_, prev => prev.concat(newSavedMovement)));
       // Close the drawer
       addMovementDrawer.onClose();
       // Clear the input
@@ -451,14 +405,14 @@ export const EditorInternals: FC<{
       toast.error(error.message);
     }
   }, [
-    MovementsQueryAPI,
+    MovementsMutationAPI,
     movements,
     logId,
     movementNameQuery,
     user.uid,
-    setSavedMovements,
     addMovementDrawer,
     toast,
+    SavedMovementsAPI,
   ]);
 
   const addMovementFromExistingSavedMovement = useCallback(
@@ -497,12 +451,8 @@ export const EditorInternals: FC<{
         });
         // Update lastSeen property if adding movement to an actual log
         if (!isProgramView) {
-          await API.SavedMovements.update({ id: match.id, lastSeen: now });
+          await SavedMovementsAPI.update({ id: match.id, lastSeen: now });
         }
-        // Update local state from DB
-        const next = savedMovements.slice();
-        next[next.indexOf(match)].lastSeen = now;
-        setSavedMovements(next);
         // Close the drawer
         addMovementDrawer.onClose();
         // Clear the input
@@ -518,7 +468,7 @@ export const EditorInternals: FC<{
       logId,
       movements,
       savedMovements,
-      setSavedMovements,
+      SavedMovementsAPI,
       toast,
       user.uid,
       isProgramView,
@@ -559,7 +509,7 @@ export const EditorInternals: FC<{
               // Block all mouse clicks/events when in readOnly mode
               sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             >
-              {movements.map((movement: Movement, movementIndex) => (
+              {movements.map(movement => (
                 <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
                     {/** alignItems here could be END or BASELINE */}
@@ -572,7 +522,13 @@ export const EditorInternals: FC<{
                       <Box display="flex" alignItems="baseline">
                         <Stack
                           sx={{ padding: theme => theme.spacing(0.5, 0.0) }}
-                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
+                          onClick={async event => {
+                            try {
+                              movementMenuDrawer.onOpen(event, movement);
+                            } catch (err) {
+                              toast.error(err.message);
+                            }
+                          }}
                         >
                           <Typography
                             fontSize="1.4rem"
@@ -1085,8 +1041,12 @@ export const EditorInternals: FC<{
                                   </Typography>
                                   <IconButton
                                     sx={{ color: theme => theme.palette.text.secondary }}
-                                    onClick={event => {
-                                      savedMovementDrawer.onOpen(event, match);
+                                    onClick={async event => {
+                                      try {
+                                        savedMovementDrawer.onOpen(event, match);
+                                      } catch (err) {
+                                        toast.error(err.message);
+                                      }
                                     }}
                                   >
                                     <MoreHoriz fontSize="small" />
@@ -1172,15 +1132,10 @@ export const EditorInternals: FC<{
                         if (newName.length < 3 || newName === savedMovement.name) {
                           return;
                         }
-                        const updated: SavedMovement = await API.SavedMovements.update({
+                        await SavedMovementsAPI.update({
                           id: savedMovement.id,
                           name: newName,
                         });
-                        // Update local state
-                        if (!DataState.isReady(savedMovements)) throw Error('Unreachable');
-                        const next = savedMovements.slice();
-                        next[next.indexOf(savedMovement)] = updated;
-                        setSavedMovements(next);
                         // Close drawer
                         savedMovementDrawer.onClose();
                       } catch (error) {
@@ -1199,11 +1154,7 @@ export const EditorInternals: FC<{
                       if (!window.confirm('Are you sure you want to delete this?')) return;
                       const savedMovement = savedMovementDrawer.getData();
                       if (!savedMovement) throw Error('Unreachable: deleteSavedMovement');
-                      await API.SavedMovements.delete(savedMovement.id);
-                      // Update local state
-                      setSavedMovements(
-                        DataState.map(savedMovements, _ => _.filter(_ => _.id !== savedMovement.id))
-                      );
+                      await SavedMovementsAPI.delete(savedMovement.id);
                       // Close drawer
                       savedMovementDrawer.onClose();
                       toast.success(`Deleted ${savedMovement.name}`);
@@ -1432,14 +1383,10 @@ export const EditorInternals: FC<{
                         onBlur={async (nextNote: string) => {
                           try {
                             // Update SavedMovement with new note
-                            const updated = await API.SavedMovements.update({
+                            await SavedMovementsAPI.update({
                               id: savedMovement.id,
                               note: nextNote,
                             });
-                            // Update local state
-                            const copy = [...savedMovements];
-                            copy[copy.indexOf(savedMovement)] = updated;
-                            setSavedMovements(copy);
                           } catch (err) {
                             toast.error(err.message);
                           }
@@ -1677,14 +1624,7 @@ const SavedMovementHistory: FC<{
   savedMovement: Pick<SavedMovement, 'id' | 'name'>;
   openLogDrawer: (event: React.MouseEvent<HTMLElement>, movement: Movement) => void;
 }> = ({ savedMovement, openLogDrawer }) => {
-  const [movementsHistory] = useDataState<Movement[]>(
-    () =>
-      API.Movements.getAll(
-        where('savedMovementId', '==', savedMovement.id),
-        orderBy('timestamp', 'desc')
-      ),
-    [savedMovement.id]
-  );
+  const movementsHistory = useStore(store => store.useMovementsHistory(savedMovement.id));
 
   if (!DataState.isReady(movementsHistory)) return null;
 

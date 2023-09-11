@@ -20,6 +20,7 @@ import { db, DbPath } from './firebase';
 
 export * from './firebase';
 export * from './client';
+export * from './store';
 
 export const API = init();
 
@@ -49,7 +50,16 @@ function init() {
   const ProgramMovements = createAPI(programMovementsRef);
 
   return {
-    TrainingLogs,
+    TrainingLogs: {
+      ...TrainingLogs,
+      async delete(logId: string) {
+        await Promise.all([
+          TrainingLogs.delete(logId),
+          Movements.deleteMany(where('logId', '==', logId)),
+        ]);
+        return;
+      },
+    },
     SavedMovements,
     Movements,
     ProgramLogTemplates,

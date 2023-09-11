@@ -2,11 +2,8 @@ import { User } from 'firebase/auth';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OptionsObject, useSnackbar } from 'notistack';
 
-import { DataState, useDataState } from '../util';
-import { API, auth } from '../api';
-import { where } from 'firebase/firestore';
-import { useUser } from '../context';
-import { Program } from '../types';
+import { DataState } from '../util';
+import { auth } from '../api';
 
 /**
  * Simplifies the usage of Material-UI's SwipeableDrawer and Menu.
@@ -174,30 +171,4 @@ export const useToast = () => {
     warn,
     error,
   };
-};
-
-export const useProgramUser = () => {
-  const user = useUser();
-  return useDataState(
-    () =>
-      API.ProgramUsers.getAll(where('userUid', '==', user.uid)).then(users => {
-        if (users.length > 0) {
-          if (users.length > 1) {
-            return DataState.error('Multiple programUsers found with the same userUid');
-          }
-          return users[0];
-        }
-        return DataState.Empty;
-      }),
-    [user.uid]
-  );
-};
-
-export const useActiveProgram = () => {
-  const [programUser] = useProgramUser();
-  return useDataState(async () => {
-    if (!DataState.isReady(programUser)) return DataState.Empty;
-    if (!programUser.activeProgramId) return DataState.Empty;
-    return API.Programs.get(programUser.activeProgramId).then(p => Program.makeTemplateId(p));
-  }, [programUser]);
 };
