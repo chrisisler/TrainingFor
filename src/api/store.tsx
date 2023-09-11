@@ -17,6 +17,7 @@ import { useAPI } from './client';
 import { DbPath } from './firebase';
 
 interface Store {
+  // Actions/Messages/Events
   ProgramLogTemplatesAPI: ReturnType<typeof useAPI<ProgramLogTemplate>>;
   ProgramMovementsAPI: ReturnType<typeof useAPI<Movement>>;
   SavedMovementsAPI: ReturnType<typeof useAPI<SavedMovement>>;
@@ -26,6 +27,8 @@ interface Store {
   ProgramsAPI: ReturnType<typeof useAPI<Program>>;
   useMovementsHistory(savedMovementId: string): DataState<Movement[]>;
   useMovements(logId: string, isProgramView?: boolean): DataState<Movement[]>;
+  useProgramMovementsByTemplateId(templateIds?: string[]): DataState<Map<string, Movement[]>>;
+  // State/Model/Data
   savedMovements: DataState<SavedMovement[]>;
   movementsByLogId: DataState<Map<string, Movement[]>>;
   activeProgram: DataState<Program>;
@@ -42,15 +45,23 @@ const subscribe = (listener: (store: Store) => void) => {
 };
 
 export function useStore<T>(selector: (store: Store) => T) {
-  const ProgramMovementsAPI = useAPI(API.ProgramMovements, DbPath.ProgramMovements);
-  const MovementsAPI = useAPI(API.Movements, DbPath.Movements);
-  const SavedMovementsAPI = useAPI(API.SavedMovements, DbPath.SavedMovements);
-  const TrainingLogsAPI = useAPI(API.TrainingLogs, DbPath.Logs);
-  const ProgramsAPI = useAPI(API.Programs, DbPath.Programs);
-  const ProgramUsersAPI = useAPI(API.ProgramUsers, DbPath.ProgramUsers);
-  const ProgramLogTemplatesAPI = useAPI(API.ProgramLogTemplates, DbPath.ProgramLogTemplates);
-
   const user = useUser();
+
+  const isProgramView = false;
+  const ProgramMovementsAPI = useAPI(API.ProgramMovements, [
+    DbPath.ProgramMovements,
+    isProgramView,
+    user.uid,
+  ]);
+  const MovementsAPI = useAPI(API.Movements, [DbPath.Movements, isProgramView, user.uid]);
+  const SavedMovementsAPI = useAPI(API.SavedMovements, [DbPath.SavedMovements, user.uid]);
+  const TrainingLogsAPI = useAPI(API.TrainingLogs, [DbPath.Logs, user.uid]);
+  const ProgramsAPI = useAPI(API.Programs, [DbPath.Programs, user.uid]);
+  const ProgramUsersAPI = useAPI(API.ProgramUsers, [DbPath.ProgramUsers, user.uid]);
+  const ProgramLogTemplatesAPI = useAPI(API.ProgramLogTemplates, [
+    DbPath.ProgramLogTemplates,
+    user.uid,
+  ]);
 
   const logs = DataState.from<TrainingLog[]>(
     useQuery({
@@ -87,11 +98,16 @@ export function useStore<T>(selector: (store: Store) => T) {
     })
   );
 
-  // `queryKey` is ULTRA important concept or invalidation is insta-broken
+  // - `queryKey` is ULTRA important concept or invalidation is insta-broken
+  // If you don't want to share the data, don't share the key
   const useMovements = (logId: string, isProgramView = false) =>
     DataState.from<Movement[]>(
       useQuery({
-        queryKey: [isProgramView ? DbPath.ProgramMovements : DbPath.Movements, user.uid],
+        queryKey: [
+          isProgramView ? DbPath.ProgramMovements : DbPath.Movements,
+          isProgramView,
+          user.uid,
+        ],
         queryFn: () =>
           (isProgramView ? API.ProgramMovements : API.Movements).getAll(
             where('logId', '==', logId),
@@ -112,6 +128,32 @@ export function useStore<T>(selector: (store: Store) => T) {
       })
     );
 
+  const useProgramMovementsByTemplateId = (templateIds?: string[]) =>
+    DataState.from<Map<string, Movement[]>>(
+      useQuery({
+        queryKey: [DbPath.ProgramMovements, user.uid],
+        enabled: !!templateIds,
+        queryFn: async () => {
+          if (!templateIds) return new Map();
+          // For each log template fetch each movement
+          // TODO use `in` query since array size will be < 10 (firebase limit)
+          const promises = templateIds.map(templateId =>
+            API.ProgramMovements.getAll(
+              where('logId', '==', templateId),
+              orderBy('position', 'asc')
+            )
+          );
+          const movementsByTemplateId = await Promise.all(promises);
+          // Group lists of movements by templateId
+          const map = new Map<string, Movement[]>(templateIds.map(templateId => [templateId, []]));
+          templateIds.forEach((templateId, index) => {
+            map.get(templateId)?.push(...movementsByTemplateId[index]);
+          });
+          return map;
+        },
+      })
+    );
+
   const programUser = DataState.from<ProgramUser>(
     useQuery({
       queryKey: [DbPath.ProgramUsers, user.uid],
@@ -123,7 +165,7 @@ export function useStore<T>(selector: (store: Store) => T) {
         if (users.length > 0) {
           // There can ONLY BE ONE!
           if (users.length > 1) {
-            users.slice(1).forEach(_ => API.ProgramUsers.delete(_.id));
+            users.slice(1).forEach(_ => ProgramUsersAPI.delete(_.id));
           }
           return users[0];
         }
@@ -214,6 +256,7 @@ export function useStore<T>(selector: (store: Store) => T) {
     ProgramLogTemplatesAPI,
     useMovements,
     useMovementsHistory,
+    useProgramMovementsByTemplateId,
     logs,
     savedMovements,
     movementsByLogId,

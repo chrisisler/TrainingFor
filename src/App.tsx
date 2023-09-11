@@ -8,7 +8,13 @@ import { PrivateThemeProvider, UserProvider } from './context';
 import { Authentication, Home, Editor, Programs } from './pages';
 import { DataStateView, Paths, useUserAuthSubscription } from './util';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export const App: FC = () => {
   /** When this value is DataState.Empty, the user is not authenticated. */

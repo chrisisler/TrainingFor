@@ -335,20 +335,17 @@ export const EditorInternals: FC<{
   /** For SavedMovement edit/update menu. */
   const [tabValue, setTabValue] = useState(TabIndex.Edit);
 
-  const ProgramMovements = useStore(store => store.ProgramMovementsAPI);
-  const Movements = useStore(store => store.MovementsAPI);
-  const savedMovements = useStore(store => store.savedMovements);
+  const MovementsMutationAPI = useStore(store =>
+    isProgramView ? store.ProgramMovementsAPI : store.MovementsAPI
+  );
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
+  const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
 
   /** The active collection, based on the usage of this component. */
   const MovementsQueryAPI = useMemo(
     () => (isProgramView ? API.ProgramMovements : API.Movements),
     [isProgramView]
-  );
-  const MovementsMutationAPI = useMemo(
-    () => (isProgramView ? ProgramMovements : Movements),
-    [isProgramView, Movements, ProgramMovements]
   );
 
   // Handle debounced search for SavedMovements
@@ -1656,7 +1653,7 @@ const SavedMovementHistory: FC<{
         sx={{
           maxHeight: '40vh',
           overflowY: 'scroll',
-          '& > *:nth-child(even)': {
+          '& > *:nth-of-type(even)': {
             backgroundColor: theme => theme.palette.action.hover,
           },
         }}

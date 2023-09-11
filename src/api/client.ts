@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { QueryKey, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CollectionReference,
   deleteDoc,
@@ -13,38 +13,37 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
-import { useUser } from '../context';
 import { FirestoreDocument } from '../types';
-import { db, DbPath } from './firebase';
+import { db } from './firebase';
 
 export function useAPI<T extends { id: string }>(
   apiClient: ReturnType<typeof createAPI<T>>,
-  dbPath: DbPath
+  queryKey: QueryKey
 ) {
   const queryClient = useQueryClient();
-  const user = useUser();
 
   const { mutateAsync: create } = useMutation({
     mutationFn: apiClient.create,
-    onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
+    onSuccess: () => queryClient.invalidateQueries(queryKey),
   });
 
   const { mutateAsync: update } = useMutation({
     mutationFn: apiClient.update,
-    onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
+    onSuccess: () => queryClient.invalidateQueries(queryKey),
   });
 
   const { mutateAsync: _delete } = useMutation({
     mutationFn: apiClient.delete,
-    onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
+    onSuccess: () => queryClient.invalidateQueries(queryKey),
   });
 
   const { mutateAsync: deleteMany } = useMutation({
     mutationFn: apiClient.deleteMany,
-    onSuccess: () => queryClient.invalidateQueries([dbPath, user.uid]),
-  })
+    onSuccess: () => queryClient.invalidateQueries(queryKey),
+  });
 
   return {
+    queryKey,
     create,
     update,
     delete: _delete,

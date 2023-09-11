@@ -20,16 +20,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { getCountFromServer, orderBy, query, where } from 'firebase/firestore';
-import { FC, useCallback, useEffect, useState } from 'react';
+import { getCountFromServer, query, where } from 'firebase/firestore';
+import { FC, useCallback, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
-import { API, DbPath, useStore } from '../api';
+import { API, useStore } from '../api';
 import { tabA11yProps, NotesDrawer, TabPanel, WithVariable } from '../components';
 import { useUser } from '../context';
-import { Movement, Program } from '../types';
+import { Program } from '../types';
 import {
   DataState,
   DataStateView,
@@ -71,39 +70,26 @@ export const Programs: FC = () => {
 
   // When page loads viewedProgram is null, when data fetches, update
   // viewedProgram so the Schedule tab is not disabled.
-  useEffect(() => {
-    if (!DataState.isReady(programUser)) return;
-    if (!DataState.isReady(programs)) return;
-    if (viewedProgram === null && typeof programUser.activeProgramId === 'string') {
-      // The user's default/chosen program
-      const userProgram = programs.find(p => p.id === programUser.activeProgramId);
-      setViewedProgram(userProgram ?? null);
-      // Auto-select the Schedule tab
-      if (userProgram) {
-        setTabValue(TabIndex.Schedule);
-      }
-    }
-  }, [programUser, programs, viewedProgram]);
+  // useEffect(() => {
+  //   if (!DataState.isReady(programUser)) return;
+  //   if (!DataState.isReady(programs)) return;
+  //   if (viewedProgram === null && typeof programUser.activeProgramId === 'string') {
+  //     // The user's default/chosen program
+  //     const userProgram = programs.find(p => p.id === programUser.activeProgramId);
+  //     setViewedProgram(userProgram ?? null);
+  //     // Auto-select the Schedule tab
+  //     if (userProgram) {
+  //       setTabValue(TabIndex.Schedule);
+  //     }
+  //   }
+  // }, [programUser, programs, viewedProgram]);
 
   // ProgramMovements from viewedProgram
-  const programMovementsByTemplateId = DataState.from<Record<string, Movement[]>>(
-    useQuery({
-      queryKey: [DbPath.ProgramMovements, user.uid, viewedProgram],
-      enabled: !editorDrawer.open && !!viewedProgram,
-      queryFn: async () => {
-        if (!viewedProgram) return {};
-        // For each log template fetch each movement
-        const promises = viewedProgram.templateIds.map(templateId =>
-          API.ProgramMovements.getAll(where('logId', '==', templateId), orderBy('position', 'asc'))
-        );
-        const movementsByTemplateId = await Promise.all(promises);
-        // Group lists of movements by templateId
-        return viewedProgram.templateIds
-          .map((templateId, index) => ({ [templateId]: movementsByTemplateId[index] }))
-          .reduce((a, b) => Object.assign(a, b), {});
-      },
-    })
-  );
+  // const programMovementsByTemplateId = useStore(store => {
+  //   console.log('called');
+  //   return store.useProgramMovementsByTemplateId(viewedProgram?.templateIds);
+  // });
+  // console.log({ programMovementsByTemplateId });
 
   const [newTemplateId] = useDataState(async () => {
     if (!editorDrawer.open) return DataState.Empty;
@@ -126,6 +112,7 @@ export const Programs: FC = () => {
     editorDrawer.setData({ ...data, templateId: newProgramLogTemplateId });
     return newProgramLogTemplateId;
   }, [editorDrawer.getData()?.templateId, viewedProgram, user.uid, ProgramsAPI]);
+  console.log({ newTemplateId });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateActiveProgram = useCallback(
@@ -191,7 +178,7 @@ export const Programs: FC = () => {
             </Button>
           )}
           {tabValue === TabIndex.Schedule && viewedProgram?.authorUserId === user.uid && (
-            <Button variant="outlined" onClick={programNoteDrawer.onOpen}>
+            <Button variant="outlined" onClick={event => programNoteDrawer.onOpen(event)}>
               Note
             </Button>
           )}
@@ -199,7 +186,7 @@ export const Programs: FC = () => {
 
         <TabPanel value={tabValue} index={TabIndex.Programs}>
           {/** Pause display until viewedProgram is ready */}
-          <DataStateView data={DataState.all(programs, viewedProgram)}>
+          <DataStateView data={DataState.all(programs, viewedProgram ?? DataState.Empty)}>
             {([programs]) =>
               programs.length === 0 ? (
                 <Typography variant="overline" sx={{ color: 'text.secondary' }}>
@@ -304,6 +291,7 @@ export const Programs: FC = () => {
                           color="error"
                           onClick={async function deleteProgram() {
                             try {
+                              // TODO
                               await Promise.all([
                                 API.Programs.delete(program.id),
                                 API.ProgramUsers.update({
@@ -380,9 +368,9 @@ export const Programs: FC = () => {
                               )}
                             </DataStateView>
                             <Stack>
-                              <DataStateView data={programMovementsByTemplateId}>
+                              {/**<DataStateView data={programMovementsByTemplateId}>
                                 {programMovementsByTemplateId => {
-                                  const movements = programMovementsByTemplateId[templateId];
+                                  const movements = programMovementsByTemplateId.get(templateId);
                                   if (!movements) return null;
                                   if (movements.length === 0) return null;
                                   return (
@@ -399,7 +387,7 @@ export const Programs: FC = () => {
                                     </>
                                   );
                                 }}
-                              </DataStateView>
+                              </DataStateView>*/}
                             </Stack>
                             <IconButton
                               sx={{ color: theme => theme.palette.primary.main }}
@@ -427,6 +415,8 @@ export const Programs: FC = () => {
                         <IconButton
                           sx={{ color: theme => theme.palette.primary.main }}
                           onClick={event => {
+                            // TODO Fetches data as a side effect.
+                            // Separate side effect into explicit store.action() call
                             editorDrawer.onOpen(event, {
                               templateId: null,
                             });
