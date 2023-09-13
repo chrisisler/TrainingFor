@@ -21,25 +21,28 @@ export function useAPI<T extends { id: string }>(
   queryKey: QueryKey
 ) {
   const queryClient = useQueryClient();
+  // Exact=false means create/update/delete operations with
+  // queryKey=['Movements'] invalidates *ANY* query with 'Movements' in its queryKey
+  const opts = { queryKey, exact: false };
 
   const { mutateAsync: create } = useMutation({
     mutationFn: apiClient.create,
-    onSuccess: () => queryClient.invalidateQueries(queryKey),
+    onSuccess: () => queryClient.invalidateQueries(opts),
   });
 
   const { mutateAsync: update } = useMutation({
     mutationFn: apiClient.update,
-    onSuccess: () => queryClient.invalidateQueries(queryKey),
+    onSuccess: () => queryClient.invalidateQueries(opts),
   });
 
   const { mutateAsync: _delete } = useMutation({
     mutationFn: apiClient.delete,
-    onSuccess: () => queryClient.invalidateQueries(queryKey),
+    onSuccess: () => queryClient.invalidateQueries(opts),
   });
 
   const { mutateAsync: deleteMany } = useMutation({
     mutationFn: apiClient.deleteMany,
-    onSuccess: () => queryClient.invalidateQueries(queryKey),
+    onSuccess: () => queryClient.invalidateQueries(opts),
   });
 
   return {

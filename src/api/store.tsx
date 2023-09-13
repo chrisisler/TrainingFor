@@ -47,21 +47,13 @@ const subscribe = (listener: (store: Store) => void) => {
 export function useStore<T>(selector: (store: Store) => T) {
   const user = useUser();
 
-  const isProgramView = false;
-  const ProgramMovementsAPI = useAPI(API.ProgramMovements, [
-    DbPath.ProgramMovements,
-    isProgramView,
-    user.uid,
-  ]);
-  const MovementsAPI = useAPI(API.Movements, [DbPath.Movements, isProgramView, user.uid]);
-  const SavedMovementsAPI = useAPI(API.SavedMovements, [DbPath.SavedMovements, user.uid]);
-  const TrainingLogsAPI = useAPI(API.TrainingLogs, [DbPath.Logs, user.uid]);
-  const ProgramsAPI = useAPI(API.Programs, [DbPath.Programs, user.uid]);
-  const ProgramUsersAPI = useAPI(API.ProgramUsers, [DbPath.ProgramUsers, user.uid]);
-  const ProgramLogTemplatesAPI = useAPI(API.ProgramLogTemplates, [
-    DbPath.ProgramLogTemplates,
-    user.uid,
-  ]);
+  const ProgramMovementsAPI = useAPI(API.ProgramMovements, [DbPath.ProgramMovements]);
+  const MovementsAPI = useAPI(API.Movements, [DbPath.Movements]);
+  const SavedMovementsAPI = useAPI(API.SavedMovements, [DbPath.SavedMovements]);
+  const TrainingLogsAPI = useAPI(API.TrainingLogs, [DbPath.Logs]);
+  const ProgramsAPI = useAPI(API.Programs, [DbPath.Programs]);
+  const ProgramUsersAPI = useAPI(API.ProgramUsers, [DbPath.ProgramUsers]);
+  const ProgramLogTemplatesAPI = useAPI(API.ProgramLogTemplates, [DbPath.ProgramLogTemplates]);
 
   const logs = DataState.from<TrainingLog[]>(
     useQuery(TrainingLogsAPI.queryKey, () =>
@@ -73,12 +65,13 @@ export function useStore<T>(selector: (store: Store) => T) {
     useQuery(
       MovementsAPI.queryKey,
       async () => {
-        if (!DataState.isReady(logs)) return logs;
+        if (!DataState.isReady(logs)) throw Error('Logs not ready for movementsByLogId');
         // https://stackoverflow.com/questions/67035919
         const promises = logs.map(_ =>
           API.Movements.getAll(where('logId', '==', _.id), orderBy('position', 'asc'))
         );
         const movementLists: Movement[][] = await Promise.all(promises);
+        // TODO There's a smarter way to do this. movementLists is already by log id.
         const map = new Map<string, Movement[]>(logs.map(_ => [_.id, []]));
         movementLists.flat().forEach(movement => map.get(movement.logId)?.push(movement));
         return map;
@@ -95,13 +88,11 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const useMovements = (logId: string, isProgramView = false) =>
     DataState.from<Movement[]>(
-      useQuery(
-        [isProgramView ? DbPath.ProgramMovements : DbPath.Movements, isProgramView, user.uid],
-        () =>
-          (isProgramView ? API.ProgramMovements : API.Movements).getAll(
-            where('logId', '==', logId),
-            orderBy('position', 'asc')
-          )
+      useQuery([isProgramView ? DbPath.ProgramMovements : DbPath.Movements, { logId }], () =>
+        (isProgramView ? API.ProgramMovements : API.Movements).getAll(
+          where('logId', '==', logId),
+          orderBy('position', 'asc')
+        )
       )
     );
 
@@ -142,7 +133,7 @@ export function useStore<T>(selector: (store: Store) => T) {
     );
 
   const programUser = DataState.from<ProgramUser>(
-    useQuery([DbPath.ProgramUsers, user.uid], async () => { // TODO QueryKey
+    useQuery(ProgramUsersAPI.queryKey, async () => {
       const users = await API.ProgramUsers.getAll(where('userUid', '==', user.uid));
       // If there is no entry in ProgramUsers for the current user, create
       // one and use that to keep track of the active program for the user.
@@ -177,7 +168,7 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const activeProgram = DataState.from<Program>(
     useQuery(
-      [DbPath.Programs, user.uid, programUser], // TODO ???
+      [DbPath.Programs, programUser], // TODO ???
       async () => {
         if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
         if (!programUser.activeProgramId) throw TypeError('activeProgramId not found');

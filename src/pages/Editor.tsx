@@ -81,7 +81,10 @@ export const Editor: FC = () => {
 
   const log = useStore(store => {
     if (!logId) return DataState.Empty;
-    return DataState.map(store.logs, logs => logs.find(_ => _.id === logId) ?? DataState.Empty);
+    return DataState.map(
+      store.logs,
+      logs => logs.find(_ => _.id === logId) ?? DataState.error('Log not found.')
+    );
   });
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const programUser = useStore(store => store.programUser);
@@ -91,15 +94,9 @@ export const Editor: FC = () => {
   });
 
   const finishTrainingLog = useCallback(async () => {
-    if (!logId) {
-      toast.error('Log not found');
-      return;
-    }
+    if (!logId) return;
     try {
-      await TrainingLogsAPI.update({
-        id: logId,
-        isFinished: true,
-      });
+      await TrainingLogsAPI.update({ id: logId, isFinished: true });
     } catch (err) {
       toast.error(err.message);
     }
@@ -117,7 +114,14 @@ export const Editor: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
-        <DataStateView data={DataState.all(log, programUser)}>
+        <DataStateView
+          data={DataState.all(log, programUser)}
+          error={() => (
+            <Button variant="contained" onClick={() => navigate(Paths.home)}>
+              Go back
+            </Button>
+          )}
+        >
           {([log, programUser]) => (
             <Stack direction="row" spacing={1.5} alignItems="baseline">
               <Typography variant="caption" color="textSecondary">
