@@ -64,17 +64,15 @@ export function useStore<T>(selector: (store: Store) => T) {
   ]);
 
   const logs = DataState.from<TrainingLog[]>(
-    useQuery({
-      queryKey: [DbPath.Logs, user.uid],
-      queryFn: () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
-    })
+    useQuery(TrainingLogsAPI.queryKey, () =>
+      API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20))
+    )
   );
 
   const movementsByLogId = DataState.from<Map<string, Movement[]>>(
-    useQuery({
-      enabled: DataState.isReady(logs),
-      queryKey: [DbPath.Movements, logs],
-      queryFn: async () => {
+    useQuery(
+      [DbPath.Movements, logs], // TODO MovementsAPI.queryKey
+      async () => {
         if (!DataState.isReady(logs)) return logs;
         // https://stackoverflow.com/questions/67035919
         const promises = logs.map(_ =>
@@ -85,55 +83,43 @@ export function useStore<T>(selector: (store: Store) => T) {
         movementLists.flat().forEach(movement => map.get(movement.logId)?.push(movement));
         return map;
       },
-    })
+      { enabled: DataState.isReady(logs) }
+    )
   );
 
   const programs = DataState.from<Program[]>(
-    useQuery({
-      queryKey: [DbPath.Programs, user.uid],
-      queryFn: async () => {
-        const list = await API.Programs.getAll(user.uid);
-        return list.map(p => Program.makeTemplateId(p));
-      },
-    })
+    useQuery(ProgramsAPI.queryKey, () =>
+      API.Programs.getAll(user.uid).then(list => list.map(p => Program.makeTemplateId(p)))
+    )
   );
 
-  // - `queryKey` is ULTRA important concept or invalidation is insta-broken
-  // If you don't want to share the data, don't share the key
   const useMovements = (logId: string, isProgramView = false) =>
     DataState.from<Movement[]>(
-      useQuery({
-        queryKey: [
-          isProgramView ? DbPath.ProgramMovements : DbPath.Movements,
-          isProgramView,
-          user.uid,
-        ],
-        queryFn: () =>
+      useQuery(
+        [isProgramView ? DbPath.ProgramMovements : DbPath.Movements, isProgramView, user.uid],
+        () =>
           (isProgramView ? API.ProgramMovements : API.Movements).getAll(
             where('logId', '==', logId),
             orderBy('position', 'asc')
-          ),
-      })
+          )
+      )
     );
 
   const useMovementsHistory = (savedMovementId: string) =>
     DataState.from<Movement[]>(
-      useQuery({
-        queryKey: [DbPath.Movements, user.uid],
-        queryFn: () =>
-          API.Movements.getAll(
-            where('savedMovementId', '==', savedMovementId),
-            orderBy('timestamp', 'desc')
-          ),
-      })
+      useQuery(MovementsAPI.queryKey, () =>
+        API.Movements.getAll(
+          where('savedMovementId', '==', savedMovementId),
+          orderBy('timestamp', 'desc')
+        )
+      )
     );
 
   const useProgramMovementsByTemplateId = (templateIds?: string[]) =>
     DataState.from<Map<string, Movement[]>>(
-      useQuery({
-        queryKey: [DbPath.ProgramMovements, user.uid],
-        enabled: !!templateIds,
-        queryFn: async () => {
+      useQuery(
+        [DbPath.ProgramMovements, user.uid], // TODO ProgramMovementsAPI.queryKey
+        async () => {
           if (!templateIds) return new Map();
           // For each log template fetch each movement
           // TODO use `in` query since array size will be < 10 (firebase limit)
@@ -151,90 +137,71 @@ export function useStore<T>(selector: (store: Store) => T) {
           });
           return map;
         },
-      })
+        { enabled: !!templateIds }
+      )
     );
 
   const programUser = DataState.from<ProgramUser>(
-    useQuery({
-      queryKey: [DbPath.ProgramUsers, user.uid],
-      queryFn: async () => {
-        const users = await API.ProgramUsers.getAll(where('userUid', '==', user.uid));
-        // If there is no entry in ProgramUsers for the current user, create
-        // one and use that to keep track of the active program for the user.
-        // Programs cannot be unselected.
-        if (users.length > 0) {
-          // There can ONLY BE ONE!
-          if (users.length > 1) {
-            users.slice(1).forEach(_ => ProgramUsersAPI.delete(_.id));
-          }
-          return users[0];
-        }
-        return ProgramUsersAPI.create({
-          userUid: user.uid,
-          activeProgramId: null,
-          activeProgramName: null,
-        });
-      },
+    useQuery([DbPath.ProgramUsers, user.uid], async () => {
+      const users = await API.ProgramUsers.getAll(where('userUid', '==', user.uid));
+      // If there is no entry in ProgramUsers for the current user, create
+      // one and use that to keep track of the active program for the user.
+      // Programs cannot be unselected.
+      if (users.length > 0) {
+        // There can ONLY BE ONE!
+        if (users.length > 1) users.slice(1).forEach(_ => ProgramUsersAPI.delete(_.id));
+        return users[0];
+      }
+      return ProgramUsersAPI.create({
+        userUid: user.uid,
+        activeProgramId: null,
+        activeProgramName: null,
+      });
     })
   );
 
   const savedMovements = DataState.from<SavedMovement[]>(
-    useQuery({
-      queryKey: [DbPath.SavedMovements, user.uid],
-      queryFn: async () => {
-        const savedMovements = await API.SavedMovements.getAll(user.uid);
-        const countPromises = savedMovements.map(_ =>
-          getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
-        );
-        const counts = (await Promise.all(countPromises)).map(_ => _.data().count);
-        // Sort by frequency and recency.
-        return savedMovements
-          .map((sm, index) => Object.assign(sm, { count: counts[index] }))
-          .sort((a, b) => b.count - a.count)
-          .sort((a, b) => b.lastSeen - a.lastSeen);
-      },
+    useQuery(SavedMovementsAPI.queryKey, async () => {
+      const savedMovements = await API.SavedMovements.getAll(user.uid);
+      const countPromises = savedMovements.map(_ =>
+        getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
+      );
+      const counts = (await Promise.all(countPromises)).map(_ => _.data().count);
+      // Sort by frequency and recency.
+      return savedMovements
+        .map((sm, index) => Object.assign(sm, { count: counts[index] }))
+        .sort((a, b) => b.count - a.count)
+        .sort((a, b) => b.lastSeen - a.lastSeen);
     })
   );
 
   const activeProgram = DataState.from<Program>(
-    useQuery({
-      enabled: DataState.isReady(programUser),
-      queryKey: [DbPath.Programs, user.uid, programUser],
-      queryFn: async () => {
+    useQuery(
+      [DbPath.Programs, user.uid, programUser], // TODO ???
+      async () => {
         if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
         if (!programUser.activeProgramId) throw TypeError('activeProgramId not found');
         return API.Programs.get(programUser.activeProgramId).then(p => Program.makeTemplateId(p));
       },
-    })
+      { enabled: DataState.isReady(programUser) }
+    )
   );
 
   const templates = DataState.from<ProgramLogTemplate[]>(
-    useQuery({
-      enabled: DataState.isReady(activeProgram),
-      queryKey: [DbPath.ProgramLogTemplates, user.uid, activeProgram],
-      queryFn: () => {
+    useQuery(
+      [DbPath.ProgramLogTemplates, user.uid, activeProgram], // TODO ProgramLogTemplatesAPI.queryKey
+      () => {
         if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
         return API.ProgramLogTemplates.getAll(
           user.uid,
           where('id', 'in', activeProgram.templateIds)
         );
       },
-    })
+      {
+        enabled: DataState.isReady(activeProgram),
+      }
+    )
   );
-  // Duplicate way to get the same data
-  // const templates = DataState.from<ProgramLogTemplate[]>(
-  //   useQuery({
-  //     enabled: DataState.isReady(programUser),
-  //     queryKey: [DbPath.ProgramLogTemplates, user.uid],
-  //     queryFn: () => {
-  //       if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
-  //       return API.ProgramLogTemplates.getAll(
-  //         user.uid,
-  //         where('programId', '==', programUser.activeProgramId)
-  //       );
-  //     },
-  //   })
-  // );
 
   Object.assign(TrainingLogsAPI, {
     async delete(logId: string) {
