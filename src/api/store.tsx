@@ -66,7 +66,7 @@ export function useStore<T>(selector: (store: Store) => T) {
   const logs = DataState.from<TrainingLog[]>(
     useQuery({
       queryKey: [DbPath.Logs, user.uid],
-      queryFn: () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(100)),
+      queryFn: () => API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20)),
     })
   );
 
@@ -236,21 +236,20 @@ export function useStore<T>(selector: (store: Store) => T) {
   //   })
   // );
 
-  // TODO
-  // - [ ] newTemplateId usage of useDataState
+  Object.assign(TrainingLogsAPI, {
+    async delete(logId: string) {
+      await Promise.all([
+        TrainingLogsAPI.delete(logId),
+        MovementsAPI.deleteMany(where('logId', '==', logId)),
+      ]);
+    },
+  });
+
   const store = {
     ProgramsAPI,
     ProgramMovementsAPI,
     SavedMovementsAPI,
-    TrainingLogsAPI: {
-      ...TrainingLogsAPI,
-      async delete(logId: string) {
-        await Promise.all([
-          TrainingLogsAPI.delete(logId),
-          MovementsAPI.deleteMany(where('logId', '==', logId)),
-        ]);
-      },
-    },
+    TrainingLogsAPI,
     MovementsAPI,
     ProgramUsersAPI,
     ProgramLogTemplatesAPI,

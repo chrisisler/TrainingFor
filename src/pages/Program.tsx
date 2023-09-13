@@ -84,9 +84,9 @@ export const Programs: FC = () => {
   //   }
   // }, [programUser, programs, viewedProgram]);
 
+  // TODO
   // ProgramMovements from viewedProgram
   // const programMovementsByTemplateId = useStore(store => {
-  //   console.log('called');
   //   return store.useProgramMovementsByTemplateId(viewedProgram?.templateIds);
   // });
   // console.log({ programMovementsByTemplateId });
@@ -98,6 +98,7 @@ export const Programs: FC = () => {
     if (!DataState.isReady(programs)) return programs;
     if (!data || !program) return DataState.Empty;
     if (data.templateId) return data.templateId;
+    // console.log('--------------------mutating stuff------------------------')
     const { id: newProgramLogTemplateId } = await TemplatesAPI.create({
       authorUserId: user.uid,
       programId: program.id,
@@ -280,6 +281,7 @@ export const Programs: FC = () => {
                                 id: programUser.id,
                                 activeProgramName: newName,
                               });
+                              // TODO await this??
                               ProgramsAPI.update({ id: program.id, name: newName });
                               toast.info('Updated program name.');
                             } catch (err) {

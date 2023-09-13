@@ -1,5 +1,7 @@
 import { Box, Collapse } from '@mui/material';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { SnackbarProvider } from 'notistack';
 import { FC } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
@@ -12,9 +14,12 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
+      cacheTime: 1000 * 60 * 60 * 24 * 2, // 2 days
     },
   },
 });
+
+const persister = createSyncStoragePersister({ storage: window.localStorage });
 
 export const App: FC = () => {
   /** When this value is DataState.Empty, the user is not authenticated. */
@@ -42,14 +47,14 @@ export const App: FC = () => {
             >
               {user => (
                 <UserProvider user={user}>
-                  <QueryClientProvider client={queryClient}>
+                  <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
                     <Routes>
                       <Route path={Paths.home} element={<Home />} />
                       <Route path={Paths.editor()} element={<Editor />} />
                       <Route path={Paths.program} element={<Programs />} />
                       <Route path="*" element={<Navigate to={Paths.home} />} />
                     </Routes>
-                  </QueryClientProvider>
+                  </PersistQueryClientProvider>
                 </UserProvider>
               )}
             </DataStateView>
