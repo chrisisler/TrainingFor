@@ -229,8 +229,9 @@ export const Home: FC = () => {
                         </Typography>
                       </Stack>
                       {/** regular list of movements */}
-                      <DataStateView data={DataState.map(movementsByLogId, _ => _.get(log.id))}>
-                        {movements => {
+                      <DataStateView data={movementsByLogId}>
+                        {map => {
+                          const movements = !!map && map.get(log.id);
                           if (!movements) return null;
                           if (movements.length === 0) {
                             return (

@@ -1092,9 +1092,9 @@ export const EditorInternals: FC<{
         {...savedMovementDrawer.props()}
         anchor="top"
         onClose={() => {
-          savedMovementDrawer.onClose();
           // Reset back to original
           setTabValue(TabIndex.Edit);
+          savedMovementDrawer.onClose();
         }}
       >
         <Collapse in={savedMovementDrawer.open}>
@@ -1646,7 +1646,7 @@ const SavedMovementHistory: FC<{
         {savedMovement.name}
       </Typography>
       {/** Graph of volume over time, w/ dates */}
-      {heaviest && heaviestDate && (
+      {!!heaviest && !!heaviestDate && (
         <Typography variant="caption">
           Heaviest was {heaviest}
           {movementsHistory[0].weightUnit} on {dateDisplay(heaviestDate)}.

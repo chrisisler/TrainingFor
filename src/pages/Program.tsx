@@ -113,7 +113,6 @@ export const Programs: FC = () => {
     editorDrawer.setData({ ...data, templateId: newProgramLogTemplateId });
     return newProgramLogTemplateId;
   }, [editorDrawer.getData()?.templateId, viewedProgram, user.uid, ProgramsAPI]);
-  console.log({ newTemplateId });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateActiveProgram = useCallback(

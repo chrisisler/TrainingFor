@@ -98,7 +98,7 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const useMovementsHistory = (savedMovementId: string) =>
     DataState.from<Movement[]>(
-      useQuery(MovementsAPI.queryKey, () =>
+      useQuery(MovementsAPI.queryKey.concat({ savedMovementId }), () =>
         API.Movements.getAll(
           where('savedMovementId', '==', savedMovementId),
           orderBy('timestamp', 'desc')
@@ -113,7 +113,7 @@ export function useStore<T>(selector: (store: Store) => T) {
         async () => {
           if (!templateIds) return new Map();
           // For each log template fetch each movement
-          // TODO use `in` query since array size will be < 10 (firebase limit)
+          // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
           const promises = templateIds.map(templateId =>
             API.ProgramMovements.getAll(
               where('logId', '==', templateId),
