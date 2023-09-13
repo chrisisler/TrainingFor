@@ -65,13 +65,13 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const logs = DataState.from<TrainingLog[]>(
     useQuery(TrainingLogsAPI.queryKey, () =>
-      API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(20))
+      API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(12))
     )
   );
 
   const movementsByLogId = DataState.from<Map<string, Movement[]>>(
     useQuery(
-      [DbPath.Movements, logs], // TODO MovementsAPI.queryKey
+      MovementsAPI.queryKey,
       async () => {
         if (!DataState.isReady(logs)) return logs;
         // https://stackoverflow.com/questions/67035919
@@ -118,7 +118,7 @@ export function useStore<T>(selector: (store: Store) => T) {
   const useProgramMovementsByTemplateId = (templateIds?: string[]) =>
     DataState.from<Map<string, Movement[]>>(
       useQuery(
-        [DbPath.ProgramMovements, user.uid], // TODO ProgramMovementsAPI.queryKey
+        ProgramMovementsAPI.queryKey,
         async () => {
           if (!templateIds) return new Map();
           // For each log template fetch each movement
@@ -142,7 +142,7 @@ export function useStore<T>(selector: (store: Store) => T) {
     );
 
   const programUser = DataState.from<ProgramUser>(
-    useQuery([DbPath.ProgramUsers, user.uid], async () => {
+    useQuery([DbPath.ProgramUsers, user.uid], async () => { // TODO QueryKey
       const users = await API.ProgramUsers.getAll(where('userUid', '==', user.uid));
       // If there is no entry in ProgramUsers for the current user, create
       // one and use that to keep track of the active program for the user.
@@ -189,7 +189,7 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const templates = DataState.from<ProgramLogTemplate[]>(
     useQuery(
-      [DbPath.ProgramLogTemplates, user.uid, activeProgram], // TODO ProgramLogTemplatesAPI.queryKey
+      ProgramLogTemplatesAPI.queryKey,
       () => {
         if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
         return API.ProgramLogTemplates.getAll(
@@ -197,9 +197,7 @@ export function useStore<T>(selector: (store: Store) => T) {
           where('id', 'in', activeProgram.templateIds)
         );
       },
-      {
-        enabled: DataState.isReady(activeProgram),
-      }
+      { enabled: DataState.isReady(activeProgram) }
     )
   );
 
