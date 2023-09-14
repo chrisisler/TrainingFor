@@ -228,7 +228,7 @@ export const Home: FC = () => {
                             .replace('m ', 'mo ')}
                         </Typography>
                       </Stack>
-                      {/** regular list of movements */}
+                      {/** List of movement names for each recent log from the user. */}
                       <DataStateView data={movementsByLogId}>
                         {map => {
                           const movements = !!map && map.get(log.id);

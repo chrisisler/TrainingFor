@@ -71,10 +71,7 @@ export function useStore<T>(selector: (store: Store) => T) {
           API.Movements.getAll(where('logId', '==', _.id), orderBy('position', 'asc'))
         );
         const movementLists: Movement[][] = await Promise.all(promises);
-        // TODO There's a smarter way to do this. movementLists is already by log id.
-        const map = new Map<string, Movement[]>(logs.map(_ => [_.id, []]));
-        movementLists.flat().forEach(movement => map.get(movement.logId)?.push(movement));
-        return map;
+        return new Map(logs.map((_, index) => [_.id, movementLists[index]]));
       },
       { enabled: DataState.isReady(logs) }
     )

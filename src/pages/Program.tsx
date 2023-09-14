@@ -354,7 +354,7 @@ export const Programs: FC = () => {
                       return (
                         <Paper
                           key={templateId}
-                          elevation={1}
+                          elevation={2}
                           sx={{
                             padding: theme => theme.spacing(2),
                           }}

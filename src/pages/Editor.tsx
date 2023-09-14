@@ -11,6 +11,7 @@ import {
   EditOutlined,
   FindReplaceRounded,
   MoreHoriz,
+  NavigateNextRounded,
   PersonOutline,
   RefreshRounded,
   ShortTextRounded,
@@ -25,6 +26,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Paper,
   Select,
   SelectProps,
   Stack,
@@ -58,6 +60,7 @@ import {
   DataState,
   DataStateView,
   dateDisplay,
+  ordinalSuffix,
   Paths,
   useDrawer,
   useResizableInputRef,
@@ -1652,55 +1655,68 @@ const SavedMovementHistory: FC<{
           {movementsHistory[0].weightUnit} on {dateDisplay(heaviestDate)}.
         </Typography>
       )}
-      <Stack
-        spacing={1}
-        sx={{
-          maxHeight: '40vh',
-          overflowY: 'scroll',
-          '& > *:nth-of-type(even)': {
-            backgroundColor: theme => theme.palette.action.hover,
-          },
-        }}
-      >
-        {movementsHistory.map((movement, index, { length }) => {
-          const date = new Date(movement.timestamp);
-          return (
-            <Stack
-              key={movement.id}
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              width="100%"
-              onClick={event => openLogDrawer(event, movement)}
-              sx={{
-                padding: theme => theme.spacing(1),
-              }}
-            >
-              <Stack direction="row" display="flex" alignItems="center" spacing={2}>
-                <Typography variant="overline" color="textSecondary">
-                  {length - index}
+      {/** List of movement items w/ links to open Editor in drawer */}
+      <Paper elevation={3}>
+        <Stack
+          spacing={1}
+          sx={{
+            maxHeight: '40vh',
+            overflowY: 'scroll',
+            '& > *:not(:last-child)': {
+              borderBottom: theme => `1px solid ${theme.palette.divider}`,
+            },
+          }}
+        >
+          {movementsHistory.map((movement, index, { length }) => {
+            const date = new Date(movement.timestamp);
+            return (
+              <Stack
+                key={movement.id}
+                spacing={2}
+                direction="row"
+                justifyContent="space-between"
+                width="100%"
+                alignItems="center"
+                onClick={event => openLogDrawer(event, movement)}
+                sx={{ padding: theme => theme.spacing(1.5) }}
+              >
+                <Stack direction="row" alignItems="baseline" spacing={2}>
+                  <Typography variant="overline" color="textSecondary" alignSelf="center">
+                    {length - index}
+                  </Typography>
+                  <Stack>
+                    <Typography variant="body2" height="100%">
+                      {dateDisplay(date)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Order: {movement.position}
+                      {ordinalSuffix(movement.position)}
+                    </Typography>
+                  </Stack>
+                </Stack>
+                <Typography variant="overline">
+                  {Intl.NumberFormat().format(
+                    MovementSet.summate(
+                      movement.sets.filter(s => s.status === MovementSetStatus.Completed)
+                    )
+                  )}{' '}
+                  {movement.sets?.[0]?.weight === 0 ? movement.repCountUnit : movement.weightUnit}
                 </Typography>
-                <Typography color="body2">{dateDisplay(date)}</Typography>
+                <Stack direction="row" display="flex" alignItems="center" spacing={2}>
+                  <Typography variant="body2">
+                    {formatDistanceToNowStrict(date, {
+                      addSuffix: true,
+                    })
+                      .replace(/ (\w)\w+ /i, '$1 ')
+                      .replace('m ', 'mo ')}
+                  </Typography>
+                  <NavigateNextRounded />
+                </Stack>
               </Stack>
-              <Typography variant="overline">
-                {Intl.NumberFormat().format(
-                  MovementSet.summate(
-                    movement.sets.filter(s => s.status === MovementSetStatus.Completed)
-                  )
-                )}{' '}
-                {movement.sets?.[0]?.weight === 0 ? movement.repCountUnit : movement.weightUnit}
-              </Typography>
-              <Typography variant="body2">
-                {formatDistanceToNowStrict(date, {
-                  addSuffix: true,
-                })
-                  .replace(/ (\w)\w+ /i, '$1 ')
-                  .replace('m ', 'mo ')}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
+            );
+          })}
+        </Stack>
+      </Paper>
     </Stack>
   );
 };
