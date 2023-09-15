@@ -143,18 +143,11 @@ export const useUserAuthSubscription = (): [DataState<User>, (user: DataState<Us
 export const useToast = () => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const success = useCallback(
-    (msg: string, opts: OptionsObject = { variant: 'success' }) => enqueueSnackbar(msg, opts),
-    [enqueueSnackbar]
-  );
   const info = useCallback(
     (msg: string, opts: OptionsObject = { variant: 'info' }) => enqueueSnackbar(msg, opts),
     [enqueueSnackbar]
   );
-  const warn = useCallback(
-    (msg: string, opts: OptionsObject = { variant: 'warning' }) => enqueueSnackbar(msg, opts),
-    [enqueueSnackbar]
-  );
+
   const error = useCallback(
     (msg: string, opts: OptionsObject = { variant: 'error' }) => {
       if (process.env.NODE_ENV === 'development') {
@@ -165,10 +158,5 @@ export const useToast = () => {
     [enqueueSnackbar]
   );
 
-  return {
-    success,
-    info,
-    warn,
-    error,
-  };
+  return { info, error };
 };

@@ -235,7 +235,7 @@ export const Editor: FC = () => {
                       id: log.id,
                       bodyweight: newBodyweight,
                     });
-                    toast.success('Updated bodyweight.');
+                    toast.info('Updated bodyweight.');
                   } catch (error) {
                     toast.error(error.message);
                   }
@@ -254,7 +254,7 @@ export const Editor: FC = () => {
                     await finishTrainingLog();
                     setConfetti(true);
                     const word = Math.random() > 0.5 ? 'effort' : 's**t';
-                    toast.success(`Good ${word}! I mean, congrations!!`);
+                    toast.info(`Good ${word}! I mean, congrations!!`);
                     return;
                   }
                   toast.info('Must complete all grey sets to finish.');
@@ -275,7 +275,7 @@ export const Editor: FC = () => {
                     await TrainingLogsAPI.delete(logId);
                     logDrawer.onClose();
                     navigate(Paths.home);
-                    toast.success('Deleted training.');
+                    toast.info('Deleted training.');
                   } catch (error) {
                     toast.error(error.message);
                   }
@@ -1012,7 +1012,7 @@ export const EditorInternals: FC<{
                                     }
                                     if (!DataState.isReady(movements)) return;
                                     if (movements.some(_ => _.savedMovementId === match.id)) {
-                                      toast.warn(`${match.name} has already been added.`);
+                                      toast.info(`${match.name} has already been added.`);
                                       return;
                                     }
                                     const { position } = movement;
@@ -1161,7 +1161,7 @@ export const EditorInternals: FC<{
                       await SavedMovementsAPI.delete(savedMovement.id);
                       // Close drawer
                       savedMovementDrawer.onClose();
-                      toast.success(`Deleted ${savedMovement.name}`);
+                      toast.info(`Deleted ${savedMovement.name}`);
                     } catch (error) {
                       toast.error(error.message);
                     }
@@ -1289,7 +1289,7 @@ export const EditorInternals: FC<{
                       });
                       // Close drawer
                       movementMenuDrawer.onClose();
-                      toast.success(`Movement renamed to ${newName}`);
+                      toast.info(`Movement renamed to ${newName}`);
                     } catch (error) {
                       toast.error(error.message);
                     }

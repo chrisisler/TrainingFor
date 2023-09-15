@@ -43,7 +43,7 @@ export const Authentication: FC = () => {
                 const authResult = await Authenticate.withGoogle();
                 setUser(authResult.user);
                 navigate(Paths.home);
-                toast.success('Welcome!');
+                toast.info('Welcome!');
               } catch (error) {
                 toast.error(error.message);
               }
@@ -58,7 +58,7 @@ export const Authentication: FC = () => {
               try {
                 await Authenticate.anonymously();
                 navigate(Paths.home);
-                toast.success('Welcome!');
+                toast.info('Welcome!');
               } catch (error) {
                 toast.error(error.message);
               }

@@ -127,7 +127,7 @@ export const Programs: FC = () => {
           activeProgramId: program.id,
           id: programUser.id,
         });
-        toast.success('Updated active program.');
+        toast.info('Updated active program.');
       } catch (err) {
         toast.error(err.message);
       }
@@ -312,7 +312,7 @@ export const Programs: FC = () => {
                               // setPrograms(programs.filter(p => p.id !== program.id));
                               setViewedProgram(null);
                               setTabValue(TabIndex.Programs);
-                              toast.success('Deleted program.');
+                              toast.info('Deleted program.');
                             } catch (err) {
                               toast.error(err.message);
                             }
@@ -579,7 +579,7 @@ export const Programs: FC = () => {
                   setViewedProgram(created);
                 }
                 addProgramDrawer.onClose();
-                toast.success('Program created!');
+                toast.info('Program created!');
               } catch (error) {
                 toast.error(error.message);
               }

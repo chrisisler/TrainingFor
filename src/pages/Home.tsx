@@ -85,7 +85,7 @@ export const Home: FC = () => {
           ]);
         }
         navigate(Paths.editor(newTrainingLog.id));
-        toast.success(`Created new training page.`);
+        toast.info(`Created new training page.`);
       } catch (err) {
         toast.error(err.message);
       }
@@ -97,7 +97,7 @@ export const Home: FC = () => {
     if (!window.confirm('Sign out?')) return;
     try {
       await signOut(auth);
-      toast.success('Signed out.');
+      toast.info('Signed out.');
     } catch (err) {
       toast.error(err.message);
     }
@@ -327,7 +327,7 @@ export const Home: FC = () => {
                       const credential = await Authenticate.withGoogle();
                       if (!credential) throw Error('Cannot authenticate: user not found.');
                       await API.assignAnonymousDataToGoogleUser(user.uid, credential.user.uid);
-                      toast.success('Assigned data to new persistent account.');
+                      toast.info('Assigned data to new persistent account.');
                     } catch (error) {
                       toast.error(error.message);
                     }
