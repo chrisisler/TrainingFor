@@ -51,7 +51,7 @@ export const App: FC = () => {
                     <Routes>
                       <Route path={Paths.home} element={<Home />} />
                       <Route path={Paths.editor()} element={<Editor />} />
-                      <Route path={Paths.program} element={<Programs />} />
+                      <Route path={Paths.program()} element={<Programs />} />
                       <Route path="*" element={<Navigate to={Paths.home} />} />
                     </Routes>
                   </QueryClientProvider>

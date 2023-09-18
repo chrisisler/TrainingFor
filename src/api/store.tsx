@@ -58,7 +58,7 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const logs = DataState.from<TrainingLog[]>(
     useQuery(TrainingLogsAPI.queryKey, () =>
-      API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(12))
+      API.TrainingLogs.getAll(user.uid, orderBy('timestamp', 'desc'), limit(10))
     )
   );
 

@@ -1,6 +1,10 @@
 import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
+  BookmarkAddRounded,
+  BookmarkBorderRounded,
+  BookmarkRounded,
+  CloseRounded,
   Google,
   Launch,
   LightModeTwoTone,
@@ -15,19 +19,22 @@ import {
   Collapse,
   IconButton,
   Paper,
+  Skeleton,
   Stack,
   SwipeableDrawer,
+  TextField,
   Typography,
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
 import { where } from 'firebase/firestore';
-import { FC, useCallback } from 'react';
+import { FC, useCallback, useState } from 'react';
+import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate, useStore } from '../api';
 import { useUser } from '../context';
-import { Movement } from '../types';
+import { Movement, Program } from '../types';
 import {
   DataState,
   DataStateView,
@@ -43,12 +50,27 @@ export const Home: FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
+  const addProgramDrawer = useMaterialMenu();
+
+  const [newProgramName, setNewProgramName] = useState('');
 
   const activeProgram = useStore(store => store.activeProgram);
   const logs = useStore(store => store.logs);
   const movementsByLogId = useStore(store => store.movementsByLogId);
   const templates = useStore(store => store.templates);
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
+  const ProgramsAPI = useStore(store => store.ProgramsAPI);
+  const programs = useStore(store => {
+    // Sort by active program first.
+    if (!DataState.isReady(store.activeProgram)) return store.activeProgram;
+    if (!DataState.isReady(store.programs)) return store.programs;
+    const activeProgram = store.activeProgram;
+    const first = store.programs.find(p => p.id === activeProgram.id);
+    if (first) {
+      return [first, ...store.programs.filter(p => p.id !== activeProgram.id)];
+    }
+    return store.programs;
+  });
 
   const createTrainingLog = useCallback(
     async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
@@ -77,9 +99,11 @@ export const Home: FC = () => {
           }));
           await Promise.all([
             // Create movements in the new log
+            // TODO API.createMany
             API.Movements.createMany(logMovements),
             // Update lastSeen property for each movement's savedMovement parent
             logMovements.map(_ =>
+              // TODO SavedMovementsAPI
               API.SavedMovements.update({ id: _.savedMovementId, lastSeen: _.timestamp })
             ),
           ]);
@@ -109,21 +133,22 @@ export const Home: FC = () => {
       sx={{
         height: '100vh',
         width: '100vw',
+        overflowY: 'scroll',
         maxWidth: theme => theme.breakpoints.values.sm,
         margin: '0 auto',
         padding: theme => theme.spacing(2),
+        backgroundColor: theme =>
+          theme.palette.mode === 'dark'
+            ? theme.palette.background.default
+            : theme.palette.action.hover,
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="baseline">
-        <Button onClick={() => navigate(Paths.program)} variant="text">
-          Program
-        </Button>
-        <Typography variant="caption">
-          Welcome,{' '}
+        <Typography variant="h6" fontWeight={600}>
           {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
         </Typography>
         <IconButton size="small" onClick={deauthenticate}>
-          <Logout fontSize="small" />
+          <Logout fontSize="small" sx={{ color: theme => theme.palette.text.primary }} />
         </IconButton>
       </Box>
 
@@ -163,6 +188,46 @@ export const Home: FC = () => {
         </Button>
       </Stack>
 
+      <Typography variant="overline" fontWeight={600}>
+        Programs
+      </Typography>
+      <Box>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ width: '100%', overflowX: 'scroll', padding: theme => theme.spacing(2, 0) }}
+        >
+          <DataStateView
+            data={programs}
+            loading={() => (
+              <>
+                <Skeleton variant="text" width={80} />
+                <Skeleton variant="rounded" />
+                <Skeleton variant="text" width={80} />
+                <Skeleton variant="rounded" />
+              </>
+            )}
+          >
+            {programs => (
+              <>
+                {programs.map(program => (
+                  <ProgramView
+                    key={program.id}
+                    program={program}
+                    isActive={DataState.isReady(activeProgram) && activeProgram.id === program.id}
+                    onClick={() => navigate(Paths.program(program.id))}
+                  />
+                ))}
+                <ProgramView onClick={event => addProgramDrawer.onOpen(event)} />
+              </>
+            )}
+          </DataStateView>
+        </Stack>
+      </Box>
+
+      <Typography variant="overline" fontWeight={600}>
+        Training
+      </Typography>
       <DataStateView data={logs}>
         {logs =>
           logs.length === 0 ? (
@@ -181,10 +246,10 @@ export const Home: FC = () => {
                 return (
                   <Paper
                     key={log.id}
-                    elevation={0}
+                    variant="outlined"
                     sx={theme => {
                       const gradientBg = theme.make.background(
-                        alpha(theme.palette.primary.main, 0.05),
+                        alpha(theme.palette.primary.main, 0.03),
                         theme.palette.background.default
                       );
                       return {
@@ -340,6 +405,92 @@ export const Home: FC = () => {
           </SwipeableDrawer>
         </>
       )}
+
+      <SwipeableDrawer {...addProgramDrawer} anchor="top">
+        <Stack spacing={2}>
+          <ReactFocusLock disabled={!addProgramDrawer.open} returnFocus>
+            <TextField
+              fullWidth
+              variant="standard"
+              label="Program Name"
+              value={newProgramName}
+              onChange={event => setNewProgramName(event.target.value)}
+              InputProps={{
+                endAdornment: !!newProgramName && (
+                  <IconButton size="small" onClick={() => setNewProgramName('')}>
+                    <CloseRounded />
+                  </IconButton>
+                ),
+              }}
+            />
+          </ReactFocusLock>
+          <Button
+            variant="text"
+            disabled={newProgramName.trim().length === 0}
+            startIcon={<AddRounded />}
+            size="large"
+            onClick={async function createProgram() {
+              try {
+                const created = await ProgramsAPI.create({
+                  name: newProgramName,
+                  authorUserId: user.uid,
+                  timestamp: Date.now(),
+                  note: '',
+                  templateIds: [],
+                });
+                setNewProgramName('');
+                navigate(Paths.program(created.id));
+                addProgramDrawer.onClose();
+                toast.info('Program created!');
+              } catch (error) {
+                toast.error(error.message);
+              }
+            }}
+          >
+            New Program
+          </Button>
+        </Stack>
+      </SwipeableDrawer>
     </Stack>
+  );
+};
+
+const ProgramView: FC<{
+  /** Renders "add button" when not provided. */
+  program?: Program;
+  isActive?: boolean;
+  onClick: React.MouseEventHandler<HTMLDivElement>;
+}> = ({ program, isActive = false, onClick }) => {
+  const inAddMode = !program;
+  return (
+    <Paper
+      sx={theme => {
+        const gradient = theme.make.background(
+          theme.palette.background.default,
+          alpha(theme.palette.primary.main, 0.05)
+        );
+        return {
+          background: gradient,
+          padding: theme.spacing(4),
+          // ...(isActive ? { border: `1px solid ${theme.palette.primary.main}` } : {}),
+        };
+      }}
+      elevation={isActive ? 6 : 1}
+      onClick={onClick}
+    >
+      <Stack direction="row" display="flex" spacing={1} alignItems="center">
+        {inAddMode ? (
+          <BookmarkAddRounded />
+        ) : isActive ? (
+          <BookmarkRounded />
+        ) : (
+          <BookmarkBorderRounded />
+        )}
+        <Typography variant="overline" fontStyle="italic" fontWeight={600} whiteSpace="nowrap">
+          {inAddMode ? 'New Program' : program.name}
+        </Typography>
+        {!inAddMode && <NavigateNextRounded />}
+      </Stack>
+    </Paper>
   );
 };

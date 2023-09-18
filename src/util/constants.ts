@@ -55,5 +55,5 @@ export const Paths = {
   home: '/home',
   training: '/training',
   editor: (logId = ':logId') => `${Paths.training}/log/${logId}`,
-  program: '/program',
+  program: (programId = ':programId') => `/program/${programId}`,
 } as const;
