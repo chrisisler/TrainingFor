@@ -22,6 +22,7 @@ import {
   Box,
   Button,
   Collapse,
+  colors,
   Grid,
   IconButton,
   Menu,
@@ -94,10 +95,7 @@ export const Editor: FC = () => {
   });
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const programUser = useStore(store => store.programUser);
-  const movements = useStore(store => {
-    if (!logId) return DataState.Empty;
-    return store.useMovements(logId);
-  });
+  const movements = useStore(store => (logId ? store.useMovements(logId) : DataState.Empty));
 
   const finishTrainingLog = useCallback(async () => {
     if (!logId) return;
@@ -248,6 +246,7 @@ export const Editor: FC = () => {
             <Grid item xs={4}>
               <Button
                 variant="outlined"
+                disabled={!DataState.isReady(movements)}
                 onClick={async () => {
                   if (!DataState.isReady(movements)) return;
                   const allSetsDone = movements.every(m =>
@@ -375,12 +374,8 @@ export const EditorInternals: FC<{
   }, [movementNameQuery, savedMovements]);
 
   const addMovementFromNewSavedMovement = useCallback(async () => {
-    if (!logId) {
-      throw TypeError('Unreachable: logId is required');
-    }
-    if (!DataState.isReady(movements)) {
-      return;
-    }
+    if (!logId) throw TypeError('Unreachable: logId is required');
+    if (!DataState.isReady(movements)) return;
     try {
       const timestamp: number = Date.now();
       const newSavedMovement: SavedMovement = await SavedMovementsAPI.create({
@@ -874,7 +869,14 @@ export const EditorInternals: FC<{
                     <Button
                       size="large"
                       variant="outlined"
-                      sx={{ color: 'text.secondary', backgroundColor: 'divider', border: 0 }}
+                      sx={theme => {
+                        const bgColor = alpha(colors.amber[500], 0.2);
+                        return {
+                          color: 'text.secondary',
+                          backgroundColor: bgColor,
+                          border: theme => `1px solid ${bgColor}`,
+                        };
+                      }}
                       onClick={addSetMenu.onClose}
                       startIcon={<CloseRounded fontSize="small" />}
                     >
@@ -893,7 +895,6 @@ export const EditorInternals: FC<{
                               sets: movement.sets.filter(_ => _.uuid !== last.uuid),
                               id: movement.id,
                             });
-                            if (!DataState.isReady(movements)) return;
                             // Close the menu
                             addSetMenu.onClose();
                           } catch (error) {
@@ -916,7 +917,6 @@ export const EditorInternals: FC<{
                               sets: [],
                               id: movement.id,
                             });
-                            if (!DataState.isReady(movements)) return;
                             // Close the menu
                             addSetMenu.onClose();
                           } catch (error) {
