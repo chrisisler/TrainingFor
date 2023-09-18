@@ -69,6 +69,9 @@ import {
 
 const DIFF_CHAR = 'to';
 
+const DEFAULT_MIN_REPS = 5;
+const DEFAULT_MAX_REPS = 30;
+
 /**
  * Wrapper page for editing training entries.
  */
@@ -335,8 +338,8 @@ export const EditorInternals: FC<{
   const [movementNameQuery, setMovementNameQuery] = useState('');
   /** Controlled state of the Add Set inputs. */
   const [newSetWeight, setNewSetWeight] = useState(0);
-  const [newSetRepCountMin, setNewSetRepCountMin] = useState(0);
-  const [newSetRepCountMax, setNewSetRepCountMax] = useState(0);
+  const [newSetRepCountMin, setNewSetRepCountMin] = useState(DEFAULT_MIN_REPS);
+  const [newSetRepCountMax, setNewSetRepCountMax] = useState(DEFAULT_MAX_REPS);
   /** State for re-ordering the list of movements. Holds the Movement to swap places with. */
   const [movementOrderSwap, setMovementOrderSwap] = useState<null | Movement>(null);
   /** For SavedMovement edit/update menu. */
@@ -582,11 +585,11 @@ export const EditorInternals: FC<{
                             const lastSet = movement.sets[movement.sets.length - 1];
                             setNewSetWeight(lastSet.weight);
                             setNewSetRepCountMin(lastSet.repCountExpected);
-                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || 0);
+                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
                           } else {
                             setNewSetWeight(0);
-                            setNewSetRepCountMin(0);
-                            setNewSetRepCountMax(0);
+                            setNewSetRepCountMin(DEFAULT_MIN_REPS);
+                            setNewSetRepCountMax(DEFAULT_MAX_REPS);
                           }
                         }}
                       >
@@ -739,9 +742,6 @@ export const EditorInternals: FC<{
                               id: movement.id,
                               weightUnit: newWeightUnit,
                             });
-                            if (!DataState.isReady(movements)) {
-                              return;
-                            }
                             addSetMenu.setData(updated);
                           } catch (error) {
                             toast.error(error.message);
@@ -765,9 +765,6 @@ export const EditorInternals: FC<{
                               id: movement.id,
                               repCountUnit: newRepCountUnit,
                             });
-                            if (!DataState.isReady(movements)) {
-                              return;
-                            }
                             addSetMenu.setData(updated);
                           } catch (error) {
                             toast.error(error.message);

@@ -29,6 +29,7 @@ interface Store {
   useMovements(logId: string, isProgramView?: boolean): DataState<Movement[]>;
   useProgramMovementsByTemplateId(templateIds?: string[]): DataState<Map<string, Movement[]>>;
   // State/Model/Data
+  // programMovementsByTemplateId: DataState<Map<string, Movement[]>>;
   savedMovements: DataState<SavedMovement[]>;
   movementsByLogId: DataState<Map<string, Movement[]>>;
   activeProgram: DataState<Program>;
@@ -103,31 +104,27 @@ export function useStore<T>(selector: (store: Store) => T) {
       )
     );
 
-  const useProgramMovementsByTemplateId = (templateIds?: string[]) =>
-    DataState.from<Map<string, Movement[]>>(
-      useQuery(
-        ProgramMovementsAPI.queryKey,
-        async () => {
-          if (!templateIds) return new Map();
-          // For each log template fetch each movement
-          // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
-          const promises = templateIds.map(templateId =>
-            API.ProgramMovements.getAll(
-              where('logId', '==', templateId),
-              orderBy('position', 'asc')
-            )
-          );
-          const movementsByTemplateId = await Promise.all(promises);
-          // Group lists of movements by templateId
-          const map = new Map<string, Movement[]>(templateIds.map(templateId => [templateId, []]));
-          templateIds.forEach((templateId, index) => {
-            map.get(templateId)?.push(...movementsByTemplateId[index]);
-          });
-          return map;
-        },
-        { enabled: !!templateIds }
-      )
-    );
+  // const useProgramMovementsByTemplateId = (templateIds?: string[]) =>
+  //   DataState.from<Map<string, Movement[]>>(
+  //     useQuery(
+  //       ProgramMovementsAPI.queryKey,
+  //       async () => {
+  //         if (!templateIds) throw Error('templateIds not ready for Program view');
+  //         // For each template ID fetch each ProgramMovement
+  //         // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
+  //         const promises = templateIds.map(templateId =>
+  //           API.ProgramMovements.getAll(
+  //             where('logId', '==', templateId),
+  //             orderBy('position', 'asc')
+  //           )
+  //         );
+  //         const movementsByTemplateId = await Promise.all(promises);
+  //         console.log('-------------DONE FETCHING------------------------');
+  //         return new Map(templateIds.map((id, index) => [id, movementsByTemplateId[index]]));
+  //       },
+  //       { enabled: !!templateIds }
+  //     )
+  //   );
 
   const programUser = DataState.from<ProgramUser>(
     useQuery(ProgramUsersAPI.queryKey, async () => {
@@ -162,6 +159,35 @@ export function useStore<T>(selector: (store: Store) => T) {
         .sort((a, b) => b.lastSeen - a.lastSeen);
     })
   );
+
+  const useProgramMovementsByTemplateId = () =>
+    DataState.from<Map<string, Movement[]>>(
+      useQuery(
+        ProgramMovementsAPI.queryKey,
+        async () => {
+          if (!DataState.isReady(programUser) || !DataState.isReady(programs)) return;
+          const templateIds = programs.find(_ => _.id === programUser.activeProgramId)?.templateIds;
+          if (templateIds === undefined) throw Error('Unreachable: templateIds not found');
+          // For each template ID fetch each ProgramMovement
+          // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
+          const promises = templateIds.map(templateId =>
+            API.ProgramMovements.getAll(
+              where('logId', '==', templateId),
+              orderBy('position', 'asc')
+            )
+          );
+          const movementsByTemplateId = await Promise.all(promises);
+          console.log('-------------DONE FETCHING------------------------');
+          return new Map(templateIds.map((id, index) => [id, movementsByTemplateId[index]]));
+        },
+        {
+          enabled:
+            DataState.isReady(programUser) &&
+            DataState.isReady(programs) &&
+            programs.some(_ => _.id === programUser.activeProgramId),
+        }
+      )
+    );
 
   const activeProgram = DataState.from<Program>(
     useQuery(

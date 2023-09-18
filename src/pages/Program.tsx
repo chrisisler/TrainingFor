@@ -21,7 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { getCountFromServer, query, where } from 'firebase/firestore';
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,9 +53,7 @@ export const Programs: FC = () => {
   const navigate = useNavigate();
   const addProgramDrawer = useMaterialMenu();
   const programNoteDrawer = useMaterialMenu();
-  const editorDrawer = useDrawer<{
-    templateId: null | string;
-  }>();
+  const editorDrawer = useDrawer<{ templateId: null | string }>();
 
   const [newProgramName, setNewProgramName] = useState('');
   const [tabValue, setTabValue] = useState(TabIndex.Programs);
@@ -67,29 +65,23 @@ export const Programs: FC = () => {
   const programUser = useStore(store => store.programUser);
   const templates = useStore(store => store.templates);
   const programs = useStore(store => store.programs);
+  // TODO Still broken
+  // Consider re-writing this to NOT use tabs???? i don't fucking know.
+  // It works just fine on SavedMovementHistory view. What the fuck is the issue with this?
+  // const programMovementsByTemplateId = useStore(store => store.useProgramMovementsByTemplateId());
 
-  // When page loads viewedProgram is null, when data fetches, update
-  // viewedProgram so the Schedule tab is not disabled.
-  // useEffect(() => {
-  //   if (!DataState.isReady(programUser)) return;
-  //   if (!DataState.isReady(programs)) return;
-  //   if (viewedProgram === null && typeof programUser.activeProgramId === 'string') {
-  //     // The user's default/chosen program
-  //     const userProgram = programs.find(p => p.id === programUser.activeProgramId);
-  //     setViewedProgram(userProgram ?? null);
-  //     // Auto-select the Schedule tab
-  //     if (userProgram) {
-  //       setTabValue(TabIndex.Schedule);
-  //     }
-  //   }
-  // }, [programUser, programs, viewedProgram]);
-
-  // TODO
-  // ProgramMovements from viewedProgram
-  // const programMovementsByTemplateId = useStore(store => {
-  //   return store.useProgramMovementsByTemplateId(viewedProgram?.templateIds);
-  // });
   // console.log({ programMovementsByTemplateId });
+
+  console.log('sutff is commented out 3');
+  // useEffect(() => {
+  //   if (!DataState.isReady(programUser) || !DataState.isReady(programs)) return;
+  //   const activeProgram = programs.find(p => p.id === programUser.activeProgramId);
+  //   if (activeProgram && viewedProgram === null) {
+  //     // TODO 2 It's not even this
+  //     // setViewedProgram(activeProgram);
+  //     //     setTabValue(TabIndex.Schedule);
+  //   }
+  // }, [programUser, programs]);
 
   const [newTemplateId] = useDataState(async () => {
     if (!editorDrawer.open) return DataState.Empty;
@@ -98,7 +90,6 @@ export const Programs: FC = () => {
     if (!DataState.isReady(programs)) return programs;
     if (!data || !program) return DataState.Empty;
     if (data.templateId) return data.templateId;
-    // console.log('--------------------mutating stuff------------------------')
     const { id: newProgramLogTemplateId } = await TemplatesAPI.create({
       authorUserId: user.uid,
       programId: program.id,
@@ -154,15 +145,15 @@ export const Programs: FC = () => {
                 <Tab
                   label="Programs"
                   {...tabA11yProps(TabIndex.Programs)}
-                  onClick={() => {
-                    // when clicking Programs tab - back from Schedule tab - ensure the program
-                    // seen when navigating *back* to Schedule tab is the user's active program.
-                    if (!DataState.isReady(programs)) return;
-                    if (!DataState.isReady(programUser)) return;
-                    setViewedProgram(
-                      prev => programs.find(p => p.id === programUser.activeProgramId) || prev
-                    );
-                  }}
+                  // onClick={() => {
+                  //   // when clicking Programs tab - back from Schedule tab - ensure the program
+                  //   // seen when navigating *back* to Schedule tab is the user's active program.
+                  //   if (!DataState.isReady(programs)) return;
+                  //   if (!DataState.isReady(programUser)) return;
+                  //   setViewedProgram(
+                  //     prev => programs.find(p => p.id === programUser.activeProgramId) || prev
+                  //   );
+                  // }}
                 />
                 <Tab
                   label="Schedule"
@@ -185,9 +176,8 @@ export const Programs: FC = () => {
         </Stack>
 
         <TabPanel value={tabValue} index={TabIndex.Programs}>
-          {/** Pause display until viewedProgram is ready */}
-          <DataStateView data={DataState.all(programs, viewedProgram ?? DataState.Empty)}>
-            {([programs]) =>
+          <DataStateView data={programs}>
+            {programs =>
               programs.length === 0 ? (
                 <Typography variant="overline" sx={{ color: 'text.secondary' }}>
                   Add a program to get started.
@@ -210,9 +200,11 @@ export const Programs: FC = () => {
                             : {}),
                         }}
                         onClick={() => {
-                          setViewedProgram(program);
+                          // TODO 4 updating either `setX` state here causes infinite re-render....
+                          // setViewedProgram(program);
                           // Navigate user to tab which shows the program details
-                          setTabValue(TabIndex.Schedule);
+                          console.log('thanks 333333333-------------------------------');
+                          // setTabValue(TabIndex.Schedule);
                         }}
                       >
                         <Stack direction="row" justifyContent="space-between">
@@ -309,7 +301,6 @@ export const Programs: FC = () => {
                                   ),
                                 ],
                               ]);
-                              // setPrograms(programs.filter(p => p.id !== program.id));
                               setViewedProgram(null);
                               setTabValue(TabIndex.Programs);
                               toast.info('Deleted program.');
@@ -563,7 +554,6 @@ export const Programs: FC = () => {
             startIcon={<AddRounded />}
             size="large"
             onClick={async function createProgram() {
-              if (!DataState.isReady(programs)) return;
               try {
                 const created = await ProgramsAPI.create({
                   name: newProgramName,
@@ -575,9 +565,7 @@ export const Programs: FC = () => {
                 setNewProgramName('');
                 // Happens after deleting then creating a new program
                 // Do not keep user on "nothing to show here" case view
-                if (tabValue === TabIndex.Schedule) {
-                  setViewedProgram(created);
-                }
+                if (tabValue === TabIndex.Schedule) setViewedProgram(created);
                 addProgramDrawer.onClose();
                 toast.info('Program created!');
               } catch (error) {
