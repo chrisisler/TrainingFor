@@ -28,6 +28,7 @@ interface Store {
   useMovementsHistory(savedMovementId: string): DataState<Movement[]>;
   useMovements(logId: string, isProgramView?: boolean): DataState<Movement[]>;
   useProgramMovementsByTemplateId(programId?: string): DataState<Map<string, Movement[]>>;
+  createTemplate(program: Program): Promise<ProgramLogTemplate>;
   // State/Model/Data
   // programMovementsByTemplateId: DataState<Map<string, Movement[]>>;
   savedMovements: DataState<SavedMovement[]>;
@@ -193,6 +194,20 @@ export function useStore<T>(selector: (store: Store) => T) {
     )
   );
 
+  const createTemplate = async (program: Program) => {
+    const newTemplate = await ProgramLogTemplatesAPI.create({
+      authorUserId: user.uid,
+      programId: program.id,
+      name: '',
+    });
+    // Update programs to reflect newly added day
+    await ProgramsAPI.update({
+      id: program.id,
+      templateIds: program.templateIds.concat(newTemplate.id),
+    });
+    return newTemplate;
+  };
+
   Object.assign(TrainingLogsAPI, {
     async delete(logId: string) {
       await Promise.all([
@@ -213,6 +228,7 @@ export function useStore<T>(selector: (store: Store) => T) {
     useMovements,
     useMovementsHistory,
     useProgramMovementsByTemplateId,
+    createTemplate,
     logs,
     savedMovements,
     movementsByLogId,
