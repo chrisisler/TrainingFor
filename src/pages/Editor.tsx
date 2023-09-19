@@ -471,23 +471,27 @@ export const EditorInternals: FC<{
   );
 
   const addSetToMovement = useCallback(
-    async (movement: Movement) => {
+    async (movement: Movement): Promise<true | undefined> => {
       // Sets for movements in ProgramLogTemplates must be a rep *range* to
       // match realistic human behavior
       if (isProgramView && newSetRepCountMin === newSetRepCountMax) {
-        return toast.info('Must provide a range to match actual human behavior', {
+        toast.info('Please give a rep range to better match human behavior.', {
           action: snackbarKey => (
-            <Button
-              onClick={() => {
-                setNewSetRepCountMin(newSetRepCountMin - 5);
-                setNewSetRepCountMax(newSetRepCountMin + 5);
-                toast.close(snackbarKey);
-              }}
-            >
-              Make it happen
-            </Button>
+            <Stack direction="row">
+              <Button
+                onClick={() => {
+                  // Minimum is 1, not 0
+                  setNewSetRepCountMin(newSetRepCountMin - 5 || 1);
+                  setNewSetRepCountMax(newSetRepCountMin + 5);
+                  toast.close(snackbarKey);
+                }}
+              >
+                Okay
+              </Button>
+            </Stack>
           ),
         });
+        return;
       }
       try {
         const sets = movement.sets.concat({
@@ -499,6 +503,7 @@ export const EditorInternals: FC<{
           uuid: uuidv4(),
         });
         await MovementsMutationAPI.update({ sets, id: movement.id });
+        return true;
       } catch (error) {
         toast.error(error.message);
       }
@@ -690,7 +695,7 @@ export const EditorInternals: FC<{
               <Menu
                 open={addSetMenu.open}
                 anchorEl={addSetMenu.anchorEl}
-                onClose={(_event, reason) => {
+                onClose={async (_event, reason) => {
                   if (reason === 'backdropClick') {
                     if (newSetRepCountMin === 0) {
                       addSetMenu.onClose();
@@ -700,8 +705,8 @@ export const EditorInternals: FC<{
                       toast.error('Maximum must be less than minimum.');
                       return;
                     }
-                    addSetToMovement(movement);
-                    addSetMenu.onClose();
+                    const success = await addSetToMovement(movement);
+                    if (success) addSetMenu.onClose();
                     return;
                   }
                   // Click was NOT on the backdrop so it was within
@@ -718,9 +723,9 @@ export const EditorInternals: FC<{
                     >
                       <Collapse
                         in={newSetRepCountMin > 0}
-                        onClick={() => {
-                          addSetToMovement(movement);
-                          addSetMenu.onClose();
+                        onClick={async () => {
+                          const success = await addSetToMovement(movement);
+                          if (success) addSetMenu.onClose();
                         }}
                       >
                         Tap outside to <b>add set {movement.sets.length + 1}</b>
@@ -874,12 +879,12 @@ export const EditorInternals: FC<{
                     <Button
                       size="large"
                       variant="outlined"
-                      sx={theme => {
+                      sx={() => {
                         const bgColor = alpha(colors.amber[500], 0.2);
                         return {
                           color: 'text.secondary',
                           backgroundColor: bgColor,
-                          border: theme => `1px solid ${bgColor}`,
+                          border: `1px solid ${bgColor}`,
                         };
                       }}
                       onClick={addSetMenu.onClose}
@@ -892,22 +897,19 @@ export const EditorInternals: FC<{
                         variant="text"
                         sx={{ color: 'text.secondary' }}
                         startIcon={<DeleteOutline fontSize="small" />}
-                        onClick={async function deleteSet() {
+                        onClick={async function deleteLastSet() {
+                          let sets = movement.sets.slice();
+                          // Remove last element
+                          sets.pop();
                           try {
-                            const last = movement.sets[movement.sets.length - 1];
-                            if (!last) throw TypeError('Unreachable: last');
-                            await MovementsMutationAPI.update({
-                              sets: movement.sets.filter(_ => _.uuid !== last.uuid),
-                              id: movement.id,
-                            });
-                            // Close the menu
+                            await MovementsMutationAPI.update({ id: movement.id, sets });
                             addSetMenu.onClose();
                           } catch (error) {
                             toast.error(error.message);
                           }
                         }}
                       >
-                        Delete Set
+                        Delete Previous Set
                       </Button>
                     )}
                     {movement.sets.length > 1 && (
@@ -918,11 +920,7 @@ export const EditorInternals: FC<{
                         startIcon={<DeleteRounded fontSize="small" />}
                         onClick={async function deleteAllSets() {
                           try {
-                            await MovementsMutationAPI.update({
-                              sets: [],
-                              id: movement.id,
-                            });
-                            // Close the menu
+                            await MovementsMutationAPI.update({ id: movement.id, sets: [] });
                             addSetMenu.onClose();
                           } catch (error) {
                             toast.error(error.message);

@@ -293,7 +293,9 @@ export const Programs: FC = () => {
       >
         <Collapse in={templateEditorDrawer.open}>
           <Box height="80vh">
-            <EditorDrawerView templateId={templateEditorDrawer.getData()?.templateId} />
+            {templateEditorDrawer.getData()?.templateId && (
+              <EditorDrawerView templateId={templateEditorDrawer.getData()?.templateId} />
+            )}
           </Box>
         </Collapse>
       </SwipeableDrawer>
