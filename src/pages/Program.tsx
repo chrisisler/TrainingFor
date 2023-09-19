@@ -51,7 +51,6 @@ export const Programs: FC = () => {
   const programMovementsByTemplateId = useStore(store =>
     store.useProgramMovementsByTemplateId(programId)
   );
-  const createTemplate = useStore(store => store.createTemplate);
 
   useEffect(() => {
     if (!programId) navigate(Paths.home);
@@ -233,7 +232,17 @@ export const Programs: FC = () => {
                       sx={{ color: theme => theme.palette.primary.main }}
                       onClick={async event => {
                         try {
-                          const newTemplate = await createTemplate(program);
+                          // TODO const newTemplate = store.createTemplate(...)
+                          const newTemplate = await TemplatesAPI.create({
+                            authorUserId: user.uid,
+                            programId: program.id,
+                            name: '',
+                          });
+                          // Update programs to reflect newly added day
+                          await ProgramsAPI.update({
+                            id: program.id,
+                            templateIds: program.templateIds.concat(newTemplate.id),
+                          });
                           templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
                         } catch (err) {
                           toast.error(err.message);
