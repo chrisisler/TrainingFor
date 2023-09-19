@@ -67,23 +67,6 @@ export const Programs: FC = () => {
   const userIsProgramAuthor =
     DataState.isReady(viewedProgram) && user.uid === viewedProgram.authorUserId;
 
-  const updateActiveProgram = useCallback(
-    async (program: Program) => {
-      if (!DataState.isReady(programUser)) return toast.error('Program user not ready.');
-      try {
-        await ProgramUsersAPI.update({
-          activeProgramName: program.name,
-          activeProgramId: program.id,
-          id: programUser.id,
-        });
-        toast.info('Updated active program.');
-      } catch (err) {
-        toast.error(err.message);
-      }
-    },
-    [toast, ProgramUsersAPI, programUser]
-  );
-
   return (
     <>
       <Box sx={{ height: '100vh', width: '100vw', padding: theme => theme.spacing(1) }}>
@@ -105,7 +88,6 @@ export const Programs: FC = () => {
                       return;
                     }
                     if (!DataState.isReady(programUser)) return;
-                    // TODO
                     try {
                       await Promise.all([
                         ProgramUsersAPI.update({ id: programUser.id, activeProgramName: newName }),
@@ -162,22 +144,24 @@ export const Programs: FC = () => {
                   fullWidth
                   variant="text"
                   disabled={isActiveProgram}
-                  onClick={() => {
-                    const program = viewedProgram;
-                    if (!DataState.isReady(program) || !DataState.isReady(programUser)) {
-                      throw Error('Unreachable: ProgramUser not ready.');
-                    }
-                    const { activeProgramId, activeProgramName } = programUser;
-                    if (activeProgramId === program.id) {
-                      toast.info('Program is already active.');
-                    }
-                    if (
-                      typeof activeProgramId === 'string' &&
-                      !window.confirm(`Switch from ${activeProgramName} to ${program.name}?`)
-                    ) {
+                  onClick={async () => {
+                    if (!DataState.isReady(viewedProgram) || !DataState.isReady(programUser)) {
                       return;
                     }
-                    updateActiveProgram(program);
+                    const { activeProgramId } = programUser;
+                    if (!!activeProgramId && !window.confirm(`Switch to ${viewedProgram.name}?`)) {
+                      return;
+                    }
+                    try {
+                      await ProgramUsersAPI.update({
+                        id: programUser.id,
+                        activeProgramName: viewedProgram.name,
+                        activeProgramId: viewedProgram.id,
+                      });
+                      toast.info('Updated active program.');
+                    } catch (err) {
+                      toast.error(err.message);
+                    }
                   }}
                 >
                   Make active program
