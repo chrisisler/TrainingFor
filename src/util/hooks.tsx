@@ -141,7 +141,7 @@ export const useUserAuthSubscription = (): [DataState<User>, (user: DataState<Us
  * ```
  */
 export const useToast = () => {
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   const info = useCallback(
     (msg: string, opts: OptionsObject = { variant: 'info' }) => enqueueSnackbar(msg, opts),
@@ -158,5 +158,5 @@ export const useToast = () => {
     [enqueueSnackbar]
   );
 
-  return { info, error };
+  return { info, error, close: closeSnackbar };
 };

@@ -398,9 +398,7 @@ export const EditorInternals: FC<{
         weightUnit: MovementWeightUnit.Pounds,
         repCountUnit: MovementRepCountUnit.Reps,
       });
-      // Close the drawer
       addMovementDrawer.onClose();
-      // Clear the input
       setMovementNameQuery('');
     } catch (error) {
       toast.error(error.message);
@@ -451,12 +449,8 @@ export const EditorInternals: FC<{
           ...overrides,
         });
         // Update lastSeen property if adding movement to an actual log
-        if (!isProgramView) {
-          await SavedMovementsAPI.update({ id: match.id, lastSeen: now });
-        }
-        // Close the drawer
+        if (!isProgramView) await SavedMovementsAPI.update({ id: match.id, lastSeen: now });
         addMovementDrawer.onClose();
-        // Clear the input
         setMovementNameQuery('');
       } catch (error) {
         toast.error(error.message);
@@ -478,9 +472,24 @@ export const EditorInternals: FC<{
 
   const addSetToMovement = useCallback(
     async (movement: Movement) => {
-      if (!DataState.isReady(movements)) return;
+      // Sets for movements in ProgramLogTemplates must be a rep *range* to
+      // match realistic human behavior
+      if (isProgramView && newSetRepCountMin === newSetRepCountMax) {
+        return toast.info('Must provide a range to match actual human behavior', {
+          action: snackbarKey => (
+            <Button
+              onClick={() => {
+                setNewSetRepCountMin(newSetRepCountMin - 5);
+                setNewSetRepCountMax(newSetRepCountMin + 5);
+                toast.close(snackbarKey);
+              }}
+            >
+              Make it happen
+            </Button>
+          ),
+        });
+      }
       try {
-        // Add new set to list of sets for this Movement
         const sets = movement.sets.concat({
           weight: newSetWeight,
           repCountActual: newSetRepCountMax,
@@ -489,15 +498,12 @@ export const EditorInternals: FC<{
           status: MovementSetStatus.Unattempted,
           uuid: uuidv4(),
         });
-        await MovementsMutationAPI.update({
-          sets,
-          id: movement.id,
-        });
+        await MovementsMutationAPI.update({ sets, id: movement.id });
       } catch (error) {
         toast.error(error.message);
       }
     },
-    [MovementsMutationAPI, movements, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
+    [MovementsMutationAPI, isProgramView, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
   );
 
   return (
@@ -1136,7 +1142,6 @@ export const EditorInternals: FC<{
                           id: savedMovement.id,
                           name: newName,
                         });
-                        // Close drawer
                         savedMovementDrawer.onClose();
                       } catch (error) {
                         toast.error(error.message);
@@ -1155,7 +1160,6 @@ export const EditorInternals: FC<{
                       const savedMovement = savedMovementDrawer.getData();
                       if (!savedMovement) throw Error('Unreachable: deleteSavedMovement');
                       await SavedMovementsAPI.delete(savedMovement.id);
-                      // Close drawer
                       savedMovementDrawer.onClose();
                       toast.info(`Deleted ${savedMovement.name}`);
                     } catch (error) {
@@ -1283,7 +1287,6 @@ export const EditorInternals: FC<{
                         id: movement.id,
                         name: newName,
                       });
-                      // Close drawer
                       movementMenuDrawer.onClose();
                       toast.info(`Movement renamed to ${newName}`);
                     } catch (error) {
@@ -1302,7 +1305,6 @@ export const EditorInternals: FC<{
                       const movement = movementMenuDrawer.getData();
                       if (!movement) throw TypeError('Unreachable: rename movement');
                       await MovementsMutationAPI.delete(movement.id);
-                      // Close drawer
                       movementMenuDrawer.onClose();
                     } catch (error) {
                       toast.error(error.message);
