@@ -173,7 +173,6 @@ export const Programs: FC = () => {
                       <DataStateView data={templates}>
                         {templates => (
                           <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
-                            {/** TODO awful way to do this. write custom useTemplateName */}
                             {templates.find(t => t.id === templateId)?.name || `Day ${index + 1}`}
                           </Typography>
                         )}
@@ -215,7 +214,6 @@ export const Programs: FC = () => {
                       sx={{ color: theme => theme.palette.primary.main }}
                       onClick={async event => {
                         try {
-                          // TODO const newTemplate = store.createTemplate(...)
                           const newTemplate = await TemplatesAPI.create({
                             authorUserId: user.uid,
                             programId: program.id,
@@ -328,10 +326,12 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
         onBlur={async event => {
           try {
             const newName = event.target.value;
-            TemplatesAPI.update({
-              id: templateId,
-              name: newName,
-            });
+            if (newName.length < 3 || newName === templateName) {
+              toast.info('Template name must be at least 3 characters.');
+              return;
+            }
+            await TemplatesAPI.update({ id: templateId, name: newName });
+            toast.info('Updated template name.');
           } catch (error) {
             toast.error(error.message);
           }
