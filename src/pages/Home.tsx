@@ -1,8 +1,6 @@
 import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
-  BookmarkAddRounded,
-  BookmarkBorderRounded,
   BookmarkRounded,
   CloseRounded,
   Google,
@@ -211,14 +209,14 @@ export const Home: FC = () => {
             {programs => (
               <>
                 {programs.map(program => (
-                  <ProgramView
+                  <ProgramPreview
                     key={program.id}
                     program={program}
                     isActive={DataState.isReady(activeProgram) && activeProgram.id === program.id}
                     onClick={() => navigate(Paths.program(program.id))}
                   />
                 ))}
-                <ProgramView onClick={event => addProgramDrawer.onOpen(event)} />
+                <ProgramPreview onClick={event => addProgramDrawer.onOpen(event)} />
               </>
             )}
           </DataStateView>
@@ -455,7 +453,7 @@ export const Home: FC = () => {
   );
 };
 
-const ProgramView: FC<{
+const ProgramPreview: FC<{
   /** Renders "add button" when not provided. */
   program?: Program;
   isActive?: boolean;
@@ -472,21 +470,15 @@ const ProgramView: FC<{
         return {
           background: gradient,
           padding: theme.spacing(4),
-          // ...(isActive ? { border: `1px solid ${theme.palette.primary.main}` } : {}),
+          border: `1px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
         };
       }}
       elevation={isActive ? 6 : 1}
       onClick={onClick}
     >
       <Stack direction="row" display="flex" spacing={1} alignItems="center">
-        {inAddMode ? (
-          <BookmarkAddRounded />
-        ) : isActive ? (
-          <BookmarkRounded />
-        ) : (
-          <BookmarkBorderRounded />
-        )}
-        <Typography variant="overline" fontStyle="italic" fontWeight={600} whiteSpace="nowrap">
+        {inAddMode ? <AddRounded /> : isActive ? <BookmarkRounded /> : null}
+        <Typography variant="overline" fontStyle="italic" whiteSpace="nowrap">
           {inAddMode ? 'New Program' : program.name}
         </Typography>
         {!inAddMode && <NavigateNextRounded />}

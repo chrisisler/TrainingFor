@@ -27,7 +27,7 @@ interface Store {
   ProgramsAPI: ReturnType<typeof useAPI<Program>>;
   useMovementsHistory(savedMovementId: string): DataState<Movement[]>;
   useMovements(logId: string, isProgramView?: boolean): DataState<Movement[]>;
-  useProgramMovementsByTemplateId(templateIds?: string[]): DataState<Map<string, Movement[]>>;
+  useProgramMovementsByTemplateId(programId?: string): DataState<Map<string, Movement[]>>;
   // State/Model/Data
   // programMovementsByTemplateId: DataState<Map<string, Movement[]>>;
   savedMovements: DataState<SavedMovement[]>;
@@ -104,28 +104,6 @@ export function useStore<T>(selector: (store: Store) => T) {
       )
     );
 
-  // const useProgramMovementsByTemplateId = (templateIds?: string[]) =>
-  //   DataState.from<Map<string, Movement[]>>(
-  //     useQuery(
-  //       ProgramMovementsAPI.queryKey,
-  //       async () => {
-  //         if (!templateIds) throw Error('templateIds not ready for Program view');
-  //         // For each template ID fetch each ProgramMovement
-  //         // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
-  //         const promises = templateIds.map(templateId =>
-  //           API.ProgramMovements.getAll(
-  //             where('logId', '==', templateId),
-  //             orderBy('position', 'asc')
-  //           )
-  //         );
-  //         const movementsByTemplateId = await Promise.all(promises);
-  //         console.log('-------------DONE FETCHING------------------------');
-  //         return new Map(templateIds.map((id, index) => [id, movementsByTemplateId[index]]));
-  //       },
-  //       { enabled: !!templateIds }
-  //     )
-  //   );
-
   const programUser = DataState.from<ProgramUser>(
     useQuery(ProgramUsersAPI.queryKey, async () => {
       const users = await API.ProgramUsers.getAll(where('userUid', '==', user.uid));
@@ -160,14 +138,14 @@ export function useStore<T>(selector: (store: Store) => T) {
     })
   );
 
-  const useProgramMovementsByTemplateId = () =>
+  const useProgramMovementsByTemplateId = (programId?: string) =>
     DataState.from<Map<string, Movement[]>>(
       useQuery(
         ProgramMovementsAPI.queryKey,
         async () => {
-          if (!DataState.isReady(programUser) || !DataState.isReady(programs)) return;
-          const templateIds = programs.find(_ => _.id === programUser.activeProgramId)?.templateIds;
-          if (templateIds === undefined) throw Error('Unreachable: templateIds not found');
+          if (!DataState.isReady(programUser) || !DataState.isReady(programs) || !programId) return;
+          const templateIds = programs.find(_ => _.id === programId)?.templateIds;
+          if (templateIds === undefined) throw Error('Unreachable: Program not found');
           // For each template ID fetch each ProgramMovement
           // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
           const promises = templateIds.map(templateId =>
@@ -177,14 +155,14 @@ export function useStore<T>(selector: (store: Store) => T) {
             )
           );
           const movementsByTemplateId = await Promise.all(promises);
-          console.log('-------------DONE FETCHING------------------------');
           return new Map(templateIds.map((id, index) => [id, movementsByTemplateId[index]]));
         },
         {
           enabled:
+            !!programId &&
             DataState.isReady(programUser) &&
             DataState.isReady(programs) &&
-            programs.some(_ => _.id === programUser.activeProgramId),
+            programs.some(_ => _.id === programId),
         }
       )
     );
