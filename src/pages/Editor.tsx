@@ -385,7 +385,6 @@ export const EditorInternals: FC<{
         lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
-      // TODO Should this be MovementsMutationAPI???
       await MovementsMutationAPI.create({
         logId,
         name: newSavedMovement.name,

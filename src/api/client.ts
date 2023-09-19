@@ -30,6 +30,11 @@ export function useAPI<T extends { id: string }>(
     onSuccess: () => queryClient.invalidateQueries(opts),
   });
 
+  const { mutateAsync: createMany } = useMutation({
+    mutationFn: apiClient.createMany,
+    onSuccess: () => queryClient.invalidateQueries(opts),
+  });
+
   const { mutateAsync: update } = useMutation({
     mutationFn: apiClient.update,
     onSuccess: () => queryClient.invalidateQueries(opts),
@@ -48,6 +53,7 @@ export function useAPI<T extends { id: string }>(
   return {
     queryKey,
     create,
+    createMany,
     update,
     delete: _delete,
     deleteMany,

@@ -18,13 +18,12 @@ import {
   Typography,
 } from '@mui/material';
 import { getCountFromServer, query, where } from 'firebase/firestore';
-import { FC, useCallback, useEffect } from 'react';
+import { FC, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API, useStore } from '../api';
 import { NotesDrawer } from '../components';
 import { useUser } from '../context';
-import { Program } from '../types';
 import { DataState, DataStateView, Paths, useDrawer, useMaterialMenu, useToast } from '../util';
 import { EditorInternals } from './Editor';
 

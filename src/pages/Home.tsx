@@ -58,6 +58,8 @@ export const Home: FC = () => {
   const templates = useStore(store => store.templates);
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
+  const MovementsAPI = useStore(store => store.MovementsAPI);
+  const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const programs = useStore(store => {
     // Sort by active program first.
     if (!DataState.isReady(store.activeProgram)) return store.activeProgram;
@@ -97,12 +99,10 @@ export const Home: FC = () => {
           }));
           await Promise.all([
             // Create movements in the new log
-            // TODO API.createMany
-            API.Movements.createMany(logMovements),
+            MovementsAPI.createMany(logMovements),
             // Update lastSeen property for each movement's savedMovement parent
             logMovements.map(_ =>
-              // TODO SavedMovementsAPI
-              API.SavedMovements.update({ id: _.savedMovementId, lastSeen: _.timestamp })
+              SavedMovementsAPI.update({ id: _.savedMovementId, lastSeen: _.timestamp })
             ),
           ]);
         }
@@ -112,7 +112,7 @@ export const Home: FC = () => {
         toast.error(err.message);
       }
     },
-    [activeProgram, user.uid, navigate, toast, TrainingLogsAPI]
+    [activeProgram, user.uid, navigate, toast, TrainingLogsAPI, MovementsAPI, SavedMovementsAPI]
   );
 
   const deauthenticate = useCallback(async () => {
