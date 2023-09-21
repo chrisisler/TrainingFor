@@ -513,13 +513,7 @@ export const EditorInternals: FC<{
                       <Box display="flex" alignItems="baseline">
                         <Stack
                           sx={{ padding: theme => theme.spacing(0.5, 0.0) }}
-                          onClick={async event => {
-                            try {
-                              movementMenuDrawer.onOpen(event, movement);
-                            } catch (err) {
-                              toast.error(err.message);
-                            }
-                          }}
+                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
                         >
                           <Typography
                             fontSize="1.4rem"

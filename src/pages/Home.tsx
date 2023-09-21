@@ -1,6 +1,7 @@
 import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
+  AutoAwesomeRounded,
   BookmarkRounded,
   CloseRounded,
   Google,
@@ -153,7 +154,13 @@ export const Home: FC = () => {
         </IconButton>
       </Box>
 
-      <Stack spacing={2} sx={{ padding: theme => theme.spacing(0, 1, 1) }}>
+      <Stack
+        spacing={2}
+        sx={{
+          padding: theme => theme.spacing(0, 1, 1),
+          backgroundColor: theme => alpha(theme.palette.action.hover, 0.05),
+        }}
+      >
         <DataStateView data={DataState.all(activeProgram, templates)}>
           {([activeProgram, templates]) => {
             return (
@@ -165,9 +172,10 @@ export const Home: FC = () => {
                     size="large"
                     onClick={() => createTrainingLog({ fromTemplateId: template.id })}
                     startIcon={<AddRounded />}
+                    endIcon={<AutoAwesomeRounded />}
                     sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between' }}
                   >
-                    Train {template.name}
+                    Add {template.name} Training
                   </Button>
                 ))}
               </>
@@ -454,6 +462,7 @@ const ProgramPreview: FC<{
         background: gradient,
         padding: theme.spacing(4),
         border: `1px solid ${theme.palette.divider}`,
+        borderRadius: 0,
       }}
       elevation={isActive ? 8 : inAddMode ? 0 : 2}
       onClick={onClick}

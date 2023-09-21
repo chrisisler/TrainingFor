@@ -169,7 +169,7 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const activeProgram = DataState.from<Program>(
     useQuery(
-      [DbPath.Programs, programUser], // TODO queryKey?
+      ProgramsAPI.queryKey,
       async () => {
         if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
         if (programUser.activeProgramId === null) return DataState.Empty;
@@ -180,22 +180,10 @@ export function useStore<T>(selector: (store: Store) => T) {
   );
 
   const templates = DataState.from<ProgramLogTemplate[]>(
-    useQuery(
-      ProgramLogTemplatesAPI.queryKey,
-      () => {
-        if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
-        if (activeProgram.templateIds.length === 0) {
-          return Promise.reject('Non-empty templateIds required.');
-        }
-        return API.ProgramLogTemplates.getAll(
-          user.uid,
-          where('id', 'in', activeProgram.templateIds)
-        );
-      },
-      { enabled: DataState.isReady(activeProgram) }
-    )
+    useQuery(ProgramLogTemplatesAPI.queryKey, () => API.ProgramLogTemplates.getAll(user.uid))
   );
 
+  // TODO undo this, this is being too "clever"
   Object.assign(TrainingLogsAPI, {
     async delete(logId: string) {
       await Promise.all([

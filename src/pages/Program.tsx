@@ -1,11 +1,10 @@
 import {
   AddRounded,
+  AutoAwesomeRounded,
   DeleteForeverRounded,
   EditOutlined,
   NoteAltOutlined,
   PersonOutline,
-  PlaylistAddRounded,
-  SwitchAccessShortcutRounded,
 } from '@mui/icons-material';
 import {
   Box,
@@ -70,34 +69,71 @@ export const Programs: FC = () => {
             return (
               <Stack spacing={3}>
                 <Stack direction="row" spacing={1}>
-                  <InputBase
-                    multiline
-                    maxRows={2}
-                    defaultValue={program.name}
-                    sx={{ fontSize: '2rem', fontWeight: 600, width: '100%' }}
-                    readOnly={!(userIsProgramAuthor && isActiveProgram)}
-                    disabled={!DataState.isReady(programUser)}
-                    onBlur={async event => {
-                      const newName = event.target.value;
-                      if (newName.length < 3 || newName === program.name) {
-                        toast.info('Program name must be at least 3 characters');
-                        return;
-                      }
-                      if (!DataState.isReady(programUser)) return;
-                      try {
-                        await Promise.all([
-                          ProgramUsersAPI.update({
-                            id: programUser.id,
-                            activeProgramName: newName,
-                          }),
-                          ProgramsAPI.update({ id: program.id, name: newName }),
-                        ]);
-                        toast.info('Updated program name');
-                      } catch (err) {
-                        toast.error(err.message);
-                      }
-                    }}
-                  />
+                  <Stack spacing={1}>
+                    <InputBase
+                      multiline
+                      maxRows={2}
+                      defaultValue={program.name}
+                      sx={{ fontSize: '2rem', fontWeight: 600, width: '100%' }}
+                      readOnly={!(userIsProgramAuthor && isActiveProgram)}
+                      disabled={!DataState.isReady(programUser)}
+                      onBlur={async event => {
+                        const newName = event.target.value;
+                        if (newName.length < 3 || newName === program.name) {
+                          toast.info('Program name must be at least 3 characters');
+                          return;
+                        }
+                        if (!DataState.isReady(programUser)) return;
+                        try {
+                          await Promise.all([
+                            ProgramUsersAPI.update({
+                              id: programUser.id,
+                              activeProgramName: newName,
+                            }),
+                            ProgramsAPI.update({ id: program.id, name: newName }),
+                          ]);
+                          toast.info('Updated program name');
+                        } catch (err) {
+                          toast.error(err.message);
+                        }
+                      }}
+                    />
+                    <Box>
+                      <Button
+                        variant="text"
+                        size="small"
+                        disabled={isActiveProgram}
+                        endIcon={<AutoAwesomeRounded />}
+                        onClick={async () => {
+                          if (
+                            !DataState.isReady(viewedProgram) ||
+                            !DataState.isReady(programUser)
+                          ) {
+                            return;
+                          }
+                          const { activeProgramId } = programUser;
+                          if (
+                            !!activeProgramId &&
+                            !window.confirm(`Switch to ${viewedProgram.name}?`)
+                          ) {
+                            return;
+                          }
+                          try {
+                            await ProgramUsersAPI.update({
+                              id: programUser.id,
+                              activeProgramName: viewedProgram.name,
+                              activeProgramId: viewedProgram.id,
+                            });
+                            toast.info('Updated active program');
+                          } catch (err) {
+                            toast.error(err.message);
+                          }
+                        }}
+                      >
+                        {isActiveProgram ? 'Active Program' : 'Activate Program'}
+                      </Button>
+                    </Box>
+                  </Stack>
                   <Stack spacing={1}>
                     <IconButton onClick={() => navigate(Paths.home)}>
                       <PersonOutline />
@@ -148,37 +184,7 @@ export const Programs: FC = () => {
                     </IconButton>
                   </Stack>
                 </Stack>
-                {!isActiveProgram && (
-                  <Button
-                    variant="text"
-                    disabled={isActiveProgram}
-                    endIcon={<SwitchAccessShortcutRounded />}
-                    onClick={async () => {
-                      if (!DataState.isReady(viewedProgram) || !DataState.isReady(programUser)) {
-                        return;
-                      }
-                      const { activeProgramId } = programUser;
-                      if (
-                        !!activeProgramId &&
-                        !window.confirm(`Switch to ${viewedProgram.name}?`)
-                      ) {
-                        return;
-                      }
-                      try {
-                        await ProgramUsersAPI.update({
-                          id: programUser.id,
-                          activeProgramName: viewedProgram.name,
-                          activeProgramId: viewedProgram.id,
-                        });
-                        toast.info('Updated active program');
-                      } catch (err) {
-                        toast.error(err.message);
-                      }
-                    }}
-                  >
-                    Activate Program
-                  </Button>
-                )}
+
                 <Stack spacing={3}>
                   {program.templateIds.map((templateId, index) => (
                     <Paper
