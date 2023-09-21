@@ -1,4 +1,5 @@
 import {
+  AddRounded,
   DeleteForeverRounded,
   EditOutlined,
   NoteAltOutlined,
@@ -149,10 +150,9 @@ export const Programs: FC = () => {
                 </Stack>
                 {!isActiveProgram && (
                   <Button
-                    fullWidth
                     variant="text"
                     disabled={isActiveProgram}
-                    startIcon={<SwitchAccessShortcutRounded />}
+                    endIcon={<SwitchAccessShortcutRounded />}
                     onClick={async () => {
                       if (!DataState.isReady(viewedProgram) || !DataState.isReady(programUser)) {
                         return;
@@ -176,7 +176,7 @@ export const Programs: FC = () => {
                       }
                     }}
                   >
-                    Active Program
+                    Activate Program
                   </Button>
                 )}
                 <Stack spacing={3}>
@@ -227,8 +227,10 @@ export const Programs: FC = () => {
                   <Box sx={{ padding: theme => theme.spacing(1, 2) }}>
                     <Stack direction="row" alignItems="center" justifyContent="center" width="100%">
                       <Box />
-                      <IconButton
+                      <Button
                         sx={{ color: theme => theme.palette.primary.main }}
+                        startIcon={<AddRounded />}
+                        variant="outlined"
                         onClick={async event => {
                           try {
                             const newTemplate = await TemplatesAPI.create({
@@ -236,19 +238,17 @@ export const Programs: FC = () => {
                               programId: program.id,
                               name: '',
                             });
+                            const templateIds = program.templateIds.concat(newTemplate.id);
                             // Update programs to reflect newly added day
-                            await ProgramsAPI.update({
-                              id: program.id,
-                              templateIds: program.templateIds.concat(newTemplate.id),
-                            });
+                            await ProgramsAPI.update({ id: program.id, templateIds });
                             templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
                           } catch (err) {
                             toast.error(err.message);
                           }
                         }}
                       >
-                        <PlaylistAddRounded />
-                      </IconButton>
+                        Add A Template
+                      </Button>
                     </Stack>
                   </Box>
                 </Stack>

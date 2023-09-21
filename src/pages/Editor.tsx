@@ -1,7 +1,6 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
-  AddRounded,
   CheckRounded,
   Close,
   CloseRounded,
@@ -10,6 +9,7 @@ import {
   DeleteRounded,
   EditOutlined,
   FindReplaceRounded,
+  KeyboardDoubleArrowDownRounded,
   MoreHoriz,
   NavigateNextRounded,
   PersonOutline,
@@ -650,8 +650,11 @@ export const EditorInternals: FC<{
 
         {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
-            <Button onClick={event => addMovementDrawer.onOpen(event, null)} size="small">
-              <AddRounded
+            <Button
+              onClick={event => addMovementDrawer.onOpen(event, null)}
+              sx={{ backgroundColor: theme => alpha(theme.palette.action.hover, 0.05) }}
+            >
+              <KeyboardDoubleArrowDownRounded
                 sx={{
                   color: 'text.secondary',
                   fontSize: '1.5rem',
