@@ -169,7 +169,8 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const activeProgram = DataState.from<Program>(
     useQuery(
-      ProgramsAPI.queryKey,
+      // queryKey must differ from `programs` queryKey otherwise queries will mix data
+      [ProgramsAPI.queryKey, programUser],
       async () => {
         if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
         if (programUser.activeProgramId === null) return DataState.Empty;
