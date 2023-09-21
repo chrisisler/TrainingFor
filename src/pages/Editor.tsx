@@ -628,20 +628,19 @@ export const EditorInternals: FC<{
                         )}
 
                         {movement.sets.map((movementSet, index) => (
-                          <Fade in key={movementSet.uuid}>
-                            <MovementSetView
-                              movementSet={movementSet}
-                              movement={movement}
-                              index={index}
-                              updateSets={async (sets: MovementSet[]) => {
-                                try {
-                                  await MovementsMutationAPI.update({ id: movement.id, sets });
-                                } catch (error) {
-                                  toast.error(error.message);
-                                }
-                              }}
-                            />
-                          </Fade>
+                          <MovementSetView
+                            key={movementSet.uuid}
+                            movementSet={movementSet}
+                            movement={movement}
+                            index={index}
+                            updateSets={async (sets: MovementSet[]) => {
+                              try {
+                                await MovementsMutationAPI.update({ id: movement.id, sets });
+                              } catch (error) {
+                                toast.error(error.message);
+                              }
+                            }}
+                          />
                         ))}
                       </Stack>
                     </Box>
@@ -1429,143 +1428,146 @@ const MovementSetView: FC<{
   );
 
   return (
-    <Stack>
-      <input
-        ref={resizeWeightInput}
-        type="tel"
-        min={0}
-        max={9999}
-        name="weight"
-        value={weight}
-        onFocus={event => {
-          event.currentTarget.select();
-        }}
-        onChange={event => {
-          if (Number.isNaN(event.target.value)) return;
-          setWeight(Number(event.target.value));
-        }}
-        onBlur={event => {
-          if (Number.isNaN(event.target.value)) {
-            throw Error('Unreachable: weight input is NaN');
-          }
-          const value = +event.target.value;
-          let next = movement.sets.slice();
-          // Cascade new weight value to sets after this one if this weight = 0
-          if (movementSet.weight === 0 && index < next.length - 1) {
-            next.slice(index + 1).forEach(_ => {
-              _.weight = value;
-              _.uuid = uuidv4();
-            });
-          }
-          next[index].weight = value;
-          updateSets(next);
-        }}
-        style={{
-          height: '100%',
-          color:
-            movementSet.status === MovementSetStatus.Unattempted
-              ? theme.palette.text.secondary
-              : theme.palette.success.light,
-          backgroundColor: 'transparent',
-          width: '3ch',
-          border: 'none',
-          outline: 'none',
-          margin: '0 auto',
-          padding: '2px 4px',
-          fontFamily: 'monospace',
-          fontWeight: 500,
-          fontSize: '1.2rem',
-          letterSpacing: '0.004em',
-        }}
-      />
-
-      <Select
-        // Handles dynamic styling based on repCount button for a movement set
-        style={dynamicRepCountButtonStyle}
-        sx={{
-          borderRadius: 1,
-          whiteSpace: 'nowrap',
-        }}
-        disableUnderline
-        variant="standard"
-        SelectDisplayProps={{
-          style: {
-            padding: `10px ${
-              setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-            }`,
-            textAlign: 'center',
-            fontSize: '1.5rem',
-            minHeight: 'auto',
-          },
-        }}
-        IconComponent={() => null}
-        value={movementSet.repCountActual}
-        inputProps={{
-          id: movementSet.uuid,
-        }}
-        // This onClose catches when the user selects the rep value that is the
-        // same value as the repCountMaxExpected (which onChange does not
-        // catch, since that is apparently not considered a _change_).
-        onClose={() => {
-          const el = document.getElementById(movementSet.uuid);
-          if (!(el instanceof HTMLInputElement) || Number.isNaN(+el?.value)) {
-            return;
-          }
-          const value = +el.value;
-          if (movementSet.repCountMaxExpected !== value) return;
-          if (movementSet.status === MovementSetStatus.Unattempted) {
-            movement.sets[index].status = MovementSetStatus.Completed;
-            updateSets([...movement.sets]);
-          }
-        }}
-        onChange={async event => {
-          const { repCountMaxExpected } = movementSet;
-          const value = event.target.value;
-          if (Number.isNaN(+value) && value === 'RESET') {
-            // reset to OG value
-            movement.sets[index].status = MovementSetStatus.Unattempted;
-            movement.sets[index].repCountActual = repCountMaxExpected;
-          } else {
-            // update to new value
-            movement.sets[index].repCountActual = +value;
-            movement.sets[index].status = MovementSetStatus.Completed;
-            const isLastSet = index === movement.sets.length - 1;
-            if (Math.random() > 0.85 && isLastSet) {
-              setConfetti(true);
+    <Fade in>
+      <Stack>
+        <input
+          ref={resizeWeightInput}
+          type="tel"
+          min={0}
+          max={9999}
+          name="weight"
+          value={weight}
+          onFocus={event => {
+            event.currentTarget.select();
+          }}
+          onChange={event => {
+            if (Number.isNaN(event.target.value)) return;
+            setWeight(Number(event.target.value));
+          }}
+          onBlur={event => {
+            if (Number.isNaN(event.target.value)) {
+              throw Error('Unreachable: weight input is NaN');
             }
+            const value = +event.target.value;
+            let next = movement.sets.slice();
+            // Cascade new weight value to sets after this one if this weight = 0
+            if (movementSet.weight === 0 && index < next.length - 1) {
+              next.slice(index + 1).forEach(_ => {
+                _.weight = value;
+                _.uuid = uuidv4();
+              });
+            }
+            next[index].weight = value;
+            updateSets(next);
+          }}
+          style={{
+            height: '100%',
+            color:
+              movementSet.status === MovementSetStatus.Unattempted
+                ? theme.palette.text.secondary
+                : theme.palette.success.light,
+            backgroundColor: 'transparent',
+            width: '3ch',
+            border: 'none',
+            outline: 'none',
+            margin: '0 auto',
+            padding: '2px 4px',
+            fontFamily: 'monospace',
+            fontWeight: 500,
+            fontSize: '1.2rem',
+            letterSpacing: '0.004em',
+          }}
+        />
+
+        <Select
+          // Handles dynamic styling based on repCount button for a movement set
+          style={dynamicRepCountButtonStyle}
+          sx={{
+            borderRadius: 1,
+            whiteSpace: 'nowrap',
+          }}
+          disableUnderline
+          variant="standard"
+          SelectDisplayProps={{
+            style: {
+              padding: `10px ${
+                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+              }`,
+              textAlign: 'center',
+              fontSize: '1.5rem',
+              minHeight: 'auto',
+            },
+          }}
+          IconComponent={() => null}
+          value={movementSet.repCountActual}
+          inputProps={{
+            id: movementSet.uuid,
+          }}
+          // This onClose catches when the user selects the rep value that is the
+          // same value as the repCountMaxExpected (which onChange does not
+          // catch, since that is apparently not considered a _change_).
+          onClose={() => {
+            const el = document.getElementById(movementSet.uuid);
+            if (!(el instanceof HTMLInputElement) || Number.isNaN(+el?.value)) {
+              return;
+            }
+            const value = +el.value;
+            if (movementSet.repCountMaxExpected !== value) return;
+            if (movementSet.status === MovementSetStatus.Unattempted) {
+              movement.sets[index].status = MovementSetStatus.Completed;
+              updateSets([...movement.sets]);
+            }
+          }}
+          onChange={async event => {
+            const { repCountMaxExpected } = movementSet;
+            const value = event.target.value;
+            if (Number.isNaN(+value) && value === 'RESET') {
+              // reset to OG value
+              movement.sets[index].status = MovementSetStatus.Unattempted;
+              movement.sets[index].repCountActual = repCountMaxExpected;
+            } else {
+              // update to new value
+              movement.sets[index].repCountActual = +value;
+              movement.sets[index].status = MovementSetStatus.Completed;
+              const isLastSet = index === movement.sets.length - 1;
+              if (Math.random() > 0.85 && isLastSet) {
+                setConfetti(true);
+              }
+            }
+            updateSets([...movement.sets]);
+          }}
+          renderValue={value =>
+            typeof movementSet.repCountMaxExpected === 'undefined' ||
+            movementSet.status === MovementSetStatus.Completed ||
+            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              value.toString()
+            ) : (
+              <Typography>
+                {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
+                {movementSet.repCountMaxExpected}
+              </Typography>
+            )
           }
-          updateSets([...movement.sets]);
-        }}
-        renderValue={value =>
-          typeof movementSet.repCountMaxExpected === 'undefined' ||
-          movementSet.status === MovementSetStatus.Completed ||
-          movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
-            value.toString()
-          ) : (
-            <Typography>
-              {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
-              {movementSet.repCountMaxExpected}
-            </Typography>
-          )
-        }
-      >
-        <MenuItem value={'RESET'}>
-          <RefreshRounded sx={{ mr: 1.5, color: theme => theme.palette.text.secondary }} />{' '}
-          {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()} {movementSet.repCountMaxExpected}
-        </MenuItem>
-        {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected + N */}
-        {Array.from({ length: movementSet.repCountMaxExpected + 6 })
-          .map((_, i) => i)
-          .reverse()
-          .map(i => (
-            <MenuItem value={i} key={i} sx={{ justifyContent: 'space-between' }}>
-              <CheckRounded sx={{ opacity: 0.5, color: theme => theme.palette.success.main }} />
-              {i}
-            </MenuItem>
-          ))}
-      </Select>
-      {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
-    </Stack>
+        >
+          <MenuItem value={'RESET'}>
+            <RefreshRounded sx={{ mr: 1.5, color: theme => theme.palette.text.secondary }} />{' '}
+            {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
+            {movementSet.repCountMaxExpected}
+          </MenuItem>
+          {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected + N */}
+          {Array.from({ length: movementSet.repCountMaxExpected + 6 })
+            .map((_, i) => i)
+            .reverse()
+            .map(i => (
+              <MenuItem value={i} key={i} sx={{ justifyContent: 'space-between' }}>
+                <CheckRounded sx={{ opacity: 0.5, color: theme => theme.palette.success.main }} />
+                {i}
+              </MenuItem>
+            ))}
+        </Select>
+        {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
+      </Stack>
+    </Fade>
   );
 };
 
