@@ -23,6 +23,7 @@ import {
   Button,
   Collapse,
   colors,
+  Fade,
   Grid,
   IconButton,
   Menu,
@@ -496,147 +497,156 @@ export const EditorInternals: FC<{
         <DataStateView data={movements}>
           {movements => (
             <Stack
-              spacing={3}
+              spacing={2}
               // Block all mouse clicks/events when in readOnly mode
               sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             >
               {movements.map(movement => (
-                <Stack key={movement.id} sx={{ padding: theme => theme.spacing(1, 0) }}>
-                  <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
-                    {/** alignItems here could be END or BASELINE */}
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
+                <Fade in key={movement.id}>
+                  <Stack sx={{ padding: theme => theme.spacing(1, 0) }}>
+                    <Box
+                      display="flex"
+                      alignItems="end"
                       width="100%"
+                      justifyContent="space-between"
                     >
-                      <Box display="flex" alignItems="baseline">
-                        <Stack
-                          sx={{ padding: theme => theme.spacing(0.5, 0.0) }}
-                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                        >
-                          <Typography
-                            fontSize="1.4rem"
-                            fontWeight={200}
-                            sx={{
-                              backgroundColor: theme => alpha(theme.palette.divider, 0.02),
-                              padding: theme => theme.spacing(0.0, 1.0),
-                              borderRadius: 1,
-                            }}
-                          >
-                            {movement.name}
-                          </Typography>
-                        </Stack>
-
-                        {/** Display volume or reps total. */}
-                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                        <WithVariable
-                          value={movement.sets.filter(
-                            _ => _.status === MovementSetStatus.Completed
-                          )}
-                        >
-                          {completedSets => {
-                            const completedVol = MovementSet.summate(completedSets);
-                            const totalVol = MovementSet.summate(movement.sets);
-                            return (
-                              <Typography
-                                variant="overline"
-                                sx={{
-                                  color: 'text.secondary',
-                                  marginLeft: theme => theme.spacing(1),
-                                }}
-                              >
-                                {!isProgramView && completedVol !== totalVol && (
-                                  <>{Intl.NumberFormat().format(completedVol)}/</>
-                                )}
-                                {Intl.NumberFormat().format(totalVol)}
-                              </Typography>
-                            );
-                          }}
-                        </WithVariable>
-                      </Box>
-                      <IconButton
-                        onClick={event => {
-                          addSetMenu.onOpen(event, movement);
-                          // Set controlled state default values to previous set
-                          if (movement.sets.length > 0) {
-                            const lastSet = movement.sets[movement.sets.length - 1];
-                            setNewSetWeight(lastSet.weight);
-                            setNewSetRepCountMin(lastSet.repCountExpected);
-                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
-                          } else {
-                            setNewSetWeight(0);
-                            setNewSetRepCountMin(DEFAULT_MIN_REPS);
-                            setNewSetRepCountMax(DEFAULT_MAX_REPS);
-                          }
-                        }}
+                      {/** alignItems here could be END or BASELINE */}
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        width="100%"
                       >
-                        <EditOutlined />
-                      </IconButton>
-                    </Stack>
-                  </Box>
-
-                  {DataState.isReady(savedMovements) && (
-                    <WithVariable
-                      value={savedMovements.find(_ => _.id === movement.savedMovementId)}
-                    >
-                      {savedMovement =>
-                        !savedMovement?.note?.length ? null : (
-                          <Typography
-                            variant="body1"
-                            sx={{ margin: theme => theme.spacing(1) }}
-                            fontWeight={200}
+                        <Box display="flex" alignItems="baseline">
+                          <Stack
+                            sx={{ padding: theme => theme.spacing(0.5, 0.0) }}
+                            onClick={event => movementMenuDrawer.onOpen(event, movement)}
                           >
-                            {'>'} {savedMovement.note}
-                          </Typography>
-                        )
-                      }
-                    </WithVariable>
-                  )}
+                            <Typography
+                              fontSize="1.4rem"
+                              fontWeight={200}
+                              sx={{
+                                backgroundColor: theme => alpha(theme.palette.divider, 0.02),
+                                padding: theme => theme.spacing(0.0, 1.0),
+                                borderRadius: 1,
+                              }}
+                            >
+                              {movement.name}
+                            </Typography>
+                          </Stack>
 
-                  <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                    <Stack direction="row">
-                      {/** Stack of unit control text display */}
-                      {movement.sets.length > 0 && (
-                        <Stack
-                          alignItems="end"
-                          sx={{
-                            // Spacing away from set blocks
-                            paddingRight: theme => theme.spacing(2),
-                          }}
-                        >
-                          <Typography variant="overline" alignSelf="end">
-                            {movement.weightUnit}
-                          </Typography>
-
-                          <Typography variant="overline" alignSelf="end">
-                            {MovementRepCountUnit[movement.repCountUnit]}
-                          </Typography>
-                        </Stack>
-                      )}
-
-                      {movement.sets.map((movementSet, index) => (
-                        <MovementSetView
-                          key={movementSet.uuid}
-                          movementSet={movementSet}
-                          movement={movement}
-                          index={index}
-                          updateSets={async (mSets: MovementSet[]) => {
-                            try {
-                              // Send changes
-                              await MovementsMutationAPI.update({
-                                id: movement.id,
-                                sets: mSets,
-                              });
-                            } catch (error) {
-                              toast.error(error.message);
+                          {/** Display volume or reps total. */}
+                          {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                          <WithVariable
+                            value={movement.sets.filter(
+                              _ => _.status === MovementSetStatus.Completed
+                            )}
+                          >
+                            {completedSets => {
+                              const completedVol = MovementSet.summate(completedSets);
+                              const totalVol = MovementSet.summate(movement.sets);
+                              return (
+                                <Typography
+                                  variant="overline"
+                                  sx={{
+                                    color: 'text.secondary',
+                                    marginLeft: theme => theme.spacing(1),
+                                  }}
+                                >
+                                  {!isProgramView && completedVol !== totalVol && (
+                                    <>{Intl.NumberFormat().format(completedVol)}/</>
+                                  )}
+                                  {Intl.NumberFormat().format(totalVol)}
+                                </Typography>
+                              );
+                            }}
+                          </WithVariable>
+                        </Box>
+                        <IconButton
+                          onClick={event => {
+                            addSetMenu.onOpen(event, movement);
+                            // Set controlled state default values to previous set
+                            if (movement.sets.length > 0) {
+                              const lastSet = movement.sets[movement.sets.length - 1];
+                              setNewSetWeight(lastSet.weight);
+                              setNewSetRepCountMin(lastSet.repCountExpected);
+                              setNewSetRepCountMax(
+                                lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS
+                              );
+                            } else {
+                              setNewSetWeight(0);
+                              setNewSetRepCountMin(DEFAULT_MIN_REPS);
+                              setNewSetRepCountMax(DEFAULT_MAX_REPS);
                             }
                           }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                </Stack>
+                        >
+                          <EditOutlined />
+                        </IconButton>
+                      </Stack>
+                    </Box>
+
+                    {DataState.isReady(savedMovements) && (
+                      <WithVariable
+                        value={savedMovements.find(_ => _.id === movement.savedMovementId)}
+                      >
+                        {savedMovement =>
+                          !savedMovement?.note?.length ? null : (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                margin: theme => theme.spacing(1),
+                                fontStyle: 'italic',
+                                fontWeight: 200,
+                              }}
+                            >
+                              {'>'} {savedMovement.note}
+                            </Typography>
+                          )
+                        }
+                      </WithVariable>
+                    )}
+
+                    <Box width="100%" sx={{ overflowX: 'scroll' }}>
+                      <Stack direction="row">
+                        {/** Stack of unit control text display */}
+                        {movement.sets.length > 0 && (
+                          <Stack
+                            alignItems="end"
+                            sx={{
+                              // Spacing away from set blocks
+                              paddingRight: theme => theme.spacing(2),
+                            }}
+                          >
+                            <Typography variant="overline" alignSelf="end">
+                              {movement.weightUnit}
+                            </Typography>
+
+                            <Typography variant="overline" alignSelf="end">
+                              {MovementRepCountUnit[movement.repCountUnit]}
+                            </Typography>
+                          </Stack>
+                        )}
+
+                        {movement.sets.map((movementSet, index) => (
+                          <Fade in key={movementSet.uuid}>
+                            <MovementSetView
+                              movementSet={movementSet}
+                              movement={movement}
+                              index={index}
+                              updateSets={async (sets: MovementSet[]) => {
+                                try {
+                                  await MovementsMutationAPI.update({ id: movement.id, sets });
+                                } catch (error) {
+                                  toast.error(error.message);
+                                }
+                              }}
+                            />
+                          </Fade>
+                        ))}
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Fade>
               ))}
             </Stack>
           )}
