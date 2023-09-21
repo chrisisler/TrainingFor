@@ -79,7 +79,7 @@ export const Programs: FC = () => {
                     onBlur={async event => {
                       const newName = event.target.value;
                       if (newName.length < 3 || newName === program.name) {
-                        toast.info('Program name must be at least 3 characters.');
+                        toast.info('Program name must be at least 3 characters');
                         return;
                       }
                       if (!DataState.isReady(programUser)) return;
@@ -91,7 +91,7 @@ export const Programs: FC = () => {
                           }),
                           ProgramsAPI.update({ id: program.id, name: newName }),
                         ]);
-                        toast.info('Updated program name.');
+                        toast.info('Updated program name');
                       } catch (err) {
                         toast.error(err.message);
                       }
@@ -113,7 +113,7 @@ export const Programs: FC = () => {
                           'Enter the program name to delete it forever'
                         );
                         if (inputName !== program.name) {
-                          return toast.info('Program name did not match. Exiting.');
+                          return toast.info('Exiting - program name did not match');
                         }
                         if (!window.confirm('Delete this program forever?')) return;
                         try {
@@ -137,7 +137,7 @@ export const Programs: FC = () => {
                             ],
                           ]);
                           navigate(Paths.home);
-                          toast.info('Deleted program.');
+                          toast.info('Deleted program');
                         } catch (err) {
                           toast.error(err.message);
                         }
@@ -170,7 +170,7 @@ export const Programs: FC = () => {
                           activeProgramName: viewedProgram.name,
                           activeProgramId: viewedProgram.id,
                         });
-                        toast.info('Updated active program.');
+                        toast.info('Updated active program');
                       } catch (err) {
                         toast.error(err.message);
                       }
@@ -347,11 +347,11 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
           try {
             const newName = event.target.value;
             if (newName.length < 3 || newName === templateName) {
-              toast.info('Template name must be at least 3 characters.');
+              toast.info('Template name must be at least 3 characters');
               return;
             }
             await TemplatesAPI.update({ id: templateId, name: newName });
-            toast.info('Updated template name.');
+            toast.info('Updated template name');
           } catch (error) {
             toast.error(error.message);
           }

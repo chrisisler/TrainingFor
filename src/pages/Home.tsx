@@ -118,7 +118,7 @@ export const Home: FC = () => {
     if (!window.confirm('Sign out?')) return;
     try {
       await signOut(auth);
-      toast.info('Signed out.');
+      toast.info('Signed out');
     } catch (err) {
       toast.error(err.message);
     }
@@ -373,7 +373,7 @@ export const Home: FC = () => {
                     const credential = await Authenticate.withGoogle();
                     if (!credential) throw Error('Cannot authenticate: user not found.');
                     await API.assignAnonymousDataToGoogleUser(user.uid, credential.user.uid);
-                    toast.info('Assigned data to new persistent account.');
+                    toast.info('Assigned data to new persistent account');
                   } catch (error) {
                     toast.error(error.message);
                   }
@@ -421,7 +421,6 @@ export const Home: FC = () => {
                 setNewProgramName('');
                 navigate(Paths.program(created.id));
                 addProgramDrawer.onClose();
-                toast.info('Program created!');
               } catch (error) {
                 toast.error(error.message);
               }

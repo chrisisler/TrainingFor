@@ -207,7 +207,7 @@ export const Editor: FC = () => {
               <Button
                 variant="outlined"
                 onClick={() => {
-                  toast.info('Unimplemented: Update log timestamp.');
+                  toast.info('Unimplemented: Update log timestamp');
                 }}
               >
                 {DataState.isReady(log) && (
@@ -236,7 +236,7 @@ export const Editor: FC = () => {
                       id: log.id,
                       bodyweight: newBodyweight,
                     });
-                    toast.info('Updated bodyweight.');
+                    toast.info('Updated bodyweight');
                   } catch (error) {
                     toast.error(error.message);
                   }
@@ -259,7 +259,7 @@ export const Editor: FC = () => {
                     toast.info(`Good ${word}! I mean, congrations!!`);
                     return;
                   }
-                  toast.info('Must complete all grey sets to finish.');
+                  toast.info('Must complete all grey sets to finish');
                 }}
               >
                 Finish
@@ -277,7 +277,7 @@ export const Editor: FC = () => {
                     await TrainingLogsAPI.delete(logId);
                     logDrawer.onClose();
                     navigate(Paths.home);
-                    toast.info('Deleted training.');
+                    toast.info('Deleted training');
                   } catch (error) {
                     toast.error(error.message);
                   }
@@ -681,7 +681,7 @@ export const EditorInternals: FC<{
                       return;
                     }
                     if (newSetRepCountMax < newSetRepCountMin) {
-                      toast.error('Maximum must be less than minimum.');
+                      toast.error('Maximum must be less than minimum');
                       return;
                     }
                     addSetToMovement(movement);
@@ -991,7 +991,7 @@ export const EditorInternals: FC<{
                                     }
                                     if (!DataState.isReady(movements)) return;
                                     if (movements.some(_ => _.savedMovementId === match.id)) {
-                                      toast.info(`${match.name} has already been added.`);
+                                      toast.info(`${match.name} has already been added`);
                                       return;
                                     }
                                     const { position } = movement;
@@ -1001,7 +1001,6 @@ export const EditorInternals: FC<{
                                         addMovementFromExistingSavedMovement(match, { position }),
                                       ]);
                                       movementMenuDrawer.onClose();
-                                      toast.info('Movement replaced.');
                                     } catch (error) {
                                       toast.error(error.message);
                                     }
