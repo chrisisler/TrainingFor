@@ -66,7 +66,7 @@ export function useStore<T>(selector: (store: Store) => T) {
     useQuery(
       MovementsAPI.queryKey,
       async () => {
-        if (!DataState.isReady(logs)) throw Error('Logs not ready for movementsByLogId');
+        if (!DataState.isReady(logs)) return Promise.reject('Logs not ready for movementsByLogId');
         // https://stackoverflow.com/questions/67035919
         const promises = logs.map(_ =>
           API.Movements.getAll(where('logId', '==', _.id), orderBy('position', 'asc'))
@@ -145,7 +145,7 @@ export function useStore<T>(selector: (store: Store) => T) {
         async () => {
           if (!DataState.isReady(programUser) || !DataState.isReady(programs) || !programId) return;
           const templateIds = programs.find(_ => _.id === programId)?.templateIds;
-          if (templateIds === undefined) throw Error('Unreachable: Program not found');
+          if (templateIds === undefined) return Promise.reject('Unreachable: Program not found');
           // For each template ID fetch each ProgramMovement
           // TODO use `in` query since array size will be < 10 (firebase limit) (it'll be 7)
           const promises = templateIds.map(templateId =>
@@ -169,10 +169,10 @@ export function useStore<T>(selector: (store: Store) => T) {
 
   const activeProgram = DataState.from<Program>(
     useQuery(
-      [DbPath.Programs, programUser], // TODO ???
+      [DbPath.Programs, programUser], // TODO queryKey?
       async () => {
         if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
-        if (!programUser.activeProgramId) throw TypeError('activeProgramId not found');
+        if (!programUser.activeProgramId) return Promise.reject('activeProgramId not found');
         return API.Programs.get(programUser.activeProgramId).then(p => Program.makeTemplateId(p));
       },
       { enabled: DataState.isReady(programUser) }

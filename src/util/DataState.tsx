@@ -30,8 +30,8 @@ interface DataStateAll {
 export const DataState = {
   Empty: DataStateEmpty,
   Loading: DataStateLoading,
-  error: (message: unknown): Error => {
-    return Error(typeof message === 'string' ? message : String(message));
+  error: (err: unknown): Error => {
+    return err instanceof Error ? err : Error(String(err));
   },
   isEmpty<T>(ds: DataState<T>): ds is typeof DataStateEmpty {
     return ds === DataStateEmpty;
@@ -50,8 +50,8 @@ export const DataState = {
     return fn(ds);
   },
   from<T>(state: { isLoading: boolean; error: unknown; data: T | undefined }): DataState<T> {
-    if (state.isLoading) return DataState.Loading;
     if (state.error) return DataState.error(state.error);
+    if (state.isLoading) return DataState.Loading;
     if (state.data === undefined) return DataState.Empty;
     return state.data;
   },

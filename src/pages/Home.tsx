@@ -216,10 +216,10 @@ export const Home: FC = () => {
                     onClick={() => navigate(Paths.program(program.id))}
                   />
                 ))}
-                <ProgramPreview onClick={event => addProgramDrawer.onOpen(event)} />
               </>
             )}
           </DataStateView>
+          <ProgramPreview onClick={event => addProgramDrawer.onOpen(event)} />
         </Stack>
       </Box>
 
