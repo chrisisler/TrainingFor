@@ -351,12 +351,8 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
         onBlur={async event => {
           try {
             const newName = event.target.value;
-            if (newName.length < 3 || newName === templateName) {
-              toast.info('Template name must be at least 3 characters');
-              return;
-            }
+            if (newName.length === 0 || newName === templateName) return;
             await TemplatesAPI.update({ id: templateId, name: newName });
-            toast.info('Updated template name');
           } catch (error) {
             toast.error(error.message);
           }
