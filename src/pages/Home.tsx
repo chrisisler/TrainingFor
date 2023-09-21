@@ -166,18 +166,24 @@ export const Home: FC = () => {
             return (
               <>
                 <Typography variant="overline">{activeProgram.name}</Typography>
-                {templates.map(template => (
-                  <Button
-                    key={template.id}
-                    size="large"
-                    onClick={() => createTrainingLog({ fromTemplateId: template.id })}
-                    startIcon={<AddRounded />}
-                    endIcon={<AutoAwesomeRounded />}
-                    sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between' }}
-                  >
-                    Add {template.name} Training
-                  </Button>
-                ))}
+                {templates
+                  .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
+                  .map(template => (
+                    <Button
+                      key={template.id}
+                      size="large"
+                      onClick={() => createTrainingLog({ fromTemplateId: template.id })}
+                      startIcon={<AddRounded />}
+                      endIcon={<AutoAwesomeRounded />}
+                      sx={{
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      Add {template.name} Training
+                    </Button>
+                  ))}
               </>
             );
           }}
