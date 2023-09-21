@@ -166,25 +166,26 @@ export const Programs: FC = () => {
                         }
                         if (!window.confirm('Delete this program forever?')) return;
                         try {
-                          // Deleting a Program consists of...
-                          await Promise.all([
-                            //1. Delete the entry
+                          let promises: Promise<unknown>[] = [
                             ProgramsAPI.delete(program.id),
-                            //2. Point the users active program to nothing
-                            ProgramUsersAPI.update({
-                              id: programUser.id,
-                              activeProgramId: null,
-                              activeProgramName: null,
-                            }),
-                            //3. Delete templates that are children of the entry
+                            // Delete templates that are children of the entry
                             TemplatesAPI.deleteMany(where('programId', '==', program.id)),
-                            //4. Delete programmovements that are children of the templates
-                            ...[
-                              program.templateIds.map(id =>
-                                ProgramMovementsAPI.deleteMany(where('logId', '==', id))
-                              ),
-                            ],
-                          ]);
+                            // Delete programmovements that are children of the templates
+                            ...program.templateIds.map(id =>
+                              ProgramMovementsAPI.deleteMany(where('logId', '==', id))
+                            ),
+                          ];
+                          // Point the users active program to nothing
+                          if (isActiveProgram) {
+                            promises.push(
+                              ProgramUsersAPI.update({
+                                id: programUser.id,
+                                activeProgramId: null,
+                                activeProgramName: null,
+                              })
+                            );
+                          }
+                          await Promise.all(promises);
                           navigate(Paths.home);
                           toast.info('Deleted program');
                         } catch (err) {
