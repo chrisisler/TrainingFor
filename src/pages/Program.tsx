@@ -26,7 +26,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { API, useStore } from '../api';
 import { NotesDrawer } from '../components';
 import { useUser } from '../context';
-import { DataState, DataStateView, Paths, useDrawer, useMaterialMenu, useToast } from '../util';
+import {
+  DataState,
+  DataStateView,
+  Paths,
+  dateDisplay,
+  useDrawer,
+  useMaterialMenu,
+  useToast,
+} from '../util';
 import { EditorInternals } from './Editor';
 
 export const Programs: FC = () => {
@@ -72,6 +80,9 @@ export const Programs: FC = () => {
               <Stack spacing={3}>
                 <Stack direction="row" spacing={1}>
                   <Stack spacing={1}>
+                    <Typography variant="caption" color="text.secondary" textTransform="uppercase">
+                      {dateDisplay(new Date(program.timestamp))}
+                    </Typography>
                     <InputBase
                       multiline
                       maxRows={2}
