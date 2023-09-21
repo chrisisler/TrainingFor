@@ -184,6 +184,9 @@ export function useStore<T>(selector: (store: Store) => T) {
       ProgramLogTemplatesAPI.queryKey,
       () => {
         if (!DataState.isReady(activeProgram)) return Promise.reject('activeProgram not ready.');
+        if (activeProgram.templateIds.length === 0) {
+          return Promise.reject('Non-empty templateIds required.');
+        }
         return API.ProgramLogTemplates.getAll(
           user.uid,
           where('id', 'in', activeProgram.templateIds)

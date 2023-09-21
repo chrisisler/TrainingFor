@@ -4,6 +4,7 @@ import {
   NoteAltOutlined,
   PersonOutline,
   PlaylistAddRounded,
+  SwitchAccessShortcutRounded,
 } from '@mui/icons-material';
 import {
   Box,
@@ -41,8 +42,6 @@ export const Programs: FC = () => {
   const TemplatesAPI = useStore(store => store.ProgramLogTemplatesAPI);
   const programUser = useStore(store => store.programUser);
   const templates = useStore(store => store.templates);
-  // TODO memoize the selector for this and programMovementsByTemplateId 
-  // due to deps = [programId]
   const viewedProgram = useStore(store =>
     DataState.map(
       store.programs,
@@ -53,196 +52,209 @@ export const Programs: FC = () => {
     store.useProgramMovementsByTemplateId(programId)
   );
 
+  // Navigate home when invalid programId or viewedProgram
   useEffect(() => {
-    if (!programId) navigate(Paths.home);
-    if (DataState.isError(viewedProgram)) {
-      toast.info('No Program with that ID. Redirecting...');
-      navigate(Paths.home);
-    }
-  }, [navigate, programId, toast, viewedProgram]);
-
-  const isActiveProgram =
-    DataState.isReady(programUser) &&
-    DataState.isReady(viewedProgram) &&
-    programUser.activeProgramId === viewedProgram?.id;
-  const userIsProgramAuthor =
-    DataState.isReady(viewedProgram) && user.uid === viewedProgram.authorUserId;
+    if (!programId || DataState.isError(viewedProgram)) navigate(Paths.home);
+  }, [programId, viewedProgram, navigate]);
 
   return (
     <>
       <Box sx={{ height: '100vh', width: '100vw', padding: theme => theme.spacing(1) }}>
         <DataStateView data={viewedProgram}>
-          {program => (
-            <Stack spacing={3}>
-              <Stack direction="row" spacing={1}>
-                <InputBase
-                  multiline
-                  maxRows={2}
-                  defaultValue={program.name}
-                  sx={{ fontSize: '2rem', fontWeight: 600, width: '100%' }}
-                  readOnly={!(userIsProgramAuthor && isActiveProgram)}
-                  disabled={!DataState.isReady(programUser)}
-                  onBlur={async event => {
-                    const newName = event.target.value;
-                    if (newName.length < 3 || newName === program.name) {
-                      toast.info('Program name must be at least 3 characters.');
-                      return;
-                    }
-                    if (!DataState.isReady(programUser)) return;
-                    try {
-                      await Promise.all([
-                        ProgramUsersAPI.update({ id: programUser.id, activeProgramName: newName }),
-                        ProgramsAPI.update({ id: program.id, name: newName }),
-                      ]);
-                      toast.info('Updated program name.');
-                    } catch (err) {
-                      toast.error(err.message);
-                    }
-                  }}
-                />
-                <Stack spacing={1}>
-                  <IconButton onClick={() => navigate(Paths.home)}>
-                    <PersonOutline />
-                  </IconButton>
-                  <IconButton onClick={event => programNoteDrawer.onOpen(event)}>
-                    <NoteAltOutlined />
-                  </IconButton>
-                  <IconButton
-                    color="error"
+          {program => {
+            const isActiveProgram =
+              DataState.isReady(programUser) && programUser.activeProgramId === program.id;
+            const userIsProgramAuthor = user.uid === program.authorUserId;
+
+            return (
+              <Stack spacing={3}>
+                <Stack direction="row" spacing={1}>
+                  <InputBase
+                    multiline
+                    maxRows={2}
+                    defaultValue={program.name}
+                    sx={{ fontSize: '2rem', fontWeight: 600, width: '100%' }}
+                    readOnly={!(userIsProgramAuthor && isActiveProgram)}
                     disabled={!DataState.isReady(programUser)}
-                    onClick={async function deleteProgram() {
+                    onBlur={async event => {
+                      const newName = event.target.value;
+                      if (newName.length < 3 || newName === program.name) {
+                        toast.info('Program name must be at least 3 characters.');
+                        return;
+                      }
                       if (!DataState.isReady(programUser)) return;
-                      if (!window.confirm('Permanently delete this program forever?')) return;
                       try {
-                        // Deleting a Program consists of...
                         await Promise.all([
-                          //1. Delete the entry
-                          ProgramsAPI.delete(program.id),
-                          //2. Point the users active program to nothing
                           ProgramUsersAPI.update({
                             id: programUser.id,
-                            activeProgramId: null,
-                            activeProgramName: null,
+                            activeProgramName: newName,
                           }),
-                          //3. Delete templates that are children of the entry
-                          TemplatesAPI.deleteMany(where('programId', '==', program.id)),
-                          //4. Delete programmovements that are children of the templates
-                          ...[
-                            program.templateIds.map(id =>
-                              ProgramMovementsAPI.deleteMany(where('logId', '==', id))
-                            ),
-                          ],
+                          ProgramsAPI.update({ id: program.id, name: newName }),
                         ]);
-                        navigate(Paths.home);
-                        toast.info('Deleted program.');
+                        toast.info('Updated program name.');
                       } catch (err) {
                         toast.error(err.message);
                       }
                     }}
-                  >
-                    <DeleteForeverRounded fontSize="small" />
-                  </IconButton>
-                </Stack>
-              </Stack>
-              {!isActiveProgram && (
-                <Button
-                  fullWidth
-                  variant="text"
-                  disabled={isActiveProgram}
-                  onClick={async () => {
-                    if (!DataState.isReady(viewedProgram) || !DataState.isReady(programUser)) {
-                      return;
-                    }
-                    const { activeProgramId } = programUser;
-                    if (!!activeProgramId && !window.confirm(`Switch to ${viewedProgram.name}?`)) {
-                      return;
-                    }
-                    try {
-                      await ProgramUsersAPI.update({
-                        id: programUser.id,
-                        activeProgramName: viewedProgram.name,
-                        activeProgramId: viewedProgram.id,
-                      });
-                      toast.info('Updated active program.');
-                    } catch (err) {
-                      toast.error(err.message);
-                    }
-                  }}
-                >
-                  Make active program
-                </Button>
-              )}
-              <Stack spacing={3}>
-                {program.templateIds.map((templateId, index) => (
-                  <Paper key={templateId} elevation={2} sx={{ padding: theme => theme.spacing(2) }}>
-                    <Stack alignItems="center" justifyContent="center" spacing={3}>
-                      <DataStateView data={templates}>
-                        {templates => (
-                          <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
-                            {templates.find(t => t.id === templateId)?.name || `Day ${index + 1}`}
-                          </Typography>
-                        )}
-                      </DataStateView>
-                      <Stack>
-                        <DataStateView data={programMovementsByTemplateId}>
-                          {programMovementsByTemplateId => {
-                            const movements = programMovementsByTemplateId.get(templateId);
-                            if (!movements) return null;
-                            if (movements.length === 0) return null;
-                            return (
-                              <>
-                                {movements.map(movement => (
-                                  <Typography variant="body2" key={movement.id} fontWeight={600}>
-                                    {movement.name}
-                                  </Typography>
-                                ))}
-                              </>
-                            );
-                          }}
-                        </DataStateView>
-                      </Stack>
-                      <IconButton
-                        sx={{ color: theme => theme.palette.primary.main }}
-                        onClick={event => {
-                          templateEditorDrawer.onOpen(event, { templateId });
-                        }}
-                      >
-                        <EditOutlined />
-                      </IconButton>
-                    </Stack>
-                  </Paper>
-                ))}
-
-                <Box sx={{ padding: theme => theme.spacing(1, 2) }}>
-                  <Stack direction="row" alignItems="center" justifyContent="center" width="100%">
-                    <Box />
+                  />
+                  <Stack spacing={1}>
+                    <IconButton onClick={() => navigate(Paths.home)}>
+                      <PersonOutline />
+                    </IconButton>
+                    <IconButton onClick={event => programNoteDrawer.onOpen(event)}>
+                      <NoteAltOutlined />
+                    </IconButton>
                     <IconButton
-                      sx={{ color: theme => theme.palette.primary.main }}
-                      onClick={async event => {
+                      color="error"
+                      disabled={!isActiveProgram}
+                      onClick={async function deleteProgramForever() {
+                        if (!DataState.isReady(programUser)) return;
+                        const inputName = window.prompt(
+                          'Enter the program name to delete it forever'
+                        );
+                        if (inputName !== program.name) {
+                          return toast.info('Program name did not match. Exiting.');
+                        }
+                        if (!window.confirm('Delete this program forever?')) return;
                         try {
-                          const newTemplate = await TemplatesAPI.create({
-                            authorUserId: user.uid,
-                            programId: program.id,
-                            name: '',
-                          });
-                          // Update programs to reflect newly added day
-                          await ProgramsAPI.update({
-                            id: program.id,
-                            templateIds: program.templateIds.concat(newTemplate.id),
-                          });
-                          templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
+                          // Deleting a Program consists of...
+                          await Promise.all([
+                            //1. Delete the entry
+                            ProgramsAPI.delete(program.id),
+                            //2. Point the users active program to nothing
+                            ProgramUsersAPI.update({
+                              id: programUser.id,
+                              activeProgramId: null,
+                              activeProgramName: null,
+                            }),
+                            //3. Delete templates that are children of the entry
+                            TemplatesAPI.deleteMany(where('programId', '==', program.id)),
+                            //4. Delete programmovements that are children of the templates
+                            ...[
+                              program.templateIds.map(id =>
+                                ProgramMovementsAPI.deleteMany(where('logId', '==', id))
+                              ),
+                            ],
+                          ]);
+                          navigate(Paths.home);
+                          toast.info('Deleted program.');
                         } catch (err) {
                           toast.error(err.message);
                         }
                       }}
                     >
-                      <PlaylistAddRounded />
+                      <DeleteForeverRounded fontSize="small" />
                     </IconButton>
                   </Stack>
-                </Box>
+                </Stack>
+                {!isActiveProgram && (
+                  <Button
+                    fullWidth
+                    variant="text"
+                    disabled={isActiveProgram}
+                    startIcon={<SwitchAccessShortcutRounded />}
+                    onClick={async () => {
+                      if (!DataState.isReady(viewedProgram) || !DataState.isReady(programUser)) {
+                        return;
+                      }
+                      const { activeProgramId } = programUser;
+                      if (
+                        !!activeProgramId &&
+                        !window.confirm(`Switch to ${viewedProgram.name}?`)
+                      ) {
+                        return;
+                      }
+                      try {
+                        await ProgramUsersAPI.update({
+                          id: programUser.id,
+                          activeProgramName: viewedProgram.name,
+                          activeProgramId: viewedProgram.id,
+                        });
+                        toast.info('Updated active program.');
+                      } catch (err) {
+                        toast.error(err.message);
+                      }
+                    }}
+                  >
+                    Active Program
+                  </Button>
+                )}
+                <Stack spacing={3}>
+                  {program.templateIds.map((templateId, index) => (
+                    <Paper
+                      key={templateId}
+                      elevation={2}
+                      sx={{ padding: theme => theme.spacing(2) }}
+                    >
+                      <Stack alignItems="center" justifyContent="center" spacing={3}>
+                        <DataStateView data={templates}>
+                          {templates => (
+                            <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
+                              {templates.find(t => t.id === templateId)?.name || `Day ${index + 1}`}
+                            </Typography>
+                          )}
+                        </DataStateView>
+                        <Stack>
+                          <DataStateView data={programMovementsByTemplateId}>
+                            {programMovementsByTemplateId => {
+                              const movements = programMovementsByTemplateId.get(templateId);
+                              if (!movements) return null;
+                              if (movements.length === 0) return null;
+                              return (
+                                <>
+                                  {movements.map(movement => (
+                                    <Typography variant="body2" key={movement.id} fontWeight={600}>
+                                      {movement.name}
+                                    </Typography>
+                                  ))}
+                                </>
+                              );
+                            }}
+                          </DataStateView>
+                        </Stack>
+                        <IconButton
+                          sx={{ color: theme => theme.palette.primary.main }}
+                          onClick={event => {
+                            templateEditorDrawer.onOpen(event, { templateId });
+                          }}
+                        >
+                          <EditOutlined />
+                        </IconButton>
+                      </Stack>
+                    </Paper>
+                  ))}
+
+                  <Box sx={{ padding: theme => theme.spacing(1, 2) }}>
+                    <Stack direction="row" alignItems="center" justifyContent="center" width="100%">
+                      <Box />
+                      <IconButton
+                        sx={{ color: theme => theme.palette.primary.main }}
+                        onClick={async event => {
+                          try {
+                            const newTemplate = await TemplatesAPI.create({
+                              authorUserId: user.uid,
+                              programId: program.id,
+                              name: '',
+                            });
+                            // Update programs to reflect newly added day
+                            await ProgramsAPI.update({
+                              id: program.id,
+                              templateIds: program.templateIds.concat(newTemplate.id),
+                            });
+                            templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
+                          } catch (err) {
+                            toast.error(err.message);
+                          }
+                        }}
+                      >
+                        <PlaylistAddRounded />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+                </Stack>
               </Stack>
-            </Stack>
-          )}
+            );
+          }}
         </DataStateView>
       </Box>
 

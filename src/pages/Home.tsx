@@ -427,7 +427,7 @@ export const Home: FC = () => {
               }
             }}
           >
-            New Program
+            Add Program
           </Button>
         </Stack>
       </SwipeableDrawer>
