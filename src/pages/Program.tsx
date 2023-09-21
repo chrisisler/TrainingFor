@@ -33,11 +33,11 @@ export const Programs: FC = () => {
   const navigate = useNavigate();
   const programNoteDrawer = useMaterialMenu();
   const templateEditorDrawer = useDrawer<{ templateId: string }>();
-
   const { programId } = useParams<{ programId: string }>();
 
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
   const ProgramUsersAPI = useStore(store => store.ProgramUsersAPI);
+  const ProgramMovementsAPI = useStore(store => store.ProgramMovementsAPI);
   const TemplatesAPI = useStore(store => store.ProgramLogTemplatesAPI);
   const programUser = useStore(store => store.programUser);
   const templates = useStore(store => store.templates);
@@ -112,18 +112,22 @@ export const Programs: FC = () => {
                       if (!DataState.isReady(programUser)) return;
                       if (!window.confirm('Permanently delete this program forever?')) return;
                       try {
-                        // TODO
+                        // Deleting a Program consists of...
                         await Promise.all([
-                          API.Programs.delete(program.id),
-                          API.ProgramUsers.update({
+                          //1. Delete the entry
+                          ProgramsAPI.delete(program.id),
+                          //2. Point the users active program to nothing
+                          ProgramUsersAPI.update({
                             id: programUser.id,
                             activeProgramId: null,
                             activeProgramName: null,
                           }),
-                          API.ProgramLogTemplates.deleteMany(where('programId', '==', program.id)),
+                          //3. Delete templates that are children of the entry
+                          TemplatesAPI.deleteMany(where('programId', '==', program.id)),
+                          //4. Delete programmovements that are children of the templates
                           ...[
-                            program.templateIds.map(_ =>
-                              API.ProgramMovements.deleteMany(where('logId', '==', _))
+                            program.templateIds.map(id =>
+                              ProgramMovementsAPI.deleteMany(where('logId', '==', id))
                             ),
                           ],
                         ]);

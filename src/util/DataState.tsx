@@ -1,5 +1,3 @@
-import React, { useCallback, useEffect, useState } from 'react';
-
 import { Loading, Sorry } from '../components';
 
 const DataStateEmpty = 'DataState::Empty' as const;
@@ -14,12 +12,7 @@ const DataStateLoading = 'DataState::Loading' as const;
 export type DataState<T> = typeof DataStateEmpty | typeof DataStateLoading | Error | T;
 
 /** Wait for all provided DataStates to be ready. */
-// @ts-ignore
-const dataStateAll: DataStateAll = (...dss) => {
-  const notReady = dss.find(ds => !DataState.isReady(ds));
-  if (notReady) return notReady;
-  return dss;
-};
+const dataStateAll: DataStateAll = (...dss) => dss.find(ds => !DataState.isReady(ds)) || dss;
 
 interface DataStateAll {
   <A>(ds1: DataState<A>): DataState<[A]>;
@@ -73,48 +66,12 @@ export const DataState = {
   all: dataStateAll,
 };
 
-export function useDataState<T>(
-  getData: () => Promise<DataState<T>>,
-  deps: readonly unknown[]
-): [DataState<T>, React.Dispatch<React.SetStateAction<DataState<T>>>, () => Promise<void>] {
-  const [dataState, setDataState] = useState<DataState<T>>(DataState.Loading);
-
-  const refetch = useCallback(async () => {
-    try {
-      const data = await getData();
-      setDataState(data);
-    } catch (error) {
-      setDataState(DataState.error(error.message));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps.concat(getData));
-
-  useEffect(() => {
-    let stale = false;
-    getData()
-      .then(data => {
-        if (stale) return;
-        setDataState(data);
-      })
-      .catch(error => {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error(error);
-        }
-        if (stale) return;
-        setDataState(DataState.error(error.message));
-      });
-    return () => {
-      stale = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-  return [dataState, setDataState, refetch];
-}
-
 export function DataStateView<T>(props: {
   data: DataState<T>;
   children: (data: T) => JSX.Element | null;
+  // TODO Make this required
   loading?: () => JSX.Element | null;
+  // TODO Make this required
   error?: () => JSX.Element | null;
   empty?: () => JSX.Element | null;
 }): JSX.Element | null {
