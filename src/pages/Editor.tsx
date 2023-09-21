@@ -68,7 +68,7 @@ import {
   useToast,
 } from '../util';
 
-const DIFF_CHAR = 'to';
+const DIFF_CHAR = '-';
 
 const DEFAULT_MIN_REPS = 5;
 const DEFAULT_MAX_REPS = 30;
