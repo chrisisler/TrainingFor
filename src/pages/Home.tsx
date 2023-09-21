@@ -228,11 +228,7 @@ export const Home: FC = () => {
       </Typography>
       <DataStateView data={logs}>
         {logs =>
-          logs.length === 0 ? (
-            <Typography sx={{ textAlign: 'center' }} color="textSecondary">
-              No training data.
-            </Typography>
-          ) : (
+          logs.length === 0 ? null : (
             <Stack spacing={4} sx={{ padding: theme => theme.spacing(0) }}>
               {logs.map(log => {
                 const date = new Date(log.timestamp);

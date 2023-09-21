@@ -471,28 +471,7 @@ export const EditorInternals: FC<{
   );
 
   const addSetToMovement = useCallback(
-    async (movement: Movement): Promise<true | undefined> => {
-      // Sets for movements in ProgramLogTemplates must be a rep *range* to
-      // match realistic human behavior
-      if (isProgramView && newSetRepCountMin === newSetRepCountMax) {
-        toast.info('Please give a rep range to better match human behavior.', {
-          action: snackbarKey => (
-            <Stack direction="row">
-              <Button
-                onClick={() => {
-                  // Minimum is 1, not 0
-                  setNewSetRepCountMin(newSetRepCountMin - 5 || 1);
-                  setNewSetRepCountMax(newSetRepCountMin + 5);
-                  toast.close(snackbarKey);
-                }}
-              >
-                Okay
-              </Button>
-            </Stack>
-          ),
-        });
-        return;
-      }
+    async (movement: Movement) => {
       try {
         const sets = movement.sets.concat({
           weight: newSetWeight,
@@ -508,7 +487,7 @@ export const EditorInternals: FC<{
         toast.error(error.message);
       }
     },
-    [MovementsMutationAPI, isProgramView, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
+    [MovementsMutationAPI, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
   );
 
   return (
@@ -705,8 +684,8 @@ export const EditorInternals: FC<{
                       toast.error('Maximum must be less than minimum.');
                       return;
                     }
-                    const success = await addSetToMovement(movement);
-                    if (success) addSetMenu.onClose();
+                    addSetToMovement(movement);
+                    addSetMenu.onClose();
                     return;
                   }
                   // Click was NOT on the backdrop so it was within
@@ -723,9 +702,9 @@ export const EditorInternals: FC<{
                     >
                       <Collapse
                         in={newSetRepCountMin > 0}
-                        onClick={async () => {
-                          const success = await addSetToMovement(movement);
-                          if (success) addSetMenu.onClose();
+                        onClick={() => {
+                          addSetToMovement(movement);
+                          addSetMenu.onClose();
                         }}
                       >
                         Tap outside to <b>add set {movement.sets.length + 1}</b>
