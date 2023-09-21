@@ -11,15 +11,13 @@ export interface ProgramUser extends FirestoreDocument {
   activeProgramName: string | null;
 }
 
-// When fetching Programs.getAll, write custom fetch to convert daysOfWeek->templateIds via .values().
 export interface Program extends FirestoreDocument {
   name: string;
   authorUserId: string;
-  // readonly daysOfWeek: Record<Lowercase<Weekdays>, null | ProgramLogTemplate['id']>;
   timestamp: number;
   note: string;
   /** List of program log templates for this program. */
-  templateIds: ProgramLogTemplate['id'][];
+  templateIds: string[];
 }
 
 export interface ProgramLogTemplate extends FirestoreDocument {
@@ -47,20 +45,6 @@ export interface TrainingLog extends FirestoreDocument {
    */
   isFinished: boolean;
 }
-
-/**
- * Log for sleep, walks, water, food intake, mood, thoughts (usually about training)
- *
- * Upon completion of the RestLog, the user will get points.
- */
-// export interface RestLog extends FirestoreDocument {
-//   timestamp: number;
-//   authorUserId: string;
-//   // checkboxes
-//   /** The self-reported sufficient sleep quality. */
-//   userWokeUpWellRested: boolean;
-//   // mood: { NotSure: boolean; Bad: boolean; Neutral: boolean; Good: boolean };
-// }
 
 /**
  * Represents the list of all occurrences of a performed Movement.
