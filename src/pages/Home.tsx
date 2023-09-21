@@ -22,6 +22,7 @@ import {
   SwipeableDrawer,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
@@ -107,7 +108,6 @@ export const Home: FC = () => {
           ]);
         }
         navigate(Paths.editor(newTrainingLog.id));
-        toast.info(`Created new training page.`);
       } catch (err) {
         toast.error(err.message);
       }
@@ -127,7 +127,7 @@ export const Home: FC = () => {
 
   return (
     <Stack
-      spacing={1}
+      spacing={2}
       sx={{
         height: '100vh',
         width: '100vw',
@@ -142,7 +142,11 @@ export const Home: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="baseline">
-        <Typography variant="h6" fontWeight={600}>
+        <Typography
+          variant="h6"
+          fontWeight={600}
+          onClick={user.isAnonymous ? reauthDrawer.onOpen : void 0}
+        >
           {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
         </Typography>
         <IconButton size="small" onClick={deauthenticate}>
@@ -160,15 +164,9 @@ export const Home: FC = () => {
                   <Button
                     key={template.id}
                     size="large"
-                    variant="outlined"
                     onClick={() => createTrainingLog({ fromTemplateId: template.id })}
                     startIcon={<AddRounded />}
-                    endIcon={<NavigateNextRounded />}
-                    sx={{
-                      alignItems: 'center',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                    }}
+                    sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between' }}
                   >
                     Train {template.name}
                   </Button>
@@ -178,16 +176,16 @@ export const Home: FC = () => {
           }}
         </DataStateView>
         <Button
+          size="large"
           startIcon={<AddRounded />}
           onClick={() => createTrainingLog({ fromTemplateId: null })}
-          endIcon={<NavigateNextRounded />}
         >
-          From Scratch
+          Add Training
         </Button>
       </Stack>
 
-      <Typography variant="overline" fontWeight={600}>
-        Programs
+      <Typography variant="overline" fontWeight={600} color="textSecondary">
+        Training Programs
       </Typography>
       <Box>
         <Stack
@@ -223,7 +221,7 @@ export const Home: FC = () => {
         </Stack>
       </Box>
 
-      <Typography variant="overline" fontWeight={600}>
+      <Typography variant="overline" fontWeight={600} color="textSecondary">
         Training
       </Typography>
       <DataStateView data={logs}>
@@ -276,10 +274,10 @@ export const Home: FC = () => {
                           </Stack>
                         )}
                       </Stack>
-                      <Stack direction="row" spacing={1} alignItems="center" whiteSpace="nowrap">
+                      <Stack direction="row" spacing={1} alignItems="baseline" whiteSpace="nowrap">
                         {/** Bold + large + all caps name of day */}
                         <Typography fontWeight={600}>{SORTED_WEEKDAYS[date.getDay()]}</Typography>
-                        <Typography variant="body2" fontStyle="italic" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary">
                           {formatDistanceToNowStrict(new Date(log.timestamp), {
                             addSuffix: true,
                           })
@@ -288,14 +286,15 @@ export const Home: FC = () => {
                         </Typography>
                       </Stack>
                       {/** List of movement names for each recent log from the user. */}
+                      {/** TODO component-ize and put movementsByLogId inside component. */}
                       <DataStateView data={movementsByLogId}>
                         {map => {
                           const movements = !!map && map.get(log.id);
                           if (!movements) return null;
                           if (movements.length === 0) {
                             return (
-                              <Typography sx={{ color: 'text.secondary' }} variant="overline">
-                                Empty
+                              <Typography variant="caption" fontStyle="italic">
+                                No movements in this training
                               </Typography>
                             );
                           }
@@ -334,10 +333,10 @@ export const Home: FC = () => {
                       alignItems="start"
                     >
                       <Stack direction="row" alignItems="center">
+                        <NavigateNextRounded sx={{ color: 'text.secondary' }} fontSize="large" />
                         <Typography variant="body2" textTransform="uppercase">
                           {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
                         </Typography>
-                        <NavigateNextRounded sx={{ color: 'text.primary' }} fontSize="large" />
                       </Stack>
                     </Box>
                   </Paper>
@@ -348,56 +347,44 @@ export const Home: FC = () => {
         }
       </DataStateView>
 
-      {/** Button to reassign data from current anon user to google auth'd account */}
+      {/** Drawer to reassign data from current anon user to google auth'd account */}
       {user.isAnonymous && DataState.isReady(logs) && logs.length > 0 && (
-        <>
-          <Button
-            fullWidth
-            variant="outlined"
-            size="small"
-            endIcon={<Logout />}
-            onClick={reauthDrawer.onOpen}
-          >
-            Persist Account
-          </Button>
-
-          <SwipeableDrawer {...reauthDrawer} anchor="bottom">
-            <Collapse in={reauthDrawer.open}>
-              <Stack spacing={5} sx={{ padding: theme => theme.spacing(3, 1), height: '70vh' }}>
-                <Typography variant="h6" color="textSecondary">
-                  Anonymous accounts are for temporary usage.
-                  <br />
-                  <br />
-                  Re-create this account (using Google sign-in) to persist your training across
-                  sessions?
-                  <br />
-                  <br />
-                  All data will be copied over.
-                </Typography>
-                <Button
-                  fullWidth
-                  size="large"
-                  variant="outlined"
-                  startIcon={<Google />}
-                  endIcon={<Launch />}
-                  onClick={async () => {
-                    if (!window.confirm('Are you sure?')) return;
-                    try {
-                      const credential = await Authenticate.withGoogle();
-                      if (!credential) throw Error('Cannot authenticate: user not found.');
-                      await API.assignAnonymousDataToGoogleUser(user.uid, credential.user.uid);
-                      toast.info('Assigned data to new persistent account.');
-                    } catch (error) {
-                      toast.error(error.message);
-                    }
-                  }}
-                >
-                  Sign In With Google
-                </Button>
-              </Stack>
-            </Collapse>
-          </SwipeableDrawer>
-        </>
+        <SwipeableDrawer {...reauthDrawer} anchor="bottom">
+          <Collapse in={reauthDrawer.open}>
+            <Stack spacing={5} sx={{ padding: theme => theme.spacing(3, 1), height: '70vh' }}>
+              <Typography variant="h6" color="textSecondary">
+                Anonymous accounts are for temporary usage.
+                <br />
+                <br />
+                Re-create this account (using Google sign-in) to persist your training across
+                sessions?
+                <br />
+                <br />
+                All data will be copied over.
+              </Typography>
+              <Button
+                fullWidth
+                size="large"
+                variant="outlined"
+                startIcon={<Google />}
+                endIcon={<Launch />}
+                onClick={async () => {
+                  if (!window.confirm('Are you sure?')) return;
+                  try {
+                    const credential = await Authenticate.withGoogle();
+                    if (!credential) throw Error('Cannot authenticate: user not found.');
+                    await API.assignAnonymousDataToGoogleUser(user.uid, credential.user.uid);
+                    toast.info('Assigned data to new persistent account.');
+                  } catch (error) {
+                    toast.error(error.message);
+                  }
+                }}
+              >
+                Sign In With Google
+              </Button>
+            </Stack>
+          </Collapse>
+        </SwipeableDrawer>
       )}
 
       <SwipeableDrawer {...addProgramDrawer} anchor="top">
@@ -455,27 +442,32 @@ const ProgramPreview: FC<{
   isActive?: boolean;
   onClick: React.MouseEventHandler<HTMLDivElement>;
 }> = ({ program, isActive = false, onClick }) => {
+  const theme = useTheme();
+
+  const gradient = theme.make.background(
+    theme.palette.background.default,
+    alpha(theme.palette.primary.main, 0.05)
+  );
   const inAddMode = !program;
+
   return (
     <Paper
-      sx={theme => {
-        const gradient = theme.make.background(
-          theme.palette.background.default,
-          alpha(theme.palette.primary.main, 0.05)
-        );
-        return {
-          background: gradient,
-          padding: theme.spacing(4),
-          border: `1px solid ${isActive ? theme.palette.primary.main : theme.palette.divider}`,
-        };
+      sx={{
+        background: gradient,
+        padding: theme.spacing(4),
+        border: `1px solid ${theme.palette.divider}`,
       }}
-      elevation={isActive ? 6 : 1}
+      elevation={isActive ? 8 : inAddMode ? 0 : 2}
       onClick={onClick}
     >
       <Stack direction="row" display="flex" spacing={1} alignItems="center">
-        {inAddMode ? <AddRounded /> : isActive ? <BookmarkRounded /> : null}
-        <Typography variant="overline" fontStyle="italic" whiteSpace="nowrap">
-          {inAddMode ? 'New Program' : program.name}
+        {inAddMode ? (
+          <AddRounded sx={{ color: theme => theme.palette.text.secondary }} />
+        ) : isActive ? (
+          <BookmarkRounded sx={{ color: theme => theme.palette.text.secondary }} />
+        ) : null}
+        <Typography variant="overline" color="textSecondary" lineHeight={1.5}>
+          {inAddMode ? 'Add a Program' : program.name}
         </Typography>
         {!inAddMode && <NavigateNextRounded />}
       </Stack>

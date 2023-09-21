@@ -128,7 +128,7 @@ export const Editor: FC = () => {
         >
           {([log, programUser]) => (
             <Stack direction="row" spacing={1.5} alignItems="baseline">
-              <Typography variant="caption" color="textSecondary">
+              <Typography variant="caption" color="textSecondary" textTransform="uppercase">
                 {dateDisplay(new Date(log.timestamp))}
               </Typography>
               {log.programId === programUser.activeProgramId && (
@@ -1024,13 +1024,7 @@ export const EditorInternals: FC<{
                                   </Typography>
                                   <IconButton
                                     sx={{ color: theme => theme.palette.text.secondary }}
-                                    onClick={async event => {
-                                      try {
-                                        savedMovementDrawer.onOpen(event, match);
-                                      } catch (err) {
-                                        toast.error(err.message);
-                                      }
-                                    }}
+                                    onClick={event => savedMovementDrawer.onOpen(event, match)}
                                   >
                                     <MoreHoriz fontSize="small" />
                                   </IconButton>

@@ -41,6 +41,8 @@ export const Programs: FC = () => {
   const TemplatesAPI = useStore(store => store.ProgramLogTemplatesAPI);
   const programUser = useStore(store => store.programUser);
   const templates = useStore(store => store.templates);
+  // TODO memoize the selector for this and programMovementsByTemplateId 
+  // due to deps = [programId]
   const viewedProgram = useStore(store =>
     DataState.map(
       store.programs,
