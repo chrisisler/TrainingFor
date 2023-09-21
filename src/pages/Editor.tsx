@@ -95,6 +95,7 @@ export const Editor: FC = () => {
     );
   });
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
+  const MovementsAPI = useStore(store => store.MovementsAPI);
   const programUser = useStore(store => store.programUser);
   const movements = useStore(store => (logId ? store.useMovements(logId) : DataState.Empty));
 
@@ -275,7 +276,10 @@ export const Editor: FC = () => {
                   if (!logId) throw Error('Unreachable');
                   if (!window.confirm('Delete Training?')) return;
                   try {
-                    await TrainingLogsAPI.delete(logId);
+                    await Promise.all([
+                      TrainingLogsAPI.delete(logId),
+                      MovementsAPI.deleteMany(where('logId', '==', logId)),
+                    ]);
                     logDrawer.onClose();
                     navigate(Paths.home);
                     toast.info('Deleted training');

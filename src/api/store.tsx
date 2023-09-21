@@ -184,16 +184,6 @@ export function useStore<T>(selector: (store: Store) => T) {
     useQuery(ProgramLogTemplatesAPI.queryKey, () => API.ProgramLogTemplates.getAll(user.uid))
   );
 
-  // TODO undo this, this is being too "clever"
-  Object.assign(TrainingLogsAPI, {
-    async delete(logId: string) {
-      await Promise.all([
-        TrainingLogsAPI.delete(logId),
-        MovementsAPI.deleteMany(where('logId', '==', logId)),
-      ]);
-    },
-  });
-
   const store = {
     ProgramsAPI,
     ProgramMovementsAPI,
