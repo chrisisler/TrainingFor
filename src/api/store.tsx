@@ -172,7 +172,7 @@ export function useStore<T>(selector: (store: Store) => T) {
       [DbPath.Programs, programUser], // TODO queryKey?
       async () => {
         if (!DataState.isReady(programUser)) return Promise.reject('programUser not ready.');
-        if (!programUser.activeProgramId) return Promise.reject('activeProgramId not found');
+        if (programUser.activeProgramId === null) return DataState.Empty;
         return API.Programs.get(programUser.activeProgramId).then(p => Program.makeTemplateId(p));
       },
       { enabled: DataState.isReady(programUser) }
