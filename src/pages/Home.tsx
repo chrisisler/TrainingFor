@@ -61,17 +61,16 @@ export const Home: FC = () => {
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
   const MovementsAPI = useStore(store => store.MovementsAPI);
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
-  const programs = useStore(store => {
-    // Sort by active program first.
-    if (!DataState.isReady(store.activeProgram)) return store.activeProgram;
-    if (!DataState.isReady(store.programs)) return store.programs;
-    const activeProgram = store.activeProgram;
-    const first = store.programs.find(p => p.id === activeProgram.id);
-    if (first) {
-      return [first, ...store.programs.filter(p => p.id !== activeProgram.id)];
-    }
-    return store.programs;
-  });
+  const programs = useStore(store =>
+    DataState.map(store.programs, _programs => {
+      const active = store.activeProgram;
+      if (DataState.isReady(active)) {
+        const first = _programs.find(p => p.id === active.id);
+        if (first) return [first, ..._programs.filter(_ => _.id !== active.id)];
+      }
+      return _programs;
+    })
+  );
 
   const createTrainingLog = useCallback(
     async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
