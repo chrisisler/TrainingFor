@@ -143,7 +143,6 @@ export const Programs: FC = () => {
                     </IconButton>
                     <IconButton
                       color="error"
-                      disabled={!isActiveProgram}
                       onClick={async function deleteProgramForever() {
                         if (!DataState.isReady(programUser)) return;
                         const inputName = window.prompt(
