@@ -185,7 +185,7 @@ export const Programs: FC = () => {
                 </Stack>
 
                 <Stack spacing={3}>
-                  {program.templateIds.map((templateId, index) => (
+                  {program.templateIds.map(templateId => (
                     <Paper
                       key={templateId}
                       elevation={2}
@@ -195,7 +195,7 @@ export const Programs: FC = () => {
                         <DataStateView data={templates}>
                           {templates => (
                             <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
-                              {templates.find(t => t.id === templateId)?.name || `Day ${index + 1}`}
+                              {templates.find(t => t.id === templateId)?.name}
                             </Typography>
                           )}
                         </DataStateView>
@@ -241,7 +241,7 @@ export const Programs: FC = () => {
                             const newTemplate = await TemplatesAPI.create({
                               authorUserId: user.uid,
                               programId: program.id,
-                              name: '',
+                              name: 'Untitled',
                             });
                             const templateIds = program.templateIds.concat(newTemplate.id);
                             // Update programs to reflect newly added day
