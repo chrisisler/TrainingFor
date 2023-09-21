@@ -21,6 +21,7 @@ import {
 import { getCountFromServer, query, where } from 'firebase/firestore';
 import { FC, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { API, useStore } from '../api';
 import { NotesDrawer } from '../components';
@@ -35,6 +36,7 @@ export const Programs: FC = () => {
   const programNoteDrawer = useMaterialMenu();
   const templateEditorDrawer = useDrawer<{ templateId: string }>();
   const { programId } = useParams<{ programId: string }>();
+  const queryClient = useQueryClient();
 
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
   const ProgramUsersAPI = useStore(store => store.ProgramUsersAPI);
@@ -292,9 +294,8 @@ export const Programs: FC = () => {
             if (!templateId) return;
             const { templateIds } = viewedProgram;
             // If no movements exist in this template, delete it.
-            const noMovements = await getCountFromServer(
-              query(API.collections.programMovements, where('logId', '==', templateId))
-            ).then(_ => _.data().count === 0);
+            const q = query(API.collections.programMovements, where('logId', '==', templateId));
+            const noMovements = await getCountFromServer(q).then(_ => _.data().count === 0);
             if (noMovements) {
               await Promise.all([
                 TemplatesAPI.delete(templateId),
@@ -304,11 +305,8 @@ export const Programs: FC = () => {
                 }),
               ]);
             } else {
-              // Update viewedProgram which updates movement names display
-              // setViewedProgram({
-              //   ...viewedProgram,
-              //   templateIds: templateIds.concat(templateId),
-              // });
+              // Update template movement names display
+              queryClient.invalidateQueries(ProgramMovementsAPI.queryKey);
             }
           }
           templateEditorDrawer.onClose();
