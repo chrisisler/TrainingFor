@@ -1,4 +1,4 @@
-import { Box, Collapse } from '@mui/material';
+import { Box, Collapse, Typography } from '@mui/material';
 // import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -38,6 +38,21 @@ export const App: FC = () => {
           <PrivateThemeProvider>
             <DataStateView
               data={authState}
+              loading={() => (
+                <Box
+                  sx={{
+                    height: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="overline" fontStyle="italic">
+                    Trainquil
+                  </Typography>
+                </Box>
+              )}
               empty={() => (
                 <Routes>
                   <Route path="/" element={<Authentication />} />

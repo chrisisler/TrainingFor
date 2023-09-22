@@ -9,10 +9,12 @@ import {
 import {
   Box,
   Button,
+  CircularProgress,
   Collapse,
   IconButton,
   InputBase,
   Paper,
+  Skeleton,
   Stack,
   SwipeableDrawer,
   TextField,
@@ -70,7 +72,10 @@ export const Programs: FC = () => {
   return (
     <>
       <Box sx={{ height: '100vh', width: '100vw', padding: theme => theme.spacing(1) }}>
-        <DataStateView data={viewedProgram}>
+        <DataStateView
+          data={viewedProgram}
+          loading={() => <CircularProgress variant="indeterminate" size={100} />}
+        >
           {program => {
             const isActiveProgram =
               DataState.isReady(programUser) && programUser.activeProgramId === program.id;
@@ -206,7 +211,7 @@ export const Programs: FC = () => {
                       sx={{ padding: theme => theme.spacing(2) }}
                     >
                       <Stack alignItems="center" justifyContent="center" spacing={3}>
-                        <DataStateView data={templates}>
+                        <DataStateView data={templates} loading={() => <Skeleton variant="text" />}>
                           {templates => (
                             <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
                               {templates.find(t => t.id === templateId)?.name}
@@ -214,7 +219,15 @@ export const Programs: FC = () => {
                           )}
                         </DataStateView>
                         <Stack>
-                          <DataStateView data={programMovementsByTemplateId}>
+                          <DataStateView
+                            data={programMovementsByTemplateId}
+                            loading={() => (
+                              <>
+                                <Skeleton variant="text" />
+                                <Skeleton variant="text" />
+                              </>
+                            )}
+                          >
                             {programMovementsByTemplateId => {
                               const movements = programMovementsByTemplateId.get(templateId);
                               if (!movements) return null;

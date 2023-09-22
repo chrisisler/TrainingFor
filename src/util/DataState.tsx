@@ -69,8 +69,7 @@ export const DataState = {
 export function DataStateView<T>(props: {
   data: DataState<T>;
   children: (data: T) => JSX.Element | null;
-  // TODO Make this required
-  loading?: () => JSX.Element | null;
+  loading: () => JSX.Element | null;
   // TODO Make this required
   error?: () => JSX.Element | null;
   empty?: () => JSX.Element | null;

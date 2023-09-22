@@ -21,6 +21,7 @@ import {
   Backdrop,
   Box,
   Button,
+  CircularProgress,
   Collapse,
   colors,
   Fade,
@@ -31,6 +32,7 @@ import {
   Paper,
   Select,
   SelectProps,
+  Skeleton,
   Stack,
   SwipeableDrawer,
   Tab,
@@ -127,6 +129,7 @@ export const Editor: FC = () => {
               Go back
             </Button>
           )}
+          loading={() => <Skeleton variant="text" width={50} />}
         >
           {([log, programUser]) => (
             <Stack direction="row" spacing={1.5} alignItems="baseline">
@@ -175,9 +178,7 @@ export const Editor: FC = () => {
         </WithVariable>
       </SwipeableDrawer>
 
-      <DataStateView data={logId || DataState.Empty}>
-        {logId => <EditorInternals logId={logId} />}
-      </DataStateView>
+      {!!logId && <EditorInternals logId={logId} />}
 
       <SwipeableDrawer {...logDrawer.props()} anchor="top">
         <Collapse in={logDrawer.open}>
@@ -498,7 +499,15 @@ export const EditorInternals: FC<{
   return (
     <>
       <Stack spacing={2}>
-        <DataStateView data={movements}>
+        <DataStateView
+          data={movements}
+          loading={() => (
+            <Stack>
+              <Skeleton animation="wave" />
+              <Skeleton variant="text" />
+            </Stack>
+          )}
+        >
           {movements => (
             <Stack
               spacing={2}
@@ -964,7 +973,7 @@ export const EditorInternals: FC<{
               </ReactFocusLock>
             </Box>
 
-            <DataStateView data={matches}>
+            <DataStateView data={matches} loading={() => <CircularProgress />}>
               {matches => {
                 const queryIsEmpty = movementNameQuery === '';
                 const query = movementNameQuery.toLowerCase();
@@ -1307,7 +1316,16 @@ export const EditorInternals: FC<{
               </Box>
 
               {/** Re-order / position buttons */}
-              <DataStateView data={movements}>
+              <DataStateView
+                data={movements}
+                loading={() => (
+                  <Stack direction="row" spacing={1.5}>
+                    <Skeleton variant="rectangular" width={'42px'} />
+                    <Skeleton variant="rectangular" width={'42px'} />
+                    <Skeleton variant="rectangular" width={'42px'} />
+                  </Stack>
+                )}
+              >
                 {movements => {
                   if (movements.length <= 1) return null;
                   const selectedMovement = movementMenuDrawer.getData();

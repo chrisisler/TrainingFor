@@ -158,14 +158,20 @@ export const Home: FC = () => {
         spacing={2}
         sx={{
           padding: theme => theme.spacing(0, 1, 1),
-          backgroundColor: theme => alpha(theme.palette.action.hover, 0.05),
+          backgroundColor: theme => theme.palette.background.paper,
+          border: theme => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <DataStateView data={DataState.all(activeProgram, templates)}>
+        <DataStateView
+          data={DataState.all(activeProgram, templates)}
+          loading={() => <Skeleton height={40} />}
+        >
           {([activeProgram, templates]) => {
             return (
               <>
-                <Typography variant="overline">{activeProgram.name}</Typography>
+                <Typography variant="overline" fontWeight={600} color="textSecondary">
+                  {activeProgram.name}
+                </Typography>
                 {templates
                   .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
                   .map(template => (
@@ -181,7 +187,7 @@ export const Home: FC = () => {
                         justifyContent: 'space-between',
                       }}
                     >
-                      Add {template.name} Training
+                      Add {template.name || 'Program'} Training
                     </Button>
                   ))}
               </>
@@ -237,7 +243,19 @@ export const Home: FC = () => {
       <Typography variant="overline" fontWeight={600} color="textSecondary">
         Training
       </Typography>
-      <DataStateView data={logs}>
+      <DataStateView
+        data={logs}
+        loading={() => (
+          <Stack>
+            <Stack direction="row">
+              <Skeleton variant="rounded" />
+              <Skeleton variant="text" />
+            </Stack>
+            <Skeleton width="100%" variant="rectangular" />
+            <Skeleton width="100%" variant="rectangular" />
+          </Stack>
+        )}
+      >
         {logs =>
           logs.length === 0 ? null : (
             <Stack spacing={4} sx={{ padding: theme => theme.spacing(0) }}>
@@ -288,7 +306,6 @@ export const Home: FC = () => {
                         )}
                       </Stack>
                       <Stack direction="row" spacing={1} alignItems="baseline" whiteSpace="nowrap">
-                        {/** Bold + large + all caps name of day */}
                         <Typography fontWeight={600}>{SORTED_WEEKDAYS[date.getDay()]}</Typography>
                         <Typography variant="body2" color="text.secondary">
                           {formatDistanceToNowStrict(new Date(log.timestamp), {
@@ -300,7 +317,15 @@ export const Home: FC = () => {
                       </Stack>
                       {/** List of movement names for each recent log from the user. */}
                       {/** TODO component-ize and put movementsByLogId inside component. */}
-                      <DataStateView data={movementsByLogId}>
+                      <DataStateView
+                        data={movementsByLogId}
+                        loading={() => (
+                          <>
+                            <Skeleton variant="text" />
+                            <Skeleton variant="text" />
+                          </>
+                        )}
+                      >
                         {map => {
                           const movements = !!map && map.get(log.id);
                           if (!movements) return null;
