@@ -111,29 +111,6 @@ export function usePrevious<T>(value: T): T {
 }
 
 /**
- * Maps the state of authentication (in VS not in VS logging in VS failed) to
- * DataState and updates based on auth changes (log in and out).
- */
-export const useUserAuthSubscription = (): [DataState<User>, (user: DataState<User>) => void] => {
-  const [state, setState] = useState<DataState<User>>(DataState.Loading);
-
-  useEffect(() => {
-    return auth.onAuthStateChanged(
-      user => {
-        // If it exists, get the data (without the firebase metadata)
-        if (user) setState(user.toJSON() as User);
-        else setState(DataState.Empty);
-      },
-      err => {
-        setState(DataState.error(err.message));
-      }
-    );
-  }, []);
-
-  return [state, setState];
-};
-
-/**
  * @usage
  * ```TypeScript
  * const toast = useToast();

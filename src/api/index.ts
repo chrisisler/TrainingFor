@@ -21,6 +21,7 @@ import { db, DbPath } from './firebase';
 export * from './firebase';
 export * from './client';
 export * from './store';
+export * from './auth-store';
 
 export const API = init();
 

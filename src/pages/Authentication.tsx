@@ -3,13 +3,15 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Authenticate } from '../api';
-import { Paths, useToast, useUserAuthSubscription } from '../util';
+import { Authenticate, useAuthStore } from '../api';
+import { Paths, useToast } from '../util';
+
+import logo192 from '../logo192.png';
 
 export const Authentication: FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const [, setUser] = useUserAuthSubscription();
+  const setUser = useAuthStore(store => store.setUser);
 
   return (
     <Box
@@ -28,11 +30,16 @@ export const Authentication: FC = () => {
           textAlign: 'left',
         }}
       >
-        <Typography sx={{ fontFamily: 'monospace', fontStyle: 'italic' }}>
-          Trainquil Logo
-        </Typography>
-        <Typography variant="h6">
-          Start training and track your progression. Join Trainquil today.
+        <Stack direction="row" spacing={2} alignItems="center" width="100" margin="0 auto">
+          <img src={logo192} alt="Trainquil Logo" height={64} width={64} />
+          <Typography variant="overline" fontStyle="italic">
+            Trainquil
+          </Typography>
+        </Stack>
+
+        <Typography>
+          Start training and track your progression. <br />
+          Join today.
         </Typography>
         <Stack spacing={3}>
           <Button

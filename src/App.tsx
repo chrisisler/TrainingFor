@@ -8,7 +8,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { PrivateThemeProvider, UserProvider } from './context';
 import { Authentication, Home, Editor, Programs } from './pages';
-import { DataStateView, Paths, useUserAuthSubscription } from './util';
+import { DataStateView, Paths } from './util';
+import { useAuthStore } from './api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,8 +23,7 @@ const queryClient = new QueryClient({
 // const persister = createSyncStoragePersister({ storage: window.localStorage });
 
 export const App: FC = () => {
-  /** When this value is DataState.Empty, the user is not authenticated. */
-  const [authState] = useUserAuthSubscription();
+  const authState = useAuthStore(store => store.authState);
 
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
