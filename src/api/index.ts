@@ -51,16 +51,7 @@ function init() {
   const ProgramMovements = createAPI(programMovementsRef);
 
   return {
-    TrainingLogs: {
-      ...TrainingLogs,
-      async delete(logId: string) {
-        await Promise.all([
-          TrainingLogs.delete(logId),
-          Movements.deleteMany(where('logId', '==', logId)),
-        ]);
-        return;
-      },
-    },
+    TrainingLogs,
     SavedMovements,
     Movements,
     ProgramLogTemplates,
