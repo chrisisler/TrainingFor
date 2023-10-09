@@ -1,9 +1,5 @@
-import { User } from 'firebase/auth';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OptionsObject, useSnackbar } from 'notistack';
-
-import { DataState } from '../util';
-import { auth } from '../api';
 
 /**
  * Simplifies the usage of Material-UI's SwipeableDrawer and Menu.
