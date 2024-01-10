@@ -1,5 +1,5 @@
 import { User } from 'firebase/auth';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
 
 import { DataState } from '../util';
@@ -31,15 +31,10 @@ export function useAuthStore<T>(selector: (store: Store) => T) {
     );
   }, []);
 
-  // It's important for this value to adhere to immutability principles because
-  // it's likely to be used by effects and APIs
-  const getSnapshot = useCallback(
-    () => ({
-      authState: userState,
-      setUser: (user: User) => setUserState(user),
-    }),
-    [userState]
-  );
+  const store = {
+    authState: userState,
+    setUser: (user: User) => setUserState(user),
+  };
 
-  return useSyncExternalStoreWithSelector(subscribe, getSnapshot, null, selector);
+  return useSyncExternalStoreWithSelector(subscribe, () => store, null, selector);
 }

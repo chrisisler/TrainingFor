@@ -178,6 +178,7 @@ export const Home: FC = () => {
                     <Button
                       key={template.id}
                       size="large"
+                      variant="contained"
                       onClick={() => createTrainingLog({ fromTemplateId: template.id })}
                       startIcon={<AddRounded />}
                       endIcon={<AutoAwesomeRounded />}
