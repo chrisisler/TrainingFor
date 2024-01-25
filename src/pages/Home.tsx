@@ -128,7 +128,7 @@ export const Home: FC = () => {
 
   return (
     <Stack
-      spacing={2}
+      spacing={3}
       sx={{
         height: '100vh',
         width: '100vw',
@@ -155,7 +155,7 @@ export const Home: FC = () => {
         </IconButton>
       </Box>
 
-      <Stack spacing={1}>
+      <Stack>
         <DataStateView
           data={DataState.all(activeProgram, templates)}
           loading={() => <Skeleton height={40} />}
@@ -195,7 +195,7 @@ export const Home: FC = () => {
                           justifyContent: 'space-between',
                         }}
                       >
-                        <Typography variant="h6" lineHeight={1} fontWeight={600}>
+                        <Typography variant="h6" lineHeight={1}>
                           {template.name || 'Program'}
                         </Typography>
                         {/*<WithVariable value={DataState.isReady(logs) && logs.find(_ => _.programLogTemplateId === template.id) && logs}>
@@ -205,11 +205,12 @@ export const Home: FC = () => {
                         </WithVariable>*/}
 
                         <Button
-                          variant="outlined"
+                          variant="contained"
                           endIcon={
                             <ChevronRightRounded
                               fontSize="large"
-                              sx={{ color: theme => theme.palette.primary.main }}
+                              // sx={{ color: theme => theme.palette.primary.main }}
+                              // c
                             />
                           }
                         >
@@ -232,10 +233,10 @@ export const Home: FC = () => {
         </Button>
       </Stack>
 
-      <Typography variant="h5" fontWeight={600}>
-        Training Programs
-      </Typography>
       <Box>
+        <Typography variant="h5" fontWeight={600}>
+          Training Programs
+        </Typography>
         <Stack
           direction="row"
           spacing={2}
