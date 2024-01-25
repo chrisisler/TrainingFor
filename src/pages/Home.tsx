@@ -1,8 +1,8 @@
 import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
-  AutoAwesomeRounded,
   BookmarkRounded,
+  ChevronRightRounded,
   CloseRounded,
   Google,
   Launch,
@@ -44,6 +44,7 @@ import {
   useMaterialMenu,
   useToast,
 } from '../util';
+import { WithVariable } from '../components';
 
 export const Home: FC = () => {
   const user = useUser();
@@ -154,14 +155,7 @@ export const Home: FC = () => {
         </IconButton>
       </Box>
 
-      <Stack
-        spacing={2}
-        sx={{
-          padding: theme => theme.spacing(0, 1, 1),
-          backgroundColor: theme => theme.palette.background.paper,
-          border: theme => `1px solid ${theme.palette.divider}`,
-        }}
-      >
+      <Stack spacing={1}>
         <DataStateView
           data={DataState.all(activeProgram, templates)}
           loading={() => <Skeleton height={40} />}
@@ -169,49 +163,83 @@ export const Home: FC = () => {
           {([activeProgram, templates]) => {
             return (
               <>
-                <Typography variant="overline" fontWeight={600} color="textSecondary">
-                  {activeProgram.name}
-                </Typography>
-                {templates
-                  .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
-                  .map(template => (
-                    <Button
-                      key={template.id}
-                      size="large"
-                      variant="contained"
-                      onClick={() => createTrainingLog({ fromTemplateId: template.id })}
-                      startIcon={<AddRounded />}
-                      endIcon={<AutoAwesomeRounded />}
-                      sx={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      Add {template.name || 'Program'} Training
-                    </Button>
-                  ))}
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  onClick={() => navigate(Paths.program(activeProgram.id))}
+                >
+                  <Typography variant="overline" color="textSecondary">
+                    Program
+                  </Typography>
+                  <Typography variant="overline" fontWeight={600}>
+                    {activeProgram.name}
+                  </Typography>
+                </Stack>
+                <Stack direction="row" flexWrap="wrap">
+                  {templates
+                    .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
+                    .map(template => (
+                      <Box
+                        key={template.id}
+                        onClick={() => createTrainingLog({ fromTemplateId: template.id })}
+                        sx={{
+                          width: '100%',
+                          padding: theme => theme.spacing(1.5),
+                          margin: theme => theme.spacing(0, 1, 1, 0),
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark'
+                              ? theme.palette.action.hover
+                              : theme.palette.background.default,
+                          alignItems: 'center',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Typography variant="h6" lineHeight={1} fontWeight={600}>
+                          {template.name || 'Program'}
+                        </Typography>
+                        {/*<WithVariable value={DataState.isReady(logs) && logs.find(_ => _.programLogTemplateId === template.id) && logs}>
+                        {found => (
+                        <Typography variant="caption" color="textSecondary">{foun}</Typography>
+                            )}
+                        </WithVariable>*/}
+
+                        <Button
+                          variant="outlined"
+                          endIcon={
+                            <ChevronRightRounded
+                              fontSize="large"
+                              sx={{ color: theme => theme.palette.primary.main }}
+                            />
+                          }
+                        >
+                          Go
+                        </Button>
+                      </Box>
+                    ))}
+                </Stack>
               </>
             );
           }}
         </DataStateView>
         <Button
           size="large"
+          variant="outlined"
           startIcon={<AddRounded />}
           onClick={() => createTrainingLog({ fromTemplateId: null })}
         >
-          Add Training
+          Create Training
         </Button>
       </Stack>
 
-      <Typography variant="overline" fontWeight={600} color="textSecondary">
+      <Typography variant="h5" fontWeight={600}>
         Training Programs
       </Typography>
       <Box>
         <Stack
           direction="row"
           spacing={2}
-          sx={{ width: '100%', overflowX: 'scroll', padding: theme => theme.spacing(2, 0) }}
+          sx={{ width: '100%', overflowX: 'scroll', padding: theme => theme.spacing(1, 0) }}
         >
           <DataStateView
             data={programs}
@@ -241,9 +269,10 @@ export const Home: FC = () => {
         </Stack>
       </Box>
 
-      <Typography variant="overline" fontWeight={600} color="textSecondary">
-        Training
+      <Typography variant="h5" fontWeight={600}>
+        Training Sessions
       </Typography>
+
       <DataStateView
         data={logs}
         loading={() => (
