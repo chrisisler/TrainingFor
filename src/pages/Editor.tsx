@@ -182,7 +182,7 @@ export const Editor: FC = () => {
 
       <SwipeableDrawer {...logDrawer.props()} anchor="top">
         <Collapse in={logDrawer.open}>
-          <Stack spacing={3} sx={{ padding: theme => theme.spacing(0, 4) }}>
+          <Stack spacing={3} sx={{ padding: theme => theme.spacing(0, 3) }}>
             <Button
               variant="outlined"
               onClick={() => navigate(Paths.home)}
@@ -201,7 +201,7 @@ export const Editor: FC = () => {
             >
               Note
             </Button>
-            <Button
+            {/*<Button
               variant="outlined"
               onClick={() => {
                 toast.info('Unimplemented: Update log timestamp');
@@ -213,7 +213,7 @@ export const Editor: FC = () => {
                   {date => <>{dateDisplay(date)}</>}
                 </WithVariable>
               )}
-            </Button>
+            </Button>*/}
             <TextField
               size="small"
               variant="standard"
@@ -523,19 +523,19 @@ export const EditorInternals: FC<{
                         width="100%"
                       >
                         <Box display="flex" alignItems="baseline">
-                          <Stack
-                            sx={{ padding: theme => theme.spacing(0.5, 0.0) }}
+                          <Button
+                            sx={{
+                              padding: theme => theme.spacing(0.5, 1.0),
+                              margin: theme => theme.spacing(-0.5, -1.0),
+                              fontSize: '1.0rem',
+                              textTransform: 'uppercase',
+                              fontWeight: 600,
+                              color: theme => alpha(theme.palette.text.primary, 0.8),
+                            }}
                             onClick={event => movementMenuDrawer.onOpen(event, movement)}
                           >
-                            <Typography
-                              fontSize="1.4rem"
-                              sx={{
-                                padding: theme => theme.spacing(0.0, 1.0),
-                              }}
-                            >
-                              {movement.name}
-                            </Typography>
-                          </Stack>
+                            {movement.name}
+                          </Button>
 
                           {/** Display volume or reps total. */}
                           {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
@@ -545,6 +545,7 @@ export const EditorInternals: FC<{
                             )}
                           >
                             {completedSets => {
+                              if (completedSets.length === 0) return null;
                               const completedVol = MovementSet.summate(completedSets);
                               const totalVol = MovementSet.summate(movement.sets);
                               return (
@@ -552,7 +553,9 @@ export const EditorInternals: FC<{
                                   variant="overline"
                                   sx={{
                                     color: 'text.secondary',
-                                    marginLeft: theme => theme.spacing(1),
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    marginLeft: theme => theme.spacing(1.5),
                                   }}
                                 >
                                   {!isProgramView && completedVol !== totalVol && (
@@ -669,7 +672,7 @@ export const EditorInternals: FC<{
                 marginTop: theme => theme.spacing(4),
               }}
             >
-              Add Movement
+              Movements
               <KeyboardDoubleArrowDownRounded
                 sx={{
                   color: theme =>
@@ -984,6 +987,7 @@ export const EditorInternals: FC<{
                       <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
                         <Stack spacing={1.25} sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
                           {matches.map((match: SavedMovement) => {
+                            // A string like "22h ago" or "4d ago"
                             const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
                               addSuffix: true,
                             })
@@ -994,11 +998,15 @@ export const EditorInternals: FC<{
                               72 * 60 * 60 * 1000;
                             return (
                               <Box key={match.id} display="flex" justifyContent="space-between">
-                                <Typography
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  disabled={!!isMutating}
                                   sx={{
-                                    padding: theme => theme.spacing(0.5, 1.25),
-                                    borderRadius: 1,
-                                    border: '1px solid lightgrey',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: theme => theme.palette.text.primary,
+                                    justifyContent: 'flex-start',
                                   }}
                                   onClick={async () => {
                                     const movement = addMovementDrawer.getData();
@@ -1024,8 +1032,12 @@ export const EditorInternals: FC<{
                                   }}
                                 >
                                   {match.name}
-                                </Typography>
-                                <Box sx={{ whiteSpace: 'nowrap' }}>
+                                </Button>
+                                <Stack
+                                  sx={{ whiteSpace: 'nowrap', alignItems: 'center' }}
+                                  spacing={1}
+                                  direction="row"
+                                >
                                   <Typography
                                     variant="caption"
                                     sx={{
@@ -1033,7 +1045,6 @@ export const EditorInternals: FC<{
                                         isLessThan72HoursAgo
                                           ? theme.palette.text.secondary
                                           : theme.palette.success.main,
-                                      filter: 'grayscale(30%)',
                                     }}
                                   >
                                     {distance}
@@ -1042,9 +1053,9 @@ export const EditorInternals: FC<{
                                     sx={{ color: theme => theme.palette.text.secondary }}
                                     onClick={event => savedMovementDrawer.onOpen(event, match)}
                                   >
-                                    <MoreHoriz fontSize="small" />
+                                    <MoreHoriz />
                                   </IconButton>
-                                </Box>
+                                </Stack>
                               </Box>
                             );
                           })}
@@ -1063,8 +1074,10 @@ export const EditorInternals: FC<{
                         <Button
                           fullWidth
                           size="large"
-                          variant="outlined"
-                          sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                          variant="contained"
+                          sx={{
+                            justifyContent: 'flex-start',
+                          }}
                           startIcon={<Add />}
                           onClick={addMovementFromNewSavedMovement}
                           disabled={!!isMutating}
