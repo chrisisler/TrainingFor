@@ -1,11 +1,13 @@
 import { uuidv4 } from '@firebase/util';
 import {
   Add,
+  ArrowForwardRounded,
   CheckRounded,
   Close,
   CloseRounded,
   DeleteForeverRounded,
   DeleteOutline,
+  DeleteOutlineRounded,
   DeleteRounded,
   EditOutlined,
   FindReplaceRounded,
@@ -25,7 +27,6 @@ import {
   Collapse,
   colors,
   Fade,
-  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -87,8 +88,6 @@ export const Editor: FC = () => {
   const notesDrawer = useDrawer<TrainingLog>();
   const programDrawer = useDrawer<string>();
 
-  const [confetti, setConfetti] = useState(false);
-
   const log = useStore(store => {
     if (!logId) return DataState.Empty;
     return DataState.map(
@@ -99,16 +98,16 @@ export const Editor: FC = () => {
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const MovementsAPI = useStore(store => store.MovementsAPI);
   const programUser = useStore(store => store.programUser);
-  const movements = useStore(store => (logId ? store.useMovements(logId) : DataState.Empty));
+  // const movements = useStore(store => (logId ? store.useMovements(logId) : DataState.Empty));
 
-  const finishTrainingLog = useCallback(async () => {
-    if (!logId) return;
-    try {
-      await TrainingLogsAPI.update({ id: logId, isFinished: true });
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }, [logId, toast, TrainingLogsAPI]);
+  // const finishTrainingLog = useCallback(async () => {
+  //   if (!logId) return;
+  //   try {
+  //     await TrainingLogsAPI.update({ id: logId, isFinished: true });
+  //   } catch (err) {
+  //     toast.error(err.message);
+  //   }
+  // }, [logId, toast, TrainingLogsAPI]);
 
   return (
     <Box
@@ -182,71 +181,63 @@ export const Editor: FC = () => {
 
       <SwipeableDrawer {...logDrawer.props()} anchor="top">
         <Collapse in={logDrawer.open}>
-          <Grid
-            container
-            rowSpacing={2}
-            columnSpacing={1}
-            direction="row-reverse"
-            justifyContent="space-evenly"
-          >
-            <Grid item xs={4}>
-              <Button variant="outlined" onClick={() => navigate(Paths.home)}>
-                <PersonOutline />
-              </Button>
-            </Grid>
-            <Grid item xs={4}>
-              <Button
-                variant="outlined"
-                disabled={!DataState.isReady(log)}
-                onClick={event => {
-                  if (!DataState.isReady(log)) return;
-                  notesDrawer.onOpen(event, log);
-                }}
-              >
-                Note
-              </Button>
-            </Grid>
-            <Grid item xs={4}>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  toast.info('Unimplemented: Update log timestamp');
-                }}
-              >
-                {DataState.isReady(log) && (
-                  <WithVariable value={new Date(log.timestamp)}>
-                    {date => <>{dateDisplay(date)}</>}
-                  </WithVariable>
-                )}
-              </Button>
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                size="small"
-                variant="standard"
-                label="Bodyweight"
-                key={DataState.isReady(log) ? log.bodyweight : undefined}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                onFocus={event => event.currentTarget.select()}
-                defaultValue={(DataState.isReady(log) && log.bodyweight) || void 0}
-                onBlur={async function updateTrainingLogBodyweight(event) {
-                  if (Number.isNaN(event.target.value)) return;
-                  if (!DataState.isReady(log)) return;
-                  const newBodyweight = +event.target.value;
-                  if (newBodyweight === log.bodyweight) return;
-                  try {
-                    await TrainingLogsAPI.update({
-                      id: log.id,
-                      bodyweight: newBodyweight,
-                    });
-                    toast.info('Updated bodyweight');
-                  } catch (error) {
-                    toast.error(error.message);
-                  }
-                }}
-              />
-            </Grid>
-            <Grid item xs={4}>
+          <Stack spacing={3} sx={{ padding: theme => theme.spacing(0, 4) }}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate(Paths.home)}
+              startIcon={<PersonOutline />}
+              endIcon={<ArrowForwardRounded fontSize="small" />}
+            >
+              Home
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={!DataState.isReady(log)}
+              onClick={event => {
+                if (!DataState.isReady(log)) return;
+                notesDrawer.onOpen(event, log);
+              }}
+            >
+              Note
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                toast.info('Unimplemented: Update log timestamp');
+              }}
+              disabled
+            >
+              {DataState.isReady(log) && (
+                <WithVariable value={new Date(log.timestamp)}>
+                  {date => <>{dateDisplay(date)}</>}
+                </WithVariable>
+              )}
+            </Button>
+            <TextField
+              size="small"
+              variant="standard"
+              label="Bodyweight"
+              key={DataState.isReady(log) ? log.bodyweight : undefined}
+              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+              onFocus={event => event.currentTarget.select()}
+              defaultValue={(DataState.isReady(log) && log.bodyweight) || void 0}
+              onBlur={async function updateTrainingLogBodyweight(event) {
+                if (Number.isNaN(event.target.value)) return;
+                if (!DataState.isReady(log)) return;
+                const newBodyweight = +event.target.value;
+                if (newBodyweight === log.bodyweight) return;
+                try {
+                  await TrainingLogsAPI.update({
+                    id: log.id,
+                    bodyweight: newBodyweight,
+                  });
+                  toast.info('Updated bodyweight');
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+            />
+            {/*<Grid item xs={4}>
               <Button
                 variant="outlined"
                 disabled={!DataState.isReady(movements)}
@@ -268,31 +259,29 @@ export const Editor: FC = () => {
                 Finish
               </Button>
               {confetti && <ConfettiExplosion particleCount={150} width={500} force={1} />}
-            </Grid>
-            <Grid item xs={4}>
-              <Button
-                color="error"
-                variant="outlined"
-                onClick={async () => {
-                  if (!logId) throw Error('Unreachable');
-                  if (!window.confirm('Delete Training?')) return;
-                  try {
-                    await Promise.all([
-                      TrainingLogsAPI.delete(logId),
-                      MovementsAPI.deleteMany(where('logId', '==', logId)),
-                    ]);
-                    logDrawer.onClose();
-                    navigate(Paths.home);
-                    toast.info('Deleted training');
-                  } catch (error) {
-                    toast.error(error.message);
-                  }
-                }}
-              >
-                <DeleteForeverRounded />
-              </Button>
-            </Grid>
-          </Grid>
+            </Grid>*/}
+            <Button
+              color="error"
+              onClick={async () => {
+                if (!logId) throw Error('Unreachable');
+                if (!window.confirm('Delete Training?')) return;
+                try {
+                  await Promise.all([
+                    TrainingLogsAPI.delete(logId),
+                    MovementsAPI.deleteMany(where('logId', '==', logId)),
+                  ]);
+                  logDrawer.onClose();
+                  navigate(Paths.home);
+                  toast.info('Deleted training');
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+              startIcon={<DeleteOutlineRounded />}
+            >
+              Delete Session
+            </Button>
+          </Stack>
         </Collapse>
       </SwipeableDrawer>
 
@@ -391,6 +380,7 @@ export const EditorInternals: FC<{
         lastSeen: timestamp,
       });
       const position = movements.length > 0 ? movements[movements.length - 1].position + 1 : 0;
+      // TODO global activity indicator here
       await MovementsMutationAPI.create({
         logId,
         name: newSavedMovement.name,
@@ -537,11 +527,8 @@ export const EditorInternals: FC<{
                           >
                             <Typography
                               fontSize="1.4rem"
-                              fontWeight={200}
                               sx={{
-                                backgroundColor: theme => alpha(theme.palette.divider, 0.02),
                                 padding: theme => theme.spacing(0.0, 1.0),
-                                borderRadius: 1,
                               }}
                             >
                               {movement.name}
@@ -575,7 +562,7 @@ export const EditorInternals: FC<{
                             }}
                           </WithVariable>
                         </Box>
-                        <IconButton
+                        <Button
                           onClick={event => {
                             addSetMenu.onOpen(event, movement);
                             // Set controlled state default values to previous set
@@ -592,9 +579,12 @@ export const EditorInternals: FC<{
                               setNewSetRepCountMax(DEFAULT_MAX_REPS);
                             }
                           }}
+                          sx={{ color: theme => theme.palette.text.secondary }}
+                          startIcon={<EditOutlined sx={{ mb: 0.5 }} />}
+                          size="small"
                         >
-                          <EditOutlined />
-                        </IconButton>
+                          Add
+                        </Button>
                       </Stack>
                     </Box>
 
@@ -668,15 +658,20 @@ export const EditorInternals: FC<{
           <Box display="flex" width="100%" justifyContent="center">
             <Button
               onClick={event => addMovementDrawer.onOpen(event, null)}
-              sx={{ backgroundColor: theme => alpha(theme.palette.action.hover, 0.05) }}
+              sx={{
+                // backgroundColor: theme => alpha(theme.palette.action.hover, 0.03),
+                color: theme =>
+                  movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
+                padding: theme => theme.spacing(1.5, 2),
+                marginTop: theme => theme.spacing(4),
+              }}
             >
+              Add Movement
               <KeyboardDoubleArrowDownRounded
                 sx={{
-                  color: 'text.secondary',
+                  color: theme =>
+                    movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
                   fontSize: '1.5rem',
-                  // Move away from everything else
-                  mt: 2,
-                  mb: 2,
                 }}
               />
             </Button>
@@ -949,7 +944,7 @@ export const EditorInternals: FC<{
         <Collapse in={addMovementDrawer.open}>
           {/** Top 3-8 recommendations */}
 
-          <Stack spacing={1} key={JSON.stringify(addMovementDrawer)}>
+          <Stack spacing={2} key={JSON.stringify(addMovementDrawer)}>
             <Box>
               {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
               <ReactFocusLock
@@ -1065,6 +1060,7 @@ export const EditorInternals: FC<{
                         <Button
                           fullWidth
                           size="large"
+                          variant="outlined"
                           sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                           startIcon={<Add />}
                           onClick={addMovementFromNewSavedMovement}

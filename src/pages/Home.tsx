@@ -44,7 +44,6 @@ import {
   useMaterialMenu,
   useToast,
 } from '../util';
-import { WithVariable } from '../components';
 
 export const Home: FC = () => {
   const user = useUser();
@@ -64,6 +63,7 @@ export const Home: FC = () => {
   const MovementsAPI = useStore(store => store.MovementsAPI);
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const programs = useStore(store =>
+    // List of programs with active program first
     DataState.map(store.programs, _programs => {
       const active = store.activeProgram;
       if (DataState.isReady(active)) {
@@ -155,7 +155,7 @@ export const Home: FC = () => {
         </IconButton>
       </Box>
 
-      <Stack>
+      <Stack spacing={1}>
         <DataStateView
           data={DataState.all(activeProgram, templates)}
           loading={() => <Skeleton height={40} />}
@@ -175,7 +175,7 @@ export const Home: FC = () => {
                     {activeProgram.name}
                   </Typography>
                 </Stack>
-                <Stack direction="row" flexWrap="wrap">
+                <Stack>
                   {templates
                     .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
                     .map(template => (
@@ -185,7 +185,7 @@ export const Home: FC = () => {
                         sx={{
                           width: '100%',
                           padding: theme => theme.spacing(1.5),
-                          margin: theme => theme.spacing(0, 1, 1, 0),
+                          // border: theme => `1px solid ${theme.palette.divider}`,
                           backgroundColor: theme =>
                             theme.palette.mode === 'dark'
                               ? theme.palette.action.hover
@@ -195,26 +195,9 @@ export const Home: FC = () => {
                           justifyContent: 'space-between',
                         }}
                       >
-                        <Typography variant="h6" lineHeight={1}>
-                          {template.name || 'Program'}
-                        </Typography>
-                        {/*<WithVariable value={DataState.isReady(logs) && logs.find(_ => _.programLogTemplateId === template.id) && logs}>
-                        {found => (
-                        <Typography variant="caption" color="textSecondary">{foun}</Typography>
-                            )}
-                        </WithVariable>*/}
-
-                        <Button
-                          variant="contained"
-                          endIcon={
-                            <ChevronRightRounded
-                              fontSize="large"
-                              // sx={{ color: theme => theme.palette.primary.main }}
-                              // c
-                            />
-                          }
-                        >
-                          Go
+                        <Typography variant="h6">{template.name || 'Program'}</Typography>
+                        <Button variant="contained" startIcon={<AddRounded />}>
+                          Train
                         </Button>
                       </Box>
                     ))}
@@ -225,11 +208,10 @@ export const Home: FC = () => {
         </DataStateView>
         <Button
           size="large"
-          variant="outlined"
           startIcon={<AddRounded />}
           onClick={() => createTrainingLog({ fromTemplateId: null })}
         >
-          Create Training
+          Just Let Me Train
         </Button>
       </Stack>
 
