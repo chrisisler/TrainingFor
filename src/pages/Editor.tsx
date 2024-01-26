@@ -71,6 +71,7 @@ import {
   useResizableInputRef,
   useToast,
 } from '../util';
+import { useIsMutating } from '@tanstack/react-query';
 
 const DIFF_CHAR = '-';
 
@@ -345,6 +346,7 @@ export const EditorInternals: FC<{
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
+  const isMutating = useIsMutating();
 
   /** The active collection, based on the usage of this component. */
   const MovementsQueryAPI = useMemo(
@@ -583,7 +585,7 @@ export const EditorInternals: FC<{
                           startIcon={<EditOutlined sx={{ mb: 0.5 }} />}
                           size="small"
                         >
-                          Add
+                          Sets
                         </Button>
                       </Stack>
                     </Box>
@@ -632,6 +634,7 @@ export const EditorInternals: FC<{
 
                         {movement.sets.map((movementSet, index) => (
                           <MovementSetView
+                            isProgramView={isProgramView}
                             key={movementSet.uuid}
                             movementSet={movementSet}
                             movement={movement}
@@ -1064,6 +1067,7 @@ export const EditorInternals: FC<{
                           sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                           startIcon={<Add />}
                           onClick={addMovementFromNewSavedMovement}
+                          disabled={!!isMutating}
                         >
                           Create {movementNameQuery}
                         </Button>
@@ -1416,11 +1420,12 @@ export const EditorInternals: FC<{
 };
 
 const MovementSetView: FC<{
+  isProgramView: boolean;
   movementSet: MovementSet;
   movement: Movement;
   index: number;
   updateSets(mSets: MovementSet[]): Promise<void>;
-}> = ({ movementSet, movement, updateSets, index }) => {
+}> = ({ movementSet, movement, updateSets, index, isProgramView }) => {
   const resizeWeightInput = useResizableInputRef();
   const theme = useTheme();
 
@@ -1505,6 +1510,7 @@ const MovementSetView: FC<{
             whiteSpace: 'nowrap',
           }}
           disableUnderline
+          disabled={isProgramView}
           variant="standard"
           SelectDisplayProps={{
             style: {
