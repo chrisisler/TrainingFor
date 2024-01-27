@@ -530,7 +530,7 @@ export const EditorInternals: FC<{
                               fontSize: '1.0rem',
                               textTransform: 'uppercase',
                               fontWeight: 600,
-                              color: theme => alpha(theme.palette.text.primary, 0.8),
+                              color: theme => theme.palette.text.primary,
                             }}
                             onClick={event => movementMenuDrawer.onOpen(event, movement)}
                           >
@@ -665,7 +665,6 @@ export const EditorInternals: FC<{
             <Button
               onClick={event => addMovementDrawer.onOpen(event, null)}
               sx={{
-                // backgroundColor: theme => alpha(theme.palette.action.hover, 0.03),
                 color: theme =>
                   movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
                 padding: theme => theme.spacing(1.5, 2),
@@ -1451,13 +1450,13 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.07),
+            backgroundColor: alpha(theme.palette.success.light, 0.09),
             // Avoid jarring when switching between Unattempted and Completed
             borderBottom: `3px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,
           }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.04),
+            backgroundColor: alpha(theme.palette.divider, 0.05),
             borderBottom: `3px solid ${theme.palette.divider}`,
           },
     [movementSet.status, theme]
