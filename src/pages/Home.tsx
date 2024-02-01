@@ -2,7 +2,6 @@ import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
   BookmarkRounded,
-  ChevronRightRounded,
   CloseRounded,
   Google,
   Launch,
@@ -58,6 +57,8 @@ export const Home: FC = () => {
   const logs = useStore(store => store.logs);
   const movementsByLogId = useStore(store => store.movementsByLogId);
   const templates = useStore(store => store.templates);
+
+  const trainingLogsCount = useStore(store => store.useTrainingLogsCount(user.uid));
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
   const MovementsAPI = useStore(store => store.MovementsAPI);
@@ -252,9 +253,16 @@ export const Home: FC = () => {
         </Stack>
       </Box>
 
-      <Typography variant="h5" fontWeight={600}>
-        Training Sessions
-      </Typography>
+      <Stack direction="row" spacing={1} alignItems="baseline">
+        <Typography variant="h5" fontWeight={600}>
+          Training Sessions
+        </Typography>
+        {DataState.isReady(trainingLogsCount) && (
+          <Typography variant="caption" fontStyle="italic">
+            <b>{trainingLogsCount}</b>
+          </Typography>
+        )}
+      </Stack>
 
       <DataStateView
         data={logs}

@@ -25,8 +25,10 @@ interface Store {
   ProgramUsersAPI: ReturnType<typeof useAPI<ProgramUser>>;
   MovementsAPI: ReturnType<typeof useAPI<Movement>>;
   ProgramsAPI: ReturnType<typeof useAPI<Program>>;
+  // Fetch data
   useMovementsHistory(savedMovementId: string): DataState<Movement[]>;
   useMovements(logId: string, isProgramView?: boolean): DataState<Movement[]>;
+  useTrainingLogsCount(userUid: string): DataState<number>;
   useProgramMovementsByTemplateId(programId?: string): DataState<Map<string, Movement[]>>;
   // State/Model/Data
   // programMovementsByTemplateId: DataState<Map<string, Movement[]>>;
@@ -123,12 +125,26 @@ export function useStore<T>(selector: (store: Store) => T) {
     })
   );
 
+  const useTrainingLogsCount = (userUid: string) =>
+    DataState.from<number>(
+      useQuery(TrainingLogsAPI.queryKey.concat({ userUid }), async () => {
+        const snapshot = await getCountFromServer(
+          query(API.collections.logs, where('authorUserId', '==', userUid))
+        );
+        return snapshot.data().count;
+      })
+    );
+
   const savedMovements = DataState.from<SavedMovement[]>(
     useQuery(SavedMovementsAPI.queryKey, async () => {
+      // XXX There has to be a better way to do this
       const savedMovements = await API.SavedMovements.getAll(user.uid);
       const countPromises = savedMovements.map(_ =>
         getCountFromServer(query(API.collections.movements, where('savedMovementId', '==', _.id)))
       );
+      // const countPromises = getCountFromServer(
+      //   query(API.collections.savedMovements, where('authorUserId', '==', user.uid))
+      // );
       const counts = (await Promise.all(countPromises)).map(_ => _.data().count);
       // Sort by frequency and recency.
       return savedMovements
@@ -187,6 +203,7 @@ export function useStore<T>(selector: (store: Store) => T) {
     ProgramLogTemplatesAPI,
     useMovements,
     useMovementsHistory,
+    useTrainingLogsCount,
     useProgramMovementsByTemplateId,
     logs,
     savedMovements,

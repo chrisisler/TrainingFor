@@ -44,7 +44,7 @@ import {
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { limit, orderBy, where } from 'firebase/firestore';
-import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -132,21 +132,22 @@ export const Editor: FC = () => {
           loading={() => <Skeleton variant="text" width={50} />}
         >
           {([log, programUser]) => (
-            <Stack direction="row" spacing={1.5} alignItems="baseline">
+            <Stack direction="row" spacing={1} alignItems="baseline">
               <Typography variant="caption" color="textSecondary" textTransform="uppercase">
                 {dateDisplay(new Date(log.timestamp))}
               </Typography>
               {log.programId === programUser.activeProgramId && (
-                <Typography
-                  variant="overline"
-                  sx={{ color: theme => alpha(theme.palette.text.secondary, 0.4) }}
+                <Button
+                  size="small"
+                  variant="outlined"
+                  sx={{ color: theme => theme.palette.text.secondary }}
                   onClick={event => {
                     if (!log.programLogTemplateId) throw Error('Unreachable: Empty template ID.');
                     programDrawer.onOpen(event, log.programLogTemplateId);
                   }}
                 >
-                  <b>{programUser.activeProgramName}</b>
-                </Typography>
+                  {programUser.activeProgramName}
+                </Button>
               )}
             </Stack>
           )}
@@ -322,6 +323,7 @@ export const EditorInternals: FC<{
 }> = ({ logId, isProgramView = false, readOnly = false }) => {
   const toast = useToast();
   const user = useUser();
+  const movementsBtnRef = useRef<HTMLElement>(null);
   // Data is null when *adding*; when *replacing*, it's the replacing Movement.
   const { anchorEl: _3, ...addMovementDrawer } = useDrawer<null | Movement>();
   const addSetMenu = useDrawer<Movement>();
@@ -346,6 +348,9 @@ export const EditorInternals: FC<{
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
+  const log = useStore(store =>
+    DataState.map(store.logs, logs => logs.find(_ => _.id === logId) ?? DataState.Empty)
+  );
   const isMutating = useIsMutating();
 
   /** The active collection, based on the usage of this component. */
@@ -487,6 +492,22 @@ export const EditorInternals: FC<{
     },
     [MovementsMutationAPI, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
   );
+
+  // "Auto open" the Add Movement UI if the Log created recently
+  // TODO Improve this mechanism, avoid useEffect and do it off loading something.
+  // This works for now but is the wrong way to do this
+  useEffect(() => {
+    if (isProgramView || addMovementDrawer.open) return;
+    if (!DataState.isReady(movements) || !DataState.isReady(log)) return;
+    const timeout = setTimeout(() => {
+      const now = Date.now();
+      const logWasJustCreated = now - log.timestamp < 10 * 1000;
+      if (logWasJustCreated) {
+        movementsBtnRef.current?.click();
+      }
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [addMovementDrawer.open, isProgramView, log, movements]);
 
   return (
     <>
@@ -664,6 +685,9 @@ export const EditorInternals: FC<{
           <Box display="flex" width="100%" justifyContent="center">
             <Button
               onClick={event => addMovementDrawer.onOpen(event, null)}
+              // id="movements-add"
+              ref={movementsBtnRef}
+              component="span"
               sx={{
                 color: theme =>
                   movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
