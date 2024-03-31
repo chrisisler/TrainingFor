@@ -348,9 +348,6 @@ export const EditorInternals: FC<{
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
-  const log = useStore(store =>
-    DataState.map(store.logs, logs => logs.find(_ => _.id === logId) ?? DataState.Empty)
-  );
   const isMutating = useIsMutating();
 
   /** The active collection, based on the usage of this component. */
@@ -492,22 +489,6 @@ export const EditorInternals: FC<{
     },
     [MovementsMutationAPI, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
   );
-
-  // "Auto open" the Add Movement UI if the Log created recently
-  // TODO Improve this mechanism, avoid useEffect and do it off loading something.
-  // This works for now but is the wrong way to do this
-  useEffect(() => {
-    if (isProgramView || addMovementDrawer.open) return;
-    if (!DataState.isReady(movements) || !DataState.isReady(log)) return;
-    const timeout = setTimeout(() => {
-      const now = Date.now();
-      const logWasJustCreated = now - log.timestamp < 10 * 1000;
-      if (logWasJustCreated) {
-        movementsBtnRef.current?.click();
-      }
-    }, 1000);
-    return () => clearTimeout(timeout);
-  }, [addMovementDrawer.open, isProgramView, log, movements]);
 
   return (
     <>
@@ -1757,3 +1738,4 @@ const SavedMovementHistory: FC<{
     </Stack>
   );
 };
+
