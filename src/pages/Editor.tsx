@@ -1,14 +1,13 @@
 import { uuidv4 } from '@firebase/util';
+import { useIsMutating } from '@tanstack/react-query';
 import {
   Add,
   ArrowForwardRounded,
   CheckRounded,
   Close,
-  CloseRounded,
   DeleteForeverRounded,
   DeleteOutline,
   DeleteOutlineRounded,
-  DeleteRounded,
   EditOutlined,
   FindReplaceRounded,
   KeyboardDoubleArrowDownRounded,
@@ -25,7 +24,6 @@ import {
   Button,
   CircularProgress,
   Collapse,
-  colors,
   Fade,
   IconButton,
   Menu,
@@ -71,7 +69,6 @@ import {
   useResizableInputRef,
   useToast,
 } from '../util';
-import { useIsMutating } from '@tanstack/react-query';
 
 const DIFF_CHAR = '-';
 
@@ -89,26 +86,17 @@ export const Editor: FC = () => {
   const notesDrawer = useDrawer<TrainingLog>();
   const programDrawer = useDrawer<string>();
 
-  const log = useStore(store => {
-    if (!logId) return DataState.Empty;
-    return DataState.map(
-      store.logs,
-      logs => logs.find(_ => _.id === logId) ?? DataState.error('Log not found.')
-    );
-  });
+  const log = useStore(store =>
+    !logId
+      ? DataState.error('No log ID')
+      : DataState.map(
+          store.logs,
+          logs => logs.find(_ => _.id === logId) ?? DataState.error('Log not found.')
+        )
+  );
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const MovementsAPI = useStore(store => store.MovementsAPI);
   const programUser = useStore(store => store.programUser);
-  // const movements = useStore(store => (logId ? store.useMovements(logId) : DataState.Empty));
-
-  // const finishTrainingLog = useCallback(async () => {
-  //   if (!logId) return;
-  //   try {
-  //     await TrainingLogsAPI.update({ id: logId, isFinished: true });
-  //   } catch (err) {
-  //     toast.error(err.message);
-  //   }
-  // }, [logId, toast, TrainingLogsAPI]);
 
   return (
     <Box
@@ -202,19 +190,6 @@ export const Editor: FC = () => {
             >
               Note
             </Button>
-            {/*<Button
-              variant="outlined"
-              onClick={() => {
-                toast.info('Unimplemented: Update log timestamp');
-              }}
-              disabled
-            >
-              {DataState.isReady(log) && (
-                <WithVariable value={new Date(log.timestamp)}>
-                  {date => <>{dateDisplay(date)}</>}
-                </WithVariable>
-              )}
-            </Button>*/}
             <TextField
               size="small"
               variant="standard"
@@ -239,29 +214,6 @@ export const Editor: FC = () => {
                 }
               }}
             />
-            {/*<Grid item xs={4}>
-              <Button
-                variant="outlined"
-                disabled={!DataState.isReady(movements)}
-                onClick={async () => {
-                  if (!DataState.isReady(movements)) return;
-                  const allSetsDone = movements.every(m =>
-                    m.sets.every(s => s.status === MovementSetStatus.Completed)
-                  );
-                  if (allSetsDone) {
-                    await finishTrainingLog();
-                    setConfetti(true);
-                    const word = Math.random() > 0.5 ? 'effort' : 's**t';
-                    toast.info(`Good ${word}! I mean, congrations!!`);
-                    return;
-                  }
-                  toast.info('Must complete all grey sets to finish');
-                }}
-              >
-                Finish
-              </Button>
-              {confetti && <ConfettiExplosion particleCount={150} width={500} force={1} />}
-            </Grid>*/}
             <Button
               color="error"
               onClick={async () => {
@@ -330,6 +282,7 @@ export const EditorInternals: FC<{
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
   const { anchorEl: _2, ...historyLogDrawer } = useDrawer<Movement>();
+  const isMutating = useIsMutating();
 
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
@@ -348,7 +301,6 @@ export const EditorInternals: FC<{
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
-  const isMutating = useIsMutating();
 
   /** The active collection, based on the usage of this component. */
   const MovementsQueryAPI = useMemo(
@@ -468,26 +420,6 @@ export const EditorInternals: FC<{
       user.uid,
       isProgramView,
     ]
-  );
-
-  const addSetToMovement = useCallback(
-    async (movement: Movement) => {
-      try {
-        const sets = movement.sets.concat({
-          weight: newSetWeight,
-          repCountActual: newSetRepCountMax,
-          repCountExpected: newSetRepCountMin,
-          repCountMaxExpected: newSetRepCountMax,
-          status: MovementSetStatus.Unattempted,
-          uuid: uuidv4(),
-        });
-        await MovementsMutationAPI.update({ sets, id: movement.id });
-        return true;
-      } catch (error) {
-        toast.error(error.message);
-      }
-    },
-    [MovementsMutationAPI, newSetRepCountMax, newSetRepCountMin, newSetWeight, toast]
   );
 
   return (
@@ -708,7 +640,6 @@ export const EditorInternals: FC<{
                       toast.error('Maximum must be less than minimum');
                       return;
                     }
-                    addSetToMovement(movement);
                     addSetMenu.onClose();
                     return;
                   }
@@ -719,25 +650,6 @@ export const EditorInternals: FC<{
                 }}
               >
                 <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 3) }}>
-                  <Box width="100%" textAlign="center" marginBottom="-1rem">
-                    <Typography
-                      variant="overline"
-                      sx={{ color: theme => theme.palette.primary.main }}
-                    >
-                      <Collapse
-                        in={newSetRepCountMin > 0}
-                        onClick={() => {
-                          addSetToMovement(movement);
-                          addSetMenu.onClose();
-                        }}
-                      >
-                        Tap outside to <b>add set {movement.sets.length + 1}</b>
-                      </Collapse>
-                      <Collapse in={newSetRepCountMin === 0}>
-                        Add Set <b>{movement.sets.length + 1}</b>
-                      </Collapse>
-                    </Typography>
-                  </Box>
                   <Stack direction="row">
                     <Stack spacing={3} marginTop={0.8} marginRight={2}>
                       <MovementUnitSelect
@@ -794,7 +706,7 @@ export const EditorInternals: FC<{
                       </MovementUnitSelect>
                     </Stack>
                     <Stack spacing={3}>
-                      <Box display="flex">
+                      <Stack direction="row" spacing={1} display="flex">
                         <TextField
                           variant="standard"
                           inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -812,32 +724,39 @@ export const EditorInternals: FC<{
                             return (
                               <>
                                 <Button
-                                  sx={{ color: 'text.secondary' }}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{
+                                    borderColor: 'text.secondary',
+                                    color: 'text.primary',
+                                    border: theme => `1px solid ${theme.palette.divider}`,
+                                    borderRadius: 1,
+                                  }}
                                   onClick={() => {
-                                    let nextWeight = lastSet.weight * 0.75;
-                                    // Round to intervals of 5
-                                    nextWeight = Math.round(nextWeight / 5) * 5;
-                                    setNewSetWeight(nextWeight);
+                                    setNewSetWeight(lastSet.weight + 10);
                                   }}
                                 >
-                                  75%
+                                  -10
                                 </Button>
                                 <Button
-                                  sx={{ color: 'text.secondary' }}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{
+                                    borderColor: 'text.secondary',
+                                    color: 'text.primary',
+                                    border: theme => `1px solid ${theme.palette.divider}`,
+                                  }}
                                   onClick={() => {
-                                    let nextWeight = lastSet.weight * 1.1;
-                                    // Round to intervals of 5
-                                    nextWeight = Math.round(nextWeight / 5) * 5;
-                                    setNewSetWeight(nextWeight);
+                                    setNewSetWeight(lastSet.weight + 10);
                                   }}
                                 >
-                                  110%
+                                  +10
                                 </Button>
                               </>
                             );
                           }}
                         </WithVariable>
-                      </Box>
+                      </Stack>
                       <Box display="flex">
                         <TextField
                           variant="standard"
@@ -878,62 +797,65 @@ export const EditorInternals: FC<{
                       </Box>
                     </Stack>
                   </Stack>
-                  <Stack spacing={2}>
+                  <Button
+                    size="large"
+                    variant="contained"
+                    onClick={async () => {
+                      const sets = movement.sets.concat({
+                        weight: newSetWeight,
+                        repCountActual: newSetRepCountMax,
+                        repCountExpected: newSetRepCountMin,
+                        repCountMaxExpected: newSetRepCountMax,
+                        status: MovementSetStatus.Unattempted,
+                        uuid: uuidv4(),
+                      });
+
+                      try {
+                        const updatedMovement = await MovementsMutationAPI.update({
+                          sets,
+                          id: movement.id,
+                        });
+                        if (!updatedMovement) {
+                          throw Error('Failed to add set to movement');
+                        }
+                        // Update Add Set panel so future operations include the new set
+                        addSetMenu.setData(updatedMovement);
+                      } catch (err) {
+                        toast.error(err.message);
+                      }
+                    }}
+                    startIcon={<Add />}
+                    disabled={!!isMutating}
+                  >
+                    Add Set {movement.sets.length + 1}
+                  </Button>
+                  {movement.sets.length > 0 && (
                     <Button
-                      size="large"
-                      variant="outlined"
-                      sx={() => {
-                        const bgColor = alpha(colors.amber[500], 0.2);
-                        return {
-                          color: 'text.secondary',
-                          backgroundColor: bgColor,
-                          border: `1px solid ${bgColor}`,
-                        };
+                      variant="text"
+                      color="error"
+                      startIcon={<Close fontSize="small" />}
+                      disabled={!!isMutating}
+                      onClick={async function deleteLastSet() {
+                        let sets = movement.sets.slice();
+                        // Remove last element
+                        sets.pop();
+                        try {
+                          const updated = await MovementsMutationAPI.update({
+                            id: movement.id,
+                            sets,
+                          });
+                          if (!updated) {
+                            throw Error('Failed to delete set #' + movement.sets.length);
+                          }
+                          addSetMenu.setData(updated);
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
                       }}
-                      onClick={addSetMenu.onClose}
-                      startIcon={<CloseRounded fontSize="small" />}
                     >
-                      Cancel
+                      Delete Set {movement.sets.length}
                     </Button>
-                    {movement.sets.length > 0 && (
-                      <Button
-                        variant="text"
-                        sx={{ color: 'text.secondary' }}
-                        startIcon={<DeleteOutline fontSize="small" />}
-                        onClick={async function deleteLastSet() {
-                          let sets = movement.sets.slice();
-                          // Remove last element
-                          sets.pop();
-                          try {
-                            await MovementsMutationAPI.update({ id: movement.id, sets });
-                            addSetMenu.onClose();
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                      >
-                        Delete Previous Set
-                      </Button>
-                    )}
-                    {movement.sets.length > 1 && (
-                      <Button
-                        size="small"
-                        variant="text"
-                        sx={{ color: 'text.secondary' }}
-                        startIcon={<DeleteRounded fontSize="small" />}
-                        onClick={async function deleteAllSets() {
-                          try {
-                            await MovementsMutationAPI.update({ id: movement.id, sets: [] });
-                            addSetMenu.onClose();
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                      >
-                        Delete All Sets
-                      </Button>
-                    )}
-                  </Stack>
+                  )}
                 </Stack>
               </Menu>
             )
@@ -1738,4 +1660,3 @@ const SavedMovementHistory: FC<{
     </Stack>
   );
 };
-
