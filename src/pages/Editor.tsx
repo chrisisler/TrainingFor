@@ -41,7 +41,7 @@ import {
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { limit, orderBy, where } from 'firebase/firestore';
-import { FC, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
