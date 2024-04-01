@@ -8,9 +8,8 @@ import {
   DeleteForeverRounded,
   DeleteOutline,
   DeleteOutlineRounded,
-  EditOutlined,
+  Edit,
   FindReplaceRounded,
-  KeyboardDoubleArrowDownRounded,
   MoreHoriz,
   NavigateNextRounded,
   PersonOutline,
@@ -58,6 +57,7 @@ import {
   MovementSetStatus,
   MovementSet,
   TrainingLog,
+  abbreviate,
 } from '../types';
 import {
   DataState,
@@ -275,7 +275,6 @@ export const EditorInternals: FC<{
 }> = ({ logId, isProgramView = false, readOnly = false }) => {
   const toast = useToast();
   const user = useUser();
-  const movementsBtnRef = useRef<HTMLElement>(null);
   // Data is null when *adding*; when *replacing*, it's the replacing Movement.
   const { anchorEl: _3, ...addMovementDrawer } = useDrawer<null | Movement>();
   const addSetMenu = useDrawer<Movement>();
@@ -501,7 +500,7 @@ export const EditorInternals: FC<{
                             }}
                           </WithVariable>
                         </Box>
-                        <Button
+                        <IconButton
                           onClick={event => {
                             addSetMenu.onOpen(event, movement);
                             // Set controlled state default values to previous set
@@ -518,12 +517,10 @@ export const EditorInternals: FC<{
                               setNewSetRepCountMax(DEFAULT_MAX_REPS);
                             }
                           }}
-                          sx={{ color: theme => theme.palette.text.secondary }}
-                          startIcon={<EditOutlined sx={{ mb: 0.5 }} />}
-                          size="small"
+                          sx={{ color: theme => theme.palette.text.primary }}
                         >
-                          Sets
-                        </Button>
+                          <Edit />
+                        </IconButton>
                       </Stack>
                     </Box>
 
@@ -556,15 +553,29 @@ export const EditorInternals: FC<{
                             alignItems="end"
                             sx={{
                               // Spacing away from set blocks
-                              paddingRight: theme => theme.spacing(2),
+                              paddingRight: theme => theme.spacing(1.5),
                             }}
                           >
-                            <Typography variant="overline" alignSelf="end">
+                            <Typography
+                              variant="overline"
+                              alignSelf="end"
+                              textTransform="capitalize"
+                              fontWeight={600}
+                              sx={{
+                                color: 'text.secondary',
+                              }}
+                            >
                               {movement.weightUnit}
                             </Typography>
 
-                            <Typography variant="overline" alignSelf="end">
-                              {MovementRepCountUnit[movement.repCountUnit]}
+                            <Typography
+                              variant="overline"
+                              alignSelf="end"
+                              textTransform="capitalize"
+                              fontWeight={600}
+                              sx={{ color: 'text.secondary' }}
+                            >
+                              {abbreviate(movement.repCountUnit)}
                             </Typography>
                           </Stack>
                         )}
@@ -597,25 +608,16 @@ export const EditorInternals: FC<{
         {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button
+              variant="outlined"
               onClick={event => addMovementDrawer.onOpen(event, null)}
-              // id="movements-add"
-              ref={movementsBtnRef}
-              component="span"
               sx={{
                 color: theme =>
                   movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
-                padding: theme => theme.spacing(1.5, 2),
                 marginTop: theme => theme.spacing(4),
+                borderColor: theme => theme.palette.divider,
               }}
             >
               Movements
-              <KeyboardDoubleArrowDownRounded
-                sx={{
-                  color: theme =>
-                    movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
-                  fontSize: '1.5rem',
-                }}
-              />
             </Button>
           </Box>
         )}
@@ -649,154 +651,150 @@ export const EditorInternals: FC<{
                   return;
                 }}
               >
-                <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 3) }}>
-                  <Stack direction="row">
-                    <Stack spacing={3} marginTop={0.8} marginRight={2}>
-                      <MovementUnitSelect
-                        value={movement.weightUnit}
-                        onChange={async event => {
-                          try {
-                            const newWeightUnit = event.target.value as MovementWeightUnit;
-                            // Update field on the movement
-                            const updated: Movement = await MovementsMutationAPI.update({
-                              id: movement.id,
-                              weightUnit: newWeightUnit,
-                            });
-                            addSetMenu.setData(updated);
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                      >
-                        <MenuItem value={MovementWeightUnit.Pounds}>
-                          {MovementWeightUnit.Pounds}
-                        </MenuItem>
-                        <MenuItem value={MovementWeightUnit.Kilograms}>
-                          {MovementWeightUnit.Kilograms}
-                        </MenuItem>
-                      </MovementUnitSelect>
-                      <MovementUnitSelect
-                        value={movement.repCountUnit}
-                        onChange={async event => {
-                          try {
-                            const newRepCountUnit = event.target.value as MovementRepCountUnit;
-                            // Update field on the movement
-                            const updated: Movement = await MovementsMutationAPI.update({
-                              id: movement.id,
-                              repCountUnit: newRepCountUnit,
-                            });
-                            addSetMenu.setData(updated);
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                      >
-                        <MenuItem value={MovementRepCountUnit.Reps}>
-                          {MovementRepCountUnit.Reps}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.Seconds}>
-                          {MovementRepCountUnit.Seconds}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.Minutes}>
-                          {MovementRepCountUnit.Minutes}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.Meters}>
-                          {MovementRepCountUnit.Meters}
-                        </MenuItem>
-                      </MovementUnitSelect>
-                    </Stack>
-                    <Stack spacing={3}>
-                      <Stack direction="row" spacing={1} display="flex">
-                        <TextField
-                          variant="standard"
-                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                          value={newSetWeight}
-                          onChange={event => setNewSetWeight(+event.target.value)}
-                          onFocus={event => event.currentTarget.select()}
-                          InputProps={{
-                            sx: { fontSize: '1.5rem', width: '60px' },
-                          }}
-                        />
-                        {/** Shortcut buttons to add set with weight as a down set or up set */}
-                        <WithVariable value={movement.sets[movement.sets.length - 1]}>
-                          {lastSet => {
-                            if (!lastSet || lastSet.weight === 0) return null;
-                            return (
-                              <>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{
-                                    borderColor: 'text.secondary',
-                                    color: 'text.primary',
-                                    border: theme => `1px solid ${theme.palette.divider}`,
-                                    borderRadius: 1,
-                                  }}
-                                  onClick={() => {
-                                    setNewSetWeight(lastSet.weight + 10);
-                                  }}
-                                >
-                                  -10
-                                </Button>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{
-                                    borderColor: 'text.secondary',
-                                    color: 'text.primary',
-                                    border: theme => `1px solid ${theme.palette.divider}`,
-                                  }}
-                                  onClick={() => {
-                                    setNewSetWeight(lastSet.weight + 10);
-                                  }}
-                                >
-                                  +10
-                                </Button>
-                              </>
-                            );
-                          }}
-                        </WithVariable>
-                      </Stack>
-                      <Box display="flex">
-                        <TextField
-                          variant="standard"
-                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                          value={newSetRepCountMin}
-                          onChange={event => {
-                            const val = +event.target.value;
-                            // auto-set max to min if min > max
-                            if (val > newSetRepCountMax) {
-                              setNewSetRepCountMax(val);
-                            }
-                            setNewSetRepCountMin(val);
-                          }}
-                          onFocus={event => event.currentTarget.select()}
-                          InputProps={{
-                            sx: { fontSize: '1.5rem', width: '75px' },
-                          }}
-                        />
-                        <TextField
-                          variant="standard"
-                          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                          value={newSetRepCountMax}
-                          error={newSetRepCountMax < newSetRepCountMin}
-                          onChange={event => {
-                            const val = +event.target.value;
-                            setNewSetRepCountMax(val);
-                          }}
-                          onFocus={event => event.currentTarget.select()}
-                          InputProps={{
-                            sx: { fontSize: '1.5rem', width: '75px' },
-                            startAdornment: (
-                              <Typography variant="body2" color="textSecondary" ml={-3} mr={3}>
-                                {DIFF_CHAR}
-                              </Typography>
-                            ),
-                          }}
-                        />
-                      </Box>
-                    </Stack>
+                {/** menu container */}
+                <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 2) }}>
+                  {/** container of top row */}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    display="flex"
+                    sx={{
+                      borderRadius: 1,
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.action.hover
+                          : theme.palette.background.default,
+                    }}
+                  >
+                    <MovementUnitSelect
+                      value={movement.weightUnit}
+                      onChange={async event => {
+                        try {
+                          const newWeightUnit = event.target.value as MovementWeightUnit;
+                          // Update field on the movement
+                          const updated: Movement = await MovementsMutationAPI.update({
+                            id: movement.id,
+                            weightUnit: newWeightUnit,
+                          });
+                          addSetMenu.setData(updated);
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    >
+                      <MenuItem value={MovementWeightUnit.Pounds}>
+                        {MovementWeightUnit.Pounds}
+                      </MenuItem>
+                      <MenuItem value={MovementWeightUnit.Kilograms}>
+                        {MovementWeightUnit.Kilograms}
+                      </MenuItem>
+                    </MovementUnitSelect>
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={newSetWeight}
+                      onChange={event => setNewSetWeight(+event.target.value)}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        sx: { fontSize: '1.5rem', width: '60px' },
+                      }}
+                    />
+                    {/** Shortcut buttons to add set with weight */}
+                    <Button
+                      disabled={newSetWeight <= 0}
+                      onClick={() => {
+                        setNewSetWeight(num => num - 10);
+                      }}
+                    >
+                      -10
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setNewSetWeight(num => num + 10);
+                      }}
+                    >
+                      +10
+                    </Button>
                   </Stack>
+                  {/** bottom row */}
+                  <Stack
+                    spacing={1}
+                    direction="row"
+                    sx={{
+                      borderRadius: 1,
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.action.hover
+                          : theme.palette.background.default,
+                    }}
+                  >
+                    <MovementUnitSelect
+                      value={movement.repCountUnit}
+                      onChange={async event => {
+                        try {
+                          const newRepCountUnit = event.target.value as MovementRepCountUnit;
+                          // Update field on the movement
+                          const updated: Movement = await MovementsMutationAPI.update({
+                            id: movement.id,
+                            repCountUnit: newRepCountUnit,
+                          });
+                          addSetMenu.setData(updated);
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    >
+                      <MenuItem value={MovementRepCountUnit.Reps}>
+                        {MovementRepCountUnit.Reps}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.Seconds}>
+                        {MovementRepCountUnit.Seconds}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.Minutes}>
+                        {MovementRepCountUnit.Minutes}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.Meters}>
+                        {MovementRepCountUnit.Meters}
+                      </MenuItem>
+                    </MovementUnitSelect>
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={newSetRepCountMin}
+                      onChange={event => {
+                        const val = +event.target.value;
+                        // auto-set max to min if min > max
+                        if (val > newSetRepCountMax) {
+                          setNewSetRepCountMax(val);
+                        }
+                        setNewSetRepCountMin(val);
+                      }}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        sx: { fontSize: '1.5rem', width: '75px' },
+                      }}
+                    />
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={newSetRepCountMax}
+                      error={newSetRepCountMax < newSetRepCountMin}
+                      onChange={event => {
+                        const val = +event.target.value;
+                        setNewSetRepCountMax(val);
+                      }}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        sx: { fontSize: '1.5rem', width: '75px' },
+                        startAdornment: (
+                          <Typography variant="body2" color="textSecondary" ml={-3} mr={3}>
+                            {DIFF_CHAR}
+                          </Typography>
+                        ),
+                      }}
+                    />
+                  </Stack>
+                  {/** add set ui action buttons */}
                   <Button
                     size="large"
                     variant="contained"
@@ -1377,13 +1375,13 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.09),
+            backgroundColor: alpha(theme.palette.success.light, 0.13),
             // Avoid jarring when switching between Unattempted and Completed
             borderBottom: `3px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,
           }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.05),
+            backgroundColor: alpha(theme.palette.divider, 0.08),
             borderBottom: `3px solid ${theme.palette.divider}`,
           },
     [movementSet.status, theme]
@@ -1392,60 +1390,68 @@ const MovementSetView: FC<{
   return (
     <Fade in>
       <Stack>
-        <input
-          ref={resizeWeightInput}
-          type="tel"
-          min={0}
-          max={9999}
-          name="weight"
-          value={weight}
-          onFocus={event => {
-            event.currentTarget.select();
+        <Box
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            borderBottom: 'none',
+            textAlign: 'center',
+            alignItems: 'center',
           }}
-          onChange={event => {
-            if (Number.isNaN(event.target.value)) return;
-            setWeight(Number(event.target.value));
-          }}
-          onBlur={event => {
-            if (Number.isNaN(event.target.value)) {
-              throw Error('Unreachable: weight input is NaN');
-            }
-            const value = +event.target.value;
-            let next = movement.sets.slice();
-            // Cascade new weight value to sets after this one if this weight = 0
-            if (movementSet.weight === 0 && index < next.length - 1) {
-              next.slice(index + 1).forEach(_ => {
-                _.weight = value;
-                _.uuid = uuidv4();
-              });
-            }
-            next[index].weight = value;
-            updateSets(next);
-          }}
-          style={{
-            height: '100%',
-            color:
-              movementSet.status === MovementSetStatus.Unattempted
-                ? theme.palette.text.secondary
-                : theme.palette.success.light,
-            backgroundColor: 'transparent',
-            width: '3ch',
-            border: 'none',
-            outline: 'none',
-            margin: '0 auto',
-            padding: '2px 4px',
-            fontFamily: 'monospace',
-            fontWeight: 500,
-            fontSize: '1.2rem',
-            letterSpacing: '0.004em',
-          }}
-        />
+        >
+          <input
+            ref={resizeWeightInput}
+            type="tel"
+            min={0}
+            max={9999}
+            name="weight"
+            value={weight}
+            onFocus={event => {
+              event.currentTarget.select();
+            }}
+            onChange={event => {
+              if (Number.isNaN(event.target.value)) return;
+              setWeight(Number(event.target.value));
+            }}
+            onBlur={event => {
+              if (Number.isNaN(event.target.value)) {
+                throw Error('Unreachable: weight input is NaN');
+              }
+              const value = +event.target.value;
+              let next = movement.sets.slice();
+              // Cascade new weight value to sets after this one if this weight = 0
+              if (movementSet.weight === 0 && index < next.length - 1) {
+                next.slice(index + 1).forEach(_ => {
+                  _.weight = value;
+                  _.uuid = uuidv4();
+                });
+              }
+              next[index].weight = value;
+              updateSets(next);
+            }}
+            style={{
+              color:
+                movementSet.status === MovementSetStatus.Unattempted
+                  ? theme.palette.text.primary
+                  : theme.palette.success.light,
+              backgroundColor: 'transparent',
+              width: '3ch',
+              border: 'none',
+              outline: 'none',
+              margin: '0 auto',
+              padding: '4px 11px',
+              fontFamily: 'monospace',
+              fontWeight: 600,
+              fontSize: '1.0rem',
+              letterSpacing: '0.004em',
+            }}
+          />
+        </Box>
 
         <Select
           // Handles dynamic styling based on repCount button for a movement set
           style={dynamicRepCountButtonStyle}
           sx={{
-            borderRadius: 1,
+            // borderRadius: 1,
             whiteSpace: 'nowrap',
           }}
           disableUnderline
@@ -1544,17 +1550,12 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
     disableUnderline
     variant="standard"
     SelectDisplayProps={{
-      style: {
-        padding: '8px 11px',
-      },
+      style: { padding: '8px 11px' },
     }}
     sx={{
-      width: '100%',
-      textAlign: 'right',
-      textTransform: 'uppercase',
-      border: theme => `1px solid ${theme.palette.divider}`,
-      borderRadius: 1,
-      fontSize: '0.8rem',
+      color: theme => theme.palette.primary.main,
+      textTransform: 'capitalize',
+      fontSize: '0.9rem',
     }}
     IconComponent={() => null}
     value={value}

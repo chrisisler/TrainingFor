@@ -119,6 +119,14 @@ export enum MovementRepCountUnit {
   Meters = 'Meters',
 }
 
+export const abbreviate = (unit: MovementRepCountUnit): string => {
+  if (unit === MovementRepCountUnit.Reps) return 'Reps';
+  if (unit === MovementRepCountUnit.Seconds) return 'Secs';
+  if (unit === MovementRepCountUnit.Minutes) return 'Mins';
+  if (unit === MovementRepCountUnit.Meters) return 'Meters';
+  throw new Error(`Unknown unit: ${unit}`);
+};
+
 export enum MovementWeightUnit {
   Kilograms = 'Kg',
   Pounds = 'Lb',
