@@ -1441,7 +1441,7 @@ const MovementSetView: FC<{
               padding: '4px 11px',
               fontFamily: 'monospace',
               fontWeight: 600,
-              fontSize: '1.0rem',
+              fontSize: '1.1rem',
               letterSpacing: '0.004em',
             }}
           />
