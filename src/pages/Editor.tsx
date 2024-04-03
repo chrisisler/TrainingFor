@@ -825,11 +825,11 @@ export const EditorInternals: FC<{
                     startIcon={<Add />}
                     disabled={!!isMutating}
                   >
-                    Add Set {movement.sets.length + 1}
+                    Create Set {movement.sets.length + 1}
                   </Button>
                   {movement.sets.length > 0 && (
                     <Button
-                      variant="text"
+                      variant="outlined"
                       color="error"
                       startIcon={<Close fontSize="small" />}
                       disabled={!!isMutating}
