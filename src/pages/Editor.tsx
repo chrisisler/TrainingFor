@@ -702,6 +702,7 @@ export const EditorInternals: FC<{
                     {/** Shortcut buttons to add set with weight */}
                     <Button
                       disabled={newSetWeight <= 0}
+                      size="large"
                       onClick={() => {
                         setNewSetWeight(num => num - 10);
                       }}
@@ -709,6 +710,7 @@ export const EditorInternals: FC<{
                       -10
                     </Button>
                     <Button
+                      size="large"
                       onClick={() => {
                         setNewSetWeight(num => num + 10);
                       }}
