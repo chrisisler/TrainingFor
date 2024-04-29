@@ -15,6 +15,7 @@ import {
   PersonOutline,
   RefreshRounded,
   ShortTextRounded,
+  UnfoldMore,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -608,13 +609,12 @@ export const EditorInternals: FC<{
         {DataState.isReady(movements) && !readOnly && (
           <Box display="flex" width="100%" justifyContent="center">
             <Button
-              variant="outlined"
               onClick={event => addMovementDrawer.onOpen(event, null)}
+              endIcon={<UnfoldMore />}
               sx={{
                 color: theme =>
                   movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
                 marginTop: theme => theme.spacing(4),
-                borderColor: theme => theme.palette.divider,
               }}
             >
               Movements
@@ -911,7 +911,7 @@ export const EditorInternals: FC<{
                   <>
                     {matches.length > 0 && (
                       <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
-                        <Stack spacing={1.25} sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
+                        <Stack spacing={2} sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
                           {matches.map((match: SavedMovement) => {
                             // A string like "22h ago" or "4d ago"
                             const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
@@ -925,12 +925,10 @@ export const EditorInternals: FC<{
                             return (
                               <Box key={match.id} display="flex" justifyContent="space-between">
                                 <Button
-                                  size="small"
                                   variant="text"
                                   disabled={!!isMutating}
                                   sx={{
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
+                                    backgroundColor: theme => theme.palette.divider,
                                     color: theme => theme.palette.text.primary,
                                     justifyContent: 'flex-start',
                                   }}
