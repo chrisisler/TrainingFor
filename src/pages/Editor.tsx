@@ -2,20 +2,20 @@ import { uuidv4 } from '@firebase/util';
 import { useIsMutating } from '@tanstack/react-query';
 import {
   Add,
-  ArrowForwardRounded,
+  AddCircleOutline,
   CheckRounded,
   Close,
   DeleteForeverRounded,
   DeleteOutline,
   DeleteOutlineRounded,
   Edit,
+  EditOutlined,
   FindReplaceRounded,
   MoreHoriz,
   NavigateNextRounded,
   PersonOutline,
   RefreshRounded,
   ShortTextRounded,
-  UnfoldMore,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -80,70 +80,22 @@ const DEFAULT_MAX_REPS = 30;
  * Wrapper page for editing training entries.
  */
 export const Editor: FC = () => {
-  const navigate = useNavigate();
-  const toast = useToast();
   const { logId } = useParams<{ logId: string }>();
-  const { anchorEl: _0, ...logDrawer } = useDrawer<undefined>();
-  const notesDrawer = useDrawer<TrainingLog>();
   const programDrawer = useDrawer<string>();
 
-  const log = useStore(store =>
-    !logId
-      ? DataState.error('No log ID')
-      : DataState.map(
-          store.logs,
-          logs => logs.find(_ => _.id === logId) ?? DataState.error('Log not found.')
-        )
-  );
-  const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
-  const MovementsAPI = useStore(store => store.MovementsAPI);
-  const programUser = useStore(store => store.programUser);
-
   return (
-    <Box
-      sx={{
-        height: '100%',
-        width: '100vw',
-        maxWidth: theme => theme.breakpoints.values.sm,
-        margin: '0 auto',
-        overflowY: 'scroll',
-        padding: theme => theme.spacing(0.5, 2, 3, 2),
-      }}
-    >
-      <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
-        <DataStateView
-          data={DataState.all(log, programUser)}
-          error={() => (
-            <Button variant="contained" onClick={() => navigate(Paths.home)}>
-              Go back
-            </Button>
-          )}
-          loading={() => <Skeleton variant="text" width={50} />}
-        >
-          {([log, programUser]) => (
-            <Stack direction="row" spacing={1} alignItems="baseline">
-              <Typography variant="caption" color="textSecondary" textTransform="uppercase">
-                {dateDisplay(new Date(log.timestamp))}
-              </Typography>
-              {log.programId === programUser.activeProgramId && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  sx={{ color: theme => theme.palette.text.secondary }}
-                  onClick={event => {
-                    if (!log.programLogTemplateId) throw Error('Unreachable: Empty template ID.');
-                    programDrawer.onOpen(event, log.programLogTemplateId);
-                  }}
-                >
-                  {programUser.activeProgramName}
-                </Button>
-              )}
-            </Stack>
-          )}
-        </DataStateView>
-        <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
-          <ShortTextRounded sx={{ color: 'text.primary' }} />
-        </IconButton>
+    <>
+      <Box
+        sx={{
+          height: '100%',
+          width: '100vw',
+          maxWidth: theme => theme.breakpoints.values.sm,
+          margin: '0 auto',
+          overflowY: 'scroll',
+          padding: theme => theme.spacing(0.5, 2, 3, 2),
+        }}
+      >
+        {!!logId && <EditorInternals logId={logId} />}
       </Box>
 
       <SwipeableDrawer {...programDrawer.props()} anchor="bottom">
@@ -167,99 +119,7 @@ export const Editor: FC = () => {
           }}
         </WithVariable>
       </SwipeableDrawer>
-
-      {!!logId && <EditorInternals logId={logId} />}
-
-      <SwipeableDrawer {...logDrawer.props()} anchor="top">
-        <Collapse in={logDrawer.open}>
-          <Stack spacing={3} sx={{ padding: theme => theme.spacing(0, 3) }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate(Paths.home)}
-              startIcon={<PersonOutline />}
-              endIcon={<ArrowForwardRounded fontSize="small" />}
-            >
-              Home
-            </Button>
-            <Button
-              variant="outlined"
-              disabled={!DataState.isReady(log)}
-              onClick={event => {
-                if (!DataState.isReady(log)) return;
-                notesDrawer.onOpen(event, log);
-              }}
-            >
-              Note
-            </Button>
-            <TextField
-              size="small"
-              variant="standard"
-              label="Bodyweight"
-              key={DataState.isReady(log) ? log.bodyweight : undefined}
-              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-              onFocus={event => event.currentTarget.select()}
-              defaultValue={(DataState.isReady(log) && log.bodyweight) || void 0}
-              onBlur={async function updateTrainingLogBodyweight(event) {
-                if (Number.isNaN(event.target.value)) return;
-                if (!DataState.isReady(log)) return;
-                const newBodyweight = +event.target.value;
-                if (newBodyweight === log.bodyweight) return;
-                try {
-                  await TrainingLogsAPI.update({
-                    id: log.id,
-                    bodyweight: newBodyweight,
-                  });
-                  toast.info('Updated bodyweight');
-                } catch (error) {
-                  toast.error(error.message);
-                }
-              }}
-            />
-            <Button
-              color="error"
-              onClick={async () => {
-                if (!logId) throw Error('Unreachable');
-                if (!window.confirm('Delete Training?')) return;
-                try {
-                  await Promise.all([
-                    TrainingLogsAPI.delete(logId),
-                    MovementsAPI.deleteMany(where('logId', '==', logId)),
-                  ]);
-                  logDrawer.onClose();
-                  navigate(Paths.home);
-                  toast.info('Deleted training');
-                } catch (error) {
-                  toast.error(error.message);
-                }
-              }}
-              startIcon={<DeleteOutlineRounded />}
-            >
-              Delete Session
-            </Button>
-          </Stack>
-        </Collapse>
-      </SwipeableDrawer>
-
-      <SwipeableDrawer {...notesDrawer.props()} anchor="bottom">
-        <Collapse in={notesDrawer.open}>
-          {DataState.isReady(log) && (
-            <NotesDrawer
-              note={log?.note || ''}
-              onBlur={async (next: string) => {
-                try {
-                  await TrainingLogsAPI.update({
-                    id: log.id,
-                    note: next,
-                  });
-                } catch (error) {
-                  toast.error(error.message);
-                }
-              }}
-            />
-          )}
-        </Collapse>
-      </SwipeableDrawer>
-    </Box>
+    </>
   );
 };
 
@@ -274,14 +134,18 @@ export const EditorInternals: FC<{
   isProgramView?: boolean;
   readOnly?: boolean;
 }> = ({ logId, isProgramView = false, readOnly = false }) => {
+  const notesDrawer = useDrawer<TrainingLog>();
+
   const toast = useToast();
   const user = useUser();
+  const navigate = useNavigate();
   // Data is null when *adding*; when *replacing*, it's the replacing Movement.
   const { anchorEl: _3, ...addMovementDrawer } = useDrawer<null | Movement>();
   const addSetMenu = useDrawer<Movement>();
   const { anchorEl: _0, ...savedMovementDrawer } = useDrawer<SavedMovement>();
   const { anchorEl: _1, ...movementMenuDrawer } = useDrawer<Movement>();
   const { anchorEl: _2, ...historyLogDrawer } = useDrawer<Movement>();
+  const { anchorEl: _4, ...logDrawer } = useDrawer<undefined>();
   const isMutating = useIsMutating();
 
   /** Controlled state of the Add Movement input. */
@@ -295,12 +159,18 @@ export const EditorInternals: FC<{
   /** For SavedMovement edit/update menu. */
   const [tabValue, setTabValue] = useState(TabIndex.Edit);
 
+  const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const MovementsMutationAPI = useStore(store =>
     isProgramView ? store.ProgramMovementsAPI : store.MovementsAPI
   );
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
+  const MovementsAPI = useStore(store => store.MovementsAPI);
   const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
+  const log = useStore(store =>
+    DataState.map(store.logs, _ => _.find(l => l.id === logId) ?? DataState.error('Log not found.'))
+  );
+  const programUser = useStore(store => store.programUser);
 
   /** The active collection, based on the usage of this component. */
   const MovementsQueryAPI = useMemo(
@@ -424,204 +294,208 @@ export const EditorInternals: FC<{
 
   return (
     <>
-      <Stack spacing={2}>
-        <DataStateView
-          data={movements}
-          loading={() => (
-            <Stack>
-              <Skeleton animation="wave" />
-              <Skeleton variant="text" />
-            </Stack>
-          )}
-        >
-          {movements => (
-            <Stack
-              spacing={2}
-              // Block all mouse clicks/events when in readOnly mode
-              sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
-            >
-              {movements.map(movement => (
-                <Fade in key={movement.id}>
-                  <Stack sx={{ padding: theme => theme.spacing(1, 0) }}>
-                    <Box
-                      display="flex"
-                      alignItems="end"
-                      width="100%"
-                      justifyContent="space-between"
-                    >
-                      {/** alignItems here could be END or BASELINE */}
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        width="100%"
-                      >
-                        <Box display="flex" alignItems="baseline">
-                          <Button
-                            sx={{
-                              padding: theme => theme.spacing(0.5, 1.0),
-                              margin: theme => theme.spacing(-0.5, -1.0),
-                              fontSize: '1.0rem',
-                              textTransform: 'uppercase',
-                              fontWeight: 600,
-                              color: theme => theme.palette.text.primary,
-                            }}
-                            onClick={event => movementMenuDrawer.onOpen(event, movement)}
-                          >
-                            {movement.name}
-                          </Button>
-
-                          {/** Display volume or reps total. */}
-                          {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                          <WithVariable
-                            value={movement.sets.filter(
-                              _ => _.status === MovementSetStatus.Completed
-                            )}
-                          >
-                            {completedSets => {
-                              if (completedSets.length === 0) return null;
-                              const completedVol = MovementSet.summate(completedSets);
-                              const totalVol = MovementSet.summate(movement.sets);
-                              return (
-                                <Typography
-                                  variant="overline"
-                                  sx={{
-                                    color: 'text.secondary',
-                                    fontWeight: 600,
-                                    textTransform: 'none',
-                                    marginLeft: theme => theme.spacing(1.5),
-                                  }}
-                                >
-                                  {!isProgramView && completedVol !== totalVol && (
-                                    <>{Intl.NumberFormat().format(completedVol)}/</>
-                                  )}
-                                  {Intl.NumberFormat().format(totalVol)}
-                                </Typography>
-                              );
-                            }}
-                          </WithVariable>
-                        </Box>
-                        <IconButton
-                          onClick={event => {
-                            addSetMenu.onOpen(event, movement);
-                            // Set controlled state default values to previous set
-                            if (movement.sets.length > 0) {
-                              const lastSet = movement.sets[movement.sets.length - 1];
-                              setNewSetWeight(lastSet.weight);
-                              setNewSetRepCountMin(lastSet.repCountExpected);
-                              setNewSetRepCountMax(
-                                lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS
-                              );
-                            } else {
-                              setNewSetWeight(0);
-                              setNewSetRepCountMin(DEFAULT_MIN_REPS);
-                              setNewSetRepCountMax(DEFAULT_MAX_REPS);
-                            }
-                          }}
-                          sx={{ color: theme => theme.palette.text.primary }}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Stack>
-                    </Box>
-
-                    {DataState.isReady(savedMovements) && (
-                      <WithVariable
-                        value={savedMovements.find(_ => _.id === movement.savedMovementId)}
-                      >
-                        {savedMovement =>
-                          !savedMovement?.note?.length ? null : (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                margin: theme => theme.spacing(1),
-                                fontStyle: 'italic',
-                                fontWeight: 200,
-                              }}
-                            >
-                              {'>'} {savedMovement.note}
-                            </Typography>
-                          )
-                        }
-                      </WithVariable>
-                    )}
-
-                    <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row">
-                        {/** Stack of unit control text display */}
-                        {movement.sets.length > 0 && (
-                          <Stack
-                            alignItems="end"
-                            sx={{
-                              // Spacing away from set blocks
-                              paddingRight: theme => theme.spacing(1.5),
-                            }}
-                          >
-                            <Typography
-                              variant="overline"
-                              alignSelf="end"
-                              textTransform="capitalize"
-                              fontWeight={600}
-                              sx={{
-                                color: 'text.secondary',
-                              }}
-                            >
-                              {movement.weightUnit}
-                            </Typography>
-
-                            <Typography
-                              variant="overline"
-                              alignSelf="end"
-                              textTransform="capitalize"
-                              fontWeight={600}
-                              sx={{ color: 'text.secondary' }}
-                            >
-                              {abbreviate(movement.repCountUnit)}
-                            </Typography>
-                          </Stack>
-                        )}
-
-                        {movement.sets.map((movementSet, index) => (
-                          <MovementSetView
-                            isProgramView={isProgramView}
-                            key={movementSet.uuid}
-                            movementSet={movementSet}
-                            movement={movement}
-                            index={index}
-                            updateSets={async (sets: MovementSet[]) => {
-                              try {
-                                await MovementsMutationAPI.update({ id: movement.id, sets });
-                              } catch (error) {
-                                toast.error(error.message);
-                              }
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </Box>
-                  </Stack>
-                </Fade>
-              ))}
-            </Stack>
-          )}
-        </DataStateView>
-
-        {DataState.isReady(movements) && !readOnly && (
-          <Box display="flex" width="100%" justifyContent="center">
+      <Stack direction="row" width="100%" justifyContent="space-between" alignItems="center">
+        {DataState.isReady(log) && (
+          <Typography variant="caption">{dateDisplay(new Date(log.timestamp))}</Typography>
+        )}
+        {readOnly === false && (
+          <Stack direction="row">
             <Button
-              onClick={event => addMovementDrawer.onOpen(event, null)}
-              endIcon={<UnfoldMore />}
+              onClick={event => logDrawer.onOpen(event, void 0)}
+              endIcon={<AddCircleOutline sx={{ color: 'text.primary' }} />}
               sx={{
-                color: theme =>
-                  movements.length ? theme.palette.text.secondary : theme.palette.primary.main,
-                marginTop: theme => theme.spacing(4),
+                color: theme => theme.palette.text.primary,
+                // smaller
+                fontSize: '0.8rem',
+                borderColor: theme => theme.palette.divider,
+                paddingRight: '1.1rem',
+                paddingLeft: '0.3rem',
               }}
-            >
-              Movements
-            </Button>
-          </Box>
+              variant="outlined"
+            ></Button>
+            <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
+              <ShortTextRounded sx={{ color: 'text.primary' }} />
+            </IconButton>
+            <IconButton onClick={() => navigate(Paths.home)}>
+              <PersonOutline sx={{ color: 'text.primary' }} />
+            </IconButton>
+          </Stack>
         )}
       </Stack>
+      <DataStateView
+        data={movements}
+        loading={() => (
+          <Stack>
+            <Skeleton animation="wave" />
+            <Skeleton variant="text" />
+          </Stack>
+        )}
+      >
+        {movements => (
+          <Stack
+            spacing={2}
+            // Block all mouse clicks/events when in readOnly mode
+            sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
+          >
+            {movements.map(movement => (
+              <Fade in key={movement.id}>
+                <Stack sx={{ padding: theme => theme.spacing(1, 0) }}>
+                  <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
+                    {/** alignItems here could be END or BASELINE */}
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      width="100%"
+                    >
+                      <Box display="flex" alignItems="baseline">
+                        <Button
+                          sx={{
+                            padding: theme => theme.spacing(0.5, 1.0),
+                            margin: theme => theme.spacing(-0.5, -1.0),
+                            fontSize: '1.1rem',
+                            textTransform: 'uppercase',
+                            fontWeight: 600,
+                            letterSpacing: '-0.002rem',
+                            color: theme => theme.palette.text.primary,
+                          }}
+                          onClick={event => movementMenuDrawer.onOpen(event, movement)}
+                        >
+                          {movement.name}
+                        </Button>
+
+                        {/** Display volume or reps total. */}
+                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                        <WithVariable
+                          value={movement.sets.filter(
+                            _ => _.status === MovementSetStatus.Completed
+                          )}
+                        >
+                          {completedSets => {
+                            if (completedSets.length === 0) return null;
+                            const completedVol = MovementSet.summate(completedSets);
+                            const totalVol = MovementSet.summate(movement.sets);
+                            return (
+                              <Typography
+                                variant="overline"
+                                sx={{
+                                  color: 'text.secondary',
+                                  fontWeight: 600,
+                                  textTransform: 'none',
+                                  marginLeft: theme => theme.spacing(1.5),
+                                }}
+                              >
+                                {!isProgramView && completedVol !== totalVol && (
+                                  <>{Intl.NumberFormat().format(completedVol)}/</>
+                                )}
+                                {Intl.NumberFormat().format(totalVol)}
+                              </Typography>
+                            );
+                          }}
+                        </WithVariable>
+                      </Box>
+                      <IconButton
+                        onClick={event => {
+                          addSetMenu.onOpen(event, movement);
+                          // Set controlled state default values to previous set
+                          if (movement.sets.length > 0) {
+                            const lastSet = movement.sets[movement.sets.length - 1];
+                            setNewSetWeight(lastSet.weight);
+                            setNewSetRepCountMin(lastSet.repCountExpected);
+                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
+                          } else {
+                            setNewSetWeight(0);
+                            setNewSetRepCountMin(DEFAULT_MIN_REPS);
+                            setNewSetRepCountMax(DEFAULT_MAX_REPS);
+                          }
+                        }}
+                        sx={{ color: theme => theme.palette.text.primary }}
+                      >
+                        <EditOutlined />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+
+                  {DataState.isReady(savedMovements) && (
+                    <WithVariable
+                      value={savedMovements.find(_ => _.id === movement.savedMovementId)}
+                    >
+                      {savedMovement =>
+                        !savedMovement?.note?.length ? null : (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              margin: theme => theme.spacing(1),
+                              fontStyle: 'italic',
+                              fontWeight: 200,
+                            }}
+                          >
+                            {'>'} {savedMovement.note}
+                          </Typography>
+                        )
+                      }
+                    </WithVariable>
+                  )}
+
+                  <Box width="100%" sx={{ overflowX: 'scroll' }}>
+                    <Stack direction="row">
+                      {/** Stack of unit control text display */}
+                      {movement.sets.length > 0 && (
+                        <Stack
+                          alignItems="end"
+                          sx={{
+                            // Spacing away from set blocks
+                            paddingRight: theme => theme.spacing(1.5),
+                          }}
+                        >
+                          <Typography
+                            variant="overline"
+                            alignSelf="end"
+                            textTransform="capitalize"
+                            fontWeight={600}
+                            sx={{
+                              color: 'text.secondary',
+                            }}
+                          >
+                            {movement.weightUnit}
+                          </Typography>
+
+                          <Typography
+                            variant="overline"
+                            alignSelf="end"
+                            textTransform="capitalize"
+                            fontWeight={600}
+                            sx={{ color: 'text.secondary' }}
+                          >
+                            {abbreviate(movement.repCountUnit)}
+                          </Typography>
+                        </Stack>
+                      )}
+
+                      {movement.sets.map((movementSet, index) => (
+                        <MovementSetView
+                          isProgramView={isProgramView}
+                          key={movementSet.uuid}
+                          movementSet={movementSet}
+                          movement={movement}
+                          index={index}
+                          updateSets={async (sets: MovementSet[]) => {
+                            try {
+                              await MovementsMutationAPI.update({ id: movement.id, sets });
+                            } catch (error) {
+                              toast.error(error.message);
+                            }
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Fade>
+            ))}
+          </Stack>
+        )}
+      </DataStateView>
 
       {/** ------------------------- DRAWERS ------------------------- */}
 
@@ -1117,19 +991,9 @@ export const EditorInternals: FC<{
       <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom">
         <Collapse in={historyLogDrawer.open}>
           <Box height="80vh">
-            <WithVariable value={historyLogDrawer.getData()}>
-              {movement => {
-                if (!movement) return null;
-                return (
-                  <Stack spacing={0.5}>
-                    <Typography variant="overline" width="100%" textAlign="center" sx={{ mt: -1 }}>
-                      {dateDisplay(new Date(movement.timestamp))}
-                    </Typography>
-                    <EditorInternals readOnly logId={movement.logId} />
-                  </Stack>
-                );
-              }}
-            </WithVariable>
+            {!!historyLogDrawer.getData() && (
+              <EditorInternals readOnly logId={historyLogDrawer.getData()!.logId} />
+            )}
           </Box>
         </Collapse>
       </SwipeableDrawer>
@@ -1352,6 +1216,88 @@ export const EditorInternals: FC<{
           </TabPanel>
         </Collapse>
       </SwipeableDrawer>
+
+      <SwipeableDrawer {...logDrawer.props()} anchor="top">
+        <Collapse in={logDrawer.open}>
+          <Stack spacing={3} sx={{ padding: theme => theme.spacing(0, 3) }}>
+            <Button
+              variant="outlined"
+              disabled={!DataState.isReady(log)}
+              onClick={event => {
+                if (!DataState.isReady(log)) return;
+                notesDrawer.onOpen(event, log);
+              }}
+            >
+              Note
+            </Button>
+            <TextField
+              size="small"
+              variant="standard"
+              label="Bodyweight"
+              key={DataState.isReady(log) ? log.bodyweight : undefined}
+              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+              onFocus={event => event.currentTarget.select()}
+              defaultValue={(DataState.isReady(log) && log.bodyweight) || void 0}
+              onBlur={async function updateTrainingLogBodyweight(event) {
+                if (Number.isNaN(event.target.value)) return;
+                if (!DataState.isReady(log)) return;
+                const newBodyweight = +event.target.value;
+                if (newBodyweight === log.bodyweight) return;
+                try {
+                  await TrainingLogsAPI.update({
+                    id: log.id,
+                    bodyweight: newBodyweight,
+                  });
+                  toast.info('Updated bodyweight');
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+            />
+            <Button
+              color="error"
+              onClick={async () => {
+                if (!logId) throw Error('Unreachable');
+                if (!window.confirm('Delete Training?')) return;
+                try {
+                  await Promise.all([
+                    TrainingLogsAPI.delete(logId),
+                    MovementsAPI.deleteMany(where('logId', '==', logId)),
+                  ]);
+                  logDrawer.onClose();
+                  navigate(Paths.home);
+                  toast.info('Deleted training');
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+              startIcon={<DeleteOutlineRounded />}
+            >
+              Delete Session
+            </Button>
+          </Stack>
+        </Collapse>
+      </SwipeableDrawer>
+
+      <SwipeableDrawer {...notesDrawer.props()} anchor="bottom">
+        <Collapse in={notesDrawer.open}>
+          {DataState.isReady(log) && (
+            <NotesDrawer
+              note={log?.note || ''}
+              onBlur={async (next: string) => {
+                try {
+                  await TrainingLogsAPI.update({
+                    id: log.id,
+                    note: next,
+                  });
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }}
+            />
+          )}
+        </Collapse>
+      </SwipeableDrawer>
     </>
   );
 };
@@ -1375,7 +1321,7 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.13),
+            backgroundColor: alpha(theme.palette.success.light, 0.10),
             // Avoid jarring when switching between Unattempted and Completed
             borderBottom: `3px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,
