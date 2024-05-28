@@ -170,7 +170,6 @@ export const EditorInternals: FC<{
   const log = useStore(store =>
     DataState.map(store.logs, _ => _.find(l => l.id === logId) ?? DataState.error('Log not found.'))
   );
-  const programUser = useStore(store => store.programUser);
 
   /** The active collection, based on the usage of this component. */
   const MovementsQueryAPI = useMemo(
@@ -295,30 +294,37 @@ export const EditorInternals: FC<{
   return (
     <>
       <Stack direction="row" width="100%" justifyContent="space-between" alignItems="center">
-        {DataState.isReady(log) && (
+        {DataState.isReady(log) ? (
           <Typography variant="caption">{dateDisplay(new Date(log.timestamp))}</Typography>
+        ) : (
+          <span />
         )}
         {readOnly === false && (
           <Stack direction="row">
             <Button
-              onClick={event => logDrawer.onOpen(event, void 0)}
+              onClick={event => addMovementDrawer.onOpen(event, null)}
               endIcon={<AddCircleOutline sx={{ color: 'text.primary' }} />}
               sx={{
                 color: theme => theme.palette.text.primary,
-                // smaller
                 fontSize: '0.8rem',
                 borderColor: theme => theme.palette.divider,
                 paddingRight: '1.1rem',
                 paddingLeft: '0.3rem',
+                paddingTop: '0.5rem',
+                paddingBottom: '0.5rem',
               }}
               variant="outlined"
             ></Button>
-            <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
-              <ShortTextRounded sx={{ color: 'text.primary' }} />
-            </IconButton>
-            <IconButton onClick={() => navigate(Paths.home)}>
-              <PersonOutline sx={{ color: 'text.primary' }} />
-            </IconButton>
+            {isProgramView === false && (
+              <>
+                <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
+                  <ShortTextRounded sx={{ color: 'text.primary' }} />
+                </IconButton>
+                <IconButton onClick={() => navigate(Paths.home)}>
+                  <PersonOutline sx={{ color: 'text.primary' }} />
+                </IconButton>
+              </>
+            )}
           </Stack>
         )}
       </Stack>
@@ -1321,7 +1327,7 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.10),
+            backgroundColor: alpha(theme.palette.success.light, 0.1),
             // Avoid jarring when switching between Unattempted and Completed
             borderBottom: `3px solid ${theme.palette.success.light}`,
             color: theme.palette.success.light,

@@ -367,7 +367,7 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
   return (
     <Stack spacing={1}>
       <TextField
-        sx={{ alignSelf: 'end' }}
+        sx={{ alignSelf: 'start' }}
         placeholder="Template Name"
         defaultValue={templateName}
         variant="standard"
