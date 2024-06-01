@@ -1,13 +1,12 @@
 import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
+  ArrowForwardIos,
   CloseRounded,
   Google,
+  InfoOutlined,
   Launch,
-  LightModeTwoTone,
   Logout,
-  NavigateNextRounded,
-  NightsStayTwoTone,
   SettingsOutlined,
 } from '@mui/icons-material';
 import {
@@ -16,12 +15,12 @@ import {
   Button,
   Collapse,
   IconButton,
-  Paper,
   Skeleton,
   Stack,
   SwipeableDrawer,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
@@ -35,7 +34,7 @@ import { Movement, Program } from '../types';
 import {
   DataState,
   DataStateView,
-  Months,
+  dateDisplay,
   Paths,
   SORTED_WEEKDAYS,
   useMaterialMenu,
@@ -49,6 +48,11 @@ export const Home: FC = () => {
   const toast = useToast();
   const reauthDrawer = useMaterialMenu();
   const addProgramDrawer = useMaterialMenu();
+  const theme = useTheme();
+  const gradientBg = theme.make.background(
+    alpha(theme.palette.primary.main, 0.03),
+    theme.palette.background.default
+  );
 
   const [newProgramName, setNewProgramName] = useState('');
 
@@ -143,15 +147,22 @@ export const Home: FC = () => {
       }}
     >
       <Box display="flex" width="100%" justifyContent="space-between" alignItems="baseline">
-        <Typography
-          variant="h6"
-          fontWeight={600}
-          onClick={user.isAnonymous ? reauthDrawer.onOpen : void 0}
-        >
-          {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
-        </Typography>
+        <Stack>
+          <Typography
+            variant="h6"
+            fontWeight={600}
+            onClick={user.isAnonymous ? reauthDrawer.onOpen : void 0}
+          >
+            {user.isAnonymous ? 'Anonymous' : user.displayName || user.providerData[0]?.displayName}
+          </Typography>
+          {DataState.isReady(trainingLogsCount) && (
+            <Typography color="textSecondary" variant="caption">
+              Trained {trainingLogsCount} {trainingLogsCount === 1 ? 'time' : 'times'}
+            </Typography>
+          )}
+        </Stack>
         <IconButton size="small" onClick={deauthenticate}>
-          <Logout fontSize="small" sx={{ color: theme => theme.palette.text.primary }} />
+          <Logout fontSize="small" sx={{ color: theme => theme.palette.text.secondary }} />
         </IconButton>
       </Box>
 
@@ -162,61 +173,55 @@ export const Home: FC = () => {
         >
           {([activeProgram, templates]) => {
             return (
-              <>
-                <Stack
-                  direction="row"
-                  spacing={1}
+              <Stack spacing={1}>
+                <Typography
+                  fontWeight={600}
+                  color="textSecondary"
                   onClick={() => navigate(Paths.program(activeProgram.id))}
                 >
-                  <Typography variant="overline" color="textSecondary">
-                    Program
-                  </Typography>
-                  <Typography variant="overline" fontWeight={600}>
-                    {activeProgram.name}
-                  </Typography>
-                </Stack>
-                <Stack>
-                  {templates
-                    .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
-                    .map(template => (
-                      <Box
-                        key={template.id}
-                        onClick={() => createTrainingLog({ fromTemplateId: template.id })}
-                        sx={{
-                          width: '100%',
-                          padding: theme => theme.spacing(1.5),
-                          // border: theme => `1px solid ${theme.palette.divider}`,
-                          backgroundColor: theme =>
-                            theme.palette.mode === 'dark'
-                              ? theme.palette.action.hover
-                              : theme.palette.background.default,
-                          alignItems: 'center',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
+                  {activeProgram.name}
+                </Typography>
+                {templates
+                  .filter(_ => activeProgram.templateIds.includes(_.id)) // TODO store.useTemplates(...)
+                  .map(template => (
+                    <Box
+                      key={template.id}
+                      onClick={() => createTrainingLog({ fromTemplateId: template.id })}
+                      sx={{
+                        width: '100%',
+                        padding: theme => theme.spacing(1.5),
+                        borderRadius: 2,
+                        background: gradientBg,
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Typography>{template.name || 'Program'}</Typography>
+                      <Button
+                        endIcon={<ArrowForwardIos />}
+                        sx={{ textTransform: 'none' }}
+                        variant="outlined"
                       >
-                        <Typography variant="h6">{template.name || 'Program'}</Typography>
-                        <Button variant="contained" startIcon={<AddRounded />}>
-                          Train
-                        </Button>
-                      </Box>
-                    ))}
-                </Stack>
-              </>
+                        Train
+                      </Button>
+                    </Box>
+                  ))}
+              </Stack>
             );
           }}
         </DataStateView>
         <Button
-          size="large"
-          startIcon={<AddRounded />}
+          endIcon={<ArrowForwardIos />}
           onClick={() => createTrainingLog({ fromTemplateId: null })}
+          sx={{ textTransform: 'none' }}
         >
-          Just Let Me Train
+          New Session
         </Button>
       </Stack>
 
       <Box>
-        <Typography variant="h5" fontWeight={600} gutterBottom>
+        <Typography fontWeight={600} color="textSecondary" gutterBottom>
           Training Programs
         </Typography>
         <Stack direction="row" spacing={2} sx={{ width: '100%', overflowX: 'scroll' }}>
@@ -248,158 +253,160 @@ export const Home: FC = () => {
         </Stack>
       </Box>
 
-      <Stack direction="row" spacing={1} alignItems="baseline">
-        <Typography variant="overline" fontWeight={600}>
+      <Stack>
+        <Typography fontWeight={600} color="textSecondary" gutterBottom>
           Training Sessions
         </Typography>
-        {DataState.isReady(trainingLogsCount) && (
-          <Typography variant="caption" color="text.secondary">
-            {trainingLogsCount}
-          </Typography>
-        )}
-      </Stack>
 
-      <DataStateView
-        data={logs}
-        loading={() => (
-          <Stack>
-            <Stack direction="row">
-              <Skeleton variant="rounded" />
-              <Skeleton variant="text" />
+        <DataStateView
+          data={logs}
+          loading={() => (
+            <Stack>
+              <Stack direction="row">
+                <Skeleton variant="rounded" />
+                <Skeleton variant="text" />
+              </Stack>
+              <Skeleton width="100%" variant="rectangular" />
+              <Skeleton width="100%" variant="rectangular" />
             </Stack>
-            <Skeleton width="100%" variant="rectangular" />
-            <Skeleton width="100%" variant="rectangular" />
-          </Stack>
-        )}
-      >
-        {logs =>
-          logs.length === 0 ? null : (
-            <Stack spacing={4} sx={{ padding: theme => theme.spacing(0) }}>
-              {logs.map(log => {
-                const date = new Date(log.timestamp);
-                const programName = DataState.isReady(activeProgram) ? activeProgram.name : '';
-                const templateName =
-                  (DataState.isReady(templates) &&
-                    templates.find(t => t.id === log.programLogTemplateId)?.name) ||
-                  '';
-                return (
-                  <Paper
-                    key={log.id}
-                    variant="outlined"
-                    sx={theme => {
-                      const gradientBg = theme.make.background(
-                        alpha(theme.palette.primary.main, 0.03),
-                        theme.palette.background.default
-                      );
-                      return {
-                        // border: `1px solid ${theme.palette.divider}`,
+          )}
+        >
+          {logs =>
+            logs.length === 0 ? null : (
+              <Stack spacing={4} sx={{ padding: theme => theme.spacing(0) }}>
+                {logs.map(log => {
+                  const date = new Date(log.timestamp);
+                  const programName = DataState.isReady(activeProgram) ? activeProgram.name : '';
+                  const templateName =
+                    (DataState.isReady(templates) &&
+                      templates.find(t => t.id === log.programLogTemplateId)?.name) ||
+                    '';
+                  return (
+                    <Box
+                      key={log.id}
+                      sx={theme => ({
+                        border: `2px solid ${theme.palette.divider}`,
                         padding: theme.spacing(3),
                         display: 'flex',
                         justifyContent: 'space-between',
-                        background: gradientBg,
-                      };
-                    }}
-                    onClick={() => navigate(Paths.editor(log.id))}
-                  >
-                    <Stack spacing={2}>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        {/** Large icon for day/night (evening situation) */}
-                        {date.getHours() > 18 ? (
-                          <NightsStayTwoTone sx={{ fontSize: '3rem' }} />
-                        ) : (
-                          <LightModeTwoTone sx={{ fontSize: '3rem' }} />
+                      })}
+                      onClick={() => navigate(Paths.editor(log.id))}
+                    >
+                      <Stack spacing={1} width="100%">
+                        <Stack
+                          width="100%"
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Stack
+                            direction="row"
+                            spacing={1.5}
+                            display="flex"
+                            whiteSpace="nowrap"
+                            alignItems="baseline"
+                          >
+                            <Typography variant="h6">{SORTED_WEEKDAYS[date.getDay()]}</Typography>
+                            <Typography color="text.secondary">{dateDisplay(date)}</Typography>
+                            <Typography
+                              color="text.secondary"
+                              variant="overline"
+                              sx={{ textTransform: 'lowercase' }}
+                            >
+                              <em>
+                                {formatDistanceToNowStrict(new Date(log.timestamp), {
+                                  addSuffix: true,
+                                })
+                                  .replace(/ (\w)\w+ /i, '$1 ')
+                                  .replace('m ', 'mo ')
+                                  .replace(' ago', '')}
+                              </em>
+                            </Typography>
+                          </Stack>
+
+                          <IconButton>
+                            <ArrowForwardIos
+                              sx={{ color: theme => theme.palette.text.secondary }}
+                            />
+                          </IconButton>
+                        </Stack>
+                        {/** List of movement names for each recent log from the user. */}
+                        {/** TODO component-ize and put movementsByLogId inside component. */}
+                        <DataStateView
+                          data={movementsByLogId}
+                          loading={() => (
+                            <>
+                              <Skeleton variant="text" />
+                              <Skeleton variant="text" />
+                              <Skeleton variant="text" />
+                            </>
+                          )}
+                        >
+                          {map => {
+                            const movements = !!map && map.get(log.id);
+                            if (!movements) return null;
+                            if (movements.length === 0) {
+                              return (
+                                <Typography variant="caption" fontStyle="italic">
+                                  No movements in this training
+                                </Typography>
+                              );
+                            }
+                            if (movements.length < 6) {
+                              return (
+                                <>
+                                  {movements.map(movement => (
+                                    <Typography key={movement.id}>{movement.name}</Typography>
+                                  ))}
+                                </>
+                              );
+                            }
+                            return (
+                              <>
+                                {movements.slice(0, 4).map(movement => (
+                                  <Typography key={movement.id}>{movement.name}</Typography>
+                                ))}
+                                {movements.length > 4 && (
+                                  <Typography>+{movements.length - 4} more</Typography>
+                                )}
+                              </>
+                            );
+                          }}
+                        </DataStateView>
+                        {/** Assumes the the log index is less than the limit for logs fetched. */}
+                        {log?.note && (
+                          <Typography variant="caption" color="textSecondary">
+                            {log.note.slice(0, 75) + (log.note.length > 75 ? '...' : '')}
+                          </Typography>
                         )}
                         {/** Bold program name + template name if Log is from template */}
                         {templateName && programName && (
-                          <Stack>
-                            <Typography variant="overline" lineHeight={1.5}>
-                              <b>{programName}</b>
+                          <Stack
+                            sx={{ borderTop: theme => `1px solid ${theme.palette.divider}`, pt: 2 }}
+                          >
+                            <Typography variant="overline" lineHeight={1.5} color="text.secondary">
+                              {programName}
                             </Typography>
-                            <Typography variant="overline" lineHeight={1.5}>
-                              <em>{templateName}</em>
+                            <Typography variant="overline" lineHeight={1.5} fontWeight={600}>
+                              {templateName}
                             </Typography>
                           </Stack>
                         )}
                       </Stack>
-                      <Stack direction="row" spacing={1} alignItems="baseline" whiteSpace="nowrap">
-                        <Typography fontWeight={600}>{SORTED_WEEKDAYS[date.getDay()]}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {formatDistanceToNowStrict(new Date(log.timestamp), {
-                            addSuffix: true,
-                          })
-                            .replace(/ (\w)\w+ /i, '$1 ')
-                            .replace('m ', 'mo ')}
-                        </Typography>
-                      </Stack>
-                      {/** List of movement names for each recent log from the user. */}
-                      {/** TODO component-ize and put movementsByLogId inside component. */}
-                      <DataStateView
-                        data={movementsByLogId}
-                        loading={() => (
-                          <>
-                            <Skeleton variant="text" />
-                            <Skeleton variant="text" />
-                          </>
-                        )}
-                      >
-                        {map => {
-                          const movements = !!map && map.get(log.id);
-                          if (!movements) return null;
-                          if (movements.length === 0) {
-                            return (
-                              <Typography variant="caption" fontStyle="italic">
-                                No movements in this training
-                              </Typography>
-                            );
-                          }
-                          if (movements.length < 6) {
-                            return (
-                              <Stack>
-                                {movements.map(movement => (
-                                  <Typography key={movement.id}>{movement.name}</Typography>
-                                ))}
-                              </Stack>
-                            );
-                          }
-                          return (
-                            <Stack>
-                              {movements.slice(0, 4).map(movement => (
-                                <Typography key={movement.id}>{movement.name}</Typography>
-                              ))}
-                              {movements.length > 4 && (
-                                <Typography>+{movements.length - 4} more</Typography>
-                              )}
-                            </Stack>
-                          );
-                        }}
-                      </DataStateView>
-                      {/** Assumes the the log index is less than the limit for logs fetched. */}
-                      {log?.note && (
-                        <Typography variant="caption" color="textSecondary">
-                          {log.note.slice(0, 75) + (log.note.length > 75 ? '...' : '')}
-                        </Typography>
-                      )}
-                    </Stack>
-                    <Box
-                      display="flex"
-                      justifyContent="flex-end"
-                      whiteSpace="nowrap"
-                      alignItems="start"
-                    >
-                      <Stack direction="row" alignItems="center">
-                        <NavigateNextRounded sx={{ color: 'text.secondary' }} fontSize="large" />
-                        <Typography variant="body2" textTransform="uppercase">
-                          {Months[date.getMonth()].slice(0, 3) + ' ' + date.getDate()}
-                        </Typography>
-                      </Stack>
+                      <Box
+                        display="flex"
+                        justifyContent="flex-end"
+                        whiteSpace="nowrap"
+                        alignItems="start"
+                      ></Box>
                     </Box>
-                  </Paper>
-                );
-              })}
-            </Stack>
-          )
-        }
-      </DataStateView>
+                  );
+                })}
+              </Stack>
+            )
+          }
+        </DataStateView>
+      </Stack>
 
       {/** Drawer to reassign data from current anon user to google auth'd account */}
       {user.isAnonymous && DataState.isReady(logs) && logs.length > 0 && (
@@ -503,7 +510,7 @@ const ProgramPreview: FC<{
             ? theme.palette.action.hover
             : theme.palette.background.default,
         padding: theme => theme.spacing(5, 2),
-        border: theme => `2px solid ${theme.palette.divider}`,
+        border: theme => `1px solid ${theme.palette.divider}`,
         borderRadius: 2,
         minWidth: '250px',
       }}
@@ -516,6 +523,18 @@ const ProgramPreview: FC<{
             <Typography color="textSecondary" variant="body2">
               {program.templateIds.length} Template{program.templateIds.length > 1 ? 's' : ''}
             </Typography>
+
+            {isActive && (
+              <Stack direction="row" spacing={1} pt={1} alignItems="center">
+                <InfoOutlined
+                  sx={{ color: theme => theme.palette.text.secondary }}
+                  fontSize="small"
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Program is active
+                </Typography>
+              </Stack>
+            )}
           </Stack>
         ) : (
           <Stack spacing={1}>
