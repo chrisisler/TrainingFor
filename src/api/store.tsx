@@ -3,7 +3,6 @@ import { getCountFromServer, limit, orderBy, query, where } from 'firebase/fires
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 import { API } from '.';
-import { useUser } from '../context';
 import {
   Movement,
   Program,
@@ -12,7 +11,7 @@ import {
   SavedMovement,
   TrainingLog,
 } from '../types';
-import { DataState } from '../util';
+import { DataState, useUser } from '../util';
 import { useAPI } from './client';
 import { DbPath } from './firebase';
 

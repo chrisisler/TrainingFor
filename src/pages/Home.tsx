@@ -1,7 +1,6 @@
 import { uuidv4 } from '@firebase/util';
 import {
   AddRounded,
-  BookmarkRounded,
   CloseRounded,
   Google,
   Launch,
@@ -9,6 +8,7 @@ import {
   Logout,
   NavigateNextRounded,
   NightsStayTwoTone,
+  SettingsOutlined,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -22,7 +22,6 @@ import {
   SwipeableDrawer,
   TextField,
   Typography,
-  useTheme,
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { signOut } from 'firebase/auth';
@@ -32,7 +31,6 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate } from 'react-router-dom';
 
 import { API, auth, Authenticate, useStore } from '../api';
-import { useUser } from '../context';
 import { Movement, Program } from '../types';
 import {
   DataState,
@@ -42,6 +40,7 @@ import {
   SORTED_WEEKDAYS,
   useMaterialMenu,
   useToast,
+  useUser,
 } from '../util';
 
 export const Home: FC = () => {
@@ -134,9 +133,9 @@ export const Home: FC = () => {
         height: '100vh',
         width: '100vw',
         overflowY: 'scroll',
-        maxWidth: theme => theme.breakpoints.values.sm,
+        maxWidth: theme => theme.breakpoints.values.md,
         margin: '0 auto',
-        padding: theme => theme.spacing(2),
+        padding: theme => theme.spacing(4),
         backgroundColor: theme =>
           theme.palette.mode === 'dark'
             ? theme.palette.background.default
@@ -217,14 +216,10 @@ export const Home: FC = () => {
       </Stack>
 
       <Box>
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="h5" fontWeight={600} gutterBottom>
           Training Programs
         </Typography>
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{ width: '100%', overflowX: 'scroll', padding: theme => theme.spacing(1, 0) }}
-        >
+        <Stack direction="row" spacing={2} sx={{ width: '100%', overflowX: 'scroll' }}>
           <DataStateView
             data={programs}
             loading={() => (
@@ -254,12 +249,12 @@ export const Home: FC = () => {
       </Box>
 
       <Stack direction="row" spacing={1} alignItems="baseline">
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="overline" fontWeight={600}>
           Training Sessions
         </Typography>
         {DataState.isReady(trainingLogsCount) && (
-          <Typography variant="caption" fontStyle="italic">
-            <b>{trainingLogsCount}</b>
+          <Typography variant="caption" color="text.secondary">
+            {trainingLogsCount}
           </Typography>
         )}
       </Stack>
@@ -500,36 +495,40 @@ const ProgramPreview: FC<{
   isActive?: boolean;
   onClick: React.MouseEventHandler<HTMLDivElement>;
 }> = ({ program, isActive = false, onClick }) => {
-  const theme = useTheme();
-
-  const gradient = theme.make.background(
-    theme.palette.background.default,
-    alpha(theme.palette.primary.main, 0.05)
-  );
-  const inAddMode = !program;
-
   return (
-    <Paper
+    <Box
       sx={{
-        background: gradient,
-        padding: theme.spacing(4),
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: 0,
+        backgroundColor: theme =>
+          theme.palette.mode === 'dark'
+            ? theme.palette.action.hover
+            : theme.palette.background.default,
+        padding: theme => theme.spacing(5, 2),
+        border: theme => `2px solid ${theme.palette.divider}`,
+        borderRadius: 2,
+        minWidth: '250px',
       }}
-      elevation={isActive ? 8 : inAddMode ? 0 : 2}
       onClick={onClick}
     >
-      <Stack direction="row" display="flex" spacing={1} alignItems="center">
-        {inAddMode ? (
-          <AddRounded sx={{ color: theme => theme.palette.text.secondary }} />
-        ) : isActive ? (
-          <BookmarkRounded sx={{ color: theme => theme.palette.text.secondary }} />
-        ) : null}
-        <Typography variant="overline" color="textSecondary" lineHeight={1.5}>
-          {inAddMode ? 'Add a Program' : program.name}
-        </Typography>
-        {!inAddMode && <NavigateNextRounded />}
+      <Stack direction="row" display="flex" width="100%" justifyContent="space-between">
+        {program ? (
+          <Stack spacing={1}>
+            <Typography>{program.name}</Typography>
+            <Typography color="textSecondary" variant="body2">
+              {program.templateIds.length} Template{program.templateIds.length > 1 ? 's' : ''}
+            </Typography>
+          </Stack>
+        ) : (
+          <Stack spacing={1}>
+            <Button variant="outlined" startIcon={<AddRounded />} sx={{ textTransform: 'none' }}>
+              New Program
+            </Button>
+            <Typography color="textSecondary" variant="body2">
+              Make your own templates
+            </Typography>
+          </Stack>
+        )}
+        <SettingsOutlined fontSize="large" sx={{ color: theme => theme.palette.text.secondary }} />
       </Stack>
-    </Paper>
+    </Box>
   );
 };

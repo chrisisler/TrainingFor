@@ -20,7 +20,10 @@ const queryClient = new QueryClient({
   },
 });
 
-// const persister = createSyncStoragePersister({ storage: window.localStorage });
+// queryClient.prefetchQuery([DbPath.Movements]);
+// queryClient.prefetchQuery([DbPath.Logs]);
+// queryClient.prefetchQuery([DbPath.ProgramLogTemplates]);
+// queryClient.prefetchQuery([DbPath.Programs]);
 
 export const App: FC = () => {
   const authState = useAuthStore(store => store.authState);

@@ -1,5 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { OptionsObject, useSnackbar } from 'notistack';
+import { User } from 'firebase/auth';
+
+/** Do not import this directly. Use `useUser` instead. */
+export const UserContext = createContext(null as unknown as User);
+
+export const useUser = (): User => useContext(UserContext);
 
 /**
  * Simplifies the usage of Material-UI's SwipeableDrawer and Menu.

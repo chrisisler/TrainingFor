@@ -27,7 +27,6 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { API, useStore } from '../api';
 import { NotesDrawer } from '../components';
-import { useUser } from '../context';
 import {
   DataState,
   DataStateView,
@@ -35,6 +34,7 @@ import {
   dateDisplay,
   useDrawer,
   useMaterialMenu,
+  useUser,
   useToast,
 } from '../util';
 import { EditorInternals } from './Editor';

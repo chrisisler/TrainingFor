@@ -1,11 +1,11 @@
 import { User } from 'firebase/auth';
-import { createContext, FC, ReactNode, useContext } from 'react';
+import { FC, ReactNode } from 'react';
 
-const UserContext = createContext(null as unknown as User);
+import { UserContext } from '../util';
 
 export const UserProvider: FC<{
   user: User;
   children: ReactNode;
-}> = ({ user, children }) => <UserContext.Provider value={user}>{children}</UserContext.Provider>;
-
-export const useUser = (): User => useContext(UserContext);
+}> = ({ user, children }) => {
+  return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
+};

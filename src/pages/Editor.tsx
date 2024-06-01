@@ -8,7 +8,6 @@ import {
   DeleteForeverRounded,
   DeleteOutline,
   DeleteOutlineRounded,
-  Edit,
   EditOutlined,
   FindReplaceRounded,
   MoreHoriz,
@@ -49,7 +48,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { API, useStore } from '../api';
 import { NotesDrawer, tabA11yProps, TabPanel, WithVariable } from '../components';
-import { useUser } from '../context';
 import {
   Movement,
   MovementWeightUnit,
@@ -69,6 +67,7 @@ import {
   useDrawer,
   useResizableInputRef,
   useToast,
+  useUser,
 } from '../util';
 
 const DIFF_CHAR = '-';
