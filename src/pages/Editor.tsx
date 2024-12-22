@@ -6,15 +6,18 @@ import {
   Close,
   DeleteForeverRounded,
   DeleteOutline,
-  DeleteOutlineRounded,
+  Link,
   EditOutlined,
   FindReplaceRounded,
   MoreHoriz,
   NavigateNextRounded,
   RefreshRounded,
-  Menu as MenuIcon,
   ChatOutlined,
   IosShareRounded,
+  Notes,
+  NoteAltOutlined,
+  DeleteForeverOutlined,
+  CopyAll,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -334,7 +337,7 @@ export const EditorInternals: FC<{
               navigate(Paths.home);
             }}
           >
-            <MenuIcon />
+            <Notes />
           </IconButton>
           {DataState.isReady(log) ? (
             <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
@@ -356,6 +359,7 @@ export const EditorInternals: FC<{
                     sx={{
                       color: theme => theme.palette.text.primary,
                       letterSpacing: 0,
+                      fontWeight: 500,
                     }}
                   >
                     Share
@@ -377,7 +381,7 @@ export const EditorInternals: FC<{
                     return logDrawer.onOpen(event, void 0);
                   }}
                 >
-                  <MoreHoriz sx={{ color: 'text.secondary' }} />
+                  <MoreHoriz sx={{ color: 'text.secondary', fontSize: '1.7rem' }} />
                 </IconButton>
               </>
             )}
@@ -1305,23 +1309,15 @@ export const EditorInternals: FC<{
         </Collapse>
       </SwipeableDrawer>
 
-      <SwipeableDrawer {...logDrawer.props()} anchor="top">
+      <SwipeableDrawer {...logDrawer.props()} anchor="right">
         <Collapse in={logDrawer.open}>
-          <Stack spacing={3} sx={{ padding: theme => theme.spacing(0, 3) }}>
-            <Button
-              variant="outlined"
-              disabled={!DataState.isReady(log)}
-              onClick={event => {
-                if (!DataState.isReady(log)) return;
-                notesDrawer.onOpen(event, log);
-              }}
-            >
-              Note
-            </Button>
+          <Stack spacing={3} sx={{
+            width: isMobile ? '85vw' : '268px',
+            padding: theme => theme.spacing(1),
+          }}>
             <TextField
-              size="small"
-              variant="standard"
-              label="Bodyweight"
+              variant="outlined"
+              label="Body Weight"
               key={DataState.isReady(log) ? log.bodyweight : undefined}
               inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
               onFocus={event => event.currentTarget.select()}
@@ -1343,7 +1339,93 @@ export const EditorInternals: FC<{
               }}
             />
             <Button
-              color="error"
+              variant="text"
+              disabled={!DataState.isReady(log)}
+              startIcon={<NoteAltOutlined />}
+              size="large"
+              sx={{
+                // text align left 
+                justifyContent: 'flex-start',
+                color: theme => theme.palette.text.secondary,
+                fontWeight: 600,
+              }}
+              onClick={event => {
+                if (!DataState.isReady(log)) return;
+
+                logDrawer.onClose();
+                notesDrawer.onOpen(event, log);
+              }}
+            >
+              Note
+            </Button>
+            <Button
+              variant="text"
+              disabled={!DataState.isReady(log)}
+              startIcon={<Link />}
+              size="large"
+              sx={{
+                justifyContent: 'flex-start',
+                color: theme => theme.palette.text.secondary,
+                fontWeight: 600,
+              }}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href)
+
+                  toast.info('Copied link to clipboard');
+                } catch (err) {
+                  toast.error(err.message);
+                }
+              }}
+            >
+              Copy link
+            </Button>
+            <Button
+              variant="text"
+              disabled={!DataState.isReady(log)}
+              startIcon={<CopyAll />}
+              size="large"
+              sx={{
+                justifyContent: 'flex-start',
+                color: theme => theme.palette.text.secondary,
+                fontWeight: 600,
+              }}
+              onClick={async () => {
+                if (!DataState.isReady(log)) return;
+                if (!DataState.isReady(movements)) return;
+                if (!window.confirm('Duplicate this Training?')) return;
+
+                // duplicate log and its sets
+                try {
+                  const newTrainingLog = await TrainingLogsAPI.create({
+                    timestamp: Date.now(),
+                    authorUserId: user.uid,
+                    bodyweight: log.bodyweight,
+                    isFinished: false,
+                    note: '',
+                    programId: log.programId,
+                    programLogTemplateId: log.programLogTemplateId,
+                  });
+
+                  const logMovements: Movement[] = movements.map(movement => ({
+                    ...movement,
+                    logId: newTrainingLog.id,
+                    sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
+                    timestamp: Date.now(),
+                  }));
+                  await MovementsAPI.createMany(logMovements);
+
+                  navigate(Paths.editor(newTrainingLog.id));
+                  toast.info('Duplicated training log');
+                  logDrawer.onClose();
+                } catch (err) {
+                  toast.error(err.message);
+                }
+              }}
+            >
+              Duplicate
+            </Button>
+            <Button
               onClick={async () => {
                 if (!logId) throw Error('Unreachable');
                 if (!window.confirm('Delete Training?')) return;
@@ -1359,9 +1441,15 @@ export const EditorInternals: FC<{
                   toast.error(error.message);
                 }
               }}
-              startIcon={<DeleteOutlineRounded />}
+              startIcon={<DeleteForeverOutlined fontSize="large" />}
+              size="large"
+              sx={{
+                justifyContent: 'flex-start',
+                color: theme => theme.palette.text.secondary,
+                fontWeight: 600,
+              }}
             >
-              Delete Session
+              Delete
             </Button>
           </Stack>
         </Collapse>
