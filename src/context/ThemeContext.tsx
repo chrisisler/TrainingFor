@@ -29,6 +29,13 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
           disableTouchRipple: true,
         },
       },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+          },
+        }
+      },
       MuiSwipeableDrawer: {
         defaultProps: {
           PaperProps: {

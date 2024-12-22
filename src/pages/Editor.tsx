@@ -2,7 +2,6 @@ import { uuidv4 } from '@firebase/util';
 import { useIsMutating } from '@tanstack/react-query';
 import {
   Add,
-  AddCircleOutline,
   CheckRounded,
   Close,
   DeleteForeverRounded,
@@ -12,7 +11,6 @@ import {
   FindReplaceRounded,
   MoreHoriz,
   NavigateNextRounded,
-  PersonOutline,
   RefreshRounded,
   Menu as MenuIcon,
   ChatOutlined,
@@ -297,32 +295,45 @@ export const EditorInternals: FC<{
 
   const clickShareBtn = () => {
     console.warn('Unimplemented: share btn/panel feature');
-  }
+  };
 
   return (
     <>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{
-        // fixed header
-        position: 'absolute',
-        top: 0,
-        width: '100vw',
-        zIndex: 100,
-        left: 0,
-        padding: 0.5,
-      }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{
+          // fixed header
+          position: 'absolute',
+          top: 0,
+          width: '100vw',
+          zIndex: 100,
+          left: 0,
+          padding: 0.5,
+        }}
+      >
         <Stack direction="row" spacing={1} alignItems="center">
-          <IconButton onMouseOver={() => {
-            console.warn('Unimplemented: Desktop feature only -> hover shows left-side account panel');
-          }} onClick={() => {
-            // TODO
-            if (isMobile) {
-              // Open left-side account panel
-            } else {
-              // desktop:
-              // todo: save settings -> desktop-always-show-account-panel = true
-            }
-            console.warn('Unimplemented: See code');
-          }}>
+          <IconButton
+            onMouseOver={() => {
+              console.warn(
+                'Unimplemented: Desktop feature only -> hover shows left-side account panel'
+              );
+            }}
+            sx={{ color: theme => theme.palette.text.secondary }}
+            onClick={() => {
+              // TODO
+              if (isMobile) {
+                // Open left-side account panel
+              } else {
+                // desktop:
+                // todo: save settings -> desktop-always-show-account-panel = true
+              }
+              console.warn('Unimplemented: See code');
+
+              navigate(Paths.home);
+            }}
+          >
             <MenuIcon />
           </IconButton>
           {DataState.isReady(log) ? (
@@ -333,53 +344,40 @@ export const EditorInternals: FC<{
         </Stack>
         {readOnly === false && (
           <Stack direction="row">
-            <Button
-              onClick={event => addMovementDrawer.onOpen(event, null)}
-              endIcon={<AddCircleOutline sx={{ color: 'text.primary' }} />}
-              sx={{
-                color: theme => theme.palette.text.primary,
-                fontSize: '0.8rem',
-                borderColor: theme => theme.palette.divider,
-                paddingRight: '1.1rem',
-                paddingLeft: '0.3rem',
-                paddingTop: '0.5rem',
-                paddingBottom: '0.5rem',
-              }}
-              variant="outlined"
-            ></Button>
             {isProgramView === false && (
               <>
                 {isMobile ? (
                   <IconButton onClick={clickShareBtn}>
-                    <IosShareRounded sx={{ color: 'text.primary' }} />
+                    <IosShareRounded sx={{ color: 'text.secondary' }} />
                   </IconButton>
-                ) : <Button onClick={clickShareBtn} sx={{
-                  color: theme => theme.palette.text.primary,
-                  textTransform: 'none',
-                  letterSpacing: 0,
-                }}>Share </Button>
-                }
+                ) : (
+                  <Button
+                    onClick={clickShareBtn}
+                    sx={{
+                      color: theme => theme.palette.text.primary,
+                      letterSpacing: 0,
+                    }}
+                  >
+                    Share
+                  </Button>
+                )}
 
-                <IconButton onClick={() => {
-                  console.warn('Unimplemented: chat/comments panel: 385px desktop, 100vw mobile');
-                }}>
-                  <ChatOutlined sx={{ color: 'text.primary' }} />
+                <IconButton
+                  onClick={() => {
+                    console.warn('Unimplemented: chat/comments panel: 385px desktop, 100vw mobile');
+                  }}
+                >
+                  <ChatOutlined fontSize="small" sx={{ color: 'text.secondary' }} />
                 </IconButton>
 
-                <IconButton onClick={() => {
-                  console.warn('Unimplemented: this is part of the top-left account panel');
+                <IconButton
+                  onClick={event => {
+                    console.warn('unimplemented: see roadmap for this feature');
 
-                  return navigate(Paths.home);
-                }}>
-                  <PersonOutline sx={{ color: 'text.primary' }} />
-                </IconButton>
-
-                <IconButton onClick={event => {
-                  console.warn('unimplemented: see roadmap for this feature');
-
-                  return logDrawer.onOpen(event, void 0);
-                }}>
-                  <MoreHoriz sx={{ color: 'text.primary' }} />
+                    return logDrawer.onOpen(event, void 0);
+                  }}
+                >
+                  <MoreHoriz sx={{ color: 'text.secondary' }} />
                 </IconButton>
               </>
             )}
@@ -401,16 +399,17 @@ export const EditorInternals: FC<{
             // Block all mouse clicks/events when in readOnly mode
             sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             style={{
-
               // Padding top specifically to account for fixed header
               paddingTop: '5rem',
             }}
           >
             {movements.map(movement => (
               <Fade in key={movement.id}>
-                <Stack sx={{
-                  padding: theme => theme.spacing(1, 0),
-                }}>
+                <Stack
+                  sx={{
+                    padding: theme => theme.spacing(1, 0),
+                  }}
+                >
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
                     {/** alignItems here could be END or BASELINE */}
                     <Stack
@@ -427,7 +426,7 @@ export const EditorInternals: FC<{
                             fontSize: '1.1rem',
                             textTransform: 'uppercase',
                             fontWeight: 600,
-                            letterSpacing: '-0.002rem',
+                            letterSpacing: 0,
                             color: theme => theme.palette.text.primary,
                           }}
                           onClick={event => movementMenuDrawer.onOpen(event, movement)}
@@ -452,7 +451,6 @@ export const EditorInternals: FC<{
                                 sx={{
                                   color: 'text.secondary',
                                   fontWeight: 600,
-                                  textTransform: 'none',
                                   marginLeft: theme => theme.spacing(1.5),
                                 }}
                               >
@@ -523,9 +521,9 @@ export const EditorInternals: FC<{
                             variant="overline"
                             alignSelf="end"
                             textTransform="capitalize"
-                            fontWeight={600}
                             sx={{
                               color: 'text.secondary',
+                              letterSpacing: 0.5,
                             }}
                           >
                             {movement.weightUnit}
@@ -535,8 +533,10 @@ export const EditorInternals: FC<{
                             variant="overline"
                             alignSelf="end"
                             textTransform="capitalize"
-                            fontWeight={600}
-                            sx={{ color: 'text.secondary' }}
+                            sx={{
+                              color: 'text.secondary',
+                              letterSpacing: 0.5,
+                            }}
                           >
                             {abbreviate(movement.repCountUnit)}
                           </Typography>
@@ -567,6 +567,23 @@ export const EditorInternals: FC<{
           </Stack>
         )}
       </DataStateView>
+
+      <Button
+        onClick={event => addMovementDrawer.onOpen(event, null)}
+        // endIcon={<AddCircleOutline sx={{ color: 'text.primary' }} />}
+        fullWidth
+        sx={{
+          color: theme => theme.palette.text.secondary,
+          border: 0,
+          // fontSize: '0.8rem',
+          // borderColor: theme => theme.palette.divider,
+          // paddingRight: '1.1rem',
+          // paddingLeft: '0.3rem',
+          // paddingTop: '0.5rem',
+          // paddingBottom: '0.5rem',
+        }}
+        variant="outlined"
+      >Add movement</Button>
 
       {/** ------------------------- DRAWERS ------------------------- */}
 
