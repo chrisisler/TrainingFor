@@ -8,7 +8,6 @@ import {
   DeleteOutline,
   Link,
   EditOutlined,
-  FindReplaceRounded,
   MoreHoriz,
   NavigateNextRounded,
   RefreshRounded,
@@ -18,14 +17,16 @@ import {
   NoteAltOutlined,
   DeleteForeverOutlined,
   CopyAll,
+  DeleteSweepOutlined,
+  PlaylistRemove,
 } from '@mui/icons-material';
 import {
   alpha,
-  Backdrop,
   Box,
   Button,
   CircularProgress,
   Collapse,
+  Divider,
   Fade,
   IconButton,
   Menu,
@@ -412,6 +413,7 @@ export const EditorInternals: FC<{
                 <Stack
                   sx={{
                     padding: theme => theme.spacing(1, 0),
+                    border: theme => `1px solid ${theme.palette.divider}`,
                   }}
                 >
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
@@ -574,260 +576,388 @@ export const EditorInternals: FC<{
 
       <Button
         onClick={event => addMovementDrawer.onOpen(event, null)}
-        // endIcon={<AddCircleOutline sx={{ color: 'text.primary' }} />}
         fullWidth
         sx={{
           color: theme => theme.palette.text.secondary,
           border: 0,
-          // fontSize: '0.8rem',
-          // borderColor: theme => theme.palette.divider,
-          // paddingRight: '1.1rem',
-          // paddingLeft: '0.3rem',
-          // paddingTop: '0.5rem',
-          // paddingBottom: '0.5rem',
         }}
         variant="outlined"
       >Add movement</Button>
 
       {/** ------------------------- DRAWERS ------------------------- */}
 
-      <Backdrop open={addSetMenu.open} sx={{ color: '#fff' }}>
-        <WithVariable value={addSetMenu.getData()}>
-          {movement =>
-            movement === null ? null : (
-              <Menu
-                open={addSetMenu.open}
-                anchorEl={addSetMenu.anchorEl}
-                onClose={async (_event, reason) => {
-                  if (reason === 'backdropClick') {
-                    if (newSetRepCountMin === 0) {
-                      addSetMenu.onClose();
-                      return;
-                    }
-                    if (newSetRepCountMax < newSetRepCountMin) {
-                      toast.error('Maximum must be less than minimum');
-                      return;
-                    }
-                    addSetMenu.onClose();
-                    return;
-                  }
-                  // Click was NOT on the backdrop so it was within
-                  // the menu which means the user is clicking
-                  // around in the menu, so do nothing.
-                  return;
-                }}
-              >
-                {/** menu container */}
-                <Stack spacing={3} sx={{ padding: theme => theme.spacing(1, 2) }}>
-                  {/** container of top row */}
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    display="flex"
-                    sx={{
-                      borderRadius: 1,
-                      backgroundColor: theme =>
-                        theme.palette.mode === 'dark'
-                          ? theme.palette.action.hover
-                          : theme.palette.background.default,
-                    }}
-                  >
-                    <MovementUnitSelect
-                      value={movement.weightUnit}
-                      onChange={async event => {
-                        try {
-                          const newWeightUnit = event.target.value as MovementWeightUnit;
-                          // Update field on the movement
-                          const updated: Movement = await MovementsMutationAPI.update({
-                            id: movement.id,
-                            weightUnit: newWeightUnit,
-                          });
-                          addSetMenu.setData(updated);
-                        } catch (error) {
-                          toast.error(error.message);
-                        }
-                      }}
-                    >
-                      <MenuItem value={MovementWeightUnit.Pounds}>
-                        {MovementWeightUnit.Pounds}
-                      </MenuItem>
-                      <MenuItem value={MovementWeightUnit.Kilograms}>
-                        {MovementWeightUnit.Kilograms}
-                      </MenuItem>
-                    </MovementUnitSelect>
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetWeight}
-                      onChange={event => setNewSetWeight(+event.target.value)}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        sx: { fontSize: '1.5rem', width: '60px' },
-                      }}
-                    />
-                    {/** Shortcut buttons to add set with weight */}
-                    <Button
-                      disabled={newSetWeight <= 0}
-                      size="large"
-                      onClick={() => {
-                        setNewSetWeight(num => num - 10);
-                      }}
-                    >
-                      -10
-                    </Button>
-                    <Button
-                      size="large"
-                      onClick={() => {
-                        setNewSetWeight(num => num + 10);
-                      }}
-                    >
-                      +10
-                    </Button>
-                  </Stack>
-                  {/** bottom row */}
-                  <Stack
-                    spacing={1}
-                    direction="row"
-                    sx={{
-                      borderRadius: 1,
-                      backgroundColor: theme =>
-                        theme.palette.mode === 'dark'
-                          ? theme.palette.action.hover
-                          : theme.palette.background.default,
-                    }}
-                  >
-                    <MovementUnitSelect
-                      value={movement.repCountUnit}
-                      onChange={async event => {
-                        try {
-                          const newRepCountUnit = event.target.value as MovementRepCountUnit;
-                          // Update field on the movement
-                          const updated: Movement = await MovementsMutationAPI.update({
-                            id: movement.id,
-                            repCountUnit: newRepCountUnit,
-                          });
-                          addSetMenu.setData(updated);
-                        } catch (error) {
-                          toast.error(error.message);
-                        }
-                      }}
-                    >
-                      <MenuItem value={MovementRepCountUnit.Reps}>
-                        {MovementRepCountUnit.Reps}
-                      </MenuItem>
-                      <MenuItem value={MovementRepCountUnit.Seconds}>
-                        {MovementRepCountUnit.Seconds}
-                      </MenuItem>
-                      <MenuItem value={MovementRepCountUnit.Minutes}>
-                        {MovementRepCountUnit.Minutes}
-                      </MenuItem>
-                      <MenuItem value={MovementRepCountUnit.Meters}>
-                        {MovementRepCountUnit.Meters}
-                      </MenuItem>
-                    </MovementUnitSelect>
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetRepCountMin}
-                      onChange={event => {
-                        const val = +event.target.value;
-                        // auto-set max to min if min > max
-                        if (val > newSetRepCountMax) {
-                          setNewSetRepCountMax(val);
-                        }
-                        setNewSetRepCountMin(val);
-                      }}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        sx: { fontSize: '1.5rem', width: '75px' },
-                      }}
-                    />
-                    <TextField
-                      variant="standard"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      value={newSetRepCountMax}
-                      error={newSetRepCountMax < newSetRepCountMin}
-                      onChange={event => {
-                        const val = +event.target.value;
-                        setNewSetRepCountMax(val);
-                      }}
-                      onFocus={event => event.currentTarget.select()}
-                      InputProps={{
-                        sx: { fontSize: '1.5rem', width: '75px' },
-                        startAdornment: (
-                          <Typography variant="body2" color="textSecondary" ml={-3} mr={3}>
-                            {DIFF_CHAR}
-                          </Typography>
-                        ),
-                      }}
-                    />
-                  </Stack>
-                  {/** add set ui action buttons */}
-                  <Button
-                    size="large"
-                    variant="contained"
-                    onClick={async () => {
-                      const sets = movement.sets.concat({
-                        weight: newSetWeight,
-                        repCountActual: newSetRepCountMax,
-                        repCountExpected: newSetRepCountMin,
-                        repCountMaxExpected: newSetRepCountMax,
-                        status: MovementSetStatus.Unattempted,
-                        uuid: uuidv4(),
-                      });
+      <WithVariable value={addSetMenu.getData()}>
+        {movement => movement === null ? null : (
+          <Menu
+            open={addSetMenu.open}
+            anchorEl={addSetMenu.anchorEl}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              // horizontal: 'left',
+              horizontal: 'right',
+            }}
+            onClose={async (_event, reason) => {
+              if (!DataState.isReady(movements)) throw Error('Unreachable: movements not ready');
 
+              if (movementOrderSwap && movement) {
+                // movement is the movement clicked
+                // movementOrderSwap is the movement being moved
+                const sourceMv = movement;
+                const sourceIndex = movements.indexOf(sourceMv);
+                const targetMv = movementOrderSwap;
+                const targetIndex = movements.indexOf(targetMv);
+
+                let updates: Promise<Movement>[] = [];
+                if (sourceMv.position > targetMv.position) {
+                  // take items between and move them up
+                  updates = movements
+                    .slice(targetIndex, sourceIndex + 1)
+                    .map(m => MovementsMutationAPI.update({ id: m.id, position: m.position + 1 }));
+                } else {
+                  // take items between and move them down
+                  updates = movements
+                    .slice(sourceIndex + 1, targetIndex + 1)
+                    .map(m => MovementsMutationAPI.update({ id: m.id, position: m.position - 1 }));
+                }
+                // move source to desired destination
+                updates.push(
+                  MovementsMutationAPI.update({ id: sourceMv.id, position: targetMv.position })
+                );
+                try {
+                  await Promise.all(updates);
+
+                  setMovementOrderSwap(null);
+                } catch (error) {
+                  toast.error(error.message);
+                }
+              }
+
+              if (reason === 'backdropClick') {
+                if (newSetRepCountMin === 0) {
+                  addSetMenu.onClose();
+                  return;
+                }
+                if (newSetRepCountMax < newSetRepCountMin) {
+                  toast.error('Maximum must be less than minimum');
+                  return;
+                }
+                addSetMenu.onClose();
+                return;
+              }
+
+              // Click was NOT on the backdrop so it was within
+              // the menu which means the user is clicking
+              // around in the menu, so do nothing.
+              return;
+            }}
+            PaperProps={{
+              sx: {
+                maxWidth: '700px',
+                overflowX: 'scroll',
+              }
+            }}
+          >
+            {/** menu container */}
+            <Stack
+              direction="row"
+              sx={{
+                padding: theme => theme.spacing(0, 1),
+                // width: '100%',
+                // maxWidth: '500px',
+                // overflowX: 'scroll',
+                // marginY: -1
+              }}
+            >
+              <IconButton
+                onClick={async () => {
+                  const sets = movement.sets.concat({
+                    weight: newSetWeight,
+                    repCountActual: newSetRepCountMax,
+                    repCountExpected: newSetRepCountMin,
+                    repCountMaxExpected: newSetRepCountMax,
+                    status: MovementSetStatus.Unattempted,
+                    uuid: uuidv4(),
+                  });
+
+                  try {
+                    const updatedMovement = await MovementsMutationAPI.update({
+                      sets,
+                      id: movement.id,
+                    });
+                    if (!updatedMovement) {
+                      throw Error('Failed to add set to movement');
+                    }
+                    // Update Add Set panel so future operations include the new set
+                    addSetMenu.setData(updatedMovement);
+                  } catch (err) {
+                    toast.error(err.message);
+                  }
+                }}
+                size="large"
+                disabled={!!isMutating}
+                sx={{ color: theme => theme.palette.text.primary }}
+              >
+                <Add />
+              </IconButton>
+
+              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+              <Box display="flex">
+                <MovementUnitSelect
+                  value={movement.weightUnit}
+                  onChange={async event => {
+                    try {
+                      const newWeightUnit = event.target.value as MovementWeightUnit;
+                      // Update field on the movement
+                      const updated: Movement = await MovementsMutationAPI.update({
+                        id: movement.id,
+                        weightUnit: newWeightUnit,
+                      });
+                      addSetMenu.setData(updated);
+                    } catch (error) {
+                      toast.error(error.message);
+                    }
+                  }}
+                >
+                  <MenuItem value={MovementWeightUnit.Pounds}>
+                    {MovementWeightUnit.Pounds}
+                  </MenuItem>
+                  <MenuItem value={MovementWeightUnit.Kilograms}>
+                    {MovementWeightUnit.Kilograms}
+                  </MenuItem>
+                </MovementUnitSelect>
+                <TextField
+                  variant="standard"
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  value={newSetWeight}
+                  onChange={event => setNewSetWeight(+event.target.value)}
+                  onFocus={event => event.currentTarget.select()}
+                  InputProps={{
+                    sx: { fontSize: '1.5rem', width: '60px' },
+                  }}
+                />
+              </Box>
+
+              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+              <Box display="flex">
+                <MovementUnitSelect
+                  value={movement.repCountUnit}
+                  onChange={async event => {
+                    try {
+                      const newRepCountUnit = event.target.value as MovementRepCountUnit;
+                      // Update field on the movement
+                      const updated: Movement = await MovementsMutationAPI.update({
+                        id: movement.id,
+                        repCountUnit: newRepCountUnit,
+                      });
+                      addSetMenu.setData(updated);
+                    } catch (error) {
+                      toast.error(error.message);
+                    }
+                  }}
+                >
+                  <MenuItem value={MovementRepCountUnit.Reps}>
+                    {MovementRepCountUnit.Reps}
+                  </MenuItem>
+                  <MenuItem value={MovementRepCountUnit.Seconds}>
+                    {MovementRepCountUnit.Seconds}
+                  </MenuItem>
+                  <MenuItem value={MovementRepCountUnit.Minutes}>
+                    {MovementRepCountUnit.Minutes}
+                  </MenuItem>
+                  <MenuItem value={MovementRepCountUnit.Meters}>
+                    {MovementRepCountUnit.Meters}
+                  </MenuItem>
+                </MovementUnitSelect>
+                <TextField
+                  variant="standard"
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  value={newSetRepCountMin}
+                  onChange={event => {
+                    const val = +event.target.value;
+                    // auto-set max to min if min > max
+                    if (val > newSetRepCountMax) {
+                      setNewSetRepCountMax(val);
+                    }
+                    setNewSetRepCountMin(val);
+                  }}
+                  onFocus={event => event.currentTarget.select()}
+                  InputProps={{
+                    sx: { fontSize: '1.5rem', width: '75px' },
+                  }}
+                />
+                <TextField
+                  variant="standard"
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  value={newSetRepCountMax}
+                  error={newSetRepCountMax < newSetRepCountMin}
+                  onChange={event => {
+                    const val = +event.target.value;
+                    setNewSetRepCountMax(val);
+                  }}
+                  onFocus={event => event.currentTarget.select()}
+                  InputProps={{
+                    sx: { fontSize: '1.5rem', width: '75px' },
+                    startAdornment: (
+                      <Typography variant="body2" color="textSecondary" ml={-3} mr={3}>
+                        {DIFF_CHAR}
+                      </Typography>
+                    ),
+                  }}
+                />
+              </Box>
+
+              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+              {movement.sets.length > 0 && (
+                <>
+                  <IconButton
+                    disabled={!!isMutating}
+                    sx={{ color: theme => theme.palette.text.primary }}
+                    onClick={async function deleteLastSet() {
+                      let sets = movement.sets.slice();
+                      // Remove last element
+                      sets.pop();
                       try {
-                        const updatedMovement = await MovementsMutationAPI.update({
-                          sets,
+                        const updated = await MovementsMutationAPI.update({
                           id: movement.id,
+                          sets,
                         });
-                        if (!updatedMovement) {
-                          throw Error('Failed to add set to movement');
+                        if (!updated) {
+                          throw Error('Failed to delete set #' + movement.sets.length);
                         }
-                        // Update Add Set panel so future operations include the new set
-                        addSetMenu.setData(updatedMovement);
-                      } catch (err) {
-                        toast.error(err.message);
+                        addSetMenu.setData(updated);
+                      } catch (error) {
+                        toast.error(error.message);
                       }
                     }}
-                    startIcon={<Add />}
-                    disabled={!!isMutating}
                   >
-                    Create Set {movement.sets.length + 1}
-                  </Button>
-                  {movement.sets.length > 0 && (
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<Close fontSize="small" />}
-                      disabled={!!isMutating}
-                      onClick={async function deleteLastSet() {
-                        let sets = movement.sets.slice();
-                        // Remove last element
-                        sets.pop();
-                        try {
-                          const updated = await MovementsMutationAPI.update({
-                            id: movement.id,
-                            sets,
-                          });
-                          if (!updated) {
-                            throw Error('Failed to delete set #' + movement.sets.length);
-                          }
-                          addSetMenu.setData(updated);
-                        } catch (error) {
-                          toast.error(error.message);
+                    <DeleteOutline />
+                  </IconButton>
+
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+                  <IconButton
+                    disabled={!!isMutating}
+                    sx={{ color: theme => theme.palette.text.primary }}
+                    onClick={async function deleteAllMovementSets() {
+                      if (!window.confirm('Delete all sets?')) return;
+
+                      try {
+                        const updated = await MovementsMutationAPI.update({
+                          id: movement.id,
+                          sets: [],
+                        });
+                        if (!updated) {
+                          throw Error('Failed to delete all sets');
                         }
-                      }}
+                        addSetMenu.setData(updated);
+                      } catch (error) {
+                        toast.error(error.message);
+                      }
+                    }}
+                  >
+                    <DeleteSweepOutlined />
+                  </IconButton>
+
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                </>
+              )}
+
+              <IconButton
+                disabled={!!isMutating}
+                sx={{ color: theme => theme.palette.error.main }}
+                onClick={async () => {
+                  if (!window.confirm('Remove movement from training log')) return;
+
+                  try {
+                    await MovementsMutationAPI.delete(movement.id);
+
+                    addSetMenu.onClose();
+                  } catch (err) {
+                    toast.error(err.message);
+                  }
+                }}
+              >
+                <PlaylistRemove />
+              </IconButton>
+
+              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+              {/** Re-order / position buttons */}
+              <DataStateView
+                data={movements}
+                loading={() => null}
+              >
+                {movements => {
+                  if (movements.length <= 1) return null;
+
+                  const selectedMovement = movement;
+                  return (
+                    <Stack
+                      spacing={0.25}
+                      direction="row"
+                      alignItems="center"
+                    // sx={{ overflowX: 'scroll', width: '100%' }}
                     >
-                      Delete Set {movement.sets.length}
-                    </Button>
-                  )}
-                </Stack>
-              </Menu>
-            )
-          }
-        </WithVariable>
-      </Backdrop>
+                      <Typography variant="subtitle2" color="text.secondary">Order:</Typography>
+                      {movements.map((movement, movementIndex) => {
+                        const isSelected = movement.position === movementOrderSwap?.position;
+                        return (
+                          <Button
+                            id={movement.id}
+                            key={movement.id}
+                            variant={isSelected ? 'contained' : 'text'}
+                            disabled={selectedMovement.id === movement.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                // Unselect.
+                                setMovementOrderSwap(null);
+                              } else {
+                                setMovementOrderSwap(movement);
+                              }
+                            }}
+                            // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
+                            sx={{
+                              minWidth: '35px',
+                              fontWeight: 600,
+                              // backgroundColor: theme => theme.palette.action.hover,
+                            }}
+                            size="large"
+                          >
+                            <b>{movementIndex + 1}</b>
+                          </Button>
+                        );
+                      })}
+                    </Stack>
+                  );
+                }}
+              </DataStateView>
+
+              {/**
+                 Find and Replace Movement
+                 Disabled for now, haven't been using it
+                 And the functionality is replacable by delete + create Movement
+              <IconButton
+                disabled={!!isMutating}
+                sx={{ color: theme => theme.palette.error.main }}
+                onClick={event => {
+                  addMovementDrawer.onOpen(event, movement);
+                }}
+                size="small"
+              >
+                <FindReplaceRounded />
+              </IconButton>
+              */}
+            </Stack>
+          </Menu>
+        )}
+      </WithVariable>
 
       <SwipeableDrawer
         {...addMovementDrawer.props()}
@@ -1092,44 +1222,8 @@ export const EditorInternals: FC<{
 
       {/** Movement Menu Drawer */}
       <SwipeableDrawer
-        open={movementMenuDrawer.open}
         anchor="top"
-        onOpen={movementMenuDrawer.props().onOpen}
-        onClose={async function reorderMovements() {
-          const movement = movementMenuDrawer.getData();
-          if (!DataState.isReady(movements)) return;
-          if (movementOrderSwap && movement) {
-            // movement is the movement clicked
-            // movementOrderSwap is the movement being moved
-            const sourceMv = movement;
-            const sourceIndex = movements.indexOf(sourceMv);
-            const targetMv = movementOrderSwap;
-            const targetIndex = movements.indexOf(targetMv);
-            let updates: Promise<Movement>[] = [];
-            if (sourceMv.position > targetMv.position) {
-              // take items between and move them up
-              updates = movements
-                .slice(targetIndex, sourceIndex + 1)
-                .map(m => MovementsMutationAPI.update({ id: m.id, position: m.position + 1 }));
-            } else {
-              // take items between and move them down
-              updates = movements
-                .slice(sourceIndex + 1, targetIndex + 1)
-                .map(m => MovementsMutationAPI.update({ id: m.id, position: m.position - 1 }));
-            }
-            // move source to desired destination
-            updates.push(
-              MovementsMutationAPI.update({ id: sourceMv.id, position: targetMv.position })
-            );
-            try {
-              await Promise.all(updates);
-            } catch (error) {
-              toast.error(error.message);
-            }
-          }
-          movementMenuDrawer.onClose();
-          setMovementOrderSwap(null);
-        }}
+        {...movementMenuDrawer.props()}
       >
         <Collapse in={movementMenuDrawer.open}>
           <Box
@@ -1177,118 +1271,7 @@ export const EditorInternals: FC<{
                   }}
                 />
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button
-                  color="error"
-                  startIcon={<DeleteOutline />}
-                  onClick={async () => {
-                    if (!window.confirm('Are you sure?')) return;
-                    try {
-                      const movement = movementMenuDrawer.getData();
-                      if (!movement) throw TypeError('Unreachable: rename movement');
-                      await MovementsMutationAPI.delete(movement.id);
-                      movementMenuDrawer.onClose();
-                    } catch (error) {
-                      toast.error(error.message);
-                    }
-                  }}
-                >
-                  Remove
-                </Button>
-                <Button
-                  sx={{ color: theme => theme.palette.text.secondary }}
-                  startIcon={<FindReplaceRounded />}
-                  onClick={event => {
-                    const movement = movementMenuDrawer.getData();
-                    if (!movement) throw Error('Unreachable: Movement not found.');
-                    addMovementDrawer.onOpen(event, movement);
-                  }}
-                >
-                  Replace
-                </Button>
-              </Box>
 
-              {/** Re-order / position buttons */}
-              <DataStateView
-                data={movements}
-                loading={() => (
-                  <Stack direction="row" spacing={1.5}>
-                    <Skeleton variant="rectangular" width={'42px'} />
-                    <Skeleton variant="rectangular" width={'42px'} />
-                    <Skeleton variant="rectangular" width={'42px'} />
-                  </Stack>
-                )}
-              >
-                {movements => {
-                  if (movements.length <= 1) return null;
-                  const selectedMovement = movementMenuDrawer.getData();
-                  if (!selectedMovement) return null;
-                  return (
-                    <Stack
-                      spacing={1.5}
-                      direction="row"
-                      alignItems="center"
-                      sx={{ overflowX: 'scroll' }}
-                    >
-                      <Typography variant="subtitle2">Order:</Typography>
-                      {movements.map((movement, movementIndex) => {
-                        const isSelected = movement.position === movementOrderSwap?.position;
-                        return (
-                          <Button
-                            id={movement.id}
-                            key={movement.id}
-                            variant={isSelected ? 'contained' : 'outlined'}
-                            disabled={selectedMovement.id === movement.id}
-                            onClick={() => {
-                              if (isSelected) {
-                                // Unselect.
-                                setMovementOrderSwap(null);
-                              } else {
-                                setMovementOrderSwap(movement);
-                              }
-                            }}
-                            // https://uxmovement.com/mobile/optimal-size-and-spacing-for-mobile-buttons/
-                            sx={{ minWidth: '48px' }}
-                          >
-                            <b>{movementIndex + 1}</b>
-                          </Button>
-                        );
-                      })}
-                    </Stack>
-                  );
-                }}
-              </DataStateView>
-
-              {/** Edit note for SavedMovement */}
-              {DataState.isReady(savedMovements) && (
-                <WithVariable
-                  value={savedMovements.find(
-                    m => m.id === movementMenuDrawer.getData()?.savedMovementId
-                  )}
-                >
-                  {savedMovement => {
-                    if (!savedMovement) return null;
-                    return (
-                      <NotesDrawer
-                        noFocusLock
-                        note={savedMovement?.note || ''}
-                        sx={{ height: '16vh' }}
-                        onBlur={async (nextNote: string) => {
-                          try {
-                            // Update SavedMovement with new note
-                            await SavedMovementsAPI.update({
-                              id: savedMovement.id,
-                              note: nextNote,
-                            });
-                          } catch (err) {
-                            toast.error(err.message);
-                          }
-                        }}
-                      />
-                    );
-                  }}
-                </WithVariable>
-              )}
             </Stack>
           </TabPanel>
           <TabPanel value={tabValue} index={TabIndex.History}>
