@@ -14,7 +14,9 @@ import {
   NavigateNextRounded,
   PersonOutline,
   RefreshRounded,
-  ShortTextRounded,
+  Menu as MenuIcon,
+  ChatOutlined,
+  IosShareRounded,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -37,6 +39,7 @@ import {
   Tabs,
   TextField,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -88,10 +91,10 @@ export const Editor: FC = () => {
         sx={{
           height: '100%',
           width: '100vw',
-          maxWidth: theme => theme.breakpoints.values.sm,
+          maxWidth: '708px',
           margin: '0 auto',
           overflowY: 'scroll',
-          padding: theme => theme.spacing(0.5, 2, 3, 2),
+          padding: theme => theme.spacing(0.5, 0, 3, 0),
         }}
       >
         {!!logId && <EditorInternals logId={logId} />}
@@ -135,6 +138,8 @@ export const EditorInternals: FC<{
 }> = ({ logId, isProgramView = false, readOnly = false }) => {
   const notesDrawer = useDrawer<TrainingLog>();
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const toast = useToast();
   const user = useUser();
   const navigate = useNavigate();
@@ -290,14 +295,42 @@ export const EditorInternals: FC<{
     ]
   );
 
+  const clickShareBtn = () => {
+    console.warn('Unimplemented: share btn/panel feature');
+  }
+
   return (
     <>
-      <Stack direction="row" width="100%" justifyContent="space-between" alignItems="center">
-        {DataState.isReady(log) ? (
-          <Typography variant="caption">{dateDisplay(new Date(log.timestamp))}</Typography>
-        ) : (
-          <span />
-        )}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{
+        // fixed header
+        position: 'absolute',
+        top: 0,
+        width: '100vw',
+        zIndex: 100,
+        left: 0,
+        padding: 0.5,
+      }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <IconButton onMouseOver={() => {
+            console.warn('Unimplemented: Desktop feature only -> hover shows left-side account panel');
+          }} onClick={() => {
+            // TODO
+            if (isMobile) {
+              // Open left-side account panel
+            } else {
+              // desktop:
+              // todo: save settings -> desktop-always-show-account-panel = true
+            }
+            console.warn('Unimplemented: See code');
+          }}>
+            <MenuIcon />
+          </IconButton>
+          {DataState.isReady(log) ? (
+            <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
+          ) : (
+            <span />
+          )}
+        </Stack>
         {readOnly === false && (
           <Stack direction="row">
             <Button
@@ -316,11 +349,37 @@ export const EditorInternals: FC<{
             ></Button>
             {isProgramView === false && (
               <>
-                <IconButton onClick={event => logDrawer.onOpen(event, void 0)}>
-                  <ShortTextRounded sx={{ color: 'text.primary' }} />
+                {isMobile ? (
+                  <IconButton onClick={clickShareBtn}>
+                    <IosShareRounded sx={{ color: 'text.primary' }} />
+                  </IconButton>
+                ) : <Button onClick={clickShareBtn} sx={{
+                  color: theme => theme.palette.text.primary,
+                  textTransform: 'none',
+                  letterSpacing: 0,
+                }}>Share </Button>
+                }
+
+                <IconButton onClick={() => {
+                  console.warn('Unimplemented: chat/comments panel: 385px desktop, 100vw mobile');
+                }}>
+                  <ChatOutlined sx={{ color: 'text.primary' }} />
                 </IconButton>
-                <IconButton onClick={() => navigate(Paths.home)}>
+
+                <IconButton onClick={() => {
+                  console.warn('Unimplemented: this is part of the top-left account panel');
+
+                  return navigate(Paths.home);
+                }}>
                   <PersonOutline sx={{ color: 'text.primary' }} />
+                </IconButton>
+
+                <IconButton onClick={event => {
+                  console.warn('unimplemented: see roadmap for this feature');
+
+                  return logDrawer.onOpen(event, void 0);
+                }}>
+                  <MoreHoriz sx={{ color: 'text.primary' }} />
                 </IconButton>
               </>
             )}
@@ -341,10 +400,17 @@ export const EditorInternals: FC<{
             spacing={2}
             // Block all mouse clicks/events when in readOnly mode
             sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
+            style={{
+
+              // Padding top specifically to account for fixed header
+              paddingTop: '5rem',
+            }}
           >
             {movements.map(movement => (
               <Fade in key={movement.id}>
-                <Stack sx={{ padding: theme => theme.spacing(1, 0) }}>
+                <Stack sx={{
+                  padding: theme => theme.spacing(1, 0),
+                }}>
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
                     {/** alignItems here could be END or BASELINE */}
                     <Stack
@@ -1326,15 +1392,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.1),
-            // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `3px solid ${theme.palette.success.light}`,
-            color: theme.palette.success.light,
-          }
+          backgroundColor: alpha(theme.palette.success.light, 0.1),
+          // Avoid jarring when switching between Unattempted and Completed
+          borderBottom: `3px solid ${theme.palette.success.light}`,
+          color: theme.palette.success.light,
+        }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.08),
-            borderBottom: `3px solid ${theme.palette.divider}`,
-          },
+          backgroundColor: alpha(theme.palette.divider, 0.08),
+          borderBottom: `3px solid ${theme.palette.divider}`,
+        },
     [movementSet.status, theme]
   );
 
@@ -1410,9 +1476,8 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${
-                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-              }`,
+              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+                }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1458,8 +1523,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-            movementSet.status === MovementSetStatus.Completed ||
-            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              movementSet.status === MovementSetStatus.Completed ||
+              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
