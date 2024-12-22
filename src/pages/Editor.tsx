@@ -313,7 +313,7 @@ export const EditorInternals: FC<{
           width: '100vw',
           zIndex: 100,
           left: 0,
-          padding: 0.5,
+          padding: theme => theme.spacing(0, 0.5),
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
