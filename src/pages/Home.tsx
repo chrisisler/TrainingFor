@@ -214,7 +214,6 @@ export const Home: FC = () => {
         <Button
           endIcon={<ArrowForwardIos />}
           onClick={() => createTrainingLog({ fromTemplateId: null })}
-          sx={{ textTransform: 'none' }}
         >
           New Session
         </Button>

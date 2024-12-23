@@ -1312,24 +1312,12 @@ export const EditorInternals: FC<{
               }}
               sx={{
                 color: theme => theme.palette.text.secondary,
-                // backgroundColor: theme => darken(theme.palette.action.hover, 0.3),
                 fontWeight: 600,
                 justifyContent: 'flex-start',
-                // paddingLeft: 1.5,
               }}
             >
               {user.displayName}
             </Button>
-
-            {/** TODO other stuff here, search, inbox, add new log */}
-            <IconButton
-              sx={{ color: theme => theme.palette.text.secondary }}
-              onClick={() => {
-                console.warn('Unimplemented: search/add new training log');
-              }}
-            >
-              <NoteAltOutlined fontSize="small" />
-            </IconButton>
           </Stack>
 
           <DataStateView
@@ -1348,7 +1336,7 @@ export const EditorInternals: FC<{
           >
             {logs => (
               <Stack>
-                <Typography variant="caption" fontWeight={600} color="text.secondary" lineHeight={0.5}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary">
                   Training Logs
                 </Typography>
                 <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
@@ -1414,6 +1402,36 @@ export const EditorInternals: FC<{
               </Stack>
             )}
           </DataStateView>
+
+          <Button
+            onClick={async () => {
+              try {
+                const newTrainingLog = await TrainingLogsAPI.create({
+                  timestamp: Date.now(),
+                  authorUserId: user.uid,
+                  bodyweight: 0,
+                  isFinished: false,
+                  note: '',
+                  programId: null,
+                  programLogTemplateId: null,
+                });
+
+                navigate(Paths.editor(newTrainingLog.id));
+
+                if (!pinned) accountDrawer.onClose();
+              } catch (err) {
+                toast.error(err.message);
+              }
+            }}
+            sx={{
+              color: theme => theme.palette.text.secondary,
+              fontWeight: 600,
+              justifyContent: 'flex-start',
+            }}
+            startIcon={<Add />}
+          >
+            Add training log
+          </Button>
 
           {/**
           <Button
