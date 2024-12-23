@@ -35,6 +35,7 @@ import {
   ButtonBase,
   CircularProgress,
   Collapse,
+  darken,
   Divider,
   Fade,
   IconButton,
@@ -150,6 +151,7 @@ export const EditorInternals: FC<{
 }> = ({ logId, isProgramView = false, readOnly = false }) => {
   const notesDrawer = useDrawer<TrainingLog>();
 
+  const prefersDark = useMediaQuery('@media (prefers-color-scheme: dark)');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const toast = useToast();
@@ -353,9 +355,9 @@ export const EditorInternals: FC<{
             sx={{
               color: theme => theme.palette.text.secondary,
             }}
-            // onMouseOver={event => {
-            //   accountDrawer.onOpen(event, void 0);
-            // }}
+            onMouseOver={event => {
+              accountDrawer.onOpen(event, void 0);
+            }}
             onClick={event => {
               accountDrawer.onOpen(event, void 0);
             }}
@@ -1259,7 +1261,7 @@ export const EditorInternals: FC<{
       </SwipeableDrawer>
 
       {/** In-editor display of editor from the TrainingLog from the movement from the SavedMovement history. */}
-      <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom" PaperProps={{ sx: { p: 1 } }}>
+      <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom">
         <Collapse in={historyLogDrawer.open}>
           <Box height="80vh">
             {!!historyLogDrawer.getData() && (
@@ -1273,7 +1275,17 @@ export const EditorInternals: FC<{
         {...accountDrawer.props()}
         anchor="left"
         hideBackdrop={pinned}
+        // confines screen-wide invisible element to drawer
         sx={{ zIndex: 101, width: '240px', }}
+        PaperProps={{
+          onMouseLeave: pinned ? undefined : accountDrawer.onClose,
+          sx: {
+            padding: theme => theme.spacing(1, 1.5, 2, 1.5),
+            boxShadow: 'none',
+            backgroundColor: theme =>
+                darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
+          },
+        }}
       >
         <Stack
           spacing={3}
