@@ -98,7 +98,7 @@ export const Editor: FC = () => {
           maxWidth: '708px',
           margin: '0 auto',
           overflowY: 'scroll',
-          padding: theme => theme.spacing(0.5, 0.5, 3, 0.5),
+          padding: theme => theme.spacing(0.5, 0, 3, 0),
         }}
       >
         {!!logId && <EditorInternals logId={logId} />}
@@ -409,7 +409,9 @@ export const EditorInternals: FC<{
             sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             style={{
               // Padding top specifically to account for fixed header
-              paddingTop: '5rem',
+              paddingTop: isMobile ? '3rem' : '5rem',
+              padding: '1rem',
+              paddingBottom: 0,
             }}
           >
             {movements.map(movement => (
@@ -673,11 +675,12 @@ export const EditorInternals: FC<{
                   }}
                   disabled={!!isMutating}
                   sx={{ color: theme => theme.palette.text.primary }}
+                  size="large"
                 >
                   <Add />
                 </IconButton>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                 <Box display="flex">
                   <MovementUnitSelect
@@ -715,7 +718,7 @@ export const EditorInternals: FC<{
                   />
                 </Box>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                 <Box display="flex">
                   <MovementUnitSelect
@@ -785,7 +788,7 @@ export const EditorInternals: FC<{
                   />
                 </Box>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                 {movement.sets.length > 0 && (
                   <>
@@ -813,7 +816,7 @@ export const EditorInternals: FC<{
                       <DeleteOutline />
                     </IconButton>
 
-                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                    <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                     <IconButton
                       disabled={!!isMutating}
@@ -838,7 +841,7 @@ export const EditorInternals: FC<{
                       <DeleteSweepOutlined />
                     </IconButton>
 
-                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                    <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                   </>
                 )}
 
@@ -860,7 +863,7 @@ export const EditorInternals: FC<{
                   <PlaylistRemove />
                 </IconButton>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                 {/** Re-order / position buttons */}
                 <DataStateView data={movements} loading={() => null}>
@@ -899,7 +902,7 @@ export const EditorInternals: FC<{
                             );
                           })}
                         </Stack>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                       </>
                     );
                   }}
@@ -930,7 +933,7 @@ export const EditorInternals: FC<{
                   <DriveFileRenameOutline />
                 </IconButton>
 
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                 <IconButton
                   disabled={!!isMutating}
