@@ -931,7 +931,8 @@ export const EditorInternals: FC<{
                                   sx={{
                                     minWidth: '35px',
                                     fontWeight: 600,
-                                    backgroundColor: theme => isSelected ? 'none' : theme.palette.action.hover,
+                                    backgroundColor: theme =>
+                                      isSelected ? 'none' : theme.palette.action.hover,
                                   }}
                                   size="large"
                                 >
@@ -1381,6 +1382,9 @@ export const EditorInternals: FC<{
                           // transform: 'translateX(-6px)',
                           cursor: 'pointer',
                           borderRadius: 1,
+                          ":hover": {
+                            backgroundColor: theme => theme.palette.action.hover,
+                          },
 
                           ...(logId === log.id && {
                             backgroundColor: theme => theme.palette.action.hover,
@@ -1628,9 +1632,17 @@ export const EditorInternals: FC<{
                     TrainingLogsAPI.delete(logId),
                     MovementsAPI.deleteMany(where('logId', '==', logId)),
                   ]);
+
                   logDrawer.onClose();
-                  navigate(Paths.home);
                   toast.info('Deleted training');
+
+                  // navigate to the nearest available log
+                  if (DataState.isReady(logs) && logs.length > 1) {
+                    const [{ id }] = logs.filter(_ => _.id !== logId);
+                    navigate(Paths.editor(id));
+                  } else {
+                    navigate(Paths.home);
+                  }
                 } catch (error) {
                   toast.error(error.message);
                 }
@@ -1813,6 +1825,7 @@ const MovementSetView: FC<{
               // update to new value
               movement.sets[index].repCountActual = +value;
               movement.sets[index].status = MovementSetStatus.Completed;
+
               const isLastSet = index === movement.sets.length - 1;
               if (Math.random() > 0.85 && isLastSet) {
                 setConfetti(true);
