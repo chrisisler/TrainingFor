@@ -1271,7 +1271,7 @@ export const EditorInternals: FC<{
           <Stack direction="row" spacing={1} alignItems="center">
             <IconButton
               sx={{ color: theme => theme.palette.text.secondary }}
-              disabled
+              disabled={isMobile}
               onClick={() => {
                 if (isMobile) return;
 
@@ -1350,8 +1350,10 @@ export const EditorInternals: FC<{
                       paddingY: '0.5rem',
                       cursor: 'pointer',
                     }}
-                    justifyContent="space-between"
+                    onClick={() => navigate(Paths.editor(log.id))}
                   >
+                    <ChevronRight sx={{ color: theme => theme.palette.divider }} />
+
                     <ButtonBase
                       sx={{
                         color: theme => theme.palette.text.secondary,
@@ -1361,18 +1363,9 @@ export const EditorInternals: FC<{
                         navigate(Paths.editor(log.id));
                       }}
                     >
-                      <ChevronRight sx={{ color: theme => theme.palette.divider }} />
-
                       {dateDisplay(new Date(log.timestamp))}
                     </ButtonBase>
 
-                    <IconButton>
-                      <MoreHoriz
-                        sx={{
-                          color: theme => theme.palette.text.secondary,
-                        }}
-                      />
-                    </IconButton>
                   </Stack>
                 ))}
               </Stack>
