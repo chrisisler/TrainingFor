@@ -89,6 +89,8 @@ const DIFF_CHAR = '-';
 const DEFAULT_MIN_REPS = 5;
 const DEFAULT_MAX_REPS = 30;
 
+const ACCT_DRAWER_WIDTH = '240px';
+
 /**
  * Wrapper page for editing training entries.
  */
@@ -102,8 +104,6 @@ export const Editor: FC = () => {
         sx={{
           height: '100%',
           width: '100vw',
-          maxWidth: '708px',
-          margin: '0 auto',
           overflowY: 'scroll',
           padding: theme => theme.spacing(0.5, 0, 3, 0),
         }}
@@ -319,7 +319,11 @@ export const EditorInternals: FC<{
   };
 
   return (
-    <>
+    <main style={{
+      width: '100%',
+      margin: '0 auto',
+      maxWidth: '708px',
+    }}>
       <Stack
         direction="row"
         justifyContent="space-between"
@@ -405,6 +409,7 @@ export const EditorInternals: FC<{
           </Stack>
         )}
       </Stack>
+
       <DataStateView
         data={movements}
         loading={() => (
@@ -424,6 +429,9 @@ export const EditorInternals: FC<{
               padding: '1rem',
               paddingBottom: 0,
               paddingTop: isMobile ? '3rem' : '5rem',
+
+              // spacing for pinned header
+              transform: !isMobile && pinned ? 'translateX(150px)' : 'none',
             }}
           >
             {movements.map(movement => (
@@ -555,25 +563,25 @@ export const EditorInternals: FC<{
                 </Stack>
               </Fade>
             ))}
+            <ButtonBase
+              onClick={event => addMovementDrawer.onOpen(event, null)}
+              sx={{
+                width: '100%',
+                fontSize: '1.0rem',
+                color: theme => theme.palette.divider,
+                border: 0,
+                backgroundColor: 'transparent',
+                height: '500px',
+                fontWeight: 600,
+                letterSpacing: 0,
+              }}
+            >
+              <Add fontSize="large" />
+            </ButtonBase>
           </Stack>
         )}
       </DataStateView>
 
-      <ButtonBase
-        onClick={event => addMovementDrawer.onOpen(event, null)}
-        sx={{
-          width: '100%',
-          fontSize: '1.0rem',
-          color: theme => theme.palette.divider,
-          border: 0,
-          backgroundColor: 'transparent',
-          height: '500px',
-          fontWeight: 600,
-          letterSpacing: 0,
-        }}
-      >
-        <Add fontSize="large" />
-      </ButtonBase>
 
       {/** ------------------------- DRAWERS ------------------------- */}
 
@@ -1268,7 +1276,7 @@ export const EditorInternals: FC<{
         <Stack
           spacing={2}
           sx={{
-            width: isMobile ? '78vw' : '240px',
+            width: isMobile ? '78vw' : ACCT_DRAWER_WIDTH,
           }}
         >
           <Stack direction="row" spacing={1} alignItems="center">
@@ -1339,7 +1347,7 @@ export const EditorInternals: FC<{
             )}
           >
             {logs => (
-              <Stack spacing={0.25} sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
+              <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
                 <Typography variant="caption" fontWeight={600} color="text.secondary">
                   Training Logs
                 </Typography>
@@ -1609,7 +1617,7 @@ export const EditorInternals: FC<{
           )}
         </Collapse>
       </SwipeableDrawer>
-    </>
+    </main>
   );
 };
 
@@ -1632,15 +1640,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.1),
-            // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `3px solid ${theme.palette.success.light}`,
-            color: theme.palette.success.light,
-          }
+          backgroundColor: alpha(theme.palette.success.light, 0.1),
+          // Avoid jarring when switching between Unattempted and Completed
+          borderBottom: `3px solid ${theme.palette.success.light}`,
+          color: theme.palette.success.light,
+        }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.08),
-            borderBottom: `3px solid ${theme.palette.divider}`,
-          },
+          backgroundColor: alpha(theme.palette.divider, 0.08),
+          borderBottom: `3px solid ${theme.palette.divider}`,
+        },
     [movementSet.status, theme]
   );
 
@@ -1716,9 +1724,8 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${
-                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-              }`,
+              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+                }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1764,8 +1771,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-            movementSet.status === MovementSetStatus.Completed ||
-            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              movementSet.status === MovementSetStatus.Completed ||
+              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
