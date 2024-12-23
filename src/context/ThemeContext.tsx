@@ -23,12 +23,6 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
       mode: prefersDark ? 'dark' : 'light',
     },
     components: {
-      MuiButtonBase: {
-        defaultProps: {
-          disableRipple: true,
-          disableTouchRipple: true,
-        },
-      },
       MuiButton: {
         styleOverrides: {
           root: {
