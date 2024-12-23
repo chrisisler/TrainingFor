@@ -666,14 +666,13 @@ export const EditorInternals: FC<{
                     toast.error(err.message);
                   }
                 }}
-                size="large"
                 disabled={!!isMutating}
                 sx={{ color: theme => theme.palette.text.primary }}
               >
                 <Add />
               </IconButton>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
               <Box display="flex">
                 <MovementUnitSelect
@@ -711,7 +710,7 @@ export const EditorInternals: FC<{
                 />
               </Box>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
               <Box display="flex">
                 <MovementUnitSelect
@@ -781,7 +780,7 @@ export const EditorInternals: FC<{
                 />
               </Box>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
               {movement.sets.length > 0 && (
                 <>
@@ -809,7 +808,7 @@ export const EditorInternals: FC<{
                     <DeleteOutline />
                   </IconButton>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
                   <IconButton
                     disabled={!!isMutating}
@@ -834,7 +833,7 @@ export const EditorInternals: FC<{
                     <DeleteSweepOutlined />
                   </IconButton>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                 </>
               )}
 
@@ -856,7 +855,7 @@ export const EditorInternals: FC<{
                 <PlaylistRemove />
               </IconButton>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
               {/** Re-order / position buttons */}
               <DataStateView
@@ -900,7 +899,7 @@ export const EditorInternals: FC<{
                           );
                         })}
                       </Stack>
-                      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                     </>
                   );
                 }}
@@ -931,7 +930,7 @@ export const EditorInternals: FC<{
                 <DriveFileRenameOutline />
               </IconButton>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
               <IconButton
                 disabled={!!isMutating}
@@ -1244,7 +1243,7 @@ export const EditorInternals: FC<{
       <SwipeableDrawer {...logDrawer.props()} anchor="right">
         <Collapse in={logDrawer.open}>
           <Stack spacing={3} sx={{
-            width: isMobile ? '85vw' : '268px',
+            width: isMobile ? '80vw' : '268px',
             padding: theme => theme.spacing(1),
           }}>
             <TextField
