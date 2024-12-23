@@ -1,6 +1,5 @@
 ## TrainingFor
 
-Tailored training app to create workouts and make progress in the gym.
+Tailored training app to create workouts, share and make progress in the gym.
 
-[Source available.](https://news.itsfoss.com/open-source-source-available/)
-
+![New UI](public/desktop02.png)
