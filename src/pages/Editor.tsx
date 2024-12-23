@@ -1274,7 +1274,7 @@ export const EditorInternals: FC<{
         sx={{ zIndex: 101 }}
       >
         <Stack
-          spacing={2}
+          spacing={3}
           sx={{
             width: isMobile ? '78vw' : ACCT_DRAWER_WIDTH,
           }}
@@ -1347,68 +1347,70 @@ export const EditorInternals: FC<{
             )}
           >
             {logs => (
-              <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
+              <Stack>
+                <Typography variant="caption" fontWeight={600} color="text.secondary" lineHeight={0.5}>
                   Training Logs
                 </Typography>
-                {logs.slice(0, 30).map(log => {
-                  const date = new Date(log.timestamp);
+                <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
+                  {logs.slice(0, 20).map(log => {
+                    const date = new Date(log.timestamp);
 
-                  return (
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      key={log.id}
-                      sx={{
-                        padding: '0.75rem',
-                        paddingLeft: 0,
-                        cursor: 'pointer',
-                        borderRadius: 1,
-
-                        ...(logId === log.id && {
-                          backgroundColor: theme => theme.palette.action.hover,
-                        }),
-                        ...(isMobile && {
-                          borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                        }),
-                        // borderBottom: theme => `1px solid ${theme.palette.divider}`
-                      }}
-                      onClick={() => {
-                        if (!pinned) accountDrawer.onClose();
-                        navigate(Paths.editor(log.id));
-                      }}
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <ButtonBase
+                    return (
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        key={log.id}
                         sx={{
-                          color: theme => theme.palette.text.secondary,
-                          fontSize: '1.0rem',
-                          fontWeight: 600,
+                          padding: '0.75rem',
+                          paddingLeft: 0,
+                          cursor: 'pointer',
+                          borderRadius: 1,
+
+                          ...(logId === log.id && {
+                            backgroundColor: theme => theme.palette.action.hover,
+                          }),
+                          ...(isMobile && {
+                            borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                          }),
+                          // borderBottom: theme => `1px solid ${theme.palette.divider}`
                         }}
                         onClick={() => {
                           if (!pinned) accountDrawer.onClose();
                           navigate(Paths.editor(log.id));
                         }}
+                        justifyContent="space-between"
+                        alignItems="center"
                       >
-                        <ChevronRight sx={{ color: theme => theme.palette.divider }} />
+                        <ButtonBase
+                          sx={{
+                            color: theme => theme.palette.text.secondary,
+                            fontSize: '1.0rem',
+                            fontWeight: 600,
+                          }}
+                          onClick={() => {
+                            if (!pinned) accountDrawer.onClose();
+                            navigate(Paths.editor(log.id));
+                          }}
+                        >
+                          <ChevronRight sx={{ color: theme => theme.palette.divider }} />
 
-                        {dateDisplay(date)}
-                      </ButtonBase>
+                          {dateDisplay(date)}
+                        </ButtonBase>
 
-                      <Typography variant="body2" color="text.secondary">
-                        {SORTED_WEEKDAYS[date.getDay()]}{' '}
-                        <em>
-                          {formatDistanceToNowStrict(date, {
-                            addSuffix: true,
-                          })
-                            .replace(/ (\w)\w+ /i, '$1 ')
-                            .replace('m ', 'mo ')}
-                        </em>
-                      </Typography>
-                    </Stack>
-                  );
-                })}
+                        <Typography variant="body2" color="text.secondary">
+                          {SORTED_WEEKDAYS[date.getDay()]}{' '}
+                          <em>
+                            {formatDistanceToNowStrict(date, {
+                              addSuffix: true,
+                            })
+                              .replace(/ (\w)\w+ /i, '$1 ')
+                              .replace('m ', 'mo ')}
+                          </em>
+                        </Typography>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
               </Stack>
             )}
           </DataStateView>
