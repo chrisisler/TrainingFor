@@ -25,6 +25,7 @@ import {
   ExpandMoreRounded,
   ChevronRight,
   DoubleArrow,
+  RemoveCircleOutline,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -319,11 +320,13 @@ export const EditorInternals: FC<{
   };
 
   return (
-    <main style={{
-      width: '100%',
-      margin: '0 auto',
-      maxWidth: '708px',
-    }}>
+    <main
+      style={{
+        width: '100%',
+        margin: '0 auto',
+        maxWidth: '708px',
+      }}
+    >
       <Stack
         direction="row"
         justifyContent="space-between"
@@ -343,7 +346,7 @@ export const EditorInternals: FC<{
           spacing={1}
           alignItems="center"
           sx={{
-            zIndex: accountDrawer.open ? -1000 : 0,
+            zIndex: accountDrawer.open ? -50 : 0,
           }}
         >
           <IconButton
@@ -421,7 +424,7 @@ export const EditorInternals: FC<{
       >
         {movements => (
           <Stack
-            spacing={3}
+            spacing={2}
             // Block all mouse clicks/events when in readOnly mode
             sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             style={{
@@ -581,7 +584,6 @@ export const EditorInternals: FC<{
           </Stack>
         )}
       </DataStateView>
-
 
       {/** ------------------------- DRAWERS ------------------------- */}
 
@@ -835,7 +837,7 @@ export const EditorInternals: FC<{
                           }
                         }}
                       >
-                        <DeleteOutline />
+                        <RemoveCircleOutline />
                       </IconButton>
 
                       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
@@ -915,7 +917,7 @@ export const EditorInternals: FC<{
                                   sx={{
                                     minWidth: '35px',
                                     fontWeight: 600,
-                                    backgroundColor: theme => theme.palette.action.hover,
+                                    backgroundColor: theme => isSelected ? 'none' : theme.palette.action.hover,
                                   }}
                                   size="large"
                                 >
@@ -1257,7 +1259,7 @@ export const EditorInternals: FC<{
       </SwipeableDrawer>
 
       {/** In-editor display of editor from the TrainingLog from the movement from the SavedMovement history. */}
-      <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom">
+      <SwipeableDrawer {...historyLogDrawer.props()} anchor="bottom" PaperProps={{ sx: { p: 1 } }}>
         <Collapse in={historyLogDrawer.open}>
           <Box height="80vh">
             {!!historyLogDrawer.getData() && (
@@ -1271,7 +1273,7 @@ export const EditorInternals: FC<{
         {...accountDrawer.props()}
         anchor="left"
         hideBackdrop={pinned}
-        sx={{ zIndex: 101 }}
+        sx={{ zIndex: 101, width: '240px', }}
       >
         <Stack
           spacing={3}
@@ -1301,6 +1303,7 @@ export const EditorInternals: FC<{
               <span />
             )}
           </Stack>
+
           <Stack direction="row" justifyContent="space-between" spacing={1}>
             <Button
               fullWidth
@@ -1351,6 +1354,7 @@ export const EditorInternals: FC<{
                         sx={{
                           padding: '0.75rem',
                           paddingLeft: 0,
+                          // transform: 'translateX(-6px)',
                           cursor: 'pointer',
                           borderRadius: 1,
 
@@ -1371,7 +1375,10 @@ export const EditorInternals: FC<{
                       >
                         <ButtonBase
                           sx={{
-                            color: theme => theme.palette.text.secondary,
+                            color: theme =>
+                              logId === log.id
+                                ? theme.palette.text.primary
+                                : theme.palette.text.secondary,
                             fontSize: '1.0rem',
                             fontWeight: 600,
                           }}
