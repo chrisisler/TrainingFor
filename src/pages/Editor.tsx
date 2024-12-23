@@ -1336,7 +1336,7 @@ export const EditorInternals: FC<{
               startIcon={<Person />}
               endIcon={<ExpandMoreRounded sx={{ color: theme => theme.palette.text.secondary }} />}
               onClick={() => {
-                console.warn('Unimplemented: menu for logout and other stuff');
+                navigate(Paths.home);
               }}
               sx={{
                 color: theme => theme.palette.text.secondary,
