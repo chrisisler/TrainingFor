@@ -409,9 +409,9 @@ export const EditorInternals: FC<{
             sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             style={{
               // Padding top specifically to account for fixed header
-              paddingTop: isMobile ? '3rem' : '5rem',
               padding: '1rem',
               paddingBottom: 0,
+              paddingTop: isMobile ? '3rem' : '5rem',
             }}
           >
             {movements.map(movement => (
