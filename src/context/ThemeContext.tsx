@@ -37,7 +37,7 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
               padding: theme => theme.spacing(3, 2, 2, 2),
               maxWidth: '700px',
               margin: '0 auto',
-              backgroundColor: theme => darken(theme.palette.background.default, 1.0),
+              backgroundColor: theme => darken(theme.palette.background.default, prefersDark ? 1.0 : 0.0),
             },
           },
         },
