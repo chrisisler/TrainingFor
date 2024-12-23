@@ -34,7 +34,7 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
           root: {
             textTransform: 'none',
           },
-        }
+        },
       },
       MuiSwipeableDrawer: {
         defaultProps: {
