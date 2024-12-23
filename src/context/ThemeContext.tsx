@@ -1,5 +1,5 @@
 import { CssBaseline, useMediaQuery } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, darken, ThemeProvider } from '@mui/material/styles';
 import { FC, ReactNode } from 'react';
 
 declare module '@mui/material/styles' {
@@ -43,6 +43,7 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
               padding: theme => theme.spacing(3, 3),
               maxWidth: theme => theme.breakpoints.values.sm,
               margin: '0 auto',
+              backgroundColor: theme => darken(theme.palette.background.default, 1.0),
             },
           },
         },

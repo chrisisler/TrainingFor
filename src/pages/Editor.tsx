@@ -20,6 +20,12 @@ import {
   DeleteSweepOutlined,
   PlaylistRemove,
   DriveFileRenameOutline,
+  Person,
+  ViewSidebarRounded,
+  NoteAddOutlined,
+  ExpandMoreRounded,
+  ChevronRight,
+  DoubleArrow,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -28,6 +34,7 @@ import {
   ButtonBase,
   CircularProgress,
   Collapse,
+  darken,
   Divider,
   Fade,
   IconButton,
@@ -147,6 +154,8 @@ export const EditorInternals: FC<{
   const toast = useToast();
   const user = useUser();
   const navigate = useNavigate();
+  const isMutating = useIsMutating();
+
   // Data is null when *adding*; when *replacing*, it's the replacing Movement.
   const { anchorEl: _3, ...addMovementDrawer } = useDrawer<null | Movement>();
   const addSetMenu = useDrawer<Movement>();
@@ -156,8 +165,9 @@ export const EditorInternals: FC<{
   >>();
   const { anchorEl: _2, ...historyLogDrawer } = useDrawer<Movement>();
   const { anchorEl: _4, ...logDrawer } = useDrawer<undefined>();
-  const isMutating = useIsMutating();
+  const { anchorEl: _1, ...accountDrawer } = useDrawer<undefined>();
 
+  const [pinned, setPinned] = useState(false);
   /** Controlled state of the Add Movement input. */
   const [movementNameQuery, setMovementNameQuery] = useState('');
   /** Controlled state of the Add Set inputs. */
@@ -175,10 +185,13 @@ export const EditorInternals: FC<{
   );
   const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
   const MovementsAPI = useStore(store => store.MovementsAPI);
+
   const savedMovements = useStore(store => store.savedMovements);
   const movements = useStore(store => store.useMovements(logId, isProgramView));
-  const log = useStore(store =>
-    DataState.map(store.logs, _ => _.find(l => l.id === logId) ?? DataState.error('Log not found.'))
+  const logs = useStore(store => store.logs);
+  const log = DataState.map(
+    logs,
+    _ => _.find(log => log.id === logId) ?? DataState.error('Log not found')
   );
 
   /** The active collection, based on the usage of this component. */
@@ -321,25 +334,23 @@ export const EditorInternals: FC<{
           padding: theme => theme.spacing(0, 0.5),
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{
+            zIndex: pinned ? -1000 : 0,
+          }}
+        >
           <IconButton
-            onMouseOver={() => {
-              console.warn(
-                'Unimplemented: Desktop feature only -> hover shows left-side account panel'
-              );
+            sx={{
+              color: theme => theme.palette.text.secondary,
             }}
-            sx={{ color: theme => theme.palette.text.secondary }}
-            onClick={() => {
-              // TODO
-              if (isMobile) {
-                // Open left-side account panel
-              } else {
-                // desktop:
-                // todo: save settings -> desktop-always-show-account-panel = true
-              }
-              console.warn('Unimplemented: See code');
-
-              navigate(Paths.home);
+            onMouseOver={event => {
+              accountDrawer.onOpen(event, void 0);
+            }}
+            onClick={event => {
+              accountDrawer.onOpen(event, void 0);
             }}
           >
             <Notes />
@@ -350,6 +361,7 @@ export const EditorInternals: FC<{
             <span />
           )}
         </Stack>
+
         {readOnly === false && (
           <Stack direction="row">
             {isProgramView === false && (
@@ -1244,13 +1256,137 @@ export const EditorInternals: FC<{
         </Collapse>
       </SwipeableDrawer>
 
+      <SwipeableDrawer
+        {...accountDrawer.props()}
+        anchor="left"
+        hideBackdrop={pinned}
+        sx={{ zIndex: 101 }}
+      >
+        <Stack
+          spacing={3}
+          sx={{
+            width: isMobile ? '75vw' : '268px',
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <IconButton
+              sx={{ color: theme => theme.palette.text.secondary }}
+              disabled
+              onClick={() => {
+                if (isMobile) return;
+
+                setPinned(bool => !bool);
+              }}
+            >
+              {pinned ? (
+                <ViewSidebarRounded sx={{ transform: 'rotate(180deg)' }} />
+              ) : (
+                <DoubleArrow />
+              )}
+            </IconButton>
+            {DataState.isReady(log) ? (
+              <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
+            ) : (
+              <span />
+            )}
+          </Stack>
+          <Stack direction="row" justifyContent="space-between" spacing={1}>
+            <Button
+              fullWidth
+              variant="text"
+              startIcon={<Person />}
+              endIcon={<ExpandMoreRounded />}
+              onClick={() => {
+                console.warn('Unimplemented: menu for logout and other stuff');
+              }}
+              sx={{
+                color: theme => theme.palette.text.primary,
+                // backgroundColor: theme => darken(theme.palette.action.hover, 0.5),
+                fontWeight: 600,
+                justifyContent: 'flex-start',
+                // paddingLeft: 1.5,
+              }}
+            >
+              {user.displayName}
+            </Button>
+
+            {/** TODO other stuff here, search, inbox, add new log */}
+            <IconButton
+              sx={{ color: theme => theme.palette.text.secondary }}
+              onClick={() => {
+                //
+              }}
+            >
+              <NoteAddOutlined />
+            </IconButton>
+          </Stack>
+
+          <DataStateView
+            data={logs}
+            loading={() => (
+              <Stack spacing={2}>
+                <Skeleton variant="rectangular" width="40%" />
+                <Skeleton variant="rectangular" width="80%" />
+                <Skeleton variant="rectangular" width="95%" />
+                <Skeleton variant="rectangular" width="95%" />
+                <Skeleton variant="rectangular" width="80%" />
+                <Skeleton variant="rectangular" width="95%" />
+                <Skeleton variant="rectangular" width="95%" />
+              </Stack>
+            )}
+          >
+            {logs => (
+              <Stack sx={{ maxHeight: '45%', overflowY: 'scroll' }}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                  Training Logs
+                </Typography>
+                {logs.slice(0, 20).map(log => (
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    key={log.id}
+                    sx={{
+                      borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                      paddingY: '0.5rem',
+                      cursor: 'pointer',
+                    }}
+                    justifyContent="space-between"
+                  >
+                    <ButtonBase
+                      sx={{
+                        color: theme => theme.palette.text.secondary,
+                        fontWeight: 600,
+                      }}
+                      onClick={() => {
+                        navigate(Paths.editor(log.id));
+                      }}
+                    >
+                      <ChevronRight sx={{ color: theme => theme.palette.divider }} />
+
+                      {dateDisplay(new Date(log.timestamp))}
+                    </ButtonBase>
+
+                    <IconButton>
+                      <MoreHoriz
+                        sx={{
+                          color: theme => theme.palette.text.secondary,
+                        }}
+                      />
+                    </IconButton>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+          </DataStateView>
+        </Stack>
+      </SwipeableDrawer>
+
       <SwipeableDrawer {...logDrawer.props()} anchor="right">
         <Collapse in={logDrawer.open}>
           <Stack
-            spacing={3}
+            spacing={2}
             sx={{
-              width: isMobile ? '80vw' : '268px',
-              padding: theme => theme.spacing(1),
+              width: isMobile ? '75vw' : '268px',
             }}
           >
             <TextField
@@ -1309,6 +1445,7 @@ export const EditorInternals: FC<{
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(window.location.href);
+                  logDrawer.onClose();
 
                   toast.info('Copied link to clipboard');
                 } catch (err) {
@@ -1435,15 +1572,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.1),
-            // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `3px solid ${theme.palette.success.light}`,
-            color: theme.palette.success.light,
-          }
+          backgroundColor: alpha(theme.palette.success.light, 0.1),
+          // Avoid jarring when switching between Unattempted and Completed
+          borderBottom: `3px solid ${theme.palette.success.light}`,
+          color: theme.palette.success.light,
+        }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.08),
-            borderBottom: `3px solid ${theme.palette.divider}`,
-          },
+          backgroundColor: alpha(theme.palette.divider, 0.08),
+          borderBottom: `3px solid ${theme.palette.divider}`,
+        },
     [movementSet.status, theme]
   );
 
@@ -1519,9 +1656,8 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${
-                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-              }`,
+              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+                }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1567,8 +1703,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-            movementSet.status === MovementSetStatus.Completed ||
-            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              movementSet.status === MovementSetStatus.Completed ||
+              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
@@ -1634,12 +1770,12 @@ const SavedMovementHistory: FC<{
   if (!DataState.isReady(movementsHistory)) return null;
 
   let heaviest = 0;
-  let heaviestDate: Date | null = null;
+  const heaviestDate: Date[] = [];
   for (const movement of movementsHistory) {
     for (const set of movement.sets) {
-      if (set.weight > heaviest) {
+      if (set.weight >= heaviest) {
         heaviest = set.weight;
-        heaviestDate = new Date(movement.timestamp);
+        heaviestDate.push(new Date(movement.timestamp));
       }
     }
   }
@@ -1649,13 +1785,14 @@ const SavedMovementHistory: FC<{
       <Typography variant="h6" fontWeight="bold">
         {savedMovement.name}
       </Typography>
-      {/** Graph of volume over time, w/ dates */}
-      {!!heaviest && !!heaviestDate && (
+
+      {!!heaviest && !!heaviestDate.length && (
         <Typography variant="caption">
           Heaviest was {heaviest}
-          {movementsHistory[0].weightUnit} on {dateDisplay(heaviestDate)}.
+          {movementsHistory[0].weightUnit} on {heaviestDate.map(_ => dateDisplay(_)).join(', ')}.
         </Typography>
       )}
+
       {/** List of movement items w/ links to open Editor in drawer */}
       <Paper elevation={3}>
         <Stack
