@@ -98,7 +98,7 @@ export const Editor: FC = () => {
           maxWidth: '708px',
           margin: '0 auto',
           overflowY: 'scroll',
-          padding: theme => theme.spacing(0.5, 0, 3, 0),
+          padding: theme => theme.spacing(0.5, 0.5, 3, 0.5),
         }}
       >
         {!!logId && <EditorInternals logId={logId} />}
