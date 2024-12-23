@@ -1360,7 +1360,7 @@ export const EditorInternals: FC<{
                       spacing={1}
                       key={log.id}
                       sx={{
-                        padding: '0.5rem',
+                        padding: '0.75rem',
                         paddingLeft: 0,
                         cursor: 'pointer',
                         borderRadius: 1,
