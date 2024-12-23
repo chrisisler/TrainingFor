@@ -5,7 +5,6 @@ import {
   CheckRounded,
   Close,
   DeleteForeverRounded,
-  DeleteOutline,
   History,
   Link,
   MoreHoriz,
@@ -455,7 +454,20 @@ export const EditorInternals: FC<{
                           letterSpacing: 0,
                           color: theme => theme.palette.text.primary,
                         }}
-                        onClick={event => addSetMenu.onOpen(event, movement)}
+                        onClick={event => {
+                          addSetMenu.onOpen(event, movement);
+
+                          if (movement.sets.length > 0) {
+                            const lastSet = movement.sets[movement.sets.length - 1];
+                            setNewSetWeight(lastSet.weight);
+                            setNewSetRepCountMin(lastSet.repCountExpected);
+                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
+                          } else {
+                            setNewSetWeight(0);
+                            setNewSetRepCountMin(DEFAULT_MIN_REPS);
+                            setNewSetRepCountMax(DEFAULT_MAX_REPS);
+                          }
+                        }}
                       >
                         {movement.name}
                       </Button>
@@ -597,11 +609,11 @@ export const EditorInternals: FC<{
                 open={addSetMenu.open}
                 anchorEl={addSetMenu.anchorEl}
                 anchorOrigin={{
-                  vertical: 'bottom',
+                  vertical: 'top',
                   horizontal: 'left',
                 }}
                 transformOrigin={{
-                  vertical: 'top',
+                  vertical: 'bottom',
                   horizontal: 'left',
                 }}
                 onClose={async (_event, reason) => {
@@ -1283,7 +1295,7 @@ export const EditorInternals: FC<{
             padding: theme => theme.spacing(1, 1.5, 2, 1.5),
             boxShadow: 'none',
             backgroundColor: theme =>
-                darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
+              darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
           },
         }}
       >
