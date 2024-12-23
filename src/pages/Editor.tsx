@@ -22,7 +22,6 @@ import {
   DriveFileRenameOutline,
   Person,
   ViewSidebarRounded,
-  NoteAddOutlined,
   ExpandMoreRounded,
   ChevronRight,
   DoubleArrow,
@@ -78,6 +77,7 @@ import {
   dateDisplay,
   ordinalSuffix,
   Paths,
+  SORTED_WEEKDAYS,
   useDrawer,
   useResizableInputRef,
   useToast,
@@ -339,16 +339,16 @@ export const EditorInternals: FC<{
           spacing={1}
           alignItems="center"
           sx={{
-            zIndex: pinned ? -1000 : 0,
+            zIndex: accountDrawer.open ? -1000 : 0,
           }}
         >
           <IconButton
             sx={{
               color: theme => theme.palette.text.secondary,
             }}
-            onMouseOver={event => {
-              accountDrawer.onOpen(event, void 0);
-            }}
+            // onMouseOver={event => {
+            //   accountDrawer.onOpen(event, void 0);
+            // }}
             onClick={event => {
               accountDrawer.onOpen(event, void 0);
             }}
@@ -1265,7 +1265,7 @@ export const EditorInternals: FC<{
         <Stack
           spacing={3}
           sx={{
-            width: isMobile ? '75vw' : '268px',
+            width: isMobile ? '75vw' : '240px',
           }}
         >
           <Stack direction="row" spacing={1} alignItems="center">
@@ -1295,13 +1295,13 @@ export const EditorInternals: FC<{
               fullWidth
               variant="text"
               startIcon={<Person />}
-              endIcon={<ExpandMoreRounded />}
+              endIcon={<ExpandMoreRounded sx={{ color: theme => theme.palette.text.secondary }} />}
               onClick={() => {
                 console.warn('Unimplemented: menu for logout and other stuff');
               }}
               sx={{
-                color: theme => theme.palette.text.primary,
-                // backgroundColor: theme => darken(theme.palette.action.hover, 0.5),
+                color: theme => theme.palette.text.secondary,
+                // backgroundColor: theme => darken(theme.palette.action.hover, 0.3),
                 fontWeight: 600,
                 justifyContent: 'flex-start',
                 // paddingLeft: 1.5,
@@ -1314,10 +1314,10 @@ export const EditorInternals: FC<{
             <IconButton
               sx={{ color: theme => theme.palette.text.secondary }}
               onClick={() => {
-                //
+                console.warn('Unimplemented: search/add new training log');
               }}
             >
-              <NoteAddOutlined />
+              <NoteAltOutlined fontSize="small" />
             </IconButton>
           </Stack>
 
@@ -1337,42 +1337,68 @@ export const EditorInternals: FC<{
           >
             {logs => (
               <Stack sx={{ maxHeight: '45%', overflowY: 'scroll' }}>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                <Typography variant="caption" fontWeight={600} color="text.secondary" gutterBottom>
                   Training Logs
                 </Typography>
-                {logs.slice(0, 20).map(log => (
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    key={log.id}
-                    sx={{
-                      borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                      paddingY: '0.5rem',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => navigate(Paths.editor(log.id))}
-                  >
-                    <ChevronRight sx={{ color: theme => theme.palette.divider }} />
+                {logs.slice(0, 30).map(log => {
+                  const date = new Date(log.timestamp);
 
-                    <ButtonBase
+                  return (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      key={log.id}
                       sx={{
-                        color: theme => theme.palette.text.secondary,
-                        fontWeight: 600,
+                        padding: '0.5rem',
+                        paddingLeft: 0,
+                        cursor: 'pointer',
+                        borderRadius: 1,
+
+                        ...(logId === log.id && { backgroundColor: theme => theme.palette.action.hover }),
+                        ...(isMobile && { borderBottom: theme => `1px solid ${theme.palette.divider}` }),
+                        // borderBottom: theme => `1px solid ${theme.palette.divider}`
                       }}
                       onClick={() => {
+                        if (!pinned) accountDrawer.onClose();
                         navigate(Paths.editor(log.id));
                       }}
+                      justifyContent="space-between"
+                      alignItems="center"
                     >
-                      {dateDisplay(new Date(log.timestamp))}
-                    </ButtonBase>
+                      <ButtonBase
+                        sx={{
+                          color: theme => theme.palette.text.secondary,
+                          fontSize: '1.0rem',
+                          fontWeight: 600,
+                        }}
+                        onClick={() => {
+                          if (!pinned) accountDrawer.onClose();
+                          navigate(Paths.editor(log.id));
+                        }}
+                      >
+                        <ChevronRight sx={{ color: theme => theme.palette.divider }} />
 
-                  </Stack>
-                ))}
+                        {dateDisplay(date)}
+                      </ButtonBase>
+
+                      <Typography variant="caption" color="text.secondary">
+                        {SORTED_WEEKDAYS[date.getDay()]}{' '}
+                        <em>
+                          {formatDistanceToNowStrict(date, {
+                            addSuffix: true,
+                          })
+                            .replace(/ (\w)\w+ /i, '$1 ')
+                            .replace('m ', 'mo ')}
+                        </em>
+                      </Typography>
+                    </Stack>
+                  );
+                })}
               </Stack>
             )}
           </DataStateView>
-        </Stack>
-      </SwipeableDrawer>
+        </Stack >
+      </SwipeableDrawer >
 
       <SwipeableDrawer {...logDrawer.props()} anchor="right">
         <Collapse in={logDrawer.open}>

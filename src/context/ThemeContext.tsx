@@ -40,8 +40,8 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
         defaultProps: {
           PaperProps: {
             sx: {
-              padding: theme => theme.spacing(3, 3),
-              maxWidth: theme => theme.breakpoints.values.sm,
+              padding: theme => theme.spacing(3, 2, 2, 2),
+              maxWidth: '700px',
               margin: '0 auto',
               backgroundColor: theme => darken(theme.palette.background.default, 1.0),
             },
