@@ -251,7 +251,7 @@ export const Programs: FC = () => {
                     icon={<AutoAwesome />}
                     onClick={onActivateProgram}
                     text={isActiveProgram ? 'Active Program' : 'Activate Program'}
-                    disabled={isActivateProgram}
+                    disabled={isActiveProgram}
                   />
 
                   <PanelBtn
@@ -449,12 +449,13 @@ const PanelBtn: FC<{
   onClick(event: React.MouseEvent): Promise<void>;
   text: string;
   icon: React.ReactNode;
-}> = ({ onClick, text, icon }) => {
+  disabled?: boolean
+}> = ({ onClick, text, icon, disabled }) => {
   const prefersDark = useMediaQuery('@media (prefers-color-scheme: dark)');
 
   return (
     <Box
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       sx={{
         backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.2 : 0.02),
         width: '50%',
@@ -464,6 +465,7 @@ const PanelBtn: FC<{
     >
       <IconButton
         onClick={onClick}
+        disabled={disabled}
         sx={{
           backgroundColor: theme => theme.palette.background.default,
           borderRadius: 3,
