@@ -369,7 +369,7 @@ export const EditorInternals: FC<{
               accountDrawer.onOpen(event, void 0);
             }}
           >
-            <Notes fontSize={isMobile ? "large" : "medium"} />
+            <Notes />
           </IconButton>
           {DataState.isReady(log) ? (
             <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
