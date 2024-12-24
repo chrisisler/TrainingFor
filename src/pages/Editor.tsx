@@ -347,6 +347,7 @@ export const EditorInternals: FC<{
           zIndex: 100,
           left: 0,
           padding: theme => theme.spacing(0, 0.5),
+          backgroundColor: theme => theme.palette.background.default,
         }}
       >
         <Stack
@@ -368,7 +369,7 @@ export const EditorInternals: FC<{
               accountDrawer.onOpen(event, void 0);
             }}
           >
-            <Notes />
+            <Notes fontSize={isMobile ? "large" : "medium"} />
           </IconButton>
           {DataState.isReady(log) ? (
             <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
@@ -403,7 +404,7 @@ export const EditorInternals: FC<{
                     console.warn('Unimplemented: chat/comments panel: 385px desktop, 100vw mobile');
                   }}
                 >
-                  <ChatOutlined fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <ChatOutlined fontSize={isMobile ? "medium" : "small"} sx={{ color: 'text.secondary' }} />
                 </IconButton>
 
                 <IconButton
@@ -413,7 +414,7 @@ export const EditorInternals: FC<{
                     return logDrawer.onOpen(event, void 0);
                   }}
                 >
-                  <MoreHoriz sx={{ color: 'text.secondary', fontSize: '1.7rem' }} />
+                  <MoreHoriz sx={{ color: 'text.secondary', }} />
                 </IconButton>
               </>
             )}
@@ -689,6 +690,8 @@ export const EditorInternals: FC<{
                     paddingX: '0.5rem',
                     justifyItems: 'center',
                     display: 'flex',
+                    // inset box shadow
+                    boxShadow: 'inset -15px 0 12px rgba(0, 0, 0, 0.3)',
                   },
                 }}
               >
