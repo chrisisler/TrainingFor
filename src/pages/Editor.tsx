@@ -316,6 +316,13 @@ export const EditorInternals: FC<{
     ]
   );
 
+  useEffect(() => {
+    if (isMobile === false) return;
+    if (pinned) {
+      setPinned(false);
+    }
+  }, [isMobile, pinned]);
+
   const clickShareBtn = () => {
     console.warn('Unimplemented: share btn/panel feature');
   };
