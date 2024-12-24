@@ -356,7 +356,7 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
   const toast = useToast();
 
   if (!templateId) {
-    toast.error('Unreachable: templateId not found');
+    toast.error('No template found');
     return null;
   }
 
@@ -374,7 +374,10 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
         onBlur={async event => {
           try {
             const newName = event.target.value;
-            if (newName.length === 0 || newName === templateName) return;
+            if (newName.length === 0 || newName === templateName) {
+              return;
+            }
+
             await TemplatesAPI.update({ id: templateId, name: newName });
           } catch (error) {
             toast.error(error.message);

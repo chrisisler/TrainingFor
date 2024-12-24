@@ -406,7 +406,10 @@ export const EditorInternals: FC<{
                     console.warn('Unimplemented: chat/comments panel: 385px desktop, 100vw mobile');
                   }}
                 >
-                  <ChatOutlined fontSize={isMobile ? "medium" : "small"} sx={{ color: 'text.secondary' }} />
+                  <ChatOutlined
+                    fontSize={isMobile ? 'medium' : 'small'}
+                    sx={{ color: 'text.secondary' }}
+                  />
                 </IconButton>
 
                 <IconButton
@@ -416,7 +419,7 @@ export const EditorInternals: FC<{
                     return logDrawer.onOpen(event, void 0);
                   }}
                 >
-                  <MoreHoriz sx={{ color: 'text.secondary', }} />
+                  <MoreHoriz sx={{ color: 'text.secondary' }} />
                 </IconButton>
               </>
             )}
@@ -1301,7 +1304,7 @@ export const EditorInternals: FC<{
         anchor="left"
         hideBackdrop={pinned}
         // confines screen-wide invisible element to drawer
-        sx={{ zIndex: 101, width: '240px', }}
+        sx={{ zIndex: 101, width: '240px' }}
         PaperProps={{
           onMouseLeave: pinned ? undefined : accountDrawer.onClose,
           sx: {
@@ -1394,7 +1397,7 @@ export const EditorInternals: FC<{
                           // transform: 'translateX(-6px)',
                           cursor: 'pointer',
                           borderRadius: 1,
-                          ":hover": {
+                          ':hover': {
                             backgroundColor: theme => theme.palette.action.hover,
                           },
 
@@ -1715,15 +1718,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-          backgroundColor: alpha(theme.palette.success.light, 0.1),
-          // Avoid jarring when switching between Unattempted and Completed
-          borderBottom: `3px solid ${theme.palette.success.light}`,
-          color: theme.palette.success.light,
-        }
+            backgroundColor: alpha(theme.palette.success.light, 0.1),
+            // Avoid jarring when switching between Unattempted and Completed
+            borderBottom: `3px solid ${theme.palette.success.light}`,
+            color: theme.palette.success.light,
+          }
         : {
-          backgroundColor: alpha(theme.palette.divider, 0.08),
-          borderBottom: `3px solid ${theme.palette.divider}`,
-        },
+            backgroundColor: alpha(theme.palette.divider, 0.08),
+            borderBottom: `3px solid ${theme.palette.divider}`,
+          },
     [movementSet.status, theme]
   );
 
@@ -1799,8 +1802,9 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-                }`,
+              padding: `10px ${
+                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+              }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1847,8 +1851,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-              movementSet.status === MovementSetStatus.Completed ||
-              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+            movementSet.status === MovementSetStatus.Completed ||
+            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
