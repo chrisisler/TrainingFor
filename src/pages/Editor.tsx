@@ -350,33 +350,35 @@ export const EditorInternals: FC<{
           backgroundColor: theme => theme.palette.background.default,
         }}
       >
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          sx={{
-            zIndex: accountDrawer.open ? -50 : 0,
-          }}
-        >
-          <IconButton
+        {isProgramView === false && (
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
             sx={{
-              color: theme => theme.palette.text.secondary,
-            }}
-            onMouseOver={event => {
-              accountDrawer.onOpen(event, void 0);
-            }}
-            onClick={event => {
-              accountDrawer.onOpen(event, void 0);
+              zIndex: accountDrawer.open ? -50 : 0,
             }}
           >
-            <Notes />
-          </IconButton>
-          {DataState.isReady(log) ? (
-            <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
-          ) : (
-            <span />
-          )}
-        </Stack>
+            <IconButton
+              sx={{
+                color: theme => theme.palette.text.secondary,
+              }}
+              onMouseOver={event => {
+                accountDrawer.onOpen(event, void 0);
+              }}
+              onClick={event => {
+                accountDrawer.onOpen(event, void 0);
+              }}
+            >
+              <Notes />
+            </IconButton>
+            {DataState.isReady(log) ? (
+              <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
+            ) : (
+              <span />
+            )}
+          </Stack>
+        )}
 
         {readOnly === false && (
           <Stack direction="row">
@@ -440,7 +442,7 @@ export const EditorInternals: FC<{
               // Padding top specifically to account for fixed header
               padding: '1rem',
               paddingBottom: 0,
-              paddingTop: isMobile ? '3rem' : '5rem',
+              paddingTop: isMobile || isProgramView ? '3rem' : '5rem',
 
               // spacing for pinned header
               transform: !isMobile && pinned ? 'translateX(150px)' : 'none',
