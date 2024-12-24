@@ -1,6 +1,6 @@
 import {
   Add,
-  AutoAwesome,
+  AutoAwesomeOutlined,
   DeleteForeverOutlined,
   EditOutlined,
   NoteAltOutlined,
@@ -27,7 +27,7 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API, useStore } from '../api';
-import { NotesDrawer } from '../components';
+import { NotesDrawer, ShareBtn } from '../components';
 import {
   DataState,
   DataStateView,
@@ -38,7 +38,7 @@ import {
   useUser,
   useToast,
 } from '../util';
-import { EditorInternals, LeftsidePanel } from './Editor';
+import { EditorInternals, AccountPanel } from './Editor';
 
 export const Programs: FC = () => {
   const user = useUser();
@@ -95,7 +95,7 @@ export const Programs: FC = () => {
     } catch (err) {
       toast.error(err.message);
     }
-  }, [viewedProgram, programUser]);
+  }, [viewedProgram, programUser, toast, ProgramUsersAPI]);
 
   const onDeleteTemplate = useCallback(async () => {
     if (!DataState.isReady(programUser) || !DataState.isReady(viewedProgram)) {
@@ -142,7 +142,7 @@ export const Programs: FC = () => {
     } catch (err) {
       toast.error(err.message);
     }
-  }, [programUser, viewedProgram]);
+  }, [programUser, viewedProgram, ProgramsAPI, TemplatesAPI, ProgramMovementsAPI, navigate, toast, ProgramUsersAPI]);
 
   const updateProgramName = useCallback(
     async event => {
@@ -174,7 +174,7 @@ export const Programs: FC = () => {
         toast.error(err.message);
       }
     },
-    [viewedProgram, programUser]
+    [viewedProgram, programUser, ProgramsAPI, ProgramUsersAPI, toast]
   );
 
   const createTemplate = useCallback(
@@ -201,7 +201,7 @@ export const Programs: FC = () => {
         toast.error(err.message);
       }
     },
-    [viewedProgram, user]
+    [viewedProgram, user, TemplatesAPI, ProgramsAPI, templateEditorDrawer, toast]
   );
 
   return (
@@ -248,7 +248,7 @@ export const Programs: FC = () => {
 
                 <Stack direction="row" spacing={2}>
                   <PanelBtn
-                    icon={<AutoAwesome />}
+                    icon={<AutoAwesomeOutlined />}
                     onClick={onActivateProgram}
                     text={isActiveProgram ? 'Active Program' : 'Activate Program'}
                     disabled={isActiveProgram}
@@ -350,8 +350,10 @@ export const Programs: FC = () => {
         </Stack>
 
         <Stack spacing={1} direction="row">
+          <ShareBtn />
+
           <IconButton onClick={event => programNoteDrawer.onOpen(event)}>
-            <NoteAltOutlined />
+            <NoteAltOutlined sx={{ color: theme => theme.palette.text.secondary }} />
           </IconButton>
 
           <IconButton
@@ -364,23 +366,8 @@ export const Programs: FC = () => {
       </Stack>
 
       {/** ----------------------------- DRAWERS ----------------------------- */}
-      <SwipeableDrawer
-        {...accountDrawer}
-        anchor="left"
-        // hideBackdrop={pinned}
-        // confines screen-wide invisible element to drawer
-        // sx={{ zIndex: 101, width: '240px' }}
-        // PaperProps={{
-        //   onMouseLeave: pinned ? undefined : accountDrawer.onClose,
-        //   sx: {
-        //     padding: theme => theme.spacing(1, 1.5, 2, 1.5),
-        //     boxShadow: 'none',
-        //     backgroundColor: theme =>
-        //       darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
-        //   },
-        // }}
-      >
-        <LeftsidePanel
+      <SwipeableDrawer {...accountDrawer} anchor="left">
+        <AccountPanel
           pinned={pinned}
           setPinned={setPinned}
           onClose={accountDrawer.onClose}
@@ -448,36 +435,45 @@ export const Programs: FC = () => {
 const PanelBtn: FC<{
   onClick(event: React.MouseEvent): Promise<void>;
   text: string;
+  subtext?: string;
   icon: React.ReactNode;
   disabled?: boolean
-}> = ({ onClick, text, icon, disabled }) => {
+}> = ({ onClick, text, icon, disabled, subtext }) => {
   const prefersDark = useMediaQuery('@media (prefers-color-scheme: dark)');
 
   return (
-    <Box
+    <Stack
+      spacing={3}
       onClick={disabled ? undefined : onClick}
       sx={{
         backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.2 : 0.02),
         width: '50%',
-        borderRadius: 2,
+        borderRadius: 3,
         padding: 2,
+        cursor: 'pointer',
       }}
     >
-      <IconButton
-        onClick={onClick}
-        disabled={disabled}
-        sx={{
-          backgroundColor: theme => theme.palette.background.default,
-          borderRadius: 3,
-        }}
-      >
-        {icon}
-      </IconButton>
+      <Box>
+        <IconButton
+          onClick={onClick}
+          disabled={disabled}
+          sx={{
+            backgroundColor: theme => theme.palette.background.default,
+            borderRadius: 3,
+          }}
+        >
+          {icon}
+        </IconButton>
+      </Box>
 
-      <Typography variant="body2" fontWeight={500} color="text.secondary">
+      <Typography fontWeight={600} color={subtext ? "text.primary" : "text.secondary"}>
         {text}
       </Typography>
-    </Box>
+
+      {subtext && (
+        <Typography variant="body2" color="text.secondary">{subtext}</Typography>
+      )}
+    </Stack>
   );
 };
 

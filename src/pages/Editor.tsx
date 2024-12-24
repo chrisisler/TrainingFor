@@ -11,7 +11,6 @@ import {
   NavigateNextRounded,
   RefreshRounded,
   ChatOutlined,
-  IosShareRounded,
   Notes,
   NoteAltOutlined,
   DeleteForeverOutlined,
@@ -61,7 +60,7 @@ import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API, useStore } from '../api';
-import { NotesDrawer, tabA11yProps, TabPanel, WithVariable } from '../components';
+import { NotesDrawer, ShareBtn, tabA11yProps, TabPanel, WithVariable } from '../components';
 import {
   Movement,
   MovementWeightUnit,
@@ -323,10 +322,6 @@ export const EditorInternals: FC<{
     }
   }, [isMobile, pinned]);
 
-  const clickShareBtn = () => {
-    console.warn('Unimplemented: share btn/panel feature');
-  };
-
   return (
     <main
       style={{
@@ -384,22 +379,7 @@ export const EditorInternals: FC<{
           <Stack direction="row">
             {isProgramView === false && (
               <>
-                {isMobile ? (
-                  <IconButton onClick={clickShareBtn}>
-                    <IosShareRounded sx={{ color: 'text.secondary' }} />
-                  </IconButton>
-                ) : (
-                  <Button
-                    onClick={clickShareBtn}
-                    sx={{
-                      color: theme => theme.palette.text.primary,
-                      letterSpacing: 0,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Share
-                  </Button>
-                )}
+                <ShareBtn />
 
                 <IconButton
                   onClick={() => {
@@ -1315,7 +1295,7 @@ export const EditorInternals: FC<{
           },
         }}
       >
-        <LeftsidePanel
+        <AccountPanel
           title={DataState.isReady(log) ? dateDisplay(new Date(log.timestamp)) : ''}
           pinned={pinned}
           setPinned={setPinned}
@@ -1817,12 +1797,13 @@ const SavedMovementHistory: FC<{
  * const [pinned, setPinned] = useState(false);
  * const menu = useMaterialMenu();
  * return (
+ *   <div onClick={menu.onOpen}>...</div>
  *   <SwipeableDrawer {...menu} anchor="left">
- *     <LeftsidePanel pinned={pinned} setPinned={setPinned} onClose={menu.onClose} />
+ *     <AccountPanel pinned={pinned} setPinned={setPinned} onClose={menu.onClose} />
  *   </SwipeableDrawer>
  * );
  */
-export const LeftsidePanel: FC<{
+export const AccountPanel: FC<{
   title: string;
   logId?: string;
   pinned: boolean;
