@@ -131,7 +131,7 @@ export const Programs: FC = () => {
           id: programUser.id,
           activeProgramId: null,
           activeProgramName: null,
-        })
+        });
         promises.push(promise);
       }
 
@@ -144,69 +144,77 @@ export const Programs: FC = () => {
     }
   }, [programUser, viewedProgram]);
 
-  const updateProgramName = useCallback(async event => {
-    if (!DataState.isReady(viewedProgram)) {
-      return;
-    }
+  const updateProgramName = useCallback(
+    async event => {
+      if (!DataState.isReady(viewedProgram)) {
+        return;
+      }
 
-    const newName = event.target.value;
-    if (newName.length < 3 || newName === viewedProgram.name) {
-      toast.info('Program name must be at least 3 characters');
-      return;
-    }
+      const newName = event.target.value;
+      if (newName.length < 3 || newName === viewedProgram.name) {
+        toast.info('Program name must be at least 3 characters');
+        return;
+      }
 
-    if (!DataState.isReady(programUser)) {
-      return;
-    }
+      if (!DataState.isReady(programUser)) {
+        return;
+      }
 
-    try {
-      await Promise.all([
-        ProgramUsersAPI.update({
-          id: programUser.id,
-          activeProgramName: newName,
-        }),
-        ProgramsAPI.update({ id: viewedProgram.id, name: newName }),
-      ]);
+      try {
+        await Promise.all([
+          ProgramUsersAPI.update({
+            id: programUser.id,
+            activeProgramName: newName,
+          }),
+          ProgramsAPI.update({ id: viewedProgram.id, name: newName }),
+        ]);
 
-      toast.info('Updated program name');
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }, [viewedProgram, programUser]);
+        toast.info('Updated program name');
+      } catch (err) {
+        toast.error(err.message);
+      }
+    },
+    [viewedProgram, programUser]
+  );
 
-  const createTemplate = useCallback(async event => {
-    if (!DataState.isReady(viewedProgram)) {
-      return;
-    }
+  const createTemplate = useCallback(
+    async event => {
+      if (!DataState.isReady(viewedProgram)) {
+        return;
+      }
 
-    try {
-      const newTemplate = await TemplatesAPI.create({
-        authorUserId: user.uid,
-        programId: viewedProgram.id,
-        name: 'Untitled',
-      });
+      try {
+        const newTemplate = await TemplatesAPI.create({
+          authorUserId: user.uid,
+          programId: viewedProgram.id,
+          name: 'Untitled',
+        });
 
-      // Update programs to reflect newly added day
-      await ProgramsAPI.update({
-        id: viewedProgram.id,
-        templateIds: viewedProgram.templateIds.concat(newTemplate.id)
-      });
+        // Update programs to reflect newly added day
+        await ProgramsAPI.update({
+          id: viewedProgram.id,
+          templateIds: viewedProgram.templateIds.concat(newTemplate.id),
+        });
 
-      templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }, [viewedProgram, user]);
+        templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
+      } catch (err) {
+        toast.error(err.message);
+      }
+    },
+    [viewedProgram, user]
+  );
 
   return (
     <>
-      <Box sx={{
-        height: '100vh',
-        padding: theme => theme.spacing(1),
-        width: '100%',
-        margin: '0 auto',
-        maxWidth: '708px',
-      }}>
+      <Box
+        sx={{
+          height: '100vh',
+          padding: theme => theme.spacing(1),
+          width: '100%',
+          margin: '0 auto',
+          maxWidth: '708px',
+        }}
+      >
         <DataStateView
           data={viewedProgram}
           loading={() => <CircularProgress variant="indeterminate" size={100} />}
@@ -240,9 +248,18 @@ export const Programs: FC = () => {
 
                 <Stack direction="row" spacing={2}>
                   <PanelBtn
-                    icon={<AutoAwesome />} onClick={onActivateProgram} text={isActiveProgram ? 'Active Program' : 'Activate Program'} disabled={isActivateProgram} />
+                    icon={<AutoAwesome />}
+                    onClick={onActivateProgram}
+                    text={isActiveProgram ? 'Active Program' : 'Activate Program'}
+                    disabled={isActivateProgram}
+                  />
 
-                  <PanelBtn icon={<Add />} onClick={createTemplate} text="Add a template" disabled={!DataState.isReady(viewedProgram)} />
+                  <PanelBtn
+                    icon={<Add />}
+                    onClick={createTemplate}
+                    text="Add a template"
+                    disabled={!DataState.isReady(viewedProgram)}
+                  />
                 </Stack>
 
                 <Stack spacing={3}>
@@ -297,7 +314,6 @@ export const Programs: FC = () => {
                       </Stack>
                     </Paper>
                   ))}
-
                 </Stack>
               </Stack>
             );
@@ -320,9 +336,9 @@ export const Programs: FC = () => {
           backgroundColor: theme => theme.palette.background.default,
         }}
       >
-        <Stack direction="row" spacing={0.5} alignItems="center" >
+        <Stack direction="row" spacing={0.5} alignItems="center">
           <IconButton
-            sx={{ color: theme => theme.palette.text.secondary, }}
+            sx={{ color: theme => theme.palette.text.secondary }}
             onClick={event => accountDrawer.onOpen(event)}
           >
             <Notes />
@@ -347,23 +363,22 @@ export const Programs: FC = () => {
         </Stack>
       </Stack>
 
-
       {/** ----------------------------- DRAWERS ----------------------------- */}
       <SwipeableDrawer
         {...accountDrawer}
         anchor="left"
-      // hideBackdrop={pinned}
-      // confines screen-wide invisible element to drawer
-      // sx={{ zIndex: 101, width: '240px' }}
-      // PaperProps={{
-      //   onMouseLeave: pinned ? undefined : accountDrawer.onClose,
-      //   sx: {
-      //     padding: theme => theme.spacing(1, 1.5, 2, 1.5),
-      //     boxShadow: 'none',
-      //     backgroundColor: theme =>
-      //       darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
-      //   },
-      // }}
+        // hideBackdrop={pinned}
+        // confines screen-wide invisible element to drawer
+        // sx={{ zIndex: 101, width: '240px' }}
+        // PaperProps={{
+        //   onMouseLeave: pinned ? undefined : accountDrawer.onClose,
+        //   sx: {
+        //     padding: theme => theme.spacing(1, 1.5, 2, 1.5),
+        //     boxShadow: 'none',
+        //     backgroundColor: theme =>
+        //       darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
+        //   },
+        // }}
       >
         <LeftsidePanel
           pinned={pinned}
@@ -372,7 +387,6 @@ export const Programs: FC = () => {
           title={title}
         />
       </SwipeableDrawer>
-
 
       <SwipeableDrawer {...programNoteDrawer} anchor="bottom">
         <Collapse in={programNoteDrawer.open}>
@@ -434,7 +448,7 @@ export const Programs: FC = () => {
 const PanelBtn: FC<{
   onClick(event: React.MouseEvent): Promise<void>;
   text: string;
-  icon: React.ReactNode
+  icon: React.ReactNode;
 }> = ({ onClick, text, icon }) => {
   const prefersDark = useMediaQuery('@media (prefers-color-scheme: dark)');
 
@@ -463,7 +477,7 @@ const PanelBtn: FC<{
       </Typography>
     </Box>
   );
-}
+};
 
 const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
   const TemplatesAPI = useStore(store => store.ProgramLogTemplatesAPI);
