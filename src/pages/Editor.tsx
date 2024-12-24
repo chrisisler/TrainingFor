@@ -80,6 +80,7 @@ import {
   Paths,
   SORTED_WEEKDAYS,
   useDrawer,
+  useMaterialMenu,
   useResizableInputRef,
   useToast,
   useUser,
@@ -89,8 +90,6 @@ const DIFF_CHAR = '-';
 
 const DEFAULT_MIN_REPS = 5;
 const DEFAULT_MAX_REPS = 30;
-
-const ACCT_DRAWER_WIDTH = '240px';
 
 /**
  * Wrapper page for editing training entries.
@@ -166,8 +165,9 @@ export const EditorInternals: FC<{
     'id' | 'name'
   >>();
   const { anchorEl: _2, ...historyLogDrawer } = useDrawer<Movement>();
+  // TODO undefined useDrawer convert to useMaterialMenu
   const { anchorEl: _4, ...logDrawer } = useDrawer<undefined>();
-  const { anchorEl: _1, ...accountDrawer } = useDrawer<undefined>();
+  const accountDrawer = useMaterialMenu();
 
   const [pinned, setPinned] = useState(false);
   /** Controlled state of the Add Movement input. */
@@ -353,7 +353,7 @@ export const EditorInternals: FC<{
         {isProgramView === false && (
           <Stack
             direction="row"
-            spacing={1}
+            spacing={0.5}
             alignItems="center"
             sx={{
               zIndex: accountDrawer.open ? -50 : 0,
@@ -364,10 +364,10 @@ export const EditorInternals: FC<{
                 color: theme => theme.palette.text.secondary,
               }}
               onMouseOver={event => {
-                accountDrawer.onOpen(event, void 0);
+                accountDrawer.onOpen(event);
               }}
               onClick={event => {
-                accountDrawer.onOpen(event, void 0);
+                accountDrawer.onOpen(event);
               }}
             >
               <Notes />
@@ -1300,7 +1300,7 @@ export const EditorInternals: FC<{
       </SwipeableDrawer>
 
       <SwipeableDrawer
-        {...accountDrawer.props()}
+        {...accountDrawer}
         anchor="left"
         hideBackdrop={pinned}
         // confines screen-wide invisible element to drawer
@@ -1315,208 +1315,13 @@ export const EditorInternals: FC<{
           },
         }}
       >
-        <Stack
-          spacing={3}
-          sx={{
-            width: isMobile ? '78vw' : ACCT_DRAWER_WIDTH,
-          }}
-        >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <IconButton
-              sx={{ color: theme => theme.palette.text.secondary }}
-              disabled={isMobile}
-              onClick={() => {
-                if (isMobile) return;
-
-                setPinned(bool => !bool);
-              }}
-            >
-              {pinned ? (
-                <ViewSidebarRounded sx={{ transform: 'rotate(180deg)' }} />
-              ) : (
-                <DoubleArrow />
-              )}
-            </IconButton>
-            {DataState.isReady(log) ? (
-              <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
-            ) : (
-              <span />
-            )}
-          </Stack>
-
-          <Stack direction="row" justifyContent="space-between" spacing={1}>
-            <Button
-              fullWidth
-              variant="text"
-              startIcon={<Person />}
-              endIcon={<ExpandMoreRounded sx={{ color: theme => theme.palette.text.secondary }} />}
-              onClick={() => {
-                navigate(Paths.home);
-              }}
-              sx={{
-                color: theme => theme.palette.text.secondary,
-                fontWeight: 600,
-                justifyContent: 'flex-start',
-              }}
-            >
-              {user.displayName}
-            </Button>
-          </Stack>
-
-          <DataStateView
-            data={logs}
-            loading={() => (
-              <Stack spacing={2}>
-                <Skeleton variant="rectangular" width="40%" />
-                <Skeleton variant="rectangular" width="80%" />
-                <Skeleton variant="rectangular" width="95%" />
-                <Skeleton variant="rectangular" width="95%" />
-                <Skeleton variant="rectangular" width="80%" />
-                <Skeleton variant="rectangular" width="95%" />
-                <Skeleton variant="rectangular" width="95%" />
-              </Stack>
-            )}
-          >
-            {logs => (
-              <Stack>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
-                  Training Logs
-                </Typography>
-                <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
-                  {logs.slice(0, 20).map(log => {
-                    const date = new Date(log.timestamp);
-
-                    return (
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        key={log.id}
-                        sx={{
-                          padding: '0.75rem',
-                          paddingLeft: 0,
-                          // transform: 'translateX(-6px)',
-                          cursor: 'pointer',
-                          borderRadius: 1,
-                          ':hover': {
-                            backgroundColor: theme => theme.palette.action.hover,
-                          },
-
-                          ...(logId === log.id && {
-                            backgroundColor: theme => theme.palette.action.hover,
-                          }),
-                          ...(isMobile && {
-                            borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                          }),
-                          // borderBottom: theme => `1px solid ${theme.palette.divider}`
-                        }}
-                        onClick={() => {
-                          if (!pinned) accountDrawer.onClose();
-                          navigate(Paths.editor(log.id));
-                        }}
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <ButtonBase
-                          sx={{
-                            color: theme =>
-                              logId === log.id
-                                ? theme.palette.text.primary
-                                : theme.palette.text.secondary,
-                            fontSize: '1.0rem',
-                            fontWeight: 600,
-                          }}
-                          onClick={() => {
-                            if (!pinned) accountDrawer.onClose();
-                            navigate(Paths.editor(log.id));
-                          }}
-                        >
-                          <ChevronRight sx={{ color: theme => theme.palette.divider }} />
-
-                          {dateDisplay(date)}
-                        </ButtonBase>
-
-                        <Typography variant="body2" color="text.secondary">
-                          {SORTED_WEEKDAYS[date.getDay()]}{' '}
-                          <em>
-                            {formatDistanceToNowStrict(date, {
-                              addSuffix: true,
-                            })
-                              .replace(/ (\w)\w+ /i, '$1 ')
-                              .replace('m ', 'mo ')}
-                          </em>
-                        </Typography>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-              </Stack>
-            )}
-          </DataStateView>
-
-          <Button
-            onClick={async () => {
-              try {
-                const newTrainingLog = await TrainingLogsAPI.create({
-                  timestamp: Date.now(),
-                  authorUserId: user.uid,
-                  bodyweight: 0,
-                  isFinished: false,
-                  note: '',
-                  programId: null,
-                  programLogTemplateId: null,
-                });
-
-                navigate(Paths.editor(newTrainingLog.id));
-
-                if (!pinned) accountDrawer.onClose();
-              } catch (err) {
-                toast.error(err.message);
-              }
-            }}
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              fontWeight: 600,
-              justifyContent: 'flex-start',
-            }}
-            startIcon={<Add />}
-          >
-            Add training log
-          </Button>
-
-          {/**
-          <Button
-            fullWidth
-            variant="text"
-            startIcon={<CalendarToday sx={{ color: theme => theme.palette.text.secondary }} />}
-            onClick={() => {
-              console.warn('Unimplemented: upgrade');
-            }}
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              fontWeight: 600,
-              justifyContent: 'flex-start',
-            }}
-          >
-            Calendar
-          </Button>
-
-          <Button
-            fullWidth
-            variant="text"
-            startIcon={<Upgrade sx={{ color: theme => theme.palette.text.secondary }} />}
-            onClick={() => {
-              console.warn('Unimplemented: upgrade');
-            }}
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              fontWeight: 600,
-              justifyContent: 'flex-start',
-            }}
-          >
-            Upgrade
-          </Button>
-          */}
-        </Stack>
+        <LeftsidePanel
+          title={DataState.isReady(log) ? dateDisplay(new Date(log.timestamp)) : ''}
+          pinned={pinned}
+          setPinned={setPinned}
+          logId={logId}
+          onClose={accountDrawer.onClose}
+        />
       </SwipeableDrawer>
 
       <SwipeableDrawer {...logDrawer.props()} anchor="right">
@@ -1718,15 +1523,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.1),
-            // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `3px solid ${theme.palette.success.light}`,
-            color: theme.palette.success.light,
-          }
+          backgroundColor: alpha(theme.palette.success.light, 0.1),
+          // Avoid jarring when switching between Unattempted and Completed
+          borderBottom: `3px solid ${theme.palette.success.light}`,
+          color: theme.palette.success.light,
+        }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.08),
-            borderBottom: `3px solid ${theme.palette.divider}`,
-          },
+          backgroundColor: alpha(theme.palette.divider, 0.08),
+          borderBottom: `3px solid ${theme.palette.divider}`,
+        },
     [movementSet.status, theme]
   );
 
@@ -1802,9 +1607,8 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${
-                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-              }`,
+              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+                }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1851,8 +1655,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-            movementSet.status === MovementSetStatus.Completed ||
-            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              movementSet.status === MovementSetStatus.Completed ||
+              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
@@ -2006,3 +1810,233 @@ const SavedMovementHistory: FC<{
     </Stack>
   );
 };
+
+/**
+ * @usage
+ * const [pinned, setPinned] = useState(false);
+ * const menu = useMaterialMenu();
+ * return (
+ *   <SwipeableDrawer {...menu} anchor="left">
+ *     <LeftsidePanel pinned={pinned} setPinned={setPinned} onClose={menu.onClose} />
+ *   </SwipeableDrawer>
+ * );
+ */
+export const LeftsidePanel: FC<{
+  title: string;
+  logId?: string;
+  pinned: boolean;
+  setPinned: React.Dispatch<React.SetStateAction<boolean>>;
+  onClose: () => void;
+}> = ({ title, pinned, setPinned, logId, onClose }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+  const toast = useToast();
+  const user = useUser();
+
+  const logs = useStore(store => store.logs);
+  const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
+
+  const stickyable = logId !== undefined;
+
+  return (
+    <Stack spacing={3} sx={{ width: isMobile ? '78vw' : '240px' }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <IconButton
+          sx={{ color: theme => theme.palette.text.secondary }}
+          disabled={isMobile || stickyable === false}
+          onClick={() => {
+            if (isMobile) return;
+
+            setPinned(bool => !bool);
+          }}
+        >
+          {pinned ? (
+            <ViewSidebarRounded sx={{ transform: 'rotate(180deg)' }} />
+          ) : (
+            <DoubleArrow />
+          )}
+        </IconButton>
+        
+        {title ? (
+          <Typography variant="body2">{title}</Typography>
+        ) : (
+          <span />
+        )}
+      </Stack>
+
+      <Stack direction="row" justifyContent="space-between" spacing={1}>
+        <Button
+          fullWidth
+          variant="text"
+          startIcon={<Person />}
+          endIcon={<ExpandMoreRounded sx={{ color: theme => theme.palette.text.secondary }} />}
+          onClick={() => {
+            navigate(Paths.home);
+          }}
+          sx={{
+            color: theme => theme.palette.text.secondary,
+            fontWeight: 600,
+            justifyContent: 'flex-start',
+          }}
+        >
+          {user.displayName}
+        </Button>
+      </Stack>
+
+      <DataStateView
+        data={logs}
+        loading={() => (
+          <Stack spacing={2}>
+            <Skeleton variant="rectangular" width="40%" />
+            <Skeleton variant="rectangular" width="80%" />
+            <Skeleton variant="rectangular" width="95%" />
+            <Skeleton variant="rectangular" width="95%" />
+            <Skeleton variant="rectangular" width="80%" />
+            <Skeleton variant="rectangular" width="95%" />
+            <Skeleton variant="rectangular" width="95%" />
+          </Stack>
+        )}
+      >
+        {logs => (
+          <Stack>
+            <Typography variant="caption" fontWeight={600} color="text.secondary">
+              Training Logs
+            </Typography>
+            <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
+              {logs.slice(0, 20).map(log => {
+                const date = new Date(log.timestamp);
+
+                return (
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    key={log.id}
+                    sx={{
+                      padding: '0.75rem',
+                      paddingLeft: 0,
+                      // transform: 'translateX(-6px)',
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      ':hover': {
+                        backgroundColor: theme => theme.palette.action.hover,
+                      },
+
+                      ...(logId === log.id && {
+                        backgroundColor: theme => theme.palette.action.hover,
+                      }),
+                      ...(isMobile && {
+                        borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                      }),
+                      // borderBottom: theme => `1px solid ${theme.palette.divider}`
+                    }}
+                    onClick={() => {
+                      if (!pinned) onClose();
+                      navigate(Paths.editor(log.id));
+                    }}
+                    justifyContent="space-between"
+                    alignItems="center"
+                  >
+                    <ButtonBase
+                      sx={{
+                        color: theme =>
+                          logId === log.id
+                            ? theme.palette.text.primary
+                            : theme.palette.text.secondary,
+                        fontSize: '1.0rem',
+                        fontWeight: 600,
+                      }}
+                      onClick={() => {
+                        if (!pinned) onClose();
+                        navigate(Paths.editor(log.id));
+                      }}
+                    >
+                      <ChevronRight sx={{ color: theme => theme.palette.divider }} />
+
+                      {dateDisplay(date)}
+                    </ButtonBase>
+
+                    <Typography variant="body2" color="text.secondary">
+                      {SORTED_WEEKDAYS[date.getDay()]}{' '}
+                      <em>
+                        {formatDistanceToNowStrict(date, {
+                          addSuffix: true,
+                        })
+                          .replace(/ (\w)\w+ /i, '$1 ')
+                          .replace('m ', 'mo ')}
+                      </em>
+                    </Typography>
+                  </Stack>
+                );
+              })}
+            </Stack>
+          </Stack>
+        )}
+      </DataStateView>
+
+      <Button
+        onClick={async () => {
+          try {
+            const newTrainingLog = await TrainingLogsAPI.create({
+              timestamp: Date.now(),
+              authorUserId: user.uid,
+              bodyweight: 0,
+              isFinished: false,
+              note: '',
+              programId: null,
+              programLogTemplateId: null,
+            });
+
+            navigate(Paths.editor(newTrainingLog.id));
+
+            if (!pinned) onClose();
+          } catch (err) {
+            toast.error(err.message);
+          }
+        }}
+        sx={{
+          color: theme => theme.palette.text.secondary,
+          fontWeight: 600,
+          justifyContent: 'flex-start',
+        }}
+        startIcon={<Add />}
+      >
+        Add training log
+      </Button>
+
+      {/**
+          <Button
+            fullWidth
+            variant="text"
+            startIcon={<CalendarToday sx={{ color: theme => theme.palette.text.secondary }} />}
+            onClick={() => {
+              console.warn('Unimplemented: upgrade');
+            }}
+            sx={{
+              color: theme => theme.palette.text.secondary,
+              fontWeight: 600,
+              justifyContent: 'flex-start',
+            }}
+          >
+            Calendar
+          </Button>
+
+          <Button
+            fullWidth
+            variant="text"
+            startIcon={<Upgrade sx={{ color: theme => theme.palette.text.secondary }} />}
+            onClick={() => {
+              console.warn('Unimplemented: upgrade');
+            }}
+            sx={{
+              color: theme => theme.palette.text.secondary,
+              fontWeight: 600,
+              justifyContent: 'flex-start',
+            }}
+          >
+            Upgrade
+          </Button>
+          */}
+    </Stack>
+  );
+}
