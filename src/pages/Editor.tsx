@@ -433,8 +433,34 @@ export const EditorInternals: FC<{
           >
             {movements.map(movement => (
               <Fade in key={movement.id}>
-                <Stack sx={{ padding: theme => theme.spacing(1, 0) }}>
-                  <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
+                <Stack
+                  sx={{ cursor: 'pointer' }}
+                  onClick={event => {
+                    if (isProgramView) {
+                      return;
+                    }
+
+                    addSetMenu.onOpen(event, movement);
+
+                    if (movement.sets.length > 0) {
+                      const lastSet = movement.sets[movement.sets.length - 1];
+                      setNewSetWeight(lastSet.weight);
+                      setNewSetRepCountMin(lastSet.repCountExpected);
+                      setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
+                    } else {
+                      setNewSetWeight(0);
+                      setNewSetRepCountMin(DEFAULT_MIN_REPS);
+                      setNewSetRepCountMax(DEFAULT_MAX_REPS);
+                    }
+                  }}
+                >
+                  <Box
+                    display="flex"
+                    alignItems="end"
+                    width="100%"
+                    justifyContent="space-between"
+                    sx={{ padding: theme => theme.spacing(1, 0) }}
+                  >
                     {/** alignItems here could be END or BASELINE */}
                     <Box display="flex" alignItems="baseline">
                       <Button
@@ -446,24 +472,6 @@ export const EditorInternals: FC<{
                           fontWeight: 600,
                           letterSpacing: 0,
                           color: theme => theme.palette.text.primary,
-                        }}
-                        onClick={event => {
-                          if (isProgramView) {
-                            return;
-                          }
-
-                          addSetMenu.onOpen(event, movement);
-
-                          if (movement.sets.length > 0) {
-                            const lastSet = movement.sets[movement.sets.length - 1];
-                            setNewSetWeight(lastSet.weight);
-                            setNewSetRepCountMin(lastSet.repCountExpected);
-                            setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
-                          } else {
-                            setNewSetWeight(0);
-                            setNewSetRepCountMin(DEFAULT_MIN_REPS);
-                            setNewSetRepCountMax(DEFAULT_MAX_REPS);
-                          }
                         }}
                       >
                         {movement.name}
