@@ -141,7 +141,16 @@ export const Programs: FC = () => {
     } catch (err) {
       toast.error(err.message);
     }
-  }, [programUser, viewedProgram, ProgramsAPI, TemplatesAPI, ProgramMovementsAPI, navigate, toast, ProgramUsersAPI]);
+  }, [
+    programUser,
+    viewedProgram,
+    ProgramsAPI,
+    TemplatesAPI,
+    ProgramMovementsAPI,
+    navigate,
+    toast,
+    ProgramUsersAPI,
+  ]);
 
   const updateProgramName = useCallback(
     async event => {
@@ -193,7 +202,7 @@ export const Programs: FC = () => {
           templateIds: viewedProgram.templateIds.concat(newTemplate.id),
         }).catch(() => {
           // failed to update program to include template, avoid dangling template
-          // not linked to program 
+          // not linked to program
           TemplatesAPI.delete(newTemplate.id);
         });
 
@@ -266,11 +275,12 @@ export const Programs: FC = () => {
 
                 <Divider />
 
-                <Stack direction="row" flexWrap="wrap" >
+                <Stack direction="row" flexWrap="wrap">
                   {program.templateIds.map(templateId => {
-                    const name = (DataState.isReady(templates)
-                      && templates.find(t => t.id === templateId)?.name)
-                      || '';
+                    const name =
+                      (DataState.isReady(templates) &&
+                        templates.find(t => t.id === templateId)?.name) ||
+                      '';
 
                     const subtext = programMovementsByTemplateId
                       .get(templateId)
@@ -410,7 +420,7 @@ const PanelBtn: FC<{
   text: string;
   subtext?: string;
   icon: React.ReactNode;
-  disabled?: boolean
+  disabled?: boolean;
 }> = ({ onClick, text, icon, disabled, subtext }) => {
   const prefersDark = useMediaQuery('@media (prefers-color-scheme: dark)');
 
@@ -433,7 +443,7 @@ const PanelBtn: FC<{
 
         ':hover': {
           border: theme => `1px solid ${theme.palette.divider}`,
-        }
+        },
       }}
     >
       <Box>
@@ -449,12 +459,14 @@ const PanelBtn: FC<{
         </IconButton>
       </Box>
 
-      <Typography fontWeight={600} color={subtext ? "text.primary" : "text.secondary"}>
+      <Typography fontWeight={600} color={subtext ? 'text.primary' : 'text.secondary'}>
         {text}
       </Typography>
 
       {subtext && (
-        <Typography variant="body2" color="text.secondary">{subtext}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {subtext}
+        </Typography>
       )}
     </Stack>
   );

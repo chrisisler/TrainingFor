@@ -20,7 +20,7 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
 
   useEffect(() => {
     setAppleStatusBarStyle(prefersDark ? 'black-translucent' : 'default');
-  }, [prefersDark])
+  }, [prefersDark]);
 
   const theme = createTheme({
     palette: {
@@ -68,15 +68,15 @@ export const PrivateThemeProvider: FC<{ children: ReactNode }> = ({ children }) 
 };
 
 function setAppleStatusBarStyle(style: 'default' | 'black' | 'black-translucent') {
-  let metaTag: null | HTMLMetaElement =
-    document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  let metaTag: null | HTMLMetaElement = document.querySelector(
+    'meta[name="apple-mobile-web-app-status-bar-style"]'
+  );
   if (!metaTag) {
     metaTag = document.createElement('meta');
-    metaTag.name = "apple-mobile-web-app-status-bar-style";
+    metaTag.name = 'apple-mobile-web-app-status-bar-style';
     document.head.appendChild(metaTag);
   }
 
   // Set or update the content attribute
   metaTag.content = style;
 }
-

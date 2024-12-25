@@ -1,6 +1,6 @@
-import { IosShareRounded } from "@mui/icons-material";
-import { useMediaQuery, IconButton, useTheme, Button } from "@mui/material";
-import { FC } from "react"
+import { IosShareRounded } from '@mui/icons-material';
+import { useMediaQuery, IconButton, useTheme, Button } from '@mui/material';
+import { FC } from 'react';
 
 export const ShareBtn: FC = () => {
   const theme = useTheme();
