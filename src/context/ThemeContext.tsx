@@ -1,5 +1,5 @@
 import { CssBaseline, useMediaQuery } from '@mui/material';
-import { createTheme, darken, ThemeProvider } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { FC, ReactNode, useEffect } from 'react';
 
 declare module '@mui/material/styles' {

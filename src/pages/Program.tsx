@@ -268,8 +268,8 @@ export const Programs: FC = () => {
 
                 <Stack direction="row" flexWrap="wrap" >
                   {program.templateIds.map(templateId => {
-                    const name = DataState.isReady(templates)
-                      && templates.find(t => t.id === templateId)?.name
+                    const name = (DataState.isReady(templates)
+                      && templates.find(t => t.id === templateId)?.name)
                       || '';
 
                     const subtext = programMovementsByTemplateId
@@ -322,7 +322,7 @@ export const Programs: FC = () => {
           </Typography>
         </Stack>
 
-        <Stack spacing={1} direction="row">
+        <Stack direction="row">
           <ShareBtn />
 
           <IconButton onClick={event => programNoteDrawer.onOpen(event)}>
@@ -419,11 +419,12 @@ const PanelBtn: FC<{
       spacing={4}
       onClick={disabled ? undefined : onClick}
       sx={{
-        backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.2 : 0.02),
-        width: '47%',
+        backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.16 : 0.02),
+        width: '46%',
+        margin: 0.75,
+
         // maxWidth: '47%',
         // flexGrow: 1,
-        margin: 1,
 
         borderRadius: 3,
         padding: 2,
