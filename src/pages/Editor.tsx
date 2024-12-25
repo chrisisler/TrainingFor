@@ -19,6 +19,7 @@ import {
   PlaylistRemove,
   DriveFileRenameOutline,
   RemoveCircleOutline,
+  ChevronRight,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -205,16 +206,21 @@ export const EditorInternals: FC<{
   // Handle debounced search for SavedMovements
   const [matches, setMatches] = useState<DataState<SavedMovement[]>>(DataState.Empty);
   useEffect(() => {
-    if (!DataState.isReady(savedMovements)) return;
-    if (movementNameQuery === '') {
+    if (!DataState.isReady(savedMovements)) {
+      return;
+    }
+
+    if (movementNameQuery === '' || movementNameQuery.length < 2) {
       // No search input, so show all SavedMovements
       setMatches(savedMovements);
       return;
     }
+
     const t = setTimeout(async () => {
       const query = movementNameQuery.toLowerCase();
       setMatches(savedMovements.filter(_ => _.name.toLowerCase().includes(query)));
-    }, 400);
+    }, 800);
+
     return () => clearTimeout(t);
   }, [movementNameQuery, savedMovements]);
 
@@ -1033,155 +1039,169 @@ export const EditorInternals: FC<{
           setMovementNameQuery('');
         }}
       >
-        <Collapse in={addMovementDrawer.open}>
-          {/** Top 3-8 recommendations */}
+        <Stack spacing={1}>
+          <Box>
+            {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
+            <ReactFocusLock
+              disabled={!addMovementDrawer.open || savedMovementDrawer.open}
+              returnFocus
+            >
+              <TextField
+                fullWidth
+                variant="standard"
+                helperText={<b>Select a movement or create one</b>}
+                value={movementNameQuery}
+                onChange={event => setMovementNameQuery(event.target.value)}
+                InputProps={{
+                  endAdornment: !!movementNameQuery && (
+                    <IconButton size="small" onClick={() => setMovementNameQuery('')}>
+                      <Close />
+                    </IconButton>
+                  ),
+                }}
+              />
+            </ReactFocusLock>
+          </Box>
 
-          <Stack spacing={2} key={JSON.stringify(addMovementDrawer)}>
-            <Box>
-              {/** FocusLock-ed things are in a Box to to prevent bug with Stack spacing. */}
-              <ReactFocusLock
-                disabled={!addMovementDrawer.open || savedMovementDrawer.open}
-                returnFocus
-              >
-                <TextField
-                  fullWidth
-                  variant="standard"
-                  helperText="Select a movement"
-                  value={movementNameQuery}
-                  onChange={event => setMovementNameQuery(event.target.value)}
-                  InputProps={{
-                    endAdornment: !!movementNameQuery && (
-                      <IconButton size="small" onClick={() => setMovementNameQuery('')}>
-                        <Close />
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </ReactFocusLock>
-            </Box>
+          <DataStateView data={matches} loading={() => <CircularProgress />}>
+            {matches => {
+              const queryIsEmpty = movementNameQuery === '';
+              const query = movementNameQuery.toLowerCase();
+              const hasFoundExactName = matches.some(_ => _.name === query);
+              const hasFuzzyNameMatch = matches.some(_ => _.name.toLowerCase().includes(query));
+              // const isReplacingMovement = !!addMovementDrawer.getData();
 
-            <DataStateView data={matches} loading={() => <CircularProgress />}>
-              {matches => {
-                const queryIsEmpty = movementNameQuery === '';
-                const query = movementNameQuery.toLowerCase();
-                const hasFoundExactName = matches.some(_ => _.name === query);
-                const hasFuzzyNameMatch = matches.some(_ => _.name.toLowerCase().includes(query));
-                const isReplacingMovement = !!addMovementDrawer.getData();
+              return (
+                <>
+                  <Collapse in={(matches.length > 0 && queryIsEmpty) || hasFuzzyNameMatch}>
+                    <Stack spacing={1} sx={{ maxHeight: '35vh', overflowY: 'scroll' }}>
+                      {matches.map((match: SavedMovement) => {
+                        // A string like "22h ago" or "4d ago"
+                        const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
+                          addSuffix: true,
+                        })
+                          .replace(/ (\w)\w+ /i, '$1 ')
+                          .replace('m ', 'mo ');
 
-                return (
-                  <>
-                    {matches.length > 0 && (
-                      <Collapse in={queryIsEmpty || hasFuzzyNameMatch}>
-                        <Stack spacing={2} sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
-                          {matches.map((match: SavedMovement) => {
-                            // A string like "22h ago" or "4d ago"
-                            const distance = formatDistanceToNowStrict(new Date(match.lastSeen), {
-                              addSuffix: true,
-                            })
-                              .replace(/ (\w)\w+ /i, '$1 ')
-                              .replace('m ', 'mo ');
-                            const isLessThan72HoursAgo =
-                              new Date().getTime() - new Date(match.lastSeen).getTime() <
-                              72 * 60 * 60 * 1000;
+                        const isLessThan72HoursAgo =
+                          new Date().getTime() - new Date(match.lastSeen).getTime() <
+                          72 * 60 * 60 * 1000;
 
-                            return (
-                              <Box key={match.id} display="flex" justifyContent="space-between">
-                                <Button
-                                  variant="text"
-                                  disabled={!!isMutating}
-                                  sx={{
-                                    backgroundColor: theme => theme.palette.divider,
-                                    color: theme => theme.palette.text.primary,
-                                    justifyContent: 'flex-start',
-                                  }}
-                                  onClick={async () => {
-                                    const movement = addMovementDrawer.getData();
-                                    if (movement === null) {
-                                      addMovementFromExistingSavedMovement(match);
-                                      return;
-                                    }
+                        return (
+                          <Box
+                            key={match.id}
+                            display="flex"
+                            justifyContent="space-between"
+                            sx={{
+                              // cursor: 'pointer',
+                              // borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                            }}
+                          >
+                            <Box display="flex" justifyContent="center">
+                              <ChevronRight
+                                sx={{
+                                  color: theme => theme.palette.text.secondary,
+                                  display: 'flex',
+                                  height: '100%',
+                                }}
+                              />
 
-                                    if (!DataState.isReady(movements)) return;
-                                    if (movements.some(_ => _.savedMovementId === match.id)) {
-                                      toast.info(`${match.name} has already been added`);
-                                      return;
-                                    }
+                              <ButtonBase
+                                disabled={!!isMutating}
+                                sx={{
+                                  backgroundColor: theme => theme.palette.divider,
+                                  // backgroundColor: 'transparent',
+                                  color: theme => theme.palette.text.primary,
+                                  // border: theme => `1px solid ${theme.palette.divider}`,
+                                  // borderBottom: 'none',
+                                  fontSize: '1.0rem',
+                                  padding: '8px 11px',
+                                  fontWeight: 600,
+                                  borderRadius: 1,
+                                }}
+                                onClick={async () => {
+                                  const movement = addMovementDrawer.getData();
+                                  if (movement === null) {
+                                    return addMovementFromExistingSavedMovement(match);
+                                  }
 
-                                    const { position } = movement;
-                                    try {
-                                      await Promise.all([
-                                        MovementsMutationAPI.delete(movement.id),
-                                        addMovementFromExistingSavedMovement(match, { position }),
-                                      ]);
-                                    } catch (error) {
-                                      toast.error(error.message);
-                                    }
-                                  }}
-                                >
-                                  {match.name}
-                                </Button>
-                                <Stack
-                                  sx={{ whiteSpace: 'nowrap', alignItems: 'center' }}
-                                  spacing={1}
-                                  direction="row"
-                                >
-                                  <Typography
-                                    variant="caption"
-                                    sx={{
-                                      color: theme =>
-                                        isLessThan72HoursAgo
-                                          ? theme.palette.text.secondary
-                                          : theme.palette.success.main,
-                                    }}
-                                  >
-                                    {distance}
-                                  </Typography>
-                                  <IconButton
-                                    sx={{ color: theme => theme.palette.text.secondary }}
-                                    onClick={event => {
-                                      savedMovementDrawer.onOpen(event, match);
-                                      addMovementDrawer.onClose();
-                                    }}
-                                  >
-                                    <MoreHoriz />
-                                  </IconButton>
-                                </Stack>
-                              </Box>
-                            );
-                          })}
-                        </Stack>
-                      </Collapse>
-                    )}
-                    <Collapse in={!queryIsEmpty && !hasFoundExactName && !isReplacingMovement}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          padding: theme => theme.spacing(0),
-                        }}
-                      >
-                        <Button
-                          fullWidth
-                          size="large"
-                          variant="contained"
-                          sx={{
-                            justifyContent: 'flex-start',
-                          }}
-                          startIcon={<Add />}
-                          onClick={addMovementFromNewSavedMovement}
-                          disabled={!!isMutating}
-                        >
-                          Create {movementNameQuery}
-                        </Button>
-                      </Box>
-                    </Collapse>
-                  </>
-                );
-              }}
-            </DataStateView>
-          </Stack>
-        </Collapse>
+                                  if (!DataState.isReady(movements)) return;
+                                  if (movements.some(_ => _.savedMovementId === match.id)) {
+                                    return toast.info(`${match.name} has already been added`);
+                                  }
+
+                                  const { position } = movement;
+                                  try {
+                                    await Promise.all([
+                                      MovementsMutationAPI.delete(movement.id),
+                                      addMovementFromExistingSavedMovement(match, { position }),
+                                    ]);
+                                  } catch (error) {
+                                    toast.error(error.message);
+                                  }
+                                }}
+                              >
+                                {match.name}
+                              </ButtonBase>
+                            </Box>
+
+                            <Stack
+                              sx={{ whiteSpace: 'nowrap', alignItems: 'center' }}
+                              spacing={1}
+                              direction="row"
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: theme =>
+                                    isLessThan72HoursAgo
+                                      ? theme.palette.text.secondary
+                                      : theme.palette.success.main,
+                                }}
+                              >
+                                {distance}
+                              </Typography>
+
+                              <IconButton
+                                sx={{ color: theme => theme.palette.text.secondary }}
+                                onClick={event => {
+                                  savedMovementDrawer.onOpen(event, match);
+                                  addMovementDrawer.onClose();
+                                }}
+                              >
+                                <MoreHoriz />
+                              </IconButton>
+                            </Stack>
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  </Collapse>
+
+                  {!queryIsEmpty && !hasFoundExactName && movementNameQuery.length > 2 && (
+                    <Button
+                      fullWidth
+                      sx={{
+                        justifyContent: 'flex-start',
+                        backgroundColor: 'transparent',
+                        border: theme => `1px solid ${theme.palette.divider}`,
+                        color: theme => theme.palette.text.secondary,
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        padding: '8px 11px',
+                      }}
+                      startIcon={<Add />}
+                      onClick={addMovementFromNewSavedMovement}
+                      disabled={!!isMutating}
+                    >
+                      Create movement: {movementNameQuery}
+                    </Button>
+                  )}
+                </>
+              );
+            }}
+          </DataStateView>
+        </Stack>
       </SwipeableDrawer>
 
       {/** SavedMovement Update + Delete Drawer with History tab */}
@@ -1517,15 +1537,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.1),
-            // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `3px solid ${theme.palette.success.light}`,
-            color: theme.palette.success.light,
-          }
+          backgroundColor: alpha(theme.palette.success.light, 0.1),
+          // Avoid jarring when switching between Unattempted and Completed
+          borderBottom: `3px solid ${theme.palette.success.light}`,
+          color: theme.palette.success.light,
+        }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.08),
-            borderBottom: `3px solid ${theme.palette.divider}`,
-          },
+          backgroundColor: alpha(theme.palette.divider, 0.08),
+          borderBottom: `3px solid ${theme.palette.divider}`,
+        },
     [movementSet.status, theme]
   );
 
@@ -1603,9 +1623,8 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${
-                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-              }`,
+              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+                }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1652,8 +1671,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-            movementSet.status === MovementSetStatus.Completed ||
-            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              movementSet.status === MovementSetStatus.Completed ||
+              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
