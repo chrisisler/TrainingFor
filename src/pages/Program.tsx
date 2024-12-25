@@ -26,7 +26,7 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { API, useStore } from '../api';
-import { NotesDrawer, ShareBtn } from '../components';
+import { NotesDrawer, ShareBtn, AccountPanel } from '../components';
 import {
   DataState,
   DataStateView,
@@ -36,7 +36,7 @@ import {
   useUser,
   useToast,
 } from '../util';
-import { EditorInternals, AccountPanel } from './Editor';
+import { EditorInternals } from './Editor';
 
 export const Programs: FC = () => {
   const user = useUser();
