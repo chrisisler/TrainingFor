@@ -145,17 +145,15 @@ export const Programs: FC = () => {
 
   const updateProgramName = useCallback(
     async event => {
-      if (!DataState.isReady(viewedProgram)) {
+      if (!DataState.isReady(viewedProgram) || !DataState.isReady(programUser)) {
         return;
       }
 
       const newName = event.target.value;
-      if (newName.length < 3 || newName === viewedProgram.name) {
-        toast.info('Program name must be at least 3 characters');
-        return;
-      }
-
-      if (!DataState.isReady(programUser)) {
+      if (newName === viewedProgram.name) {
+        if (newName.length < 3) {
+          toast.info('Program name must be at least 3 characters');
+        }
         return;
       }
 
@@ -177,7 +175,7 @@ export const Programs: FC = () => {
   );
 
   const createTemplate = useCallback(
-    async event => {
+    async (event: React.MouseEvent<HTMLElement>) => {
       if (!DataState.isReady(viewedProgram)) {
         return;
       }
@@ -193,8 +191,13 @@ export const Programs: FC = () => {
         await ProgramsAPI.update({
           id: viewedProgram.id,
           templateIds: viewedProgram.templateIds.concat(newTemplate.id),
+        }).catch(() => {
+          // failed to update program to include template, avoid dangling template
+          // not linked to program 
+          TemplatesAPI.delete(newTemplate.id);
         });
 
+        // TODO fix, doesn't work
         templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
       } catch (err) {
         toast.error(err.message);
