@@ -14,7 +14,7 @@ export interface ProgramUser extends FirestoreDocument {
 export interface Program extends FirestoreDocument {
   name: string;
   authorUserId: string;
-  timestamp: number;
+  timestamp?: number;
   note: string;
   /** List of program log templates for this program. */
   templateIds: string[];

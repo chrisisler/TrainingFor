@@ -238,12 +238,13 @@ export const Programs: FC = () => {
             return (
               <Stack spacing={3}>
                 <Typography variant="caption" color="text.secondary" textTransform="uppercase">
-                  {dateDisplay(new Date(program.timestamp))}
+                  {program.timestamp && <>{dateDisplay(new Date(program.timestamp))}</>}
                 </Typography>
 
                 <InputBase
                   multiline
                   maxRows={2}
+                  key={program.name}
                   defaultValue={program.name}
                   sx={{
                     fontSize: '2.5rem',

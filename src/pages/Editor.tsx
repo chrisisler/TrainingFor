@@ -1826,6 +1826,18 @@ export const AccountPanel: FC<{
 
   const logs = useStore(store => store.logs);
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
+  const sortedPrograms = useStore(store =>
+    // List of programs with active program first
+    DataState.map(store.programs, _programs => {
+      const active = store.activeProgram;
+      if (DataState.isReady(active)) {
+        const first = _programs.find(p => p.id === active.id);
+        if (first) return [first, ..._programs.filter(_ => _.id !== active.id)];
+      }
+      return _programs;
+    })
+  );
+  const activeProgram = useStore(store => store.activeProgram);
 
   const stickyable = logId !== undefined;
 
@@ -1885,70 +1897,33 @@ export const AccountPanel: FC<{
             <Typography variant="caption" fontWeight={600} color="text.secondary">
               Training Logs
             </Typography>
-            <Stack sx={{ maxHeight: '40vh', overflowY: 'scroll' }}>
+
+            <Stack sx={{ maxHeight: '35vh', overflowY: 'scroll' }}>
               {logs.slice(0, 20).map(log => {
                 const date = new Date(log.timestamp);
 
                 return (
-                  <Stack
-                    direction="row"
-                    spacing={1}
+                  <PanelRow
                     key={log.id}
-                    sx={{
-                      padding: '0.75rem',
-                      paddingLeft: 0,
-                      // transform: 'translateX(-6px)',
-                      cursor: 'pointer',
-                      borderRadius: 1,
-                      ':hover': {
-                        backgroundColor: theme => theme.palette.action.hover,
-                      },
-
-                      ...(logId === log.id && {
-                        backgroundColor: theme => theme.palette.action.hover,
-                      }),
-                      ...(isMobile && {
-                        borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                      }),
-                      // borderBottom: theme => `1px solid ${theme.palette.divider}`
-                    }}
+                    highlighted={logId === log.id}
                     onClick={() => {
                       if (!pinned) onClose();
                       navigate(Paths.editor(log.id));
                     }}
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <ButtonBase
-                      sx={{
-                        color: theme =>
-                          logId === log.id
-                            ? theme.palette.text.primary
-                            : theme.palette.text.secondary,
-                        fontSize: '1.0rem',
-                        fontWeight: 600,
-                      }}
-                      onClick={() => {
-                        if (!pinned) onClose();
-                        navigate(Paths.editor(log.id));
-                      }}
-                    >
-                      <ChevronRight sx={{ color: theme => theme.palette.divider }} />
-
-                      {dateDisplay(date)}
-                    </ButtonBase>
-
-                    <Typography variant="body2" color="text.secondary">
-                      {SORTED_WEEKDAYS[date.getDay()]}{' '}
-                      <em>
-                        {formatDistanceToNowStrict(date, {
-                          addSuffix: true,
-                        })
-                          .replace(/ (\w)\w+ /i, '$1 ')
-                          .replace('m ', 'mo ')}
-                      </em>
-                    </Typography>
-                  </Stack>
+                    text={dateDisplay(date)}
+                    subtext={
+                      <>
+                        {SORTED_WEEKDAYS[date.getDay()]}{' '}
+                        <em>
+                          {formatDistanceToNowStrict(date, {
+                            addSuffix: true,
+                          })
+                            .replace(/ (\w)\w+ /i, '$1 ')
+                            .replace('m ', 'mo ')}
+                        </em>
+                      </>
+                    }
+                  />
                 );
               })}
             </Stack>
@@ -1986,6 +1961,30 @@ export const AccountPanel: FC<{
         Add training log
       </Button>
 
+      <DataStateView data={sortedPrograms} loading={() => null}>
+        {sortedPrograms => (
+          <Stack>
+            <Typography variant="caption" fontWeight={600} color="text.secondary">
+              Training Programs
+            </Typography>
+
+            <Stack sx={{ maxHeight: '20vh', overflowY: 'scroll' }}>
+              {sortedPrograms.map(program => (
+                <PanelRow
+                  key={program.id}
+                  // highlighted={DataState.isReady(activeProgram) && program.id === activeProgram.id}
+                  onClick={() => {
+                    if (!pinned) onClose();
+                    navigate(Paths.program(program.id));
+                  }}
+                  text={program.name}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        )}
+      </DataStateView>
+
       {/**
           <Button
             fullWidth
@@ -2019,6 +2018,61 @@ export const AccountPanel: FC<{
             Upgrade
           </Button>
           */}
+    </Stack>
+  );
+};
+
+const PanelRow: FC<{
+  subtext?: React.ReactNode;
+  text: string;
+  highlighted?: boolean;
+  onClick: () => void;
+}> = ({ subtext, text, highlighted = false, onClick }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        padding: isMobile ? '0.75rem' : '0.5rem',
+        paddingLeft: 0,
+        cursor: 'pointer',
+        borderRadius: 1,
+        ':hover': {
+          backgroundColor: theme => theme.palette.action.hover,
+        },
+
+        ...(highlighted && {
+          backgroundColor: theme => theme.palette.action.hover,
+        }),
+        ...(isMobile && {
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
+        }),
+        // borderBottom: theme => `1px solid ${theme.palette.divider}`
+      }}
+      onClick={onClick}
+      justifyContent="space-between"
+      alignItems="center"
+    >
+      <ButtonBase
+        sx={{
+          color: theme => (highlighted ? theme.palette.text.primary : theme.palette.text.secondary),
+          fontSize: '1.0rem',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+        }}
+        onClick={onClick}
+      >
+        <ChevronRight sx={{ color: theme => theme.palette.divider }} />
+
+        {text}
+      </ButtonBase>
+
+      <Typography variant="body2" color="text.secondary">
+        {subtext ?? null}
+      </Typography>
     </Stack>
   );
 };
