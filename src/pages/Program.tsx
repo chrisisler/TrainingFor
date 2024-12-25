@@ -70,7 +70,9 @@ export const Programs: FC = () => {
 
   // Navigate home when invalid programId or viewedProgram
   useEffect(() => {
-    if (!programId || DataState.isError(viewedProgram)) navigate(Paths.editor(''));
+    if (!programId || DataState.isError(viewedProgram)) {
+      navigate(Paths.editor(''));
+    }
   }, [programId, viewedProgram, navigate]);
 
   const onActivateProgram = useCallback(async () => {

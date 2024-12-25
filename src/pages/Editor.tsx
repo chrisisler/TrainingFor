@@ -322,8 +322,8 @@ export const EditorInternals: FC<{
     if (isProgramView || !DataState.isError(log) || !DataState.isReady(logs)) {
       return;
     }
-    
-    navigate(Paths.editor(logs[0].id));
+
+    navigate(Paths.editor(logs[0].id, TrainingLog.title(logs[0])));
   }, [log, logs, navigate, isProgramView]);
 
   useEffect(() => {
@@ -379,11 +379,7 @@ export const EditorInternals: FC<{
               >
                 <Notes />
               </IconButton>
-              {DataState.isReady(log) ? (
-                <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
-              ) : (
-                <span />
-              )}
+              <Typography variant="body2">{TrainingLog.title(log)}</Typography>
             </Stack>
           )}
 
@@ -1433,7 +1429,7 @@ export const EditorInternals: FC<{
 
                 // duplicate log and its sets
                 try {
-                  const newTrainingLog = await TrainingLogsAPI.create({
+                  const newLog = await TrainingLogsAPI.create({
                     timestamp: Date.now(),
                     authorUserId: user.uid,
                     bodyweight: log.bodyweight,
@@ -1445,13 +1441,13 @@ export const EditorInternals: FC<{
 
                   const logMovements: Movement[] = movements.map(movement => ({
                     ...movement,
-                    logId: newTrainingLog.id,
+                    logId: newLog.id,
                     sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
                     timestamp: Date.now(),
                   }));
                   await MovementsAPI.createMany(logMovements);
 
-                  navigate(Paths.editor(newTrainingLog.id));
+                  navigate(Paths.editor(newLog.id, TrainingLog.title(newLog)));
                   toast.info('Duplicated training log');
                   logDrawer.onClose();
                 } catch (err) {
@@ -1476,8 +1472,8 @@ export const EditorInternals: FC<{
 
                   // navigate to the nearest existing log
                   if (DataState.isReady(logs) && logs.length > 1) {
-                    const [{ id }] = logs.filter(_ => _.id !== logId);
-                    navigate(Paths.editor(id));
+                    const [first] = logs.filter(_ => _.id !== logId);
+                    navigate(Paths.editor(first.id, TrainingLog.title(first)));
                   } else {
                     navigate(Paths.editor(''));
                   }

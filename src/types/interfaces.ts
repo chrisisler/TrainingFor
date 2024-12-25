@@ -1,4 +1,4 @@
-import { SORTED_WEEKDAYS } from '../util';
+import { DataState, dateDisplay, SORTED_WEEKDAYS } from '../util';
 
 export interface FirestoreDocument {
   id: string;
@@ -130,6 +130,17 @@ export const abbreviate = (unit: MovementRepCountUnit): string => {
 export enum MovementWeightUnit {
   Kilograms = 'Kg',
   Pounds = 'Lb',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const TrainingLog = {
+  title(log: DataState<TrainingLog>) {
+    if (DataState.isReady(log)) {
+      return dateDisplay(new Date(log.timestamp))
+    }
+
+    return "";
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare

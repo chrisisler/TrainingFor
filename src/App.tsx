@@ -108,7 +108,7 @@ function EditorLastOrNew() {
 
   return (
     <DataStateView data={log} loading={AppLoading}>
-      {log => <Navigate to={Paths.editor(log.id)} />}
+      {log => <Navigate to={Paths.editor(log.id, TrainingLog.title(log))} />}
     </DataStateView>
   );
 }

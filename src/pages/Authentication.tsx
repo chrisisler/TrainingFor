@@ -1,6 +1,6 @@
 import { Google, Person } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Authenticate, useAuthStore } from '../api';
@@ -12,6 +12,10 @@ export const Authentication: FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const setUser = useAuthStore(store => store.setUser);
+
+  useEffect(() => {
+    document.title = 'Log In - Trainquil';
+  }, []);
 
   return (
     <Box

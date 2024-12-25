@@ -22,6 +22,7 @@ import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useStore } from '../api';
+import { TrainingLog } from '../types';
 import {
   DataState,
   DataStateView,
@@ -141,7 +142,7 @@ export const AccountPanel: FC<{
                     highlighted={logId === log.id}
                     onClick={() => {
                       if (!pinned) onClose();
-                      navigate(Paths.editor(log.id));
+                      navigate(Paths.editor(log.id, TrainingLog.title(log)));
                     }}
                     text={dateDisplay(date)}
                     subtext={
@@ -167,7 +168,7 @@ export const AccountPanel: FC<{
       <Button
         onClick={async () => {
           try {
-            const newTrainingLog = await TrainingLogsAPI.create({
+            const created = await TrainingLogsAPI.create({
               timestamp: Date.now(),
               authorUserId: user.uid,
               bodyweight: 0,
@@ -177,7 +178,7 @@ export const AccountPanel: FC<{
               programLogTemplateId: null,
             });
 
-            navigate(Paths.editor(newTrainingLog.id));
+            navigate(Paths.editor(created.id, TrainingLog.title(created)));
 
             if (!pinned) onClose();
           } catch (err) {
@@ -208,7 +209,7 @@ export const AccountPanel: FC<{
                   // highlighted={DataState.isReady(activeProgram) && program.id === activeProgram.id}
                   onClick={() => {
                     if (!pinned) onClose();
-                    navigate(Paths.program(program.id));
+                    navigate(Paths.program(program.id, program.name));
                   }}
                   text={program.name}
                 />
@@ -233,7 +234,7 @@ export const AccountPanel: FC<{
               templateIds: [],
             });
 
-            navigate(Paths.program(created.id));
+            navigate(Paths.program(created.id, created.name));
             onClose();
           } catch (err) {
             toast.error(err.message);

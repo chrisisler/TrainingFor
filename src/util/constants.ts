@@ -52,8 +52,20 @@ export enum Milliseconds {
 
 /** Valid route locations within the app. */
 export const Paths = {
-  program: (programId = ':programId') => `/program/${programId}`,
+  program: (programId = ':programId', title = "") => {
+    if (title) {
+      document.title = title;
+    }
 
-  /** To navigate to nearest log, use `""`, not undefined. */
-  editor: (logId = ':logId') => `/training/log/${logId}`,
-} as const;
+    return `/program/${programId}`;
+  },
+
+  /** To navigate to nearest log, use `Paths.editor("")`. */
+  editor: (logId = ':logId', title = "") => {
+    if (title) {
+      document.title = title;
+    }
+
+    return `/training/log/${logId}`;
+  },
+};
