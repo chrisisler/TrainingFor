@@ -53,7 +53,6 @@ export enum Milliseconds {
 /** Valid route locations within the app. */
 export const Paths = {
   home: '/home',
-  training: '/training',
-  editor: (logId = ':logId') => `${Paths.training}/log/${logId}`,
+  editor: (logId = ':logId') => `/training/log/${logId}`,
   program: (programId = ':programId') => `/program/${programId}`,
 } as const;

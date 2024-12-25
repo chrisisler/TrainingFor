@@ -319,6 +319,14 @@ export const EditorInternals: FC<{
   );
 
   useEffect(() => {
+    if (!DataState.isError(log) || !DataState.isReady(logs)) {
+      return;
+    }
+    
+    navigate(Paths.editor(logs[0].id));
+  }, [log, logs, navigate]);
+
+  useEffect(() => {
     if (isMobile === false) return;
     if (pinned) {
       setPinned(false);
