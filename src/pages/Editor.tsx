@@ -681,8 +681,7 @@ export const EditorInternals: FC<{
                     paddingX: '0.5rem',
                     justifyItems: 'center',
                     display: 'flex',
-                    // inset box shadow
-                    boxShadow: 'inset -15px 0 12px rgba(0, 0, 0, 0.3)',
+                    boxShadow: 'inset -15px 0 12px rgba(0, 0, 0, 0.2)',
                   },
                 }}
               >
