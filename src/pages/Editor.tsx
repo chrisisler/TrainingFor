@@ -319,7 +319,7 @@ export const EditorInternals: FC<{
   );
 
   useEffect(() => {
-    if (!DataState.isError(log) || !DataState.isReady(logs)) {
+    if (isProgramView || !DataState.isError(log) || !DataState.isReady(logs)) {
       return;
     }
     

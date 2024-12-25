@@ -99,7 +99,7 @@ export const AccountPanel: FC<{
           startIcon={<Person />}
           endIcon={<ExpandMoreRounded sx={{ color: theme => theme.palette.text.secondary }} />}
           onClick={() => {
-            navigate(Paths.home);
+            navigate(Paths.editor(''));
           }}
           sx={{
             color: theme => theme.palette.text.secondary,
