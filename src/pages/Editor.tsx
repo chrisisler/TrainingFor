@@ -98,6 +98,7 @@ const DEFAULT_MAX_REPS = 30;
 export const Editor: FC = () => {
   const { logId } = useParams<{ logId: string }>();
   const programDrawer = useDrawer<string>();
+  const programLogTemplateId = programDrawer.getData();
 
   return (
     <>
@@ -113,25 +114,20 @@ export const Editor: FC = () => {
       </Box>
 
       <SwipeableDrawer {...programDrawer.props()} anchor="bottom">
-        <WithVariable value={programDrawer.getData()}>
-          {programLogTemplateId => {
-            if (!programLogTemplateId) return null;
-            return (
-              <Box
-                sx={{
-                  height: '80vh',
-                  width: '100%',
-                  overflowY: 'scroll',
-                }}
-              >
-                <Typography variant="overline" fontWeight={600}>
-                  Editing Program Template...
-                </Typography>
-                <EditorInternals isProgramView logId={programLogTemplateId} />
-              </Box>
-            );
+        <Box
+          sx={{
+            height: '80vh',
+            width: '100%',
+            overflowY: 'scroll',
           }}
-        </WithVariable>
+        >
+          <Typography variant="overline" fontWeight={600}>
+            Editing Program Template...
+          </Typography>
+          {programLogTemplateId && (
+            <EditorInternals readOnly isProgramView logId={programLogTemplateId} />
+          )}
+        </Box>
       </SwipeableDrawer>
     </>
   );
@@ -337,52 +333,52 @@ export const EditorInternals: FC<{
         maxWidth: '708px',
       }}
     >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{
-          // fixed header
-          position: 'absolute',
-          top: 0,
-          width: '100vw',
-          zIndex: 100,
-          left: 0,
-          padding: theme => theme.spacing(0, 0.5),
-          backgroundColor: theme => theme.palette.background.default,
-        }}
-      >
-        {isProgramView === false && (
-          <Stack
-            direction="row"
-            spacing={0.5}
-            alignItems="center"
-            sx={{
-              zIndex: accountDrawer.open ? -50 : 0,
-            }}
-            onMouseOver={event => {
-              accountDrawer.onOpen(event);
-            }}
-          >
-            <IconButton
+      {readOnly === false && (
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{
+            // fixed header
+            position: 'absolute',
+            top: 0,
+            width: '100vw',
+            zIndex: 100,
+            left: 0,
+            padding: theme => theme.spacing(0, 0.5),
+            backgroundColor: theme => theme.palette.background.default,
+          }}
+        >
+          {isProgramView === false && (
+            <Stack
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
               sx={{
-                color: theme => theme.palette.text.secondary,
+                zIndex: accountDrawer.open ? -50 : 0,
               }}
-              onClick={event => {
+              onMouseOver={event => {
                 accountDrawer.onOpen(event);
               }}
             >
-              <Notes />
-            </IconButton>
-            {DataState.isReady(log) ? (
-              <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
-            ) : (
-              <span />
-            )}
-          </Stack>
-        )}
+              <IconButton
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                }}
+                onClick={event => {
+                  accountDrawer.onOpen(event);
+                }}
+              >
+                <Notes />
+              </IconButton>
+              {DataState.isReady(log) ? (
+                <Typography variant="body2">{dateDisplay(new Date(log.timestamp))}</Typography>
+              ) : (
+                <span />
+              )}
+            </Stack>
+          )}
 
-        {readOnly === false && (
           <Stack direction="row">
             {isProgramView === false && (
               <>
@@ -411,8 +407,8 @@ export const EditorInternals: FC<{
               </>
             )}
           </Stack>
-        )}
-      </Stack>
+        </Stack>
+      )}
 
       <DataStateView
         data={movements}
@@ -432,7 +428,7 @@ export const EditorInternals: FC<{
               // Padding top specifically to account for fixed header
               padding: '1rem',
               paddingBottom: 0,
-              paddingTop: isMobile || isProgramView ? '3rem' : '5rem',
+              paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
 
               // spacing for pinned header
               transform: !isMobile && pinned ? 'translateX(150px)' : 'none',
