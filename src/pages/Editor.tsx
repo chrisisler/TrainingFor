@@ -324,7 +324,7 @@ export const EditorInternals: FC<{
     }
     
     navigate(Paths.editor(logs[0].id));
-  }, [log, logs, navigate]);
+  }, [log, logs, navigate, isProgramView]);
 
   useEffect(() => {
     if (isMobile === false) return;

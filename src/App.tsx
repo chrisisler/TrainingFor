@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Collapse, Typography } from '@mui/material';
+import { Box, Collapse, Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import { FC, useEffect, useState } from 'react';
@@ -74,7 +74,7 @@ function EditorLastOrNew() {
 
   useEffect(() => {
     if (!DataState.isReady(logs)) {
-      return setLog(logs);
+      return;
     }
 
     if (logs.length) {
@@ -83,7 +83,7 @@ function EditorLastOrNew() {
 
     if (!DataState.isReady(authState)) {
       toast.error('No user logged in');
-      return setLog(authState);
+      return;
     }
 
     TrainingLogsAPI
@@ -103,7 +103,8 @@ function EditorLastOrNew() {
         setLog(DataState.error(err.message));
         console.error(err.message);
       })
-  }, [logs, authState, TrainingLogsAPI, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logs, authState]);
 
   return (
     <DataStateView data={log} loading={AppLoading}>
