@@ -31,7 +31,6 @@ import {
   DataState,
   DataStateView,
   Paths,
-  dateDisplay,
   useDrawer,
   useMaterialMenu,
   useUser,
@@ -236,11 +235,7 @@ export const Programs: FC = () => {
             const userIsProgramAuthor = user.uid === program.authorUserId;
 
             return (
-              <Stack spacing={3}>
-                <Typography variant="caption" color="text.secondary" textTransform="uppercase">
-                  {program.timestamp && <>{dateDisplay(new Date(program.timestamp))}</>}
-                </Typography>
-
+              <Stack spacing={2} paddingTop="3rem">
                 <InputBase
                   multiline
                   maxRows={2}
@@ -328,9 +323,7 @@ export const Programs: FC = () => {
             <Notes />
           </IconButton>
 
-          <Typography variant="body2">
-            {DataState.isReady(viewedProgram) && viewedProgram.name}
-          </Typography>
+          <Typography variant="body2">Program</Typography>
         </Stack>
 
         <Stack direction="row">
@@ -427,12 +420,12 @@ const PanelBtn: FC<{
 
   return (
     <Stack
-      spacing={4}
+      spacing={5}
       onClick={disabled ? undefined : onClick}
       sx={{
         backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.16 : 0.02),
         width: '46%',
-        margin: 0.75,
+        margin: 0.5,
 
         // maxWidth: '47%',
         // flexGrow: 1,

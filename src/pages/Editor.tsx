@@ -24,6 +24,7 @@ import {
   ChevronRight,
   DoubleArrow,
   RemoveCircleOutline,
+  PlaylistAdd,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -353,13 +354,13 @@ export const EditorInternals: FC<{
             sx={{
               zIndex: accountDrawer.open ? -50 : 0,
             }}
+            onMouseOver={event => {
+              accountDrawer.onOpen(event);
+            }}
           >
             <IconButton
               sx={{
                 color: theme => theme.palette.text.secondary,
-              }}
-              onMouseOver={event => {
-                accountDrawer.onOpen(event);
               }}
               onClick={event => {
                 accountDrawer.onOpen(event);
@@ -436,7 +437,7 @@ export const EditorInternals: FC<{
                 <Stack
                   sx={{ cursor: 'pointer' }}
                   onClick={event => {
-                    if (isProgramView) {
+                    if (readOnly) {
                       return;
                     }
 
@@ -1831,6 +1832,7 @@ export const AccountPanel: FC<{
   const toast = useToast();
   const user = useUser();
 
+  const ProgramsAPI = useStore(store => store.ProgramsAPI);
   const logs = useStore(store => store.logs);
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
   const sortedPrograms = useStore(store =>
@@ -1992,39 +1994,36 @@ export const AccountPanel: FC<{
         )}
       </DataStateView>
 
-      {/**
-          <Button
-            fullWidth
-            variant="text"
-            startIcon={<CalendarToday sx={{ color: theme => theme.palette.text.secondary }} />}
-            onClick={() => {
-              console.warn('Unimplemented: upgrade');
-            }}
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              fontWeight: 600,
-              justifyContent: 'flex-start',
-            }}
-          >
-            Calendar
-          </Button>
+      <Button
+        onClick={async () => {
+          if (!window.confirm('Create new training program?')) {
+            return;
+          }
 
-          <Button
-            fullWidth
-            variant="text"
-            startIcon={<Upgrade sx={{ color: theme => theme.palette.text.secondary }} />}
-            onClick={() => {
-              console.warn('Unimplemented: upgrade');
-            }}
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              fontWeight: 600,
-              justifyContent: 'flex-start',
-            }}
-          >
-            Upgrade
-          </Button>
-          */}
+          try {
+            const created = await ProgramsAPI.create({
+              name: 'Untitled Program',
+              authorUserId: user.uid,
+              timestamp: Date.now(),
+              note: '',
+              templateIds: [],
+            });
+
+            navigate(Paths.program(created.id));
+            onClose();
+          } catch (err) {
+            toast.error(err.message);
+          }
+        }}
+        sx={{
+          color: theme => theme.palette.text.secondary,
+          fontWeight: 600,
+          justifyContent: 'flex-start',
+        }}
+        startIcon={<PlaylistAdd />}
+      >
+        New training program
+      </Button>
     </Stack>
   );
 };
