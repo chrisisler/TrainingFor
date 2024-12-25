@@ -1474,12 +1474,12 @@ export const EditorInternals: FC<{
                   logDrawer.onClose();
                   toast.info('Deleted training');
 
-                  // navigate to the nearest available log
+                  // navigate to the nearest existing log
                   if (DataState.isReady(logs) && logs.length > 1) {
                     const [{ id }] = logs.filter(_ => _.id !== logId);
                     navigate(Paths.editor(id));
                   } else {
-                    navigate(Paths.home);
+                    navigate(Paths.editor(''));
                   }
                 } catch (error) {
                   toast.error(error.message);

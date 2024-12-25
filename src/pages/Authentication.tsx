@@ -41,6 +41,7 @@ export const Authentication: FC = () => {
           Start training and track your progression. <br />
           Join today.
         </Typography>
+
         <Stack spacing={3}>
           <Button
             variant="contained"
@@ -48,8 +49,9 @@ export const Authentication: FC = () => {
             onClick={async () => {
               try {
                 const authResult = await Authenticate.withGoogle();
+
                 setUser(authResult.user);
-                navigate(Paths.home);
+                navigate(Paths.editor(''));
                 toast.info('Welcome!');
               } catch (error) {
                 toast.error(error.message);
@@ -58,13 +60,15 @@ export const Authentication: FC = () => {
           >
             Sign In with Google
           </Button>
+
           <Button
             variant="outlined"
             startIcon={<Person />}
             onClick={async () => {
               try {
                 await Authenticate.anonymously();
-                navigate(Paths.home);
+
+                navigate(Paths.editor(''));
                 toast.info('Welcome!');
               } catch (error) {
                 toast.error(error.message);

@@ -70,7 +70,7 @@ export const Programs: FC = () => {
 
   // Navigate home when invalid programId or viewedProgram
   useEffect(() => {
-    if (!programId || DataState.isError(viewedProgram)) navigate(Paths.home);
+    if (!programId || DataState.isError(viewedProgram)) navigate(Paths.editor(''));
   }, [programId, viewedProgram, navigate]);
 
   const onActivateProgram = useCallback(async () => {
@@ -135,7 +135,7 @@ export const Programs: FC = () => {
 
       await Promise.all(promises);
 
-      navigate(Paths.home);
+      navigate(Paths.editor(''));
       toast.info('Deleted program');
     } catch (err) {
       toast.error(err.message);
