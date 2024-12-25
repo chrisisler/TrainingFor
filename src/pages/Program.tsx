@@ -11,10 +11,9 @@ import {
   CircularProgress,
   Collapse,
   darken,
+  Divider,
   IconButton,
   InputBase,
-  Paper,
-  Skeleton,
   Stack,
   SwipeableDrawer,
   TextField,
@@ -216,10 +215,10 @@ export const Programs: FC = () => {
         }}
       >
         <DataStateView
-          data={viewedProgram}
+          data={DataState.all(viewedProgram, programMovementsByTemplateId)}
           loading={() => <CircularProgress variant="indeterminate" size={100} />}
         >
-          {program => {
+          {([program, programMovementsByTemplateId]) => {
             const isActiveProgram =
               DataState.isReady(programUser) && programUser.activeProgramId === program.id;
             const userIsProgramAuthor = user.uid === program.authorUserId;
@@ -246,74 +245,45 @@ export const Programs: FC = () => {
                   onBlur={updateProgramName}
                 />
 
-                <Stack direction="row" spacing={2}>
+                <Stack direction="row" flexWrap="wrap">
                   <PanelBtn
                     icon={<AutoAwesomeOutlined />}
                     onClick={onActivateProgram}
-                    text={isActiveProgram ? 'Active Program' : 'Activate Program'}
+                    text={isActiveProgram ? 'Program currently selected' : 'Activate Program'}
                     disabled={isActiveProgram}
                   />
 
                   <PanelBtn
                     icon={<Add />}
                     onClick={createTemplate}
-                    text="Add a template"
+                    text="Add training template"
                     disabled={!DataState.isReady(viewedProgram)}
                   />
                 </Stack>
 
-                <Stack spacing={3}>
-                  {program.templateIds.map(templateId => (
-                    <Paper
-                      key={templateId}
-                      elevation={2}
-                      sx={{ padding: theme => theme.spacing(2) }}
-                    >
-                      <Stack alignItems="center" justifyContent="center" spacing={3}>
-                        <DataStateView data={templates} loading={() => <Skeleton variant="text" />}>
-                          {templates => (
-                            <Typography variant="h6" whiteSpace="nowrap" color="text.secondary">
-                              {templates.find(t => t.id === templateId)?.name}
-                            </Typography>
-                          )}
-                        </DataStateView>
-                        <Stack>
-                          <DataStateView
-                            data={programMovementsByTemplateId}
-                            loading={() => (
-                              <>
-                                <Skeleton variant="text" />
-                                <Skeleton variant="text" />
-                              </>
-                            )}
-                          >
-                            {programMovementsByTemplateId => {
-                              const movements = programMovementsByTemplateId.get(templateId);
-                              if (!movements) return null;
-                              if (movements.length === 0) return null;
-                              return (
-                                <>
-                                  {movements.map(movement => (
-                                    <Typography variant="body2" key={movement.id} fontWeight={600}>
-                                      {movement.name}
-                                    </Typography>
-                                  ))}
-                                </>
-                              );
-                            }}
-                          </DataStateView>
-                        </Stack>
-                        <IconButton
-                          sx={{ color: theme => theme.palette.primary.main }}
-                          onClick={event => {
-                            templateEditorDrawer.onOpen(event, { templateId });
-                          }}
-                        >
-                          <EditOutlined />
-                        </IconButton>
-                      </Stack>
-                    </Paper>
-                  ))}
+                <Divider />
+
+                <Stack direction="row" flexWrap="wrap" >
+                  {program.templateIds.map(templateId => {
+                    const name = DataState.isReady(templates)
+                      && templates.find(t => t.id === templateId)?.name
+                      || '';
+
+                    const subtext = programMovementsByTemplateId
+                      .get(templateId)
+                      ?.map(_ => _.name)
+                      ?.join(', ');
+
+                    return (
+                      <PanelBtn
+                        key={templateId}
+                        icon={<EditOutlined />}
+                        onClick={async event => templateEditorDrawer.onOpen(event, { templateId })}
+                        text={name}
+                        subtext={subtext}
+                      />
+                    );
+                  })}
                 </Stack>
               </Stack>
             );
@@ -433,7 +403,7 @@ export const Programs: FC = () => {
 };
 
 const PanelBtn: FC<{
-  onClick(event: React.MouseEvent): Promise<void>;
+  onClick(event: React.MouseEvent<HTMLElement>): Promise<void>;
   text: string;
   subtext?: string;
   icon: React.ReactNode;
@@ -443,14 +413,23 @@ const PanelBtn: FC<{
 
   return (
     <Stack
-      spacing={3}
+      spacing={4}
       onClick={disabled ? undefined : onClick}
       sx={{
         backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.2 : 0.02),
-        width: '50%',
+        width: '47%',
+        // maxWidth: '47%',
+        // flexGrow: 1,
+        margin: 1,
+
         borderRadius: 3,
         padding: 2,
         cursor: 'pointer',
+        border: '1px solid transparent',
+
+        ':hover': {
+          border: theme => `1px solid ${theme.palette.divider}`,
+        }
       }}
     >
       <Box>
@@ -480,8 +459,10 @@ const PanelBtn: FC<{
 const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
   const TemplatesAPI = useStore(store => store.ProgramLogTemplatesAPI);
   const templates = useStore(store => store.templates);
+  const programUser = useStore(store => store.programUser);
 
   const toast = useToast();
+  const { programId } = useParams<{ programId: string }>();
 
   if (!templateId) {
     toast.error('No template found');
@@ -492,28 +473,33 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
   const templateName =
     DataState.isReady(templates) && templates.find(t => t.id === templateId)?.name;
 
+  const readOnly = DataState.isReady(programUser) && programUser.activeProgramId !== programId;
+
+  const updateTemplateName = async (event: React.FocusEvent<HTMLInputElement>) => {
+    const newName = event.target.value;
+    if (newName.length === 0 || newName === templateName) {
+      return;
+    }
+
+    try {
+      await TemplatesAPI.update({ id: templateId, name: newName });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <Stack spacing={1}>
       <TextField
         sx={{ alignSelf: 'start' }}
         placeholder="Template Name"
+        disabled={readOnly}
         defaultValue={templateName}
         variant="standard"
-        onBlur={async event => {
-          try {
-            const newName = event.target.value;
-            if (newName.length === 0 || newName === templateName) {
-              return;
-            }
-
-            await TemplatesAPI.update({ id: templateId, name: newName });
-          } catch (error) {
-            toast.error(error.message);
-          }
-        }}
+        onBlur={updateTemplateName}
       />
       <Box sx={{ height: '100%', width: '100%', overflowY: 'scroll' }}>
-        <EditorInternals isProgramView logId={templateId} />
+        <EditorInternals isProgramView logId={templateId} readOnly={readOnly} />
       </Box>
     </Stack>
   );

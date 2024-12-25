@@ -448,6 +448,10 @@ export const EditorInternals: FC<{
                           color: theme => theme.palette.text.primary,
                         }}
                         onClick={event => {
+                          if (isProgramView) {
+                            return;
+                          }
+
                           addSetMenu.onOpen(event, movement);
 
                           if (movement.sets.length > 0) {
@@ -573,8 +577,10 @@ export const EditorInternals: FC<{
                 </Stack>
               </Fade>
             ))}
+
             <ButtonBase
               onClick={event => addMovementDrawer.onOpen(event, null)}
+              disabled={readOnly}
               sx={{
                 width: '100%',
                 fontSize: '1.0rem',
@@ -1533,6 +1539,8 @@ const MovementSetView: FC<{
             max={9999}
             name="weight"
             value={weight}
+            readOnly={isProgramView}
+            disabled={isProgramView}
             onFocus={event => {
               event.currentTarget.select();
             }}

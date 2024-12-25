@@ -12,7 +12,7 @@ export const NotesDrawer: FC<{
   const [state, setState] = useState(note);
 
   return (
-    <Box sx={{ height: '60vh', overflowY: 'scroll', ...sx }}>
+    <Box sx={{ height: '70vh', overflowY: 'scroll', ...sx }}>
       <ReactFocusLock returnFocus disabled={noFocusLock}>
         <InputBase
           multiline
