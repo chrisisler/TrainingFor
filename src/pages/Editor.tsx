@@ -1844,7 +1844,7 @@ export const AccountPanel: FC<{
       return _programs;
     })
   );
-  const activeProgram = useStore(store => store.activeProgram);
+  // const activeProgram = useStore(store => store.activeProgram);
 
   const stickyable = logId !== undefined;
 
