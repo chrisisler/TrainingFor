@@ -235,7 +235,7 @@ export const AccountPanel: FC<{
             });
 
             navigate(Paths.program(created.id, created.name));
-            onClose();
+            if (!pinned) onClose();
           } catch (err) {
             toast.error(err.message);
           }

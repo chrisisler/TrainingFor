@@ -363,7 +363,6 @@ export const EditorInternals: FC<{
               spacing={0.5}
               alignItems="center"
               sx={{
-                zIndex: accountDrawer.open ? -50 : 0,
               }}
               onMouseOver={event => {
                 accountDrawer.onOpen(event);
@@ -437,7 +436,7 @@ export const EditorInternals: FC<{
               paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
 
               // spacing for pinned header
-              transform: !isMobile && pinned ? 'translateX(150px)' : 'none',
+              transform: !isMobile && pinned ? 'translateX(168px)' : 'none',
             }}
           >
             {movements.map(movement => (
@@ -1319,16 +1318,17 @@ export const EditorInternals: FC<{
       <SwipeableDrawer
         {...accountDrawer}
         anchor="left"
-        hideBackdrop={pinned}
+        variant={pinned ? "permanent" : "temporary"}
         // confines screen-wide invisible element to drawer
-        sx={{ zIndex: 101, width: '240px' }}
+        // sx={{ zIndex: 101, width: '240px' }}
         PaperProps={{
           onMouseLeave: pinned ? undefined : accountDrawer.onClose,
           sx: {
             padding: theme => theme.spacing(1, 1.5, 2, 1.5),
             boxShadow: 'none',
+            border: 'none',
             backgroundColor: theme =>
-              darken(theme.palette.background.default, prefersDark ? 1.0 : 0.03),
+            darken(theme.palette.background.default, prefersDark ? 0.30 : 0.03),
           },
         }}
       >
