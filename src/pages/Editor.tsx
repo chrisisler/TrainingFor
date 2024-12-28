@@ -427,7 +427,7 @@ export const EditorInternals: FC<{
       >
         {movements => (
           <Stack
-            spacing={2}
+            spacing={3}
             // Block all mouse clicks/events when in readOnly mode
             sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
             style={{
@@ -443,6 +443,7 @@ export const EditorInternals: FC<{
             {movements.map(movement => (
               <Fade in key={movement.id}>
                 <Stack
+                  spacing={1}
                   sx={{ cursor: 'pointer' }}
                   onClick={event => {
                     if (readOnly) {
@@ -464,7 +465,7 @@ export const EditorInternals: FC<{
                   }}
                 >
                   <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
-                    <Stack display="flex" alignItems="baseline" direction="row" spacing={1}>
+                    <Stack display="flex" alignItems="baseline" direction="row" spacing={1.5}>
                       <Typography
                         sx={{
                           fontSize: '1.1rem',
@@ -517,7 +518,7 @@ export const EditorInternals: FC<{
                       {savedMovement =>
                         !savedMovement?.note?.length ? null : (
                           <Typography
-                            variant="body2"
+                            variant="body1"
                             sx={{
                               padding: 1,
                               paddingLeft: 2,
