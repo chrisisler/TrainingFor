@@ -20,6 +20,7 @@ import {
   DriveFileRenameOutline,
   RemoveCircleOutline,
   ChevronRight,
+  Title,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -865,6 +866,7 @@ export const EditorInternals: FC<{
                           let sets = movement.sets.slice();
                           // Remove last element
                           sets.pop();
+
                           try {
                             const updated = await MovementsMutationAPI.update({
                               id: movement.id,
@@ -873,6 +875,7 @@ export const EditorInternals: FC<{
                             if (!updated) {
                               throw Error('Failed to delete set #' + movement.sets.length);
                             }
+
                             addSetMenu.setData(updated);
                           } catch (error) {
                             toast.error(error.message);
@@ -979,7 +982,7 @@ export const EditorInternals: FC<{
                     disabled={!!isMutating}
                     sx={{ color: theme => theme.palette.text.secondary }}
                     onClick={async () => {
-                      const newName = window.prompt('Enter movement name:', movement.name) || '';
+                      const newName = window.prompt('Update movement name', movement.name) || '';
                       if (newName.length < 3 || newName === movement.name) {
                         return;
                       }
@@ -997,7 +1000,7 @@ export const EditorInternals: FC<{
                       }
                     }}
                   >
-                    <DriveFileRenameOutline />
+                    <Title />
                   </IconButton>
 
                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
@@ -1007,7 +1010,7 @@ export const EditorInternals: FC<{
                     sx={{
                       color: theme => theme.palette.text.secondary,
                     }}
-                    onClick={async event => {
+                    onClick={event => {
                       const sm = {
                         id: movement.savedMovementId,
                         name: movement.savedMovementName,
@@ -1018,6 +1021,41 @@ export const EditorInternals: FC<{
                     }}
                   >
                     <History />
+                  </IconButton>
+
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+                  <IconButton
+                    disabled={!!isMutating}
+                    sx={{
+                      color: theme => theme.palette.text.secondary,
+                    }}
+                    onClick={async () => {
+                      if (!DataState.isReady(savedMovements)) {
+                        return;
+                      }
+
+                      const sm = savedMovements.find(_ => _.id === movement.savedMovementId);
+                      if (!sm) {
+                        toast.error('Unreachable: updating Movement with no parent SavedMovement');
+                        return;
+                      }
+
+                      const note = window.prompt("Add notes", sm.note) ?? '';
+                      if (!note || note === sm.note) {
+                        return;
+                      }
+
+                      try {
+                        await SavedMovementsAPI.update({ note, id: sm.id });
+
+                        addSetMenu.onClose();
+                      } catch (err) {
+                        toast.error(err.message);
+                      }
+                    }}
+                  >
+                    <DriveFileRenameOutline />
                   </IconButton>
 
                   {/**

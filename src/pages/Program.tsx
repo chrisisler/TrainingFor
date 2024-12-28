@@ -374,6 +374,7 @@ export const Programs: FC = () => {
       <SwipeableDrawer
         {...templateEditorDrawer.props()}
         anchor="bottom"
+        disableBackdropTransition
         onClose={async () => {
           const context = templateEditorDrawer.getData();
           if (!!context && DataState.isReady(viewedProgram)) {
