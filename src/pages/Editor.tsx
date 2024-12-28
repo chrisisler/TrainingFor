@@ -417,7 +417,9 @@ export const EditorInternals: FC<{
       <DataStateView
         data={movements}
         loading={() => (
-          <Stack>
+          <Stack sx={{
+            paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+          }}>
             <Skeleton animation="wave" />
             <Skeleton variant="text" />
           </Stack>
@@ -461,19 +463,10 @@ export const EditorInternals: FC<{
                     }
                   }}
                 >
-                  <Box
-                    display="flex"
-                    alignItems="end"
-                    width="100%"
-                    justifyContent="space-between"
-                    sx={{ padding: theme => theme.spacing(1, 0) }}
-                  >
-                    {/** alignItems here could be END or BASELINE */}
-                    <Box display="flex" alignItems="baseline">
-                      <Button
+                  <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
+                    <Stack display="flex" alignItems="baseline" direction="row" spacing={1}>
+                      <Typography
                         sx={{
-                          padding: theme => theme.spacing(0.5, 1.0),
-                          margin: theme => theme.spacing(-0.5, -1.0),
                           fontSize: '1.1rem',
                           textTransform: 'uppercase',
                           fontWeight: 600,
@@ -482,7 +475,7 @@ export const EditorInternals: FC<{
                         }}
                       >
                         {movement.name}
-                      </Button>
+                      </Typography>
 
                       {/** Display volume or reps total. */}
                       {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
@@ -490,9 +483,13 @@ export const EditorInternals: FC<{
                         value={movement.sets.filter(_ => _.status === MovementSetStatus.Completed)}
                       >
                         {completedSets => {
-                          if (completedSets.length === 0) return null;
+                          if (completedSets.length === 0) {
+                            return null;
+                          }
+
                           const completedVol = MovementSet.summate(completedSets);
                           const totalVol = MovementSet.summate(movement.sets);
+
                           return (
                             <Typography
                               variant="overline"
@@ -510,7 +507,7 @@ export const EditorInternals: FC<{
                           );
                         }}
                       </WithVariable>
-                    </Box>
+                    </Stack>
                   </Box>
 
                   {DataState.isReady(savedMovements) && (
@@ -522,12 +519,16 @@ export const EditorInternals: FC<{
                           <Typography
                             variant="body2"
                             sx={{
-                              margin: theme => theme.spacing(1),
+                              padding: 1,
+                              paddingLeft: 2,
                               fontStyle: 'italic',
-                              fontWeight: 200,
+                              fontWeight: 300,
+                              // borderRadius: 1,
+                              borderLeft: theme => `1px solid ${theme.palette.text.secondary}`,
+                              color: theme => theme.palette.text.secondary,
                             }}
                           >
-                            {'>'} {savedMovement.note}
+                            {savedMovement.note}
                           </Typography>
                         )
                       }
@@ -631,8 +632,9 @@ export const EditorInternals: FC<{
                   horizontal: 'left',
                 }}
                 onClose={async (_event, reason) => {
-                  if (!DataState.isReady(movements))
+                  if (!DataState.isReady(movements)) {
                     throw Error('Unreachable: movements not ready');
+                  }
 
                   if (movementOrderSwap && movement) {
                     // movement is the movement clicked
@@ -696,7 +698,7 @@ export const EditorInternals: FC<{
                     paddingX: '0.5rem',
                     justifyItems: 'center',
                     display: 'flex',
-                    boxShadow: 'inset -15px 0 12px rgba(0, 0, 0, 0.2)',
+                    boxShadow: 'inset -10px 0 12px rgba(0, 0, 0, 0.3)',
                   },
                 }}
               >

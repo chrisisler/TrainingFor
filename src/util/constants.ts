@@ -54,7 +54,7 @@ export enum Milliseconds {
 export const Paths = {
   program: (programId = ':programId', title = "") => {
     if (title) {
-      document.title = title;
+      document.title = title + ' - Trainquil';
     }
 
     return `/program/${programId}`;
@@ -63,7 +63,7 @@ export const Paths = {
   /** To navigate to nearest log, use `Paths.editor("")`. */
   editor: (logId = ':logId', title = "") => {
     if (title) {
-      document.title = title;
+      document.title = title + ' - Trainquil';;
     }
 
     return `/training/log/${logId}`;
