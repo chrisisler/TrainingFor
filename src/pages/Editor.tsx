@@ -611,7 +611,7 @@ export const EditorInternals: FC<{
                   color: theme => theme.palette.divider,
                   border: 0,
                   backgroundColor: 'transparent',
-                  height: '450px',
+                  height: '400px',
                   fontWeight: 600,
                   letterSpacing: 0,
                 }}
