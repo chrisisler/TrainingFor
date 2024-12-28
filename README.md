@@ -2,7 +2,7 @@
 <h1>
 <p align="center">
   <img src="public/logo192.png" alt="Logo" width="192">
-  <br>Ghostty
+  <br>Trainquil
 </h1>
   <p align="center">
     Create workouts, share and make progress in the gym.
