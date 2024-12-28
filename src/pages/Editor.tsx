@@ -707,7 +707,7 @@ export const EditorInternals: FC<{
                     paddingX: '0.5rem',
                     justifyItems: 'center',
                     display: 'flex',
-                    boxShadow: 'inset -10px 0 12px rgba(0, 0, 0, 0.3)',
+                    border: theme => `1px solid ${darken(theme.palette.text.secondary, 0.3)}`,
                   },
                 }}
               >
@@ -774,7 +774,9 @@ export const EditorInternals: FC<{
                       variant="standard"
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                       value={newSetWeight}
-                      onChange={event => setNewSetWeight(+event.target.value)}
+                      onChange={event => {
+                        setNewSetWeight(+event.target.value);
+                      }}
                       onFocus={event => event.currentTarget.select()}
                       InputProps={{
                         sx: { fontSize: '1.5rem', width: '60px' },
@@ -1551,15 +1553,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-            backgroundColor: alpha(theme.palette.success.light, 0.1),
-            // Avoid jarring when switching between Unattempted and Completed
-            borderBottom: `3px solid ${theme.palette.success.light}`,
-            color: theme.palette.success.light,
-          }
+          backgroundColor: alpha(theme.palette.success.light, 0.1),
+          // Avoid jarring when switching between Unattempted and Completed
+          borderBottom: `3px solid ${theme.palette.success.light}`,
+          color: theme.palette.success.light,
+        }
         : {
-            backgroundColor: alpha(theme.palette.divider, 0.08),
-            borderBottom: `3px solid ${theme.palette.divider}`,
-          },
+          backgroundColor: alpha(theme.palette.divider, 0.08),
+          borderBottom: `3px solid ${theme.palette.divider}`,
+        },
     [movementSet.status, theme]
   );
 
@@ -1637,9 +1639,8 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${
-                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-              }`,
+              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+                }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1653,7 +1654,9 @@ const MovementSetView: FC<{
           // This onClose catches when the user selects the rep value that is the
           // same value as the repCountMaxExpected (which onChange does not
           // catch, since that is apparently not considered a _change_).
-          onClose={() => {
+          onClose={event => {
+            event.stopPropagation();
+
             const el = document.getElementById(movementSet.uuid);
             if (!(el instanceof HTMLInputElement) || Number.isNaN(+el?.value)) {
               return;
@@ -1686,8 +1689,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-            movementSet.status === MovementSetStatus.Completed ||
-            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+              movementSet.status === MovementSetStatus.Completed ||
+              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>
