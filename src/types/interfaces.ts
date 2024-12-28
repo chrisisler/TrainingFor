@@ -136,12 +136,12 @@ export enum MovementWeightUnit {
 export const TrainingLog = {
   title(log: DataState<TrainingLog>) {
     if (DataState.isReady(log)) {
-      return dateDisplay(new Date(log.timestamp))
+      return dateDisplay(new Date(log.timestamp));
     }
 
-    return "";
-  }
-}
+    return '';
+  },
+};
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MovementSet = {

@@ -362,8 +362,6 @@ export const EditorInternals: FC<{
               direction="row"
               spacing={0.5}
               alignItems="center"
-              sx={{
-              }}
               onMouseOver={event => {
                 accountDrawer.onOpen(event);
               }}
@@ -416,202 +414,213 @@ export const EditorInternals: FC<{
       <DataStateView
         data={movements}
         loading={() => (
-          <Stack sx={{
-            paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
-          }}>
+          <Stack
+            sx={{
+              paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+            }}
+          >
             <Skeleton animation="wave" />
             <Skeleton variant="text" />
           </Stack>
         )}
       >
-        {movements => (
-          <Stack
-            spacing={3}
-            // Block all mouse clicks/events when in readOnly mode
-            sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
-            style={{
-              // Padding top specifically to account for fixed header
-              padding: '1rem',
-              paddingBottom: 0,
-              paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+        {movements => {
+          return (
+            <Stack
+              spacing={3}
+              // Block all mouse clicks/events when in readOnly mode
+              sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
+              style={{
+                // Padding top specifically to account for fixed header
+                padding: '1rem',
+                paddingBottom: 0,
+                paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
 
-              // spacing for pinned header
-              transform: !isMobile && pinned ? 'translateX(168px)' : 'none',
-            }}
-          >
-            {movements.map(movement => (
-              <Fade in key={movement.id}>
-                <Stack
-                  spacing={1}
-                  sx={{ cursor: 'pointer' }}
-                  onClick={event => {
-                    if (readOnly) {
-                      return;
-                    }
-
-                    addSetMenu.onOpen(event, movement);
-
-                    if (movement.sets.length > 0) {
-                      const lastSet = movement.sets[movement.sets.length - 1];
-                      setNewSetWeight(lastSet.weight);
-                      setNewSetRepCountMin(lastSet.repCountExpected);
-                      setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
-                    } else {
-                      setNewSetWeight(0);
-                      setNewSetRepCountMin(DEFAULT_MIN_REPS);
-                      setNewSetRepCountMax(DEFAULT_MAX_REPS);
-                    }
-                  }}
-                >
-                  <Box display="flex" alignItems="end" width="100%" justifyContent="space-between">
-                    <Stack display="flex" alignItems="baseline" direction="row" spacing={1.5}>
-                      <Typography
-                        sx={{
-                          fontSize: '1.1rem',
-                          textTransform: 'uppercase',
-                          fontWeight: 600,
-                          letterSpacing: 0,
-                          color: theme => theme.palette.text.primary,
-                        }}
-                      >
-                        {movement.name}
-                      </Typography>
-
-                      {/** Display volume or reps total. */}
-                      {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                      <WithVariable
-                        value={movement.sets.filter(_ => _.status === MovementSetStatus.Completed)}
-                      >
-                        {completedSets => {
-                          if (completedSets.length === 0) {
-                            return null;
-                          }
-
-                          const completedVol = MovementSet.summate(completedSets);
-                          const totalVol = MovementSet.summate(movement.sets);
-
-                          return (
-                            <Typography
-                              variant="overline"
-                              sx={{
-                                color: 'text.secondary',
-                                fontWeight: 600,
-                                marginLeft: theme => theme.spacing(1.5),
-                              }}
-                            >
-                              {!isProgramView && completedVol !== totalVol && (
-                                <>{Intl.NumberFormat().format(completedVol)}/</>
-                              )}
-                              {Intl.NumberFormat().format(totalVol)}
-                            </Typography>
-                          );
-                        }}
-                      </WithVariable>
-                    </Stack>
-                  </Box>
-
-                  {DataState.isReady(savedMovements) && (
-                    <WithVariable
-                      value={savedMovements.find(_ => _.id === movement.savedMovementId)}
-                    >
-                      {savedMovement =>
-                        !savedMovement?.note?.length ? null : (
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              padding: 1,
-                              paddingLeft: 2,
-                              fontStyle: 'italic',
-                              fontWeight: 300,
-                              // borderRadius: 1,
-                              borderLeft: theme => `1px solid ${theme.palette.text.secondary}`,
-                              color: theme => theme.palette.text.secondary,
-                            }}
-                          >
-                            {savedMovement.note}
-                          </Typography>
-                        )
-                      }
-                    </WithVariable>
-                  )}
-
-                  <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                    <Stack direction="row">
-                      {/** Stack of unit control text display */}
-                      {movement.sets.length > 0 && (
-                        <Stack
-                          alignItems="end"
-                          sx={{
-                            // Spacing away from set blocks
-                            paddingRight: theme => theme.spacing(1.5),
-                          }}
-                        >
-                          <Typography
-                            variant="overline"
-                            alignSelf="end"
-                            textTransform="capitalize"
-                            sx={{
-                              color: 'text.secondary',
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            {movement.weightUnit}
-                          </Typography>
-
-                          <Typography
-                            variant="overline"
-                            alignSelf="end"
-                            textTransform="capitalize"
-                            sx={{
-                              color: 'text.secondary',
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            {abbreviate(movement.repCountUnit)}
-                          </Typography>
-                        </Stack>
-                      )}
-
-                      {movement.sets.map((movementSet, index) => (
-                        <MovementSetView
-                          isProgramView={isProgramView}
-                          key={movementSet.uuid}
-                          movementSet={movementSet}
-                          movement={movement}
-                          index={index}
-                          updateSets={async (sets: MovementSet[]) => {
-                            try {
-                              await MovementsMutationAPI.update({ id: movement.id, sets });
-                            } catch (error) {
-                              toast.error(error.message);
-                            }
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                </Stack>
-              </Fade>
-            ))}
-
-            <ButtonBase
-              onClick={event => addMovementDrawer.onOpen(event, null)}
-              disabled={readOnly}
-              sx={{
-                width: '100%',
-                fontSize: '1.0rem',
-                color: theme => theme.palette.divider,
-                border: 0,
-                backgroundColor: 'transparent',
-                height: '450px',
-                fontWeight: 600,
-                letterSpacing: 0,
+                // spacing for pinned header
+                transform: !isMobile && pinned ? 'translateX(168px)' : 'none',
               }}
             >
-              <Add fontSize="large" />
-            </ButtonBase>
-          </Stack>
-        )}
+              {movements.map(movement => (
+                <Fade in key={movement.id}>
+                  <Stack
+                    spacing={1}
+                    sx={{ cursor: 'pointer' }}
+                    onClick={event => {
+                      if (readOnly) {
+                        return;
+                      }
+
+                      addSetMenu.onOpen(event, movement);
+
+                      if (movement.sets.length > 0) {
+                        const lastSet = movement.sets[movement.sets.length - 1];
+                        setNewSetWeight(lastSet.weight);
+                        setNewSetRepCountMin(lastSet.repCountExpected);
+                        setNewSetRepCountMax(lastSet?.repCountMaxExpected || DEFAULT_MAX_REPS);
+                      } else {
+                        setNewSetWeight(0);
+                        setNewSetRepCountMin(DEFAULT_MIN_REPS);
+                        setNewSetRepCountMax(DEFAULT_MAX_REPS);
+                      }
+                    }}
+                  >
+                    <Box
+                      display="flex"
+                      alignItems="end"
+                      width="100%"
+                      justifyContent="space-between"
+                    >
+                      <Stack display="flex" alignItems="baseline" direction="row" spacing={1.5}>
+                        <Typography
+                          sx={{
+                            fontSize: '1.1rem',
+                            textTransform: 'uppercase',
+                            fontWeight: 600,
+                            letterSpacing: 0,
+                            color: theme => theme.palette.text.primary,
+                          }}
+                        >
+                          {movement.name}
+                        </Typography>
+
+                        {/** Display volume or reps total. */}
+                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
+                        <WithVariable
+                          value={movement.sets.filter(
+                            _ => _.status === MovementSetStatus.Completed
+                          )}
+                        >
+                          {completedSets => {
+                            if (completedSets.length === 0) {
+                              return null;
+                            }
+
+                            const completedVol = MovementSet.summate(completedSets);
+                            const totalVol = MovementSet.summate(movement.sets);
+
+                            return (
+                              <Typography
+                                variant="overline"
+                                sx={{
+                                  color: 'text.secondary',
+                                  fontWeight: 600,
+                                  marginLeft: theme => theme.spacing(1.5),
+                                }}
+                              >
+                                {!isProgramView && completedVol !== totalVol && (
+                                  <>{Intl.NumberFormat().format(completedVol)}/</>
+                                )}
+                                {Intl.NumberFormat().format(totalVol)}
+                              </Typography>
+                            );
+                          }}
+                        </WithVariable>
+                      </Stack>
+                    </Box>
+
+                    {DataState.isReady(savedMovements) && (
+                      <WithVariable
+                        value={savedMovements.find(_ => _.id === movement.savedMovementId)}
+                      >
+                        {savedMovement =>
+                          !savedMovement?.note?.length ? null : (
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                padding: 1,
+                                paddingLeft: 2,
+                                fontStyle: 'italic',
+                                fontWeight: 300,
+                                // borderRadius: 1,
+                                borderLeft: theme => `1px solid ${theme.palette.text.secondary}`,
+                                color: theme => theme.palette.text.secondary,
+                              }}
+                            >
+                              {savedMovement.note}
+                            </Typography>
+                          )
+                        }
+                      </WithVariable>
+                    )}
+
+                    <Box width="100%" sx={{ overflowX: 'scroll' }}>
+                      <Stack direction="row">
+                        {/** Stack of unit control text display */}
+                        {movement.sets.length > 0 && (
+                          <Stack
+                            alignItems="end"
+                            sx={{
+                              // Spacing away from set blocks
+                              paddingRight: theme => theme.spacing(1.5),
+                            }}
+                          >
+                            <Typography
+                              variant="overline"
+                              alignSelf="end"
+                              textTransform="capitalize"
+                              sx={{
+                                color: 'text.secondary',
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              {movement.weightUnit}
+                            </Typography>
+
+                            <Typography
+                              variant="overline"
+                              alignSelf="end"
+                              textTransform="capitalize"
+                              sx={{
+                                color: 'text.secondary',
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              {abbreviate(movement.repCountUnit)}
+                            </Typography>
+                          </Stack>
+                        )}
+
+                        {movement.sets.map((movementSet, index) => (
+                          <MovementSetView
+                            isProgramView={isProgramView}
+                            key={movementSet.uuid}
+                            movementSet={movementSet}
+                            movement={movement}
+                            index={index}
+                            updateSets={async (sets: MovementSet[]) => {
+                              try {
+                                await MovementsMutationAPI.update({ id: movement.id, sets });
+                              } catch (error) {
+                                toast.error(error.message);
+                              }
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Fade>
+              ))}
+
+              <ButtonBase
+                onClick={event => addMovementDrawer.onOpen(event, null)}
+                disabled={readOnly}
+                sx={{
+                  width: '100%',
+                  fontSize: '1.0rem',
+                  color: theme => theme.palette.divider,
+                  border: 0,
+                  backgroundColor: 'transparent',
+                  height: '450px',
+                  fontWeight: 600,
+                  letterSpacing: 0,
+                }}
+              >
+                <Add fontSize="large" />
+              </ButtonBase>
+            </Stack>
+          );
+        }}
       </DataStateView>
 
       {/** ------------------------- DRAWERS ------------------------- */}
@@ -1094,10 +1103,12 @@ export const EditorInternals: FC<{
                             key={match.id}
                             display="flex"
                             justifyContent="space-between"
-                            sx={{
-                              // cursor: 'pointer',
-                              // borderBottom: theme => `1px solid ${theme.palette.divider}`,
-                            }}
+                            sx={
+                              {
+                                // cursor: 'pointer',
+                                // borderBottom: theme => `1px solid ${theme.palette.divider}`,
+                              }
+                            }
                           >
                             <Box display="flex" justifyContent="center">
                               <ChevronRight
@@ -1318,7 +1329,7 @@ export const EditorInternals: FC<{
       <SwipeableDrawer
         {...accountDrawer}
         anchor="left"
-        variant={pinned ? "permanent" : "temporary"}
+        variant={pinned ? 'permanent' : 'temporary'}
         // confines screen-wide invisible element to drawer
         // sx={{ zIndex: 101, width: '240px' }}
         PaperProps={{
@@ -1328,7 +1339,7 @@ export const EditorInternals: FC<{
             boxShadow: 'none',
             border: 'none',
             backgroundColor: theme =>
-            darken(theme.palette.background.default, prefersDark ? 0.30 : 0.03),
+              darken(theme.palette.background.default, prefersDark ? 0.3 : 0.03),
           },
         }}
       >
@@ -1540,15 +1551,15 @@ const MovementSetView: FC<{
     () =>
       movementSet.status === MovementSetStatus.Completed
         ? {
-          backgroundColor: alpha(theme.palette.success.light, 0.1),
-          // Avoid jarring when switching between Unattempted and Completed
-          borderBottom: `3px solid ${theme.palette.success.light}`,
-          color: theme.palette.success.light,
-        }
+            backgroundColor: alpha(theme.palette.success.light, 0.1),
+            // Avoid jarring when switching between Unattempted and Completed
+            borderBottom: `3px solid ${theme.palette.success.light}`,
+            color: theme.palette.success.light,
+          }
         : {
-          backgroundColor: alpha(theme.palette.divider, 0.08),
-          borderBottom: `3px solid ${theme.palette.divider}`,
-        },
+            backgroundColor: alpha(theme.palette.divider, 0.08),
+            borderBottom: `3px solid ${theme.palette.divider}`,
+          },
     [movementSet.status, theme]
   );
 
@@ -1626,8 +1637,9 @@ const MovementSetView: FC<{
           variant="standard"
           SelectDisplayProps={{
             style: {
-              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-                }`,
+              padding: `10px ${
+                setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
+              }`,
               textAlign: 'center',
               fontSize: '1.5rem',
               minHeight: 'auto',
@@ -1674,8 +1686,8 @@ const MovementSetView: FC<{
           }}
           renderValue={value =>
             typeof movementSet.repCountMaxExpected === 'undefined' ||
-              movementSet.status === MovementSetStatus.Completed ||
-              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
+            movementSet.status === MovementSetStatus.Completed ||
+            movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
               value.toString()
             ) : (
               <Typography>

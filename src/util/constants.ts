@@ -52,7 +52,7 @@ export enum Milliseconds {
 
 /** Valid route locations within the app. */
 export const Paths = {
-  program: (programId = ':programId', title = "") => {
+  program: (programId = ':programId', title = '') => {
     if (title) {
       document.title = title + ' - Trainquil';
     }
@@ -61,9 +61,9 @@ export const Paths = {
   },
 
   /** To navigate to nearest log, use `Paths.editor("")`. */
-  editor: (logId = ':logId', title = "") => {
+  editor: (logId = ':logId', title = '') => {
     if (title) {
-      document.title = title + ' - Trainquil';;
+      document.title = title + ' - Trainquil';
     }
 
     return `/training/log/${logId}`;
