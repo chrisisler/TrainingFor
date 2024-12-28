@@ -9,27 +9,27 @@
   </p>
 </p>
 
-## About
+### About
 
 Trainquil is a training app that differentiates itself by being simple, fast, and powerful. While
 there are many excellent training apps available, Trainquil provides a unique approach.
 
 In all categories, I am not trying to claim that Trainquil is the best (i.e. the fastest, most
-feature-rich, or most native). But Trainquil is competitive in all three categories and doesn't
-make you choose between them.
+feature-rich, or most sleek). But Trainquil is competitive in all three categories and doesn't make
+you choose between them.
 
 While aiming for this goal, our first step is to make Trainquil one of the best training apps for
 intermediate lifters, remaining compatible with users at all levels while supporting the majority
 of use cases in the ecosystem. You can use Trainquil as a drop-in replacement for your existing
-training logs.
+training tracker or pen-and-paper setup.
 
-## Website
+### Website
 
 See the [website here.](https://trainquil.vercel.app)
 
-## Roadmap and Status
+### Development
 
-The high-level ambitious plan for the project, not in order:
+The high-level plan, not in order:
 
 |  #  | Step                                                      | Status |
 | :-: | --------------------------------------------------------- | :----: |
