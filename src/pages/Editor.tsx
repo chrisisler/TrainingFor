@@ -413,15 +413,18 @@ export const EditorInternals: FC<{
       )}
 
       <DataStateView
-        data={movements}
+        data={DataState.Loading as typeof movements}
         loading={() => (
           <Stack
             sx={{
               paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
             }}
+            spacing={5}
           >
-            <Skeleton animation="wave" />
-            <Skeleton variant="text" />
+            <Skeleton variant="rectangular" width="40%" height="100px" />
+            <Skeleton variant="rectangular" width="50%" height="100px" />
+            <Skeleton variant="rectangular" width="45%" height="100px" />
+            <Skeleton variant="rectangular" width="75%" height="100px" />
           </Stack>
         )}
       >
