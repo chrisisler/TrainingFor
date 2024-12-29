@@ -413,7 +413,7 @@ export const EditorInternals: FC<{
       )}
 
       <DataStateView
-        data={DataState.Loading as typeof movements}
+        data={movements}
         loading={() => (
           <Stack
             sx={{
