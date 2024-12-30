@@ -1628,17 +1628,23 @@ const MovementSetView: FC<{
             value={weight}
             readOnly={isProgramView}
             disabled={isProgramView}
+            onClick={event => {
+              event.stopPropagation();
+            }}
             onFocus={event => {
               event.currentTarget.select();
             }}
             onChange={event => {
-              if (Number.isNaN(event.target.value)) return;
+              if (Number.isNaN(event.target.value)) {
+                return;
+              }
               setWeight(Number(event.target.value));
             }}
             onBlur={event => {
               if (Number.isNaN(event.target.value)) {
                 throw Error('Unreachable: weight input is NaN');
               }
+
               const value = +event.target.value;
               let next = movement.sets.slice();
               // Cascade new weight value to sets after this one if this weight = 0
