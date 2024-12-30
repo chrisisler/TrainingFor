@@ -28,7 +28,6 @@ import {
   Box,
   Button,
   ButtonBase,
-  CircularProgress,
   Collapse,
   darken,
   Divider,
@@ -215,12 +214,19 @@ export const EditorInternals: FC<{
       return;
     }
 
+    // `movementNameQuery` already validated and matches is valid, so show search activity
+    if (DataState.isReady(matches)) {
+      setMatches(DataState.Loading);
+    }
+
     const t = setTimeout(async () => {
       const query = movementNameQuery.toLowerCase();
       setMatches(savedMovements.filter(_ => _.name.toLowerCase().includes(query)));
-    }, 800);
+    }, 500);
 
     return () => clearTimeout(t);
+    // Purposefully excluding `matches` to avoid infinite loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movementNameQuery, savedMovements]);
 
   const addMovementFromNewSavedMovement = useCallback(async () => {
@@ -1048,7 +1054,7 @@ export const EditorInternals: FC<{
                         return;
                       }
 
-                      const note = window.prompt("Add notes", sm.note) ?? '';
+                      const note = window.prompt('Add notes', sm.note) ?? '';
                       if (!note || note === sm.note) {
                         return;
                       }
@@ -1066,20 +1072,21 @@ export const EditorInternals: FC<{
                   </IconButton>
 
                   {/**
-               Find and Replace Movement
-               Disabled for now, haven't been using it
-               And the functionality is replacable by delete + create Movement
-               <IconButton
-               disabled={!!isMutating}
-               sx={{ color: theme => theme.palette.error.main }}
-               onClick={event => {
-               addMovementDrawer.onOpen(event, movement);
-               }}
-               size="small"
-               >
-               <FindReplaceRounded />
-               </IconButton>
-               */}
+                    Find and Replace Movement
+                    Disabled for now, haven't been using it
+                    And the functionality exists already via: Delete -> Add Movement
+
+                  <IconButton
+                    disabled={!!isMutating}
+                    sx={{ color: theme => theme.palette.error.main }}
+                    onClick={event => {
+                      addMovementDrawer.onOpen(event, movement);
+                    }}
+                    size="small"
+                  >
+                    <FindReplaceRounded />
+                  </IconButton>
+                  */}
                 </Stack>
               </Menu>
             )
@@ -1091,6 +1098,7 @@ export const EditorInternals: FC<{
         {...addMovementDrawer.props()}
         anchor={addMovementDrawer.getData() === null ? 'top' : 'bottom'}
         sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}
+        disableBackdropTransition
         onClose={() => {
           addMovementDrawer.onClose();
           // clear input on close
@@ -1121,7 +1129,18 @@ export const EditorInternals: FC<{
             </ReactFocusLock>
           </Box>
 
-          <DataStateView data={matches} loading={() => <CircularProgress />}>
+          <DataStateView
+            data={matches}
+            loading={() => (
+              <Stack>
+                <Skeleton width="50%" height="55px" />
+                <Skeleton width="30%" height="55px" />
+                <Skeleton width="80%" height="55px" />
+                <Skeleton width="20%" height="55px" />
+                <Skeleton width="30%" height="55px" />
+              </Stack>
+            )}
+          >
             {matches => {
               const queryIsEmpty = movementNameQuery === '';
               const query = movementNameQuery.toLowerCase();
@@ -1238,24 +1257,25 @@ export const EditorInternals: FC<{
                     </Stack>
                   </Collapse>
 
-                  {!queryIsEmpty && !hasFoundExactName && movementNameQuery.length > 2 && (
-                    <Button
-                      fullWidth
-                      sx={{
-                        justifyContent: 'flex-start',
-                        backgroundColor: 'transparent',
-                        border: theme => `1px solid ${theme.palette.divider}`,
-                        color: theme => theme.palette.text.secondary,
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        padding: '8px 11px',
-                      }}
-                      startIcon={<Add />}
-                      onClick={addMovementFromNewSavedMovement}
-                      disabled={!!isMutating}
-                    >
-                      Create movement: {movementNameQuery}
-                    </Button>
+                  {movementNameQuery.length > 2 && !hasFoundExactName && (
+                    <Box>
+                      <Button
+                        sx={{
+                          justifyContent: 'flex-start',
+                          // backgroundColor: 'transparent',
+                          // border: theme => `1px solid ${theme.palette.divider}`,
+                          color: theme => theme.palette.text.secondary,
+                          fontWeight: 600,
+                          fontSize: '1.0rem',
+                          // padding: '8px 11px',
+                        }}
+                        startIcon={<Add fontSize="small" />}
+                        onClick={addMovementFromNewSavedMovement}
+                        disabled={!!isMutating}
+                      >
+                        Create {movementNameQuery}
+                      </Button>
+                    </Box>
                   )}
                 </>
               );
