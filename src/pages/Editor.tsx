@@ -93,6 +93,8 @@ const DIFF_CHAR = '-';
 const DEFAULT_MIN_REPS = 5;
 const DEFAULT_MAX_REPS = 30;
 
+const headerSpacing = '168px';
+
 /**
  * Wrapper page for editing training entries.
  */
@@ -418,20 +420,18 @@ export const EditorInternals: FC<{
           <Stack
             sx={{
               paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+              transform: !isMobile && pinned ? `translateX(${headerSpacing})` : 'none',
             }}
             spacing={5}
           >
-            <Skeleton variant="rectangular" width="40%" height="100px" />
-            <Skeleton variant="rectangular" width="50%" height="100px" />
-            <Skeleton variant="rectangular" width="45%" height="100px" />
-            <Skeleton variant="rectangular" width="75%" height="100px" />
+            <Skeleton width="100%" height="50px" sx={{ borderRadius: 5 }} />
           </Stack>
         )}
       >
         {movements => {
           return (
             <Stack
-              spacing={3}
+              spacing={4}
               // Block all mouse clicks/events when in readOnly mode
               sx={readOnly ? { '& *': { pointerEvents: 'none' } } : void 0}
               style={{
@@ -441,7 +441,7 @@ export const EditorInternals: FC<{
                 paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
 
                 // spacing for pinned header
-                transform: !isMobile && pinned ? 'translateX(168px)' : 'none',
+                transform: !isMobile && pinned ? `translateX(${headerSpacing})` : 'none',
               }}
             >
               {movements.map(movement => (
@@ -606,18 +606,22 @@ export const EditorInternals: FC<{
                 </Fade>
               ))}
 
+              <Box width="100%" padding={1} />
+
               <ButtonBase
                 onClick={event => addMovementDrawer.onOpen(event, null)}
                 disabled={readOnly}
+                disableTouchRipple
                 sx={{
                   width: '100%',
+                  alignSelf: 'center',
                   fontSize: '1.0rem',
                   color: theme => theme.palette.divider,
-                  border: 0,
+                  borderTop: theme => `1px dashed ${theme.palette.divider}`,
                   backgroundColor: 'transparent',
-                  height: '400px',
+                  borderRadius: 2,
+                  height: '350px',
                   fontWeight: 600,
-                  letterSpacing: 0,
                 }}
               >
                 <Add fontSize="large" />
@@ -1373,8 +1377,6 @@ export const EditorInternals: FC<{
         {...accountDrawer}
         anchor="left"
         variant={pinned ? 'permanent' : 'temporary'}
-        // confines screen-wide invisible element to drawer
-        // sx={{ zIndex: 101, width: '240px' }}
         PaperProps={{
           onMouseLeave: pinned ? undefined : accountDrawer.onClose,
           sx: {

@@ -122,6 +122,8 @@ function AppLoading() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        fontStyle: 'italic',
+        color: theme => theme.palette.text.secondary,
       }}
     >
       <Typography variant="overline" fontWeight={600}>
