@@ -494,7 +494,6 @@ export const EditorInternals: FC<{
                           </Typography>
 
                           <ChevronRightRounded
-                            fontSize="small"
                             sx={{
                               color:
                                 movement.sets.length === 0
@@ -1683,7 +1682,6 @@ const MovementSetView: FC<{
               <Box component="form" onSubmit={handleSubmit}>
                 <ReactFocusLock disabled={!repsDrawer.open} returnFocus>
                   <input
-                    autoFocus
                     type="tel"
                     min={0}
                     max={movementSet.repCountMaxExpected}
@@ -1772,16 +1770,11 @@ const MovementSetView: FC<{
                 }}
                 startIcon={<RemoveCircleOutline />}
                 onClick={async () => {
-                  let without = movement.sets.slice();
-
-                  // Remove last element
-                  without.pop();
-
                   try {
                     // TODO isMutating state for delete
                     await MovementsMutationAPI.update({
                       id: movement.id,
-                      sets: without,
+                      sets: movement.sets.filter((_, i) => i !== index),
                     });
 
                     repsDrawer.onClose();
