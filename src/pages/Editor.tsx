@@ -610,16 +610,17 @@ export const EditorInternals: FC<{
                 sx={{
                   width: '100%',
                   alignSelf: 'center',
-                  fontSize: '1.0rem',
-                  color: theme => theme.palette.divider,
-                  border: theme => `1px dashed ${theme.palette.divider}`,
+                  fontSize: '0.9rem',
+                  color: theme => darken(theme.palette.text.secondary, 0.3),
+                  // border: theme => `1px solid ${theme.palette.divider}`,
+                  // backgroundColor: theme => darken(theme.palette.divider, 0.8),
                   backgroundColor: 'transparent',
                   borderRadius: 2,
-                  height: '400px',
-                  fontWeight: 600,
+                  height: '250px',
+                  fontWeight: 500,
                 }}
               >
-                <Add fontSize="large" />
+                <Add />
                 {movements.length === 0 ? 'Tap here to get started' : 'Add a movement'}
               </ButtonBase>
             </Stack>
