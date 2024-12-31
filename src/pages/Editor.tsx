@@ -481,17 +481,23 @@ export const EditorInternals: FC<{
                       justifyContent="space-between"
                     >
                       <Stack display="flex" alignItems="baseline" direction="row" spacing={1.5}>
-                        <Typography
-                          sx={{
-                            fontSize: '1.1rem',
-                            textTransform: 'uppercase',
-                            fontWeight: 600,
-                            letterSpacing: 0,
-                            color: theme => theme.palette.text.primary,
-                          }}
-                        >
-                          {movement.name}
-                        </Typography>
+                        <Stack direction="row" alignItems="center">
+                          <Typography
+                            sx={{
+                              fontSize: '1.1rem',
+                              textTransform: 'uppercase',
+                              fontWeight: 600,
+                              letterSpacing: 0,
+                              color: theme => theme.palette.text.primary,
+                            }}
+                          >
+                            {movement.name}
+                          </Typography>
+                          <ChevronRight sx={{
+                            color: theme => theme.palette.text.secondary,
+
+                          }} fontSize="small" />
+                        </Stack>
 
                         {/** Display volume or reps total. */}
                         {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
@@ -513,7 +519,7 @@ export const EditorInternals: FC<{
                                 variant="overline"
                                 sx={{
                                   color: 'text.secondary',
-                                  fontWeight: 600,
+                                  lineHeight: 1,
                                   marginLeft: theme => theme.spacing(1.5),
                                 }}
                               >
