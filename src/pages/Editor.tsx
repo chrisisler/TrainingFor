@@ -480,7 +480,7 @@ export const EditorInternals: FC<{
                       width="100%"
                       justifyContent="space-between"
                     >
-                      <Stack display="flex" alignItems="baseline" direction="row" spacing={1.5}>
+                      <Stack display="flex" alignItems="baseline" direction="row" spacing={0.5}>
                         <Stack direction="row" alignItems="center">
                           <Typography
                             sx={{
@@ -520,7 +520,6 @@ export const EditorInternals: FC<{
                                 sx={{
                                   color: 'text.secondary',
                                   lineHeight: 1,
-                                  marginLeft: theme => theme.spacing(1.5),
                                 }}
                               >
                                 {!isProgramView && completedVol !== totalVol && (
