@@ -3,7 +3,6 @@ import { useIsMutating } from '@tanstack/react-query';
 import {
   Add,
   Close,
-  DeleteForeverRounded,
   History,
   Link,
   MoreHoriz,
@@ -17,10 +16,10 @@ import {
   PlaylistRemove,
   DriveFileRenameOutline,
   RemoveCircleOutline,
-  ChevronRight,
   Title,
   RefreshRounded,
   SaveRounded,
+  ChevronRightRounded,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -493,11 +492,16 @@ export const EditorInternals: FC<{
                           >
                             {movement.name}
                           </Typography>
-                          <ChevronRight
-                            sx={{
-                              color: theme => theme.palette.text.secondary,
-                            }}
+
+                          <ChevronRightRounded
                             fontSize="small"
+                            sx={{
+                              color:
+                                movement.sets.length === 0
+                                  ? theme.palette.primary.main
+                                  : theme.palette.text.secondary,
+                              // color: theme.palette.primary.main,
+                            }}
                           />
                         </Stack>
 
@@ -609,14 +613,15 @@ export const EditorInternals: FC<{
                   alignSelf: 'center',
                   fontSize: '1.0rem',
                   color: theme => theme.palette.divider,
-                  borderTop: theme => `1px dashed ${theme.palette.divider}`,
+                  border: theme => `1px dashed ${theme.palette.divider}`,
                   backgroundColor: 'transparent',
                   borderRadius: 2,
-                  height: '350px',
+                  height: '400px',
                   fontWeight: 600,
                 }}
               >
                 <Add fontSize="large" />
+                {movements.length === 0 ? 'Tap here to get started' : 'Add a movement'}
               </ButtonBase>
             </Stack>
           );
@@ -901,6 +906,7 @@ export const EditorInternals: FC<{
                               throw Error('Failed to delete all sets');
                             }
                             addSetMenu.setData(updated);
+                            addSetMenu.onClose();
                           } catch (error) {
                             toast.error(error.message);
                           }
@@ -1165,7 +1171,7 @@ export const EditorInternals: FC<{
                             }
                           >
                             <Box display="flex" justifyContent="center">
-                              <ChevronRight
+                              <ChevronRightRounded
                                 sx={{
                                   color: theme => theme.palette.text.secondary,
                                   display: 'flex',
@@ -1177,10 +1183,7 @@ export const EditorInternals: FC<{
                                 disabled={!!isMutating}
                                 sx={{
                                   backgroundColor: theme => theme.palette.divider,
-                                  // backgroundColor: 'transparent',
                                   color: theme => theme.palette.text.primary,
-                                  // border: theme => `1px solid ${theme.palette.divider}`,
-                                  // borderBottom: 'none',
                                   fontSize: '1.0rem',
                                   padding: '8px 11px',
                                   fontWeight: 600,
@@ -1333,7 +1336,7 @@ export const EditorInternals: FC<{
               <Box>
                 <Button
                   color="error"
-                  startIcon={<DeleteForeverRounded />}
+                  startIcon={<RemoveCircleOutline />}
                   onClick={async function deleteSavedMovement() {
                     try {
                       if (!window.confirm('Are you sure you want to delete this?')) return;
@@ -1760,6 +1763,34 @@ const MovementSetView: FC<{
                 }}
               >
                 Reset
+              </Button>
+
+              <Button
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                  fontWeight: 600,
+                }}
+                startIcon={<RemoveCircleOutline />}
+                onClick={async () => {
+                  let without = movement.sets.slice();
+
+                  // Remove last element
+                  without.pop();
+
+                  try {
+                    // TODO isMutating state for delete
+                    await MovementsMutationAPI.update({
+                      id: movement.id,
+                      sets: without,
+                    });
+
+                    repsDrawer.onClose();
+                  } catch (err) {
+                    toast.error(err.message);
+                  }
+                }}
+              >
+                Delete
               </Button>
             </Stack>
           </Stack>
