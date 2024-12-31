@@ -1099,9 +1099,11 @@ export const EditorInternals: FC<{
         anchor={addMovementDrawer.getData() === null ? 'top' : 'bottom'}
         sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}
         disableBackdropTransition
-        onClose={() => {
+        onClose={async () => {
           addMovementDrawer.onClose();
-          // clear input on close
+
+          // clear input on close, after delay to avoid UI jank
+          await new Promise(wait => setTimeout(wait, 150));
           setMovementNameQuery('');
         }}
       >
