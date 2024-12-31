@@ -558,43 +558,43 @@ export const EditorInternals: FC<{
                       </WithVariable>
                     )}
 
-                    <Box width="100%" sx={{ overflowX: 'scroll' }}>
-                      <Stack direction="row">
-                        {/** Stack of unit control text display */}
-                        {movement.sets.length > 0 && (
-                          <Stack
-                            alignItems="end"
+                    <Box width="100%" sx={{ overflowX: 'scroll', display: 'flex' }}>
+                      {movement.sets.length > 0 && (
+                        <Stack
+                          alignItems="end"
+                          sx={{
+                            // Spacing away from set blocks
+                            paddingRight: theme => theme.spacing(1.5),
+                          }}
+                        >
+                          <Typography
+                            variant="overline"
+                            alignSelf="end"
+                            textTransform="capitalize"
                             sx={{
-                              // Spacing away from set blocks
-                              paddingRight: theme => theme.spacing(1.5),
+                              color: 'text.secondary',
+                              letterSpacing: 0.5,
                             }}
                           >
-                            <Typography
-                              variant="overline"
-                              alignSelf="end"
-                              textTransform="capitalize"
-                              sx={{
-                                color: 'text.secondary',
-                                letterSpacing: 0.5,
-                              }}
-                            >
-                              {movement.weightUnit}
-                            </Typography>
+                            {movement.weightUnit}
+                          </Typography>
 
-                            <Typography
-                              variant="overline"
-                              alignSelf="end"
-                              textTransform="capitalize"
-                              sx={{
-                                color: 'text.secondary',
-                                letterSpacing: 0.5,
-                              }}
-                            >
-                              {abbreviate(movement.repCountUnit)}
-                            </Typography>
-                          </Stack>
-                        )}
+                          <Typography
+                            variant="overline"
+                            alignSelf="end"
+                            textTransform="capitalize"
+                            sx={{
+                              color: 'text.secondary',
+                              letterSpacing: 0.5,
+                            }}
+                          >
+                            {abbreviate(movement.repCountUnit)}
+                          </Typography>
+                        </Stack>
+                      )}
 
+                      <Stack direction="row" spacing={2}>
+                        {/** Stack of unit control text display */}
                         {movement.sets.map((movementSet, index) => (
                           <MovementSetView
                             isProgramView={isProgramView}
