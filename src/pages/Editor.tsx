@@ -2,14 +2,12 @@ import { uuidv4 } from '@firebase/util';
 import { useIsMutating } from '@tanstack/react-query';
 import {
   Add,
-  CheckRounded,
   Close,
   DeleteForeverRounded,
   History,
   Link,
   MoreHoriz,
   NavigateNextRounded,
-  RefreshRounded,
   ChatOutlined,
   Notes,
   NoteAltOutlined,
@@ -21,6 +19,8 @@ import {
   RemoveCircleOutline,
   ChevronRight,
   Title,
+  RefreshRounded,
+  SaveRounded,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -51,7 +51,7 @@ import {
 import { formatDistanceToNowStrict } from 'date-fns';
 import { limit, orderBy, where } from 'firebase/firestore';
 import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import ConfettiExplosion from 'react-confetti-explosion';
+// import ConfettiExplosion from 'react-confetti-explosion';
 import ReactFocusLock from 'react-focus-lock';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -453,7 +453,7 @@ export const EditorInternals: FC<{
               {movements.map(movement => (
                 <Fade in key={movement.id}>
                   <Stack
-                    spacing={1}
+                    spacing={0.5}
                     sx={{ cursor: 'pointer' }}
                     onClick={event => {
                       if (readOnly) {
@@ -493,10 +493,12 @@ export const EditorInternals: FC<{
                           >
                             {movement.name}
                           </Typography>
-                          <ChevronRight sx={{
-                            color: theme => theme.palette.text.secondary,
-
-                          }} fontSize="small" />
+                          <ChevronRight
+                            sx={{
+                              color: theme => theme.palette.text.secondary,
+                            }}
+                            fontSize="small"
+                          />
                         </Stack>
 
                         {/** Display volume or reps total. */}
@@ -540,13 +542,11 @@ export const EditorInternals: FC<{
                         {savedMovement =>
                           !savedMovement?.note?.length ? null : (
                             <Typography
-                              variant="body1"
+                              variant="subtitle2"
                               sx={{
-                                padding: 1,
-                                paddingLeft: 2,
-                                fontStyle: 'italic',
+                                padding: theme => theme.spacing(0.5, 1, 0.5, 2.0),
+                                // fontStyle: 'italic',
                                 fontWeight: 300,
-                                // borderRadius: 1,
                                 borderLeft: theme => `1px solid ${theme.palette.text.secondary}`,
                                 color: theme => theme.palette.text.secondary,
                               }}
@@ -560,21 +560,12 @@ export const EditorInternals: FC<{
 
                     <Box width="100%" sx={{ overflowX: 'scroll', display: 'flex' }}>
                       {movement.sets.length > 0 && (
-                        <Stack
-                          alignItems="end"
-                          sx={{
-                            // Spacing away from set blocks
-                            paddingRight: theme => theme.spacing(1.5),
-                          }}
-                        >
+                        <Stack alignItems="end" spacing={1.75}>
                           <Typography
                             variant="overline"
                             alignSelf="end"
                             textTransform="capitalize"
-                            sx={{
-                              color: 'text.secondary',
-                              letterSpacing: 0.5,
-                            }}
+                            sx={{ color: 'text.secondary' }}
                           >
                             {movement.weightUnit}
                           </Typography>
@@ -583,10 +574,7 @@ export const EditorInternals: FC<{
                             variant="overline"
                             alignSelf="end"
                             textTransform="capitalize"
-                            sx={{
-                              color: 'text.secondary',
-                              letterSpacing: 0.5,
-                            }}
+                            sx={{ color: 'text.secondary' }}
                           >
                             {abbreviate(movement.repCountUnit)}
                           </Typography>
@@ -602,13 +590,6 @@ export const EditorInternals: FC<{
                             movementSet={movementSet}
                             movement={movement}
                             index={index}
-                            updateSets={async (sets: MovementSet[]) => {
-                              try {
-                                await MovementsMutationAPI.update({ id: movement.id, sets });
-                              } catch (error) {
-                                toast.error(error.message);
-                              }
-                            }}
                           />
                         ))}
                       </Stack>
@@ -1609,107 +1590,289 @@ const MovementSetView: FC<{
   movementSet: MovementSet;
   movement: Movement;
   index: number;
-  updateSets(mSets: MovementSet[]): Promise<void>;
-}> = ({ movementSet, movement, updateSets, index, isProgramView }) => {
+}> = ({ movementSet, movement, index, isProgramView }) => {
   const resizeWeightInput = useResizableInputRef();
   const theme = useTheme();
+  const toast = useToast();
+  const MovementsMutationAPI = useStore(store =>
+    isProgramView ? store.ProgramMovementsAPI : store.MovementsAPI
+  );
 
+  const repsDrawer = useDrawer<undefined>();
+
+  const [repsActual, setRepsActual] = useState(movementSet.repCountActual);
   const [weight, setWeight] = useState(movementSet.weight);
-  const [confetti, setConfetti] = useState(false);
+  // const [confetti, setConfetti] = useState(false);
 
   const setIsCompleted = movementSet.status === MovementSetStatus.Completed;
+  const singularRepDisplay =
+    typeof movementSet.repCountMaxExpected === 'undefined' ||
+    setIsCompleted ||
+    movementSet.repCountExpected === movementSet.repCountMaxExpected;
 
-  const dynamicRepCountButtonStyle = useMemo(
-    () =>
-      movementSet.status === MovementSetStatus.Completed
-        ? {
-          backgroundColor: alpha(theme.palette.success.light, 0.1),
-          // Avoid jarring when switching between Unattempted and Completed
-          borderBottom: `3px solid ${theme.palette.success.light}`,
-          color: theme.palette.success.light,
-        }
-        : {
-          backgroundColor: alpha(theme.palette.divider, 0.08),
-          borderBottom: `3px solid ${theme.palette.divider}`,
-        },
-    [movementSet.status, theme]
+  const updateSets = useCallback(
+    async (sets: MovementSet[]) => {
+      try {
+        await MovementsMutationAPI.update({ id: movement.id, sets });
+      } catch (error) {
+        toast.error(error.message);
+      }
+    },
+    [MovementsMutationAPI, toast, movement.id]
+  );
+
+  const cycleMovementSet = useCallback(
+    async event => {
+      event.stopPropagation();
+
+      if (movementSet.status === MovementSetStatus.Unattempted) {
+        movement.sets[index].repCountActual = movementSet.repCountMaxExpected;
+        movement.sets[index].status = MovementSetStatus.Completed;
+      } else if (movementSet.status === MovementSetStatus.Completed) {
+        repsDrawer.onOpen(event, void 0);
+      }
+
+      try {
+        await updateSets([...movement.sets]);
+      } catch (err) {
+        toast.error(err.message);
+      }
+    },
+    [index, movement.sets, movementSet, toast, updateSets, repsDrawer]
+  );
+
+  const handleSubmit = useCallback(
+    async event => {
+      event.preventDefault();
+
+      movement.sets[index].repCountActual = movementSet.repCountMaxExpected;
+
+      try {
+        await updateSets([...movement.sets]);
+
+        repsDrawer.onClose();
+      } catch (err) {
+        toast.error(err.message);
+      }
+    },
+    [toast, updateSets, index, movement, repsDrawer, movementSet.repCountMaxExpected]
   );
 
   return (
-    <Fade in>
-      <Stack>
-        <Box
-          sx={{
-            border: `1px solid ${theme.palette.divider}`,
-            borderBottom: 'none',
-            textAlign: 'center',
-            alignItems: 'center',
+    <>
+      <Backdrop open={repsDrawer.open} onClick={_ => _.stopPropagation()}>
+        <Menu
+          open={repsDrawer.open}
+          anchorEl={repsDrawer.anchorEl}
+          onClose={() => {
+            repsDrawer.onClose();
+            setRepsActual(0);
           }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
-          <input
-            ref={resizeWeightInput}
-            type="tel"
-            min={0}
-            max={9999}
-            name="weight"
-            value={weight}
-            readOnly={isProgramView}
+          <Stack spacing={1} sx={{ padding: theme.spacing(0, 2) }}>
+            <Typography variant="caption" fontWeight={600}>
+              How many reps were completed?
+            </Typography>
+
+            <Stack direction="row" spacing={1}>
+              <Box component="form" onSubmit={handleSubmit}>
+                <ReactFocusLock disabled={!repsDrawer.open} returnFocus>
+                  <input
+                    autoFocus
+                    type="tel"
+                    min={0}
+                    max={movementSet.repCountMaxExpected}
+                    name="repsActual"
+                    value={repsActual}
+                    readOnly={isProgramView}
+                    disabled={isProgramView}
+                    style={{
+                      color: theme.palette.text.primary,
+                      backgroundColor: theme.palette.background.paper,
+                      width: '3ch',
+                      margin: '0 auto',
+                      border: `1px solid ${darken(theme.palette.text.secondary, 0.2)}`,
+                      outline: 'none',
+                      fontFamily: 'monospace',
+                      borderRadius: 5,
+                      padding: theme.spacing(1, 2),
+                      fontWeight: 600,
+                      fontSize: '1.2rem',
+                      letterSpacing: 0.5,
+                    }}
+                    onClick={event => {
+                      event.stopPropagation();
+                    }}
+                    onFocus={event => {
+                      event.currentTarget.select();
+                    }}
+                    onChange={event => {
+                      if (Number.isNaN(event.target.value)) {
+                        return;
+                      }
+
+                      setRepsActual(Number(event.target.value));
+                    }}
+                  />
+                </ReactFocusLock>
+              </Box>
+
+              <Button
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                  fontWeight: 600,
+                }}
+                startIcon={<SaveRounded />}
+                onClick={async () => {
+                  try {
+                    movement.sets[index].repCountActual = repsActual;
+
+                    await updateSets([...movement.sets]);
+
+                    repsDrawer.onClose();
+                  } catch (err) {
+                    toast.error(err.message);
+                  }
+                }}
+              >
+                Submit
+              </Button>
+
+              <Button
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                  fontWeight: 600,
+                }}
+                startIcon={<RefreshRounded />}
+                onClick={async () => {
+                  try {
+                    movement.sets[index].status = MovementSetStatus.Unattempted;
+                    movement.sets[index].repCountActual = movementSet.repCountMaxExpected;
+
+                    await updateSets([...movement.sets]);
+
+                    repsDrawer.onClose();
+                  } catch (err) {
+                    toast.error(err.message);
+                  }
+                }}
+              >
+                Reset
+              </Button>
+            </Stack>
+          </Stack>
+        </Menu>
+      </Backdrop>
+
+      <Fade in>
+        <Stack spacing={0.25}>
+          <Box
+            sx={{
+              borderBottom: 'none',
+              textAlign: 'center',
+              alignItems: 'center',
+              // do we want this??
+              // display: 'flex',
+              borderRadius: 2,
+            }}
+          >
+            <input
+              ref={resizeWeightInput}
+              type="tel"
+              min={0}
+              max={9999}
+              name="weight"
+              value={weight}
+              readOnly={isProgramView}
+              disabled={isProgramView}
+              onClick={event => {
+                event.stopPropagation();
+              }}
+              onFocus={event => {
+                event.currentTarget.select();
+              }}
+              onChange={event => {
+                if (Number.isNaN(event.target.value)) {
+                  return;
+                }
+                setWeight(Number(event.target.value));
+              }}
+              onBlur={event => {
+                if (Number.isNaN(event.target.value)) {
+                  throw Error('Unreachable: weight input is NaN');
+                }
+
+                const value = +event.target.value;
+                let next = movement.sets.slice();
+                // Cascade new weight value to sets after this one if this weight = 0
+                if (movementSet.weight === 0 && index < next.length - 1) {
+                  next.slice(index + 1).forEach(_ => {
+                    _.weight = value;
+                    _.uuid = uuidv4();
+                  });
+                }
+                next[index].weight = value;
+                updateSets(next);
+              }}
+              style={{
+                color:
+                  movementSet.status === MovementSetStatus.Unattempted
+                    ? theme.palette.text.primary
+                    : theme.palette.success.light,
+                backgroundColor: 'transparent',
+                width: '3ch',
+                border: 'none',
+                outline: 'none',
+                margin: '0 auto',
+                padding: '4px 11px',
+                fontFamily: 'monospace',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                letterSpacing: 0.5,
+              }}
+            />
+          </Box>
+
+          <Button
             disabled={isProgramView}
-            onClick={event => {
-              event.stopPropagation();
-            }}
-            onFocus={event => {
-              event.currentTarget.select();
-            }}
-            onChange={event => {
-              if (Number.isNaN(event.target.value)) {
-                return;
-              }
-              setWeight(Number(event.target.value));
-            }}
-            onBlur={event => {
-              if (Number.isNaN(event.target.value)) {
-                throw Error('Unreachable: weight input is NaN');
-              }
+            sx={{
+              padding: `11px 16px`,
+              textAlign: 'center',
+              fontSize: singularRepDisplay ? '1.5rem' : '1.1rem',
+              fontWeight: 500,
+              letterSpacing: 0,
+              whiteSpace: 'nowrap',
+              height: '64px',
+              minHeight: 'auto',
+              borderRadius: 3,
 
-              const value = +event.target.value;
-              let next = movement.sets.slice();
-              // Cascade new weight value to sets after this one if this weight = 0
-              if (movementSet.weight === 0 && index < next.length - 1) {
-                next.slice(index + 1).forEach(_ => {
-                  _.weight = value;
-                  _.uuid = uuidv4();
-                });
-              }
-              next[index].weight = value;
-              updateSets(next);
+              ...(setIsCompleted
+                ? {
+                    backgroundColor: alpha(theme.palette.success.light, 0.11),
+                    color: theme.palette.success.light,
+                  }
+                : {
+                    backgroundColor: alpha(theme.palette.divider, 0.08),
+                    color: theme.palette.text.primary,
+                  }),
             }}
-            style={{
-              color:
-                movementSet.status === MovementSetStatus.Unattempted
-                  ? theme.palette.text.primary
-                  : theme.palette.success.light,
-              backgroundColor: 'transparent',
-              width: '3ch',
-              border: 'none',
-              outline: 'none',
-              margin: '0 auto',
-              padding: '4px 11px',
-              fontFamily: 'monospace',
-              fontWeight: 600,
-              fontSize: '1.1rem',
-              letterSpacing: '0.004em',
-            }}
-          />
-        </Box>
-
+            onClick={cycleMovementSet}
+          >
+            {singularRepDisplay ? (
+              <>{movementSet.repCountActual}</>
+            ) : (
+              <>
+                {movementSet.repCountExpected} {DIFF_CHAR} {movementSet.repCountMaxExpected}
+              </>
+            )}
+          </Button>
+          {/*
         <Select
           // Handles dynamic styling based on repCount button for a movement set
           style={dynamicRepCountButtonStyle}
-          sx={{
-            // borderRadius: 1,
-            whiteSpace: 'nowrap',
-          }}
+          sx={{ whiteSpace: 'nowrap', }}
           disableUnderline
           disabled={isProgramView}
           variant="standard"
@@ -1724,15 +1887,12 @@ const MovementSetView: FC<{
           }}
           IconComponent={() => null}
           value={movementSet.repCountActual}
-          inputProps={{
-            id: movementSet.uuid,
-          }}
+          inputProps={{ id: movementSet.uuid, }}
           // This onClose catches when the user selects the rep value that is the
           // same value as the repCountMaxExpected (which onChange does not
           // catch, since that is apparently not considered a _change_).
           onClose={event => {
             event.stopPropagation();
-
             const el = document.getElementById(movementSet.uuid);
             if (!(el instanceof HTMLInputElement) || Number.isNaN(+el?.value)) {
               return;
@@ -1781,7 +1941,6 @@ const MovementSetView: FC<{
             {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
             {movementSet.repCountMaxExpected}
           </MenuItem>
-          {/** Completed set choices: Choice of reps from 0 to repCountMaxExpected + N */}
           {Array.from({ length: movementSet.repCountMaxExpected + 6 })
             .map((_, i) => i)
             .reverse()
@@ -1793,8 +1952,10 @@ const MovementSetView: FC<{
             ))}
         </Select>
         {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
-      </Stack>
-    </Fade>
+        */}
+        </Stack>
+      </Fade>
+    </>
   );
 };
 
