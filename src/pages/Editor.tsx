@@ -1691,7 +1691,7 @@ const MovementSetView: FC<{
 
             <Stack direction="row" spacing={2}>
               <Box component="form" onSubmit={handleSubmit}>
-                <ReactFocusLock disabled={!repsDrawer.open} >
+                <ReactFocusLock disabled={!repsDrawer.open}>
                   <input
                     type="tel"
                     min={0}
@@ -1717,6 +1717,13 @@ const MovementSetView: FC<{
                     onSubmit={handleSubmit}
                     onClick={event => {
                       event.stopPropagation();
+
+                      // scroll clicked element into view
+                      event.currentTarget.scrollIntoView({
+                        behavior: 'smooth', // Smooth scroll for better user experience
+                        block: 'center',    // Align the element in the center of the viewport
+                        inline: 'nearest',  // Align it horizontally to the nearest edge
+                      });
                     }}
                     onFocus={event => {
                       event.currentTarget.select();
@@ -1892,13 +1899,13 @@ const MovementSetView: FC<{
 
               ...(setIsCompleted
                 ? {
-                    backgroundColor: alpha(theme.palette.success.light, 0.11),
-                    color: theme.palette.success.light,
-                  }
+                  backgroundColor: alpha(theme.palette.success.light, 0.11),
+                  color: theme.palette.success.light,
+                }
                 : {
-                    backgroundColor: alpha(theme.palette.divider, 0.08),
-                    color: theme.palette.text.primary,
-                  }),
+                  backgroundColor: alpha(theme.palette.divider, 0.08),
+                  color: theme.palette.text.primary,
+                }),
             }}
             onClick={cycleMovementSet}
           >
