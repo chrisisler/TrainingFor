@@ -1316,7 +1316,7 @@ export const EditorInternals: FC<{
           <TabPanel value={tabValue} index={TabIndex.Edit}>
             <Stack spacing={1} key={JSON.stringify(savedMovementDrawer)}>
               <Box>
-                <ReactFocusLock disabled={!savedMovementDrawer.open} returnFocus>
+                <ReactFocusLock disabled={!savedMovementDrawer.open}>
                   <TextField
                     fullWidth
                     variant="standard"
@@ -1658,7 +1658,7 @@ const MovementSetView: FC<{
     async event => {
       event.preventDefault();
 
-      movement.sets[index].repCountActual = movementSet.repCountMaxExpected;
+      movement.sets[index].repCountActual = repsActual;
 
       try {
         await updateSets([...movement.sets]);
@@ -1668,7 +1668,7 @@ const MovementSetView: FC<{
         toast.error(err.message);
       }
     },
-    [toast, updateSets, index, movement.sets, repsDrawer, movementSet.repCountMaxExpected]
+    [toast, updateSets, index, movement.sets, repsDrawer, repsActual]
   );
 
   return (
@@ -1718,11 +1718,10 @@ const MovementSetView: FC<{
                     onClick={event => {
                       event.stopPropagation();
 
-                      // scroll clicked element into view
                       event.currentTarget.scrollIntoView({
-                        behavior: 'smooth', // Smooth scroll for better user experience
-                        block: 'center',    // Align the element in the center of the viewport
-                        inline: 'nearest',  // Align it horizontally to the nearest edge
+                        behavior: 'smooth', 
+                        block: 'center',    
+                        inline: 'nearest', 
                       });
                     }}
                     onFocus={event => {
