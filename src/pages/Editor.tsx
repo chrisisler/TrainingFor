@@ -712,11 +712,15 @@ export const EditorInternals: FC<{
                     paddingX: '0.5rem',
                     justifyItems: 'center',
                     display: 'flex',
-                    border: theme => `1px solid ${darken(theme.palette.text.secondary, 0.3)}`,
                   },
                 }}
+                MenuListProps={{
+                  sx: {
+                    padding: 0.5,
+                  }
+                }}
               >
-                <Stack direction="row">
+                <Stack direction="row" alignItems="anchor-center">
                   <IconButton
                     onClick={async () => {
                       const sets = movement.sets.concat({
@@ -784,7 +788,10 @@ export const EditorInternals: FC<{
                       }}
                       onFocus={event => event.currentTarget.select()}
                       InputProps={{
-                        sx: { fontSize: '1.5rem', width: '60px' },
+                        sx: {
+                          fontSize: '1.5rem',
+                          width: '60px',
+                        },
                       }}
                     />
                   </Box>
@@ -821,10 +828,12 @@ export const EditorInternals: FC<{
                         {MovementRepCountUnit.Meters}
                       </MenuItem>
                     </MovementUnitSelect>
+
                     <TextField
                       variant="standard"
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                       value={newSetRepCountMin}
+                      helperText="Min"
                       onChange={event => {
                         const val = +event.target.value;
                         // auto-set max to min if min > max
@@ -842,6 +851,7 @@ export const EditorInternals: FC<{
                       variant="standard"
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                       value={newSetRepCountMax}
+                      helperText="Max"
                       error={newSetRepCountMax < newSetRepCountMin}
                       onChange={event => {
                         const val = +event.target.value;
@@ -1658,7 +1668,7 @@ const MovementSetView: FC<{
         toast.error(err.message);
       }
     },
-    [toast, updateSets, index, movement, repsDrawer, movementSet.repCountMaxExpected]
+    [toast, updateSets, index, movement.sets, repsDrawer, movementSet.repCountMaxExpected]
   );
 
   return (
@@ -1674,14 +1684,14 @@ const MovementSetView: FC<{
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
-          <Stack spacing={1} sx={{ padding: theme.spacing(0, 2) }}>
-            <Typography variant="caption" fontWeight={600}>
+          <Stack spacing={1} sx={{ padding: theme.spacing(0, 1) }}>
+            <Typography variant="subtitle2">
               How many reps were completed?
             </Typography>
 
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={2}>
               <Box component="form" onSubmit={handleSubmit}>
-                <ReactFocusLock disabled={!repsDrawer.open} returnFocus>
+                <ReactFocusLock disabled={!repsDrawer.open} >
                   <input
                     type="tel"
                     min={0}
@@ -1695,15 +1705,16 @@ const MovementSetView: FC<{
                       backgroundColor: theme.palette.background.paper,
                       width: '3ch',
                       margin: '0 auto',
-                      border: `1px solid ${darken(theme.palette.text.secondary, 0.2)}`,
+                      border: `1px solid ${theme.palette.text.secondary}`,
                       outline: 'none',
                       fontFamily: 'monospace',
                       borderRadius: 5,
                       padding: theme.spacing(1, 2),
                       fontWeight: 600,
-                      fontSize: '1.2rem',
+                      fontSize: '1.3rem',
                       letterSpacing: 0.5,
                     }}
+                    onSubmit={handleSubmit}
                     onClick={event => {
                       event.stopPropagation();
                     }}
@@ -1723,8 +1734,9 @@ const MovementSetView: FC<{
 
               <Button
                 sx={{
-                  color: theme => theme.palette.text.secondary,
+                  color: theme => theme.palette.text.primary,
                   fontWeight: 600,
+                  letterSpacing: 0,
                 }}
                 startIcon={<SaveRounded />}
                 onClick={async () => {
@@ -1746,6 +1758,7 @@ const MovementSetView: FC<{
                 sx={{
                   color: theme => theme.palette.text.secondary,
                   fontWeight: 600,
+                  letterSpacing: 0,
                 }}
                 startIcon={<RefreshRounded />}
                 onClick={async () => {
@@ -1768,6 +1781,10 @@ const MovementSetView: FC<{
                 sx={{
                   color: theme => theme.palette.text.secondary,
                   fontWeight: 600,
+                  letterSpacing: 0,
+                  ':hover': {
+                    color: theme => theme.palette.error.main,
+                  }
                 }}
                 startIcon={<RemoveCircleOutline />}
                 onClick={async () => {
