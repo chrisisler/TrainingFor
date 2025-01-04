@@ -550,7 +550,7 @@ export const EditorInternals: FC<{
                                 padding: theme => theme.spacing(0.5, 1, 0.5, 2.0),
                                 // fontStyle: 'italic',
                                 fontWeight: 300,
-                                borderLeft: theme => `1px solid ${theme.palette.text.secondary}`,
+                                borderLeft: theme => `2px solid ${theme.palette.divider}`,
                                 color: theme => theme.palette.text.secondary,
                               }}
                             >
@@ -612,15 +612,13 @@ export const EditorInternals: FC<{
                   alignSelf: 'center',
                   fontSize: '0.9rem',
                   color: theme => darken(theme.palette.text.secondary, 0.3),
-                  // border: theme => `1px solid ${theme.palette.divider}`,
-                  // backgroundColor: theme => darken(theme.palette.divider, 0.8),
                   backgroundColor: 'transparent',
                   borderRadius: 2,
                   height: '250px',
-                  fontWeight: 500,
+                  fontWeight: 600,
                 }}
               >
-                <Add />
+                <Add sx={{ mr: 0.5 }} />
                 {movements.length === 0 ? 'Tap here to get started' : 'Add a movement'}
               </ButtonBase>
             </Stack>
@@ -717,7 +715,7 @@ export const EditorInternals: FC<{
                 MenuListProps={{
                   sx: {
                     padding: 0.5,
-                  }
+                  },
                 }}
               >
                 <Stack direction="row" alignItems="anchor-center">
@@ -1685,9 +1683,7 @@ const MovementSetView: FC<{
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
           <Stack spacing={1} sx={{ padding: theme.spacing(0, 1) }}>
-            <Typography variant="subtitle2">
-              How many reps were completed?
-            </Typography>
+            <Typography variant="subtitle2">How many reps were completed?</Typography>
 
             <Stack direction="row" spacing={2}>
               <Box component="form" onSubmit={handleSubmit}>
@@ -1719,9 +1715,9 @@ const MovementSetView: FC<{
                       event.stopPropagation();
 
                       event.currentTarget.scrollIntoView({
-                        behavior: 'smooth', 
-                        block: 'center',    
-                        inline: 'nearest', 
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest',
                       });
                     }}
                     onFocus={event => {
@@ -1790,7 +1786,7 @@ const MovementSetView: FC<{
                   letterSpacing: 0,
                   ':hover': {
                     color: theme => theme.palette.error.main,
-                  }
+                  },
                 }}
                 startIcon={<RemoveCircleOutline />}
                 onClick={async () => {
@@ -1898,13 +1894,13 @@ const MovementSetView: FC<{
 
               ...(setIsCompleted
                 ? {
-                  backgroundColor: alpha(theme.palette.success.light, 0.11),
-                  color: theme.palette.success.light,
-                }
+                    backgroundColor: alpha(theme.palette.success.light, 0.11),
+                    color: theme.palette.success.light,
+                  }
                 : {
-                  backgroundColor: alpha(theme.palette.divider, 0.08),
-                  color: theme.palette.text.primary,
-                }),
+                    backgroundColor: alpha(theme.palette.divider, 0.08),
+                    color: theme.palette.text.primary,
+                  }),
             }}
             onClick={cycleMovementSet}
           >
