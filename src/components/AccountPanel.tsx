@@ -1,9 +1,11 @@
+import { uuidv4 } from '@firebase/util';
 import {
+  AddRounded,
+  AppRegistrationRounded,
   ChevronRight,
   DoubleArrow,
-  ExpandMoreRounded,
   NoteAltOutlined,
-  Person,
+  PersonOutline,
   PlaylistAdd,
   ViewSidebarRounded,
 } from '@mui/icons-material';
@@ -18,11 +20,12 @@ import {
   useTheme,
 } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { FC } from 'react';
+import { where } from 'firebase/firestore';
+import { FC, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useStore } from '../api';
-import { TrainingLog } from '../types';
+import { API, useStore } from '../api';
+import { Movement, TrainingLog } from '../types';
 import {
   DataState,
   DataStateView,
@@ -36,7 +39,7 @@ import {
 /**
  * @usage
  * const [pinned, setPinned] = useState(false);
- * const menu = useMaterialMenu();
+ * const menu = useMaterialMenu(); // or useDrawer()
  * return (
  *   <div onClick={menu.onOpen}>...</div>
  *   <SwipeableDrawer {...menu} anchor="left">
@@ -57,9 +60,11 @@ export const AccountPanel: FC<{
   const toast = useToast();
   const user = useUser();
 
+  const SavedMovementsAPI = useStore(store => store.SavedMovementsAPI);
+  const MovementsAPI = useStore(store => store.MovementsAPI);
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
-  const logs = useStore(store => store.logs);
   const TrainingLogsAPI = useStore(store => store.TrainingLogsAPI);
+  const logs = useStore(store => store.logs);
   const sortedPrograms = useStore(store =>
     // List of programs with active program first
     DataState.map(store.programs, _programs => {
@@ -71,9 +76,78 @@ export const AccountPanel: FC<{
       return _programs;
     })
   );
-  // const activeProgram = useStore(store => store.activeProgram);
+  const activeProgram = useStore(store => store.activeProgram);
+  const templates = useStore(store => store.templates);
 
   const stickyable = logId !== undefined;
+
+  const addTrainingProgram = useCallback(async () => {
+    if (!window.confirm('Create a new training program?')) {
+      return;
+    }
+
+    try {
+      const created = await ProgramsAPI.create({
+        name: 'Untitled Program',
+        authorUserId: user.uid,
+        timestamp: Date.now(),
+        note: '',
+        templateIds: [],
+      });
+
+      navigate(Paths.program(created.id, created.name));
+      if (!pinned) onClose();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }, [toast, ProgramsAPI, user.uid, pinned, onClose, navigate])
+
+  const createTrainingLog = useCallback(
+    async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
+      if (!window.confirm('Begin programmed training?')) return;
+
+      try {
+        const programId = !!fromTemplateId && DataState.isReady(activeProgram) && activeProgram.id;
+        const newTrainingLog = await TrainingLogsAPI.create({
+          timestamp: Date.now(),
+          authorUserId: user.uid,
+          bodyweight: 0,
+          isFinished: false,
+          note: '',
+          programId: programId || null,
+          programLogTemplateId: fromTemplateId || null,
+        });
+
+        // Copy over movements from the program log template to the log
+        const logIsCreatedFromProgramTemplate = !!fromTemplateId;
+        if (logIsCreatedFromProgramTemplate) {
+          const programMovements = await API.ProgramMovements.getAll(
+            where('logId', '==', fromTemplateId)
+          );
+
+          const logMovements: Movement[] = programMovements.map(movement => ({
+            ...movement,
+            logId: newTrainingLog.id,
+            sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
+            timestamp: Date.now(),
+          }));
+          await Promise.all([
+            // Create movements in the new log
+            MovementsAPI.createMany(logMovements),
+            // Update lastSeen property for each movement's savedMovement parent
+            logMovements.map(_ =>
+              SavedMovementsAPI.update({ id: _.savedMovementId, lastSeen: _.timestamp })
+            ),
+          ]);
+        }
+
+        navigate(Paths.editor(newTrainingLog.id));
+      } catch (err) {
+        toast.error(err.message);
+      }
+    },
+    [activeProgram, user.uid, navigate, toast, TrainingLogsAPI, MovementsAPI, SavedMovementsAPI]
+  );
 
   return (
     <Stack spacing={3} sx={{ width: isMobile ? '78vw' : '240px' }}>
@@ -90,15 +164,14 @@ export const AccountPanel: FC<{
           {pinned ? <ViewSidebarRounded sx={{ transform: 'rotate(180deg)' }} /> : <DoubleArrow />}
         </IconButton>
 
-        {title ? <Typography variant="body2">{title}</Typography> : <span />}
+        <Typography variant="body2">{title}</Typography>
       </Stack>
 
       <Stack direction="row" justifyContent="space-between" spacing={1}>
         <Button
           fullWidth
           variant="text"
-          startIcon={<Person />}
-          endIcon={<ExpandMoreRounded sx={{ color: theme => theme.palette.text.secondary }} />}
+          startIcon={<PersonOutline />}
           onClick={() => {
             navigate(Paths.editor(''));
           }}
@@ -111,6 +184,37 @@ export const AccountPanel: FC<{
           {user.displayName}
         </Button>
       </Stack>
+
+      <Button
+        onClick={async () => {
+          try {
+            const created = await TrainingLogsAPI.create({
+              timestamp: Date.now(),
+              authorUserId: user.uid,
+              bodyweight: 0,
+              isFinished: false,
+              note: '',
+              programId: null,
+              programLogTemplateId: null,
+            });
+
+            navigate(Paths.editor(created.id, TrainingLog.title(created)));
+
+            if (!pinned) onClose();
+          } catch (err) {
+            toast.error(err.message);
+          }
+        }}
+        sx={{
+          color: theme => theme.palette.text.primary,
+          fontWeight: 600,
+          justifyContent: 'flex-start',
+        }}
+        startIcon={<NoteAltOutlined />}
+        endIcon={<AddRounded fontSize="small" sx={{ color: theme => theme.palette.divider }} />}
+      >
+        Add training log
+      </Button>
 
       <DataStateView
         data={logs}
@@ -164,42 +268,51 @@ export const AccountPanel: FC<{
         )}
       </DataStateView>
 
-      <Button
-        onClick={async () => {
-          try {
-            const created = await TrainingLogsAPI.create({
-              timestamp: Date.now(),
-              authorUserId: user.uid,
-              bodyweight: 0,
-              isFinished: false,
-              note: '',
-              programId: null,
-              programLogTemplateId: null,
-            });
+      {DataState.isReady(activeProgram) && DataState.isReady(templates) && activeProgram.templateIds.length && (
+        <Stack>
+          <Typography variant="caption" fontWeight={600} color="text.secondary">
+            Current Program
+          </Typography>
 
-            navigate(Paths.editor(created.id, TrainingLog.title(created)));
+          {activeProgram.templateIds.map(templateId => (
+            <Button
+              key={templateId}
+              onClick={() => {
+                if (!pinned) onClose();
 
-            if (!pinned) onClose();
-          } catch (err) {
-            toast.error(err.message);
-          }
-        }}
-        sx={{
-          color: theme => theme.palette.text.primary,
-          fontWeight: 600,
-          justifyContent: 'flex-start',
-        }}
-        startIcon={<NoteAltOutlined />}
-      >
-        Add training log
-      </Button>
+                createTrainingLog({ fromTemplateId: templateId });
+              }}
+              startIcon={<AppRegistrationRounded fontSize="small" />}
+              endIcon={<AddRounded fontSize="small" sx={{ color: theme => theme.palette.divider }} />}
+              sx={{
+                color: theme => theme.palette.text.secondary,
+                fontWeight: 600,
+                justifyContent: 'flex-start',
+              }}
+            >
+                {templates.find(t => t.id === templateId)!.name}
+            </Button>
+          ))}
+        </Stack>
+      )}
 
       <DataStateView data={sortedPrograms} loading={() => null}>
         {sortedPrograms => (
           <Stack>
-            <Typography variant="caption" fontWeight={600} color="text.secondary" gutterBottom>
-              Training Programs
-            </Typography>
+            <Stack direction="row" justifyContent="space-between" alignItems="end">
+              <Typography variant="caption" fontWeight={600} color="text.secondary" gutterBottom>
+                Training Programs
+              </Typography>
+
+              <IconButton
+                onClick={addTrainingProgram}
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                  fontWeight: 600,
+                }}>
+                <PlaylistAdd fontSize="small" />
+              </IconButton>
+            </Stack>
 
             <Stack sx={{ maxHeight: '20vh', overflowY: 'scroll' }}>
               {sortedPrograms.map(program => (
@@ -217,37 +330,6 @@ export const AccountPanel: FC<{
           </Stack>
         )}
       </DataStateView>
-
-      <Button
-        onClick={async () => {
-          if (!window.confirm('Create new training program?')) {
-            return;
-          }
-
-          try {
-            const created = await ProgramsAPI.create({
-              name: 'Untitled Program',
-              authorUserId: user.uid,
-              timestamp: Date.now(),
-              note: '',
-              templateIds: [],
-            });
-
-            navigate(Paths.program(created.id, created.name));
-            if (!pinned) onClose();
-          } catch (err) {
-            toast.error(err.message);
-          }
-        }}
-        sx={{
-          color: theme => theme.palette.text.secondary,
-          fontWeight: 600,
-          justifyContent: 'flex-start',
-        }}
-        startIcon={<PlaylistAdd />}
-      >
-        New training program
-      </Button>
     </Stack>
   );
 };
