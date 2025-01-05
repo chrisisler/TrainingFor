@@ -192,6 +192,8 @@ export const Programs: FC = () => {
         return;
       }
 
+      const { currentTarget } = event;
+
       try {
         const newTemplate = await TemplatesAPI.create({
           authorUserId: user.uid,
@@ -199,18 +201,20 @@ export const Programs: FC = () => {
           name: 'Untitled',
         });
 
-        // Update programs to reflect newly added day
         await ProgramsAPI.update({
           id: viewedProgram.id,
           templateIds: viewedProgram.templateIds.concat(newTemplate.id),
         }).catch(() => {
-          // failed to update program to include template, avoid dangling template
-          // not linked to program
+          // roll it back: failed to update program to include template
+          // avoid dangling template not linked to program
           TemplatesAPI.delete(newTemplate.id);
         });
 
-        // TODO fix, doesn't work
-        templateEditorDrawer.onOpen(event, { templateId: newTemplate.id });
+        templateEditorDrawer.onOpen(
+          // workaround to make this `onOpen` call work/do what it's supposed to do
+          { currentTarget } as typeof event,
+          { templateId: newTemplate.id }
+        );
       } catch (err) {
         toast.error(err.message);
       }
@@ -406,8 +410,6 @@ export const Programs: FC = () => {
                   templateIds: templateIds.filter(id => id !== templateId),
                 }),
               ]);
-
-              toast.info("Removed empty template");
             } else {
               // Update template movement names display
               queryClient.invalidateQueries(ProgramMovementsAPI.queryKey);
