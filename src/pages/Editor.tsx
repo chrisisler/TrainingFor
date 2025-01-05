@@ -422,15 +422,17 @@ export const EditorInternals: FC<{
       <DataStateView
         data={movements}
         loading={() => (
-          <Stack
-            sx={{
-              paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
-              transform: !isMobile && pinned ? `translateX(${headerSpacing})` : 'none',
-            }}
-            spacing={5}
-          >
-            <Skeleton width="100%" height="50px" sx={{ borderRadius: 5 }} />
-          </Stack>
+          <Fade in>
+            <Stack
+              sx={{
+                paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+                transform: !isMobile && pinned ? `translateX(${headerSpacing})` : 'none',
+              }}
+              spacing={5}
+            >
+              <Skeleton width="100%" height="40px" sx={{ borderRadius: 5 }} />
+            </Stack>
+          </Fade>
         )}
       >
         {movements => {
@@ -1399,7 +1401,7 @@ export const EditorInternals: FC<{
         PaperProps={{
           onMouseLeave: pinned ? undefined : accountDrawer.onClose,
           sx: {
-            padding: theme => theme.spacing(1, 1.5, 2, 1.5),
+            padding: theme => theme.spacing(1, 1.25, 2, 1.25),
             boxShadow: 'none',
             border: 'none',
             backgroundColor: theme =>
@@ -1894,13 +1896,13 @@ const MovementSetView: FC<{
 
               ...(setIsCompleted
                 ? {
-                    backgroundColor: alpha(theme.palette.success.light, 0.11),
-                    color: theme.palette.success.light,
-                  }
+                  backgroundColor: alpha(theme.palette.success.light, 0.11),
+                  color: theme.palette.success.light,
+                }
                 : {
-                    backgroundColor: alpha(theme.palette.divider, 0.08),
-                    color: theme.palette.text.primary,
-                  }),
+                  backgroundColor: alpha(theme.palette.divider, 0.08),
+                  color: theme.palette.text.primary,
+                }),
             }}
             onClick={cycleMovementSet}
           >

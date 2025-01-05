@@ -3,6 +3,7 @@ import {
   ChevronRight,
   DoubleArrow,
   ExpandMoreRounded,
+  NoteAltOutlined,
   Person,
   PlaylistAdd,
   ViewSidebarRounded,
@@ -128,7 +129,7 @@ export const AccountPanel: FC<{
       >
         {logs => (
           <Stack>
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
+            <Typography variant="caption" fontWeight={600} color="text.secondary" gutterBottom>
               Training Logs
             </Typography>
 
@@ -147,14 +148,13 @@ export const AccountPanel: FC<{
                     text={dateDisplay(date)}
                     subtext={
                       <>
-                        {SORTED_WEEKDAYS[date.getDay()]}{' '}
-                        <em>
-                          {formatDistanceToNowStrict(date, {
-                            addSuffix: true,
-                          })
-                            .replace(/ (\w)\w+ /i, '$1 ')
-                            .replace('m ', 'mo ')}
-                        </em>
+                        <strong>{SORTED_WEEKDAYS[date.getDay()]} </strong>
+
+                        {formatDistanceToNowStrict(date, {
+                          addSuffix: true,
+                        })
+                          .replace(/ (\w)\w+ /i, '$1 ')
+                          .replace(' ago', '')}
                       </>
                     }
                   />
@@ -186,11 +186,11 @@ export const AccountPanel: FC<{
           }
         }}
         sx={{
-          color: theme => theme.palette.text.secondary,
+          color: theme => theme.palette.text.primary,
           fontWeight: 600,
           justifyContent: 'flex-start',
         }}
-        startIcon={<AddRounded />}
+        startIcon={<NoteAltOutlined />}
       >
         Add training log
       </Button>
@@ -198,7 +198,7 @@ export const AccountPanel: FC<{
       <DataStateView data={sortedPrograms} loading={() => null}>
         {sortedPrograms => (
           <Stack>
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
+            <Typography variant="caption" fontWeight={600} color="text.secondary" gutterBottom>
               Training Programs
             </Typography>
 
@@ -267,7 +267,7 @@ const PanelRow: FC<{
       direction="row"
       spacing={1}
       sx={{
-        padding: isMobile ? '0.75rem' : '0.5rem',
+        padding: isMobile ? '0.66rem' : '0.33rem',
         paddingLeft: 0,
         cursor: 'pointer',
         borderRadius: 1,
@@ -282,6 +282,7 @@ const PanelRow: FC<{
           borderBottom: theme => `1px solid ${theme.palette.divider}`,
         }),
         // borderBottom: theme => `1px solid ${theme.palette.divider}`
+        transition: 'background-color 100ms ease-in-out',
       }}
       onClick={onClick}
       justifyContent="space-between"
@@ -290,7 +291,7 @@ const PanelRow: FC<{
       <ButtonBase
         sx={{
           color: theme => (highlighted ? theme.palette.text.primary : theme.palette.text.secondary),
-          fontSize: '1.0rem',
+          fontSize: '0.9rem',
           fontWeight: 600,
           whiteSpace: 'nowrap',
         }}
@@ -301,7 +302,13 @@ const PanelRow: FC<{
         {text}
       </ButtonBase>
 
-      <Typography variant="body2" color="text.secondary">
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{
+          color: theme => (highlighted ? theme.palette.text.primary : theme.palette.text.secondary),
+        }}
+      >
         {subtext ?? null}
       </Typography>
     </Stack>
