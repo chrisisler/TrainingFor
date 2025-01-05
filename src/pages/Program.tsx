@@ -397,7 +397,10 @@ export const Programs: FC = () => {
           const context = templateEditorDrawer.getData();
           if (!!context && DataState.isReady(viewedProgram)) {
             const { templateId } = context;
-            if (!templateId) return;
+            if (!templateId) {
+              return;
+            }
+
             const { templateIds } = viewedProgram;
             // If no movements exist in this template, delete it.
             const q = query(API.collections.programMovements, where('logId', '==', templateId));
@@ -410,6 +413,8 @@ export const Programs: FC = () => {
                   templateIds: templateIds.filter(id => id !== templateId),
                 }),
               ]);
+
+              toast.info("Removed empty template");
             } else {
               // Update template movement names display
               queryClient.invalidateQueries(ProgramMovementsAPI.queryKey);

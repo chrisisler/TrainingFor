@@ -153,7 +153,7 @@ export const EditorInternals: FC<{
   const toast = useToast();
   const user = useUser();
   const navigate = useNavigate();
-  const isMutating = useIsMutating();
+  const isMutating = useIsMutating() > 0;
 
   // Data is null when *adding*; when *replacing*, it's the replacing Movement.
   const { anchorEl: _3, ...addMovementDrawer } = useDrawer<null | Movement>();
@@ -746,7 +746,7 @@ export const EditorInternals: FC<{
                         toast.error(err.message);
                       }
                     }}
-                    disabled={!!isMutating}
+                    disabled={isMutating}
                     sx={{ color: theme => theme.palette.text.primary }}
                     size="large"
                   >
@@ -803,12 +803,11 @@ export const EditorInternals: FC<{
                       value={movement.repCountUnit}
                       onChange={async event => {
                         try {
-                          const newRepCountUnit = event.target.value as MovementRepCountUnit;
-                          // Update field on the movement
                           const updated: Movement = await MovementsMutationAPI.update({
                             id: movement.id,
-                            repCountUnit: newRepCountUnit,
+                            repCountUnit: event.target.value as MovementRepCountUnit,
                           });
+
                           addSetMenu.setData(updated);
                         } catch (error) {
                           toast.error(error.message);
@@ -874,7 +873,7 @@ export const EditorInternals: FC<{
                   {movement.sets.length > 0 && (
                     <>
                       <IconButton
-                        disabled={!!isMutating}
+                        disabled={isMutating}
                         sx={{ color: theme => theme.palette.text.primary }}
                         onClick={async function deleteLastSet() {
                           let sets = movement.sets.slice();
@@ -902,7 +901,7 @@ export const EditorInternals: FC<{
                       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                       <IconButton
-                        disabled={!!isMutating}
+                        disabled={isMutating}
                         sx={{ color: theme => theme.palette.text.primary }}
                         onClick={async function deleteAllMovementSets() {
                           if (!window.confirm('Delete all sets?')) return;
@@ -930,7 +929,7 @@ export const EditorInternals: FC<{
                   )}
 
                   <IconButton
-                    disabled={!!isMutating}
+                    disabled={isMutating}
                     sx={{ color: theme => theme.palette.error.main }}
                     onClick={async () => {
                       if (!window.confirm('Remove movement from training log')) return;
@@ -994,7 +993,7 @@ export const EditorInternals: FC<{
                   </DataStateView>
 
                   <IconButton
-                    disabled={!!isMutating}
+                    disabled={isMutating}
                     sx={{ color: theme => theme.palette.text.secondary }}
                     onClick={async () => {
                       const newName = window.prompt('Update movement name', movement.name) || '';
@@ -1021,7 +1020,7 @@ export const EditorInternals: FC<{
                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                   <IconButton
-                    disabled={!!isMutating}
+                    disabled={isMutating}
                     sx={{
                       color: theme => theme.palette.text.secondary,
                     }}
@@ -1041,7 +1040,7 @@ export const EditorInternals: FC<{
                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
                   <IconButton
-                    disabled={!!isMutating}
+                    disabled={isMutating}
                     sx={{
                       color: theme => theme.palette.text.secondary,
                     }}
@@ -1079,7 +1078,7 @@ export const EditorInternals: FC<{
                     And the functionality exists already via: Delete -> Add Movement
 
                   <IconButton
-                    disabled={!!isMutating}
+                    disabled={isMutating}
                     sx={{ color: theme => theme.palette.error.main }}
                     onClick={event => {
                       addMovementDrawer.onOpen(event, movement);
@@ -1190,7 +1189,7 @@ export const EditorInternals: FC<{
                               />
 
                               <ButtonBase
-                                disabled={!!isMutating}
+                                disabled={isMutating}
                                 sx={{
                                   backgroundColor: theme => theme.palette.divider,
                                   color: theme => theme.palette.text.primary,
@@ -1272,7 +1271,7 @@ export const EditorInternals: FC<{
                         }}
                         startIcon={<Add fontSize="small" />}
                         onClick={addMovementFromNewSavedMovement}
-                        disabled={!!isMutating}
+                        disabled={isMutating}
                       >
                         Create {movementNameQuery}
                       </Button>
@@ -1610,6 +1609,7 @@ const MovementSetView: FC<{
   const MovementsMutationAPI = useStore(store =>
     isProgramView ? store.ProgramMovementsAPI : store.MovementsAPI
   );
+  const isMutating = useIsMutating() > 0;
 
   const repsDrawer = useDrawer<undefined>();
 
@@ -1754,6 +1754,7 @@ const MovementSetView: FC<{
                     toast.error(err.message);
                   }
                 }}
+                disabled={isMutating}
               >
                 Submit
               </Button>
@@ -1765,6 +1766,7 @@ const MovementSetView: FC<{
                   letterSpacing: 0,
                 }}
                 startIcon={<RefreshRounded />}
+                disabled={isMutating}
                 onClick={async () => {
                   try {
                     movement.sets[index].status = MovementSetStatus.Unattempted;
@@ -1791,9 +1793,9 @@ const MovementSetView: FC<{
                   },
                 }}
                 startIcon={<RemoveCircleOutline />}
+                disabled={isMutating}
                 onClick={async () => {
                   try {
-                    // TODO isMutating state for delete
                     await MovementsMutationAPI.update({
                       id: movement.id,
                       sets: movement.sets.filter((_, i) => i !== index),
@@ -1819,8 +1821,6 @@ const MovementSetView: FC<{
               borderBottom: 'none',
               textAlign: 'center',
               alignItems: 'center',
-              // do we want this??
-              // display: 'flex',
               borderRadius: 2,
             }}
           >
@@ -1914,91 +1914,6 @@ const MovementSetView: FC<{
               </>
             )}
           </Button>
-          {/*
-        <Select
-          // Handles dynamic styling based on repCount button for a movement set
-          style={dynamicRepCountButtonStyle}
-          sx={{ whiteSpace: 'nowrap', }}
-          disableUnderline
-          disabled={isProgramView}
-          variant="standard"
-          SelectDisplayProps={{
-            style: {
-              padding: `10px ${setIsCompleted && movementSet.repCountActual.toString().length > 1 ? '15px' : '20px'
-                }`,
-              textAlign: 'center',
-              fontSize: '1.5rem',
-              minHeight: 'auto',
-            },
-          }}
-          IconComponent={() => null}
-          value={movementSet.repCountActual}
-          inputProps={{ id: movementSet.uuid, }}
-          // This onClose catches when the user selects the rep value that is the
-          // same value as the repCountMaxExpected (which onChange does not
-          // catch, since that is apparently not considered a _change_).
-          onClose={event => {
-            event.stopPropagation();
-            const el = document.getElementById(movementSet.uuid);
-            if (!(el instanceof HTMLInputElement) || Number.isNaN(+el?.value)) {
-              return;
-            }
-            const value = +el.value;
-            if (movementSet.repCountMaxExpected !== value) return;
-            if (movementSet.status === MovementSetStatus.Unattempted) {
-              movement.sets[index].status = MovementSetStatus.Completed;
-              updateSets([...movement.sets]);
-            }
-          }}
-          onChange={async event => {
-            const { repCountMaxExpected } = movementSet;
-            const value = event.target.value;
-            if (Number.isNaN(+value) && value === 'RESET') {
-              // reset to OG value
-              movement.sets[index].status = MovementSetStatus.Unattempted;
-              movement.sets[index].repCountActual = repCountMaxExpected;
-            } else {
-              // update to new value
-              movement.sets[index].repCountActual = +value;
-              movement.sets[index].status = MovementSetStatus.Completed;
-
-              const isLastSet = index === movement.sets.length - 1;
-              if (Math.random() > 0.85 && isLastSet) {
-                setConfetti(true);
-              }
-            }
-            updateSets([...movement.sets]);
-          }}
-          renderValue={value =>
-            typeof movementSet.repCountMaxExpected === 'undefined' ||
-              movementSet.status === MovementSetStatus.Completed ||
-              movementSet.repCountExpected === movementSet.repCountMaxExpected ? (
-              value.toString()
-            ) : (
-              <Typography>
-                {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
-                {movementSet.repCountMaxExpected}
-              </Typography>
-            )
-          }
-        >
-          <MenuItem value={'RESET'}>
-            <RefreshRounded sx={{ mr: 1.5, color: theme => theme.palette.text.secondary }} />{' '}
-            {movementSet.repCountExpected} {DIFF_CHAR.toLowerCase()}{' '}
-            {movementSet.repCountMaxExpected}
-          </MenuItem>
-          {Array.from({ length: movementSet.repCountMaxExpected + 6 })
-            .map((_, i) => i)
-            .reverse()
-            .map(i => (
-              <MenuItem value={i} key={i} sx={{ justifyContent: 'space-between' }}>
-                <CheckRounded sx={{ opacity: 0.5, color: theme => theme.palette.success.main }} />
-                {i}
-              </MenuItem>
-            ))}
-        </Select>
-        {confetti && <ConfettiExplosion particleCount={150} width={500} force={0.6} />}
-        */}
         </Stack>
       </Fade>
     </>
