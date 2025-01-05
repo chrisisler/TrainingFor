@@ -17,7 +17,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useIsMutating } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -57,7 +56,6 @@ export const AccountPanel: FC<{
   const navigate = useNavigate();
   const toast = useToast();
   const user = useUser();
-  const isMutating = useIsMutating() > 0;
 
   const ProgramsAPI = useStore(store => store.ProgramsAPI);
   const logs = useStore(store => store.logs);
@@ -192,7 +190,6 @@ export const AccountPanel: FC<{
           justifyContent: 'flex-start',
         }}
         startIcon={<NoteAltOutlined />}
-        disabled={isMutating}
       >
         Add training log
       </Button>
@@ -248,7 +245,6 @@ export const AccountPanel: FC<{
           justifyContent: 'flex-start',
         }}
         startIcon={<PlaylistAdd />}
-        disabled={isMutating}
       >
         New training program
       </Button>

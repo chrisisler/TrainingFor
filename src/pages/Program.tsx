@@ -225,16 +225,18 @@ export const Programs: FC = () => {
   return (
     <>
       <Backdrop open={isMutating} sx={{ zIndex: theme => theme.zIndex.drawer + 10 }}>
-        <Box sx={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+        <Box
+          sx={{
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <CircularProgress size={64} />
         </Box>
-      </Backdrop >
+      </Backdrop>
 
       <Box
         sx={{
@@ -414,7 +416,7 @@ export const Programs: FC = () => {
                 }),
               ]);
 
-              toast.info("Removed empty template");
+              toast.info('Removed empty template');
             } else {
               // Update template movement names display
               queryClient.invalidateQueries(ProgramMovementsAPI.queryKey);

@@ -27,6 +27,7 @@ import {
   Box,
   Button,
   ButtonBase,
+  CircularProgress,
   Collapse,
   darken,
   Divider,
@@ -750,10 +751,10 @@ export const EditorInternals: FC<{
                     sx={{ color: theme => theme.palette.text.primary }}
                     size="large"
                   >
-                    <Add />
+                    {isMutating ? <CircularProgress size={24} /> : <Add />}
                   </IconButton>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                   <Box display="flex">
                     <MovementUnitSelect
@@ -796,7 +797,7 @@ export const EditorInternals: FC<{
                     />
                   </Box>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                   <Box display="flex">
                     <MovementUnitSelect
@@ -868,7 +869,7 @@ export const EditorInternals: FC<{
                     />
                   </Box>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                   {movement.sets.length > 0 && (
                     <>
@@ -898,7 +899,7 @@ export const EditorInternals: FC<{
                         <RemoveCircleOutline />
                       </IconButton>
 
-                      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                      <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                       <IconButton
                         disabled={isMutating}
@@ -924,7 +925,7 @@ export const EditorInternals: FC<{
                         <DeleteSweepOutlined />
                       </IconButton>
 
-                      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                      <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
                     </>
                   )}
 
@@ -946,7 +947,7 @@ export const EditorInternals: FC<{
                     <PlaylistRemove />
                   </IconButton>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                   {/** Re-order / position buttons */}
                   <DataStateView data={movements} loading={() => null}>
@@ -986,7 +987,7 @@ export const EditorInternals: FC<{
                               );
                             })}
                           </Stack>
-                          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                          <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
                         </>
                       );
                     }}
@@ -1017,7 +1018,7 @@ export const EditorInternals: FC<{
                     <Title />
                   </IconButton>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                   <IconButton
                     disabled={isMutating}
@@ -1037,7 +1038,7 @@ export const EditorInternals: FC<{
                     <History />
                   </IconButton>
 
-                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Divider orientation="vertical" flexItem sx={{ m: 1 }} />
 
                   <IconButton
                     disabled={isMutating}
@@ -1638,17 +1639,27 @@ const MovementSetView: FC<{
     async event => {
       event.stopPropagation();
 
+      if (movementSet.status === MovementSetStatus.Completed) {
+        repsDrawer.onOpen(event, void 0);
+
+        event.currentTarget?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest',
+        });
+
+        return;
+      }
+
       if (movementSet.status === MovementSetStatus.Unattempted) {
         movement.sets[index].repCountActual = movementSet.repCountMaxExpected;
         movement.sets[index].status = MovementSetStatus.Completed;
-      } else if (movementSet.status === MovementSetStatus.Completed) {
-        repsDrawer.onOpen(event, void 0);
-      }
 
-      try {
-        await updateSets([...movement.sets]);
-      } catch (err) {
-        toast.error(err.message);
+        try {
+          await updateSets([...movement.sets]);
+        } catch (err) {
+          toast.error(err.message);
+        }
       }
     },
     [index, movement.sets, movementSet, toast, updateSets, repsDrawer]
@@ -1673,8 +1684,13 @@ const MovementSetView: FC<{
 
   return (
     <>
-      <Backdrop open={repsDrawer.open} onClick={_ => _.stopPropagation()}>
+      <Backdrop
+        open={repsDrawer.open}
+        onClick={_ => _.stopPropagation()}
+        sx={{ backgroundColor: 'transparent' }}
+      >
         <Menu
+          keepMounted
           open={repsDrawer.open}
           anchorEl={repsDrawer.anchorEl}
           onClose={() => {
@@ -1738,7 +1754,10 @@ const MovementSetView: FC<{
 
               <Button
                 sx={{
-                  color: theme => theme.palette.text.primary,
+                  color: theme =>
+                    movementSet.status === MovementSetStatus.Completed
+                      ? theme.palette.text.secondary
+                      : theme.palette.text.primary,
                   fontWeight: 600,
                   letterSpacing: 0,
                 }}
@@ -1747,14 +1766,13 @@ const MovementSetView: FC<{
                   try {
                     movement.sets[index].repCountActual = repsActual;
 
-                    await updateSets([...movement.sets]);
-
                     repsDrawer.onClose();
+
+                    await updateSets([...movement.sets]);
                   } catch (err) {
                     toast.error(err.message);
                   }
                 }}
-                disabled={isMutating}
               >
                 Submit
               </Button>
@@ -1766,15 +1784,14 @@ const MovementSetView: FC<{
                   letterSpacing: 0,
                 }}
                 startIcon={<RefreshRounded />}
-                disabled={isMutating}
                 onClick={async () => {
                   try {
                     movement.sets[index].status = MovementSetStatus.Unattempted;
                     movement.sets[index].repCountActual = movementSet.repCountMaxExpected;
 
-                    await updateSets([...movement.sets]);
-
                     repsDrawer.onClose();
+
+                    await updateSets([...movement.sets]);
                   } catch (err) {
                     toast.error(err.message);
                   }
@@ -1795,13 +1812,18 @@ const MovementSetView: FC<{
                 startIcon={<RemoveCircleOutline />}
                 disabled={isMutating}
                 onClick={async () => {
+                  if (isMutating) {
+                    toast.info('Try again in a few seconds');
+                    return;
+                  }
+
                   try {
+                    repsDrawer.onClose();
+
                     await MovementsMutationAPI.update({
                       id: movement.id,
                       sets: movement.sets.filter((_, i) => i !== index),
                     });
-
-                    repsDrawer.onClose();
                   } catch (err) {
                     toast.error(err.message);
                   }
@@ -1896,13 +1918,13 @@ const MovementSetView: FC<{
 
               ...(setIsCompleted
                 ? {
-                  backgroundColor: alpha(theme.palette.success.light, 0.11),
-                  color: theme.palette.success.light,
-                }
+                    backgroundColor: alpha(theme.palette.success.light, 0.11),
+                    color: theme.palette.success.light,
+                  }
                 : {
-                  backgroundColor: alpha(theme.palette.divider, 0.08),
-                  color: theme.palette.text.primary,
-                }),
+                    backgroundColor: alpha(theme.palette.divider, 0.08),
+                    color: theme.palette.text.primary,
+                  }),
             }}
             onClick={cycleMovementSet}
           >
