@@ -570,7 +570,7 @@ export const EditorInternals: FC<{
                             variant="overline"
                             alignSelf="end"
                             textTransform="capitalize"
-                            sx={{ color: 'text.secondary' }}
+                            sx={{ color: 'text.secondary', letterSpacing: 0.5 }}
                           >
                             {movement.weightUnit}
                           </Typography>
@@ -579,7 +579,7 @@ export const EditorInternals: FC<{
                             variant="overline"
                             alignSelf="end"
                             textTransform="capitalize"
-                            sx={{ color: 'text.secondary' }}
+                            sx={{ color: 'text.secondary', letterSpacing: 0.5 }}
                           >
                             {abbreviate(movement.repCountUnit)}
                           </Typography>

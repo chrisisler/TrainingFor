@@ -7,6 +7,7 @@ import {
   Notes,
 } from '@mui/icons-material';
 import {
+  Backdrop,
   Box,
   CircularProgress,
   Collapse,
@@ -20,7 +21,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsMutating, useQueryClient } from '@tanstack/react-query';
 import { getCountFromServer, query, where } from 'firebase/firestore';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -47,6 +48,7 @@ export const Programs: FC = () => {
   const templateEditorDrawer = useDrawer<{ templateId: string }>();
   const { programId } = useParams<{ programId: string }>();
   const queryClient = useQueryClient();
+  const isMutating = useIsMutating() > 0;
 
   const [pinned, setPinned] = useState(false);
 
@@ -218,6 +220,18 @@ export const Programs: FC = () => {
 
   return (
     <>
+      <Backdrop open={isMutating} sx={{ zIndex: theme => theme.zIndex.drawer + 10 }}>
+        <Box sx={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <CircularProgress size={64} />
+        </Box>
+      </Backdrop >
+
       <Box
         sx={{
           height: '100vh',
@@ -311,7 +325,7 @@ export const Programs: FC = () => {
           position: 'absolute',
           top: 0,
           width: '100vw',
-          zIndex: 100,
+          // zIndex: 100,
           left: 0,
           padding: theme => theme.spacing(0, 0.5),
           backgroundColor: theme => theme.palette.background.default,
@@ -392,6 +406,8 @@ export const Programs: FC = () => {
                   templateIds: templateIds.filter(id => id !== templateId),
                 }),
               ]);
+
+              toast.info("Removed empty template");
             } else {
               // Update template movement names display
               queryClient.invalidateQueries(ProgramMovementsAPI.queryKey);
@@ -429,10 +445,6 @@ const PanelBtn: FC<{
         backgroundColor: theme => darken(theme.palette.action.hover, prefersDark ? 0.16 : 0.02),
         width: '46%',
         margin: 0.5,
-
-        // maxWidth: '47%',
-        // flexGrow: 1,
-
         borderRadius: 3,
         padding: 2,
         cursor: 'pointer',

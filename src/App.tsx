@@ -35,7 +35,7 @@ export const App: FC = () => {
         >
           <PrivateThemeProvider>
             <DataStateView
-              data={DataState.Loading as typeof authState}
+              data={authState}
               loading={AppLoading}
               empty={() => (
                 <Routes>
