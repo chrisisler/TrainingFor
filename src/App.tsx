@@ -1,4 +1,4 @@
-import { Box, Collapse, Typography } from '@mui/material';
+import { Box, Collapse, Stack, Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import { FC, useEffect, useState } from 'react';
@@ -35,7 +35,7 @@ export const App: FC = () => {
         >
           <PrivateThemeProvider>
             <DataStateView
-              data={authState}
+              data={DataState.Loading as typeof authState}
               loading={AppLoading}
               empty={() => (
                 <Routes>
@@ -115,7 +115,8 @@ function EditorLastOrNew() {
 
 function AppLoading() {
   return (
-    <Box
+    <Stack
+      spacing={2}
       sx={{
         height: '100vh',
         display: 'flex',
@@ -126,9 +127,15 @@ function AppLoading() {
         color: theme => theme.palette.text.secondary,
       }}
     >
-      <Typography variant="overline" fontWeight={600}>
+      <img
+        src="/logo192.png"
+        alt=""
+        height="96px"
+      />
+
+      <Typography variant="overline">
         Trainquil
       </Typography>
-    </Box>
+    </Stack>
   );
 }
