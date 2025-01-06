@@ -1754,10 +1754,7 @@ const MovementSetView: FC<{
 
               <Button
                 sx={{
-                  color: theme =>
-                    movementSet.status === MovementSetStatus.Completed
-                      ? theme.palette.text.secondary
-                      : theme.palette.text.primary,
+                  color: theme => theme.palette.text.primary,
                   fontWeight: 600,
                   letterSpacing: 0,
                 }}

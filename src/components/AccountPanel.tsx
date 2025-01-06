@@ -102,52 +102,53 @@ export const AccountPanel: FC<{
     }
   }, [toast, ProgramsAPI, user.uid, pinned, onClose, navigate])
 
-  const createTrainingLog = useCallback(
-    async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
-      if (!window.confirm('Begin programmed training?')) return;
+  const createTrainingLog = async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
+    if (!window.confirm('Begin programmed training?')) {
+      return;
+    }
 
-      try {
-        const programId = !!fromTemplateId && DataState.isReady(activeProgram) && activeProgram.id;
-        const newTrainingLog = await TrainingLogsAPI.create({
+    try {
+      const programId = !!fromTemplateId && DataState.isReady(activeProgram) && activeProgram.id;
+      const newTrainingLog = await TrainingLogsAPI.create({
+        timestamp: Date.now(),
+        authorUserId: user.uid,
+        bodyweight: 0,
+        isFinished: false,
+        note: '',
+        programId: programId || null,
+        programLogTemplateId: fromTemplateId || null,
+      });
+
+      // Copy over movements from the program log template to the log
+      const logIsCreatedFromProgramTemplate = !!fromTemplateId;
+      if (logIsCreatedFromProgramTemplate) {
+        const programMovements = await API.ProgramMovements.getAll(
+          where('logId', '==', fromTemplateId)
+        );
+
+        const logMovements: Movement[] = programMovements.map(movement => ({
+          ...movement,
+          logId: newTrainingLog.id,
+          sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
           timestamp: Date.now(),
-          authorUserId: user.uid,
-          bodyweight: 0,
-          isFinished: false,
-          note: '',
-          programId: programId || null,
-          programLogTemplateId: fromTemplateId || null,
-        });
-
-        // Copy over movements from the program log template to the log
-        const logIsCreatedFromProgramTemplate = !!fromTemplateId;
-        if (logIsCreatedFromProgramTemplate) {
-          const programMovements = await API.ProgramMovements.getAll(
-            where('logId', '==', fromTemplateId)
-          );
-
-          const logMovements: Movement[] = programMovements.map(movement => ({
-            ...movement,
-            logId: newTrainingLog.id,
-            sets: movement.sets.map(s => ({ ...s, uuid: uuidv4() })),
-            timestamp: Date.now(),
-          }));
-          await Promise.all([
-            // Create movements in the new log
-            MovementsAPI.createMany(logMovements),
-            // Update lastSeen property for each movement's savedMovement parent
-            logMovements.map(_ =>
-              SavedMovementsAPI.update({ id: _.savedMovementId, lastSeen: _.timestamp })
-            ),
-          ]);
-        }
-
-        navigate(Paths.editor(newTrainingLog.id));
-      } catch (err) {
-        toast.error(err.message);
+        }));
+        await Promise.all([
+          // Create movements in the new log
+          MovementsAPI.createMany(logMovements),
+          // Update lastSeen property for each movement's savedMovement parent
+          logMovements.map(_ =>
+            SavedMovementsAPI.update({ id: _.savedMovementId, lastSeen: _.timestamp })
+          ),
+        ]);
       }
-    },
-    [activeProgram, user.uid, navigate, toast, TrainingLogsAPI, MovementsAPI, SavedMovementsAPI]
-  );
+
+      navigate(Paths.editor(newTrainingLog.id));
+
+      if (!pinned) onClose();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   return (
     <Stack spacing={3} sx={{ width: isMobile ? '78vw' : '240px' }}>
@@ -277,20 +278,16 @@ export const AccountPanel: FC<{
           {activeProgram.templateIds.map(templateId => (
             <Button
               key={templateId}
-              onClick={() => {
-                if (!pinned) onClose();
-
-                createTrainingLog({ fromTemplateId: templateId });
-              }}
-              startIcon={<AppRegistrationRounded fontSize="small" />}
-              endIcon={<AddRounded fontSize="small" sx={{ color: theme => theme.palette.divider }} />}
+              onClick={() => createTrainingLog({ fromTemplateId: templateId })}
+              startIcon={<AppRegistrationRounded fontSize={isMobile ? "medium" : "small"} />}
+              endIcon={<AddRounded fontSize={isMobile ? "medium" : "small"} sx={{ color: theme => theme.palette.divider }} />}
               sx={{
                 color: theme => theme.palette.text.secondary,
                 fontWeight: 600,
                 justifyContent: 'flex-start',
               }}
             >
-                {templates.find(t => t.id === templateId)!.name}
+              {templates.find(t => t.id === templateId)!.name}
             </Button>
           ))}
         </Stack>
@@ -310,7 +307,7 @@ export const AccountPanel: FC<{
                   color: theme => theme.palette.text.secondary,
                   fontWeight: 600,
                 }}>
-                <PlaylistAdd fontSize="small" />
+                <PlaylistAdd fontSize={isMobile ? "medium" : "small"} />
               </IconButton>
             </Stack>
 
