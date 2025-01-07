@@ -919,7 +919,7 @@ export const EditorInternals: FC<{
                               throw Error('Failed to delete all sets');
                             }
                             addSetMenu.setData(updated);
-                            addSetMenu.onClose();
+                            // addSetMenu.onClose();
                           } catch (error) {
                             toast.error(error.message);
                           }
