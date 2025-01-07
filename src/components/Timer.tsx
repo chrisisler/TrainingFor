@@ -94,8 +94,8 @@ export const Timer: FC = () => {
 
         <IconButton onClick={event => timerMenu.onOpen(event, undefined)}>
           <Badge
-            badgeContent={readyBadge ? 'Go!' : ''}
-            invisible={started}
+            badgeContent={'Go!'}
+            invisible={started && readyBadge && pastTimers.length > 0}
             color="primary"
             onClick={event => timerMenu.onOpen(event, undefined)}
             anchorOrigin={{
