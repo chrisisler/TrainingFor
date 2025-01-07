@@ -100,7 +100,7 @@ export const AccountPanel: FC<{
     } catch (err) {
       toast.error(err.message);
     }
-  }, [toast, ProgramsAPI, user.uid, pinned, onClose, navigate])
+  }, [toast, ProgramsAPI, user.uid, pinned, onClose, navigate]);
 
   const createTrainingLog = async ({ fromTemplateId }: { fromTemplateId: string | null }) => {
     if (!window.confirm('Begin programmed training?')) {
@@ -269,29 +269,36 @@ export const AccountPanel: FC<{
         )}
       </DataStateView>
 
-      {DataState.isReady(activeProgram) && DataState.isReady(templates) && activeProgram.templateIds.length && (
-        <Stack>
-          <Typography variant="caption" fontWeight={600} color="text.secondary">
-            Current Program
-          </Typography>
+      {DataState.isReady(activeProgram) &&
+        DataState.isReady(templates) &&
+        activeProgram.templateIds.length && (
+          <Stack>
+            <Typography variant="caption" fontWeight={600} color="text.secondary">
+              Current Program
+            </Typography>
 
-          {activeProgram.templateIds.map(templateId => (
-            <Button
-              key={templateId}
-              onClick={() => createTrainingLog({ fromTemplateId: templateId })}
-              startIcon={<AppRegistrationRounded fontSize={isMobile ? "medium" : "small"} />}
-              endIcon={<AddRounded fontSize={isMobile ? "medium" : "small"} sx={{ color: theme => theme.palette.divider }} />}
-              sx={{
-                color: theme => theme.palette.text.secondary,
-                fontWeight: 600,
-                justifyContent: 'flex-start',
-              }}
-            >
-              {templates.find(t => t.id === templateId)!.name}
-            </Button>
-          ))}
-        </Stack>
-      )}
+            {activeProgram.templateIds.map(templateId => (
+              <Button
+                key={templateId}
+                onClick={() => createTrainingLog({ fromTemplateId: templateId })}
+                startIcon={<AppRegistrationRounded fontSize={isMobile ? 'medium' : 'small'} />}
+                endIcon={
+                  <AddRounded
+                    fontSize={isMobile ? 'medium' : 'small'}
+                    sx={{ color: theme => theme.palette.divider }}
+                  />
+                }
+                sx={{
+                  color: theme => theme.palette.text.secondary,
+                  fontWeight: 600,
+                  justifyContent: 'flex-start',
+                }}
+              >
+                {templates.find(t => t.id === templateId)!.name}
+              </Button>
+            ))}
+          </Stack>
+        )}
 
       <DataStateView data={sortedPrograms} loading={() => null}>
         {sortedPrograms => (
@@ -306,8 +313,9 @@ export const AccountPanel: FC<{
                 sx={{
                   color: theme => theme.palette.text.secondary,
                   fontWeight: 600,
-                }}>
-                <PlaylistAdd fontSize={isMobile ? "medium" : "small"} />
+                }}
+              >
+                <PlaylistAdd fontSize={isMobile ? 'medium' : 'small'} />
               </IconButton>
             </Stack>
 

@@ -62,6 +62,7 @@ import {
   ShareBtn,
   tabA11yProps,
   TabPanel,
+  Timer,
   WithVariable,
 } from '../components';
 import {
@@ -404,6 +405,8 @@ export const EditorInternals: FC<{
                     sx={{ color: 'text.secondary' }}
                   />
                 </IconButton>
+
+                <Timer />
 
                 <IconButton
                   onClick={event => {
@@ -1690,7 +1693,6 @@ const MovementSetView: FC<{
         sx={{ backgroundColor: 'transparent' }}
       >
         <Menu
-          keepMounted
           open={repsDrawer.open}
           anchorEl={repsDrawer.anchorEl}
           onClose={() => {
