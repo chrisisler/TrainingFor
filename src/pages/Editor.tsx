@@ -19,6 +19,7 @@ import {
   Title,
   RefreshRounded,
   SaveRounded,
+  KeyboardArrowDownRounded,
   ChevronRightRounded,
 } from '@mui/icons-material';
 import {
@@ -429,7 +430,7 @@ export const EditorInternals: FC<{
           <Fade in>
             <Stack
               sx={{
-                paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+                paddingTop: readOnly || isMobile || isProgramView ? '3rem' : '5rem',
                 transform: !isMobile && pinned ? `translateX(${headerSpacing})` : 'none',
               }}
               spacing={5}
@@ -449,7 +450,7 @@ export const EditorInternals: FC<{
                 // Padding top specifically to account for fixed header
                 padding: '1rem',
                 paddingBottom: 0,
-                paddingTop: readOnly ? 0 : isMobile || isProgramView ? '3rem' : '5rem',
+                paddingTop: readOnly || isMobile || isProgramView ? '3rem' : '5rem',
 
                 // spacing for pinned header
                 transform: !isMobile && pinned ? `translateX(${headerSpacing})` : 'none',
@@ -499,7 +500,8 @@ export const EditorInternals: FC<{
                             {movement.name}
                           </Typography>
 
-                          <ChevronRightRounded
+                          <KeyboardArrowDownRounded
+                            fontSize="small"
                             sx={{
                               color:
                                 movement.sets.length === 0
@@ -919,7 +921,7 @@ export const EditorInternals: FC<{
                               throw Error('Failed to delete all sets');
                             }
                             addSetMenu.setData(updated);
-                            // addSetMenu.onClose();
+                            addSetMenu.onClose();
                           } catch (error) {
                             toast.error(error.message);
                           }

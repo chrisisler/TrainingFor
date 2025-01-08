@@ -287,7 +287,7 @@ export const Programs: FC = () => {
                     icon={<Add />}
                     onClick={createTemplate}
                     text="Add training template"
-                    disabled={!DataState.isReady(viewedProgram)}
+                    disabled={!DataState.isReady(viewedProgram) || !isActiveProgram}
                   />
                 </Stack>
 
@@ -345,7 +345,13 @@ export const Programs: FC = () => {
             <Notes />
           </IconButton>
 
-          <Typography variant="body2">Program</Typography>
+          <Typography
+            variant="body2"
+            onClick={event => accountDrawer.onOpen(event)}
+            sx={{ cursor: 'pointer' }}
+          >
+            Program
+          </Typography>
         </Stack>
 
         <Stack direction="row">
@@ -456,11 +462,11 @@ const PanelBtn: FC<{
         margin: 0.5,
         borderRadius: 3,
         padding: 2,
-        cursor: 'pointer',
         border: '1px solid transparent',
 
         ':hover': {
           border: theme => `1px solid ${theme.palette.divider}`,
+          cursor: disabled ? 'not-allowed' : 'pointer',
         },
       }}
     >
@@ -497,9 +503,11 @@ const EditorDrawerView: FC<{ templateId?: string }> = ({ templateId }) => {
 
   const toast = useToast();
   const { programId } = useParams<{ programId: string }>();
+  const navigate = useNavigate();
 
   if (!templateId) {
     toast.error('No template found');
+    navigate(Paths.editor(''));
     return null;
   }
 

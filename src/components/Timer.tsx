@@ -1,4 +1,4 @@
-import { AccessAlarm, ArrowDropDownRounded, ArrowDropUpRounded } from '@mui/icons-material';
+import { AccessAlarmRounded, ArrowDropDownRounded, ArrowDropUpRounded } from '@mui/icons-material';
 import {
   Button,
   IconButton,
@@ -103,7 +103,7 @@ export const Timer: FC = () => {
               horizontal: 'left',
             }}
           >
-            <AccessAlarm
+            <AccessAlarmRounded
               fontSize={isMobile ? 'medium' : 'small'}
               sx={{ color: 'text.secondary' }}
             />
@@ -216,7 +216,7 @@ export const Timer: FC = () => {
                       return;
                     }
 
-                    let s = Number(event.target.value)
+                    let s = Number(event.target.value);
                     if (s > 59) {
                       s = 59;
                       return;
