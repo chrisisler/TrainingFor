@@ -97,7 +97,6 @@ export const Timer: FC = () => {
             badgeContent={'Go!'}
             invisible={started || !readyBadge || pastTimers.length === 0}
             color="primary"
-            onClick={event => timerMenu.onOpen(event, undefined)}
             anchorOrigin={{
               vertical: 'top',
               horizontal: 'left',

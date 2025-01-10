@@ -18,9 +18,9 @@ import {
   RemoveCircleOutline,
   Title,
   RefreshRounded,
-  SaveRounded,
   KeyboardArrowDownRounded,
   ChevronRightRounded,
+  CheckRounded,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -832,6 +832,9 @@ export const EditorInternals: FC<{
                       <MenuItem value={MovementRepCountUnit.Meters}>
                         {MovementRepCountUnit.Meters}
                       </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.RepsInReserve}>
+                        {MovementRepCountUnit.RepsInReserve}
+                      </MenuItem>
                     </MovementUnitSelect>
 
                     <TextField
@@ -1062,7 +1065,7 @@ export const EditorInternals: FC<{
                       }
 
                       const note = window.prompt('Add notes', sm.note) ?? '';
-                      if (!note || note === sm.note) {
+                      if (note === sm.note) {
                         return;
                       }
 
@@ -1723,7 +1726,8 @@ const MovementSetView: FC<{
                       backgroundColor: theme.palette.background.paper,
                       width: '3ch',
                       margin: '0 auto',
-                      border: `1px solid ${theme.palette.text.secondary}`,
+                      // border: `1px solid ${theme.palette.text.secondary}`,
+                      border: 0,
                       outline: 'none',
                       fontFamily: 'monospace',
                       borderRadius: 5,
@@ -1759,10 +1763,11 @@ const MovementSetView: FC<{
               <Button
                 sx={{
                   color: theme => theme.palette.text.primary,
+                  border: theme => `1px solid ${theme.palette.divider}`,
                   fontWeight: 600,
                   letterSpacing: 0,
                 }}
-                startIcon={<SaveRounded />}
+                startIcon={<CheckRounded fontSize="large" />}
                 onClick={async () => {
                   try {
                     movement.sets[index].repCountActual = repsActual;
@@ -1775,7 +1780,7 @@ const MovementSetView: FC<{
                   }
                 }}
               >
-                Submit
+                Save
               </Button>
 
               <Button

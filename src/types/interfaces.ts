@@ -114,6 +114,7 @@ export enum MovementSetStatus {
 
 export enum MovementRepCountUnit {
   Reps = 'Reps',
+  RepsInReserve = 'RIR',
   Seconds = 'Seconds',
   Minutes = 'Minutes',
   Meters = 'Meters',
@@ -124,6 +125,7 @@ export const abbreviate = (unit: MovementRepCountUnit): string => {
   if (unit === MovementRepCountUnit.Seconds) return 'Secs';
   if (unit === MovementRepCountUnit.Minutes) return 'Mins';
   if (unit === MovementRepCountUnit.Meters) return 'Meters';
+  if (unit === MovementRepCountUnit.RepsInReserve) return 'RIR';
   throw new Error(`Unknown unit: ${unit}`);
 };
 
