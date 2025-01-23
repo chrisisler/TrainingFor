@@ -171,7 +171,9 @@ export function useStore<T>(selector: (store: Store) => T) {
           const movementsByTemplateId = await Promise.all(promises);
           return new Map(templateIds.map((id, index) => [id, movementsByTemplateId[index]]));
         },
-        { enabled: DataState.isReady(programs) && programs.some(_ => _.id === programId) }
+        {
+          enabled: DataState.isReady(programs) && programs.some(_ => _.id === programId)
+        }
       )
     );
 

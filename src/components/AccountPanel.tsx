@@ -271,7 +271,7 @@ export const AccountPanel: FC<{
 
       {DataState.isReady(activeProgram) &&
         DataState.isReady(templates) &&
-        activeProgram.templateIds.length && (
+        activeProgram.templateIds.length > 0 && (
           <Stack>
             <Typography variant="caption" fontWeight={600} color="text.secondary">
               Current Program
