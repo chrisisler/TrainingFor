@@ -376,13 +376,13 @@ export const EditorInternals: FC<{
               onMouseOver={event => {
                 accountDrawer.onOpen(event);
               }}
+              onClick={event => {
+                accountDrawer.onOpen(event);
+              }}
             >
               <IconButton
                 sx={{
                   color: theme => theme.palette.text.secondary,
-                }}
-                onClick={event => {
-                  accountDrawer.onOpen(event);
                 }}
               >
                 <Notes />
