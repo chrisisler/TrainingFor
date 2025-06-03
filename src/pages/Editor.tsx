@@ -22,6 +22,7 @@ import {
   CheckRounded,
   PlusOneRounded,
   BackspaceOutlined,
+  EditOutlined,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -36,6 +37,7 @@ import {
   Fab,
   Fade,
   IconButton,
+  lighten,
   Menu,
   MenuItem,
   Paper,
@@ -614,26 +616,26 @@ export const EditorInternals: FC<{
                 </Fade>
               ))}
 
-              <Box width="100%" padding={1} />
+              <Box width="100%" padding={2} />
 
-              <ButtonBase
+              <Button
                 onClick={event => addMovementDrawer.onOpen(event, null)}
                 disabled={readOnly}
                 disableTouchRipple
                 sx={{
-                  width: '100%',
-                  alignSelf: 'center',
-                  fontSize: '0.9rem',
-                  color: theme => darken(theme.palette.text.secondary, 0.3),
-                  backgroundColor: 'transparent',
-                  borderRadius: 2,
-                  height: '250px',
-                  fontWeight: 600,
+                  position: 'fixed',
+                  right: '32px',
+                  bottom: '32px',
+                  backgroundColor: theme => alpha(lighten(theme.palette.background.paper, 0.0), 1.0),
+                  px: 2,
+                  // backdropFilter: 'blur(4px)',
+                  border: theme => `1px solid ${theme.palette.divider}`,
                 }}
+                size="large"
+                startIcon={<EditOutlined />}
               >
-                <Add sx={{ mr: 0.5 }} />
-                {movements.length === 0 ? 'Tap here to get started' : 'Add a movement'}
-              </ButtonBase>
+                Exercises
+              </Button>
             </Stack>
           );
         }}
