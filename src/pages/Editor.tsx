@@ -508,37 +508,6 @@ export const EditorInternals: FC<{
                           </Typography>
                         </Stack>
 
-                        {/** Display volume or reps total. */}
-                        {/** Avoids using unit to distinguish weightless/bodyweight as enum variants may change. */}
-                        <WithVariable
-                          value={movement.sets.filter(
-                            _ => _.status === MovementSetStatus.Completed
-                          )}
-                        >
-                          {completedSets => {
-                            if (completedSets.length === 0) {
-                              return null;
-                            }
-
-                            const completedVol = MovementSet.summate(completedSets);
-                            const totalVol = MovementSet.summate(movement.sets);
-
-                            return (
-                              <Typography
-                                variant="overline"
-                                sx={{
-                                  color: 'text.secondary',
-                                  lineHeight: 1,
-                                }}
-                              >
-                                {!isProgramView && completedVol !== totalVol && (
-                                  <>{Intl.NumberFormat().format(completedVol)}/</>
-                                )}
-                                {Intl.NumberFormat().format(totalVol)}
-                              </Typography>
-                            );
-                          }}
-                        </WithVariable>
                       </Stack>
                     </Box>
 
