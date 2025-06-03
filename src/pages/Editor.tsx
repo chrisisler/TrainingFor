@@ -506,17 +506,6 @@ export const EditorInternals: FC<{
                           >
                             {movement.name}
                           </Typography>
-
-                          <KeyboardArrowDownRounded
-                            fontSize="small"
-                            sx={{
-                              color:
-                                movement.sets.length === 0
-                                  ? theme.palette.primary.main
-                                  : theme.palette.text.secondary,
-                              // color: theme.palette.primary.main,
-                            }}
-                          />
                         </Stack>
 
                         {/** Display volume or reps total. */}
