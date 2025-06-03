@@ -274,7 +274,7 @@ export const AccountPanel: FC<{
         activeProgram.templateIds.length > 0 && (
           <Stack>
             <Typography variant="caption" fontWeight={600} color="text.secondary">
-              Current Program
+              Current Program: {activeProgram.name}
             </Typography>
 
             {activeProgram.templateIds.map(templateId => (
