@@ -679,19 +679,28 @@ export const EditorInternals: FC<{
                 }}
                 PaperProps={{
                   sx: {
-                    maxWidth: isMobile ? '95vw' : '700px',
+                    maxWidth: isMobile ? '96vw' : '700px',
                     // overflowX: 'scroll',
-                    paddingX: '0.25rem',
+                    marginX: '0.25rem',
                     justifyItems: 'center',
                     display: 'flex',
+                    // backgroundColor: theme => theme.palette.background.default,
                   },
                 }}
                 MenuListProps={{
-                  sx: { padding: 0.5, },
+                  // sx: { p: 0.5, },
                 }}
               >
-                <Stack gap={1.5} width="100%">
-                  <Stack gap={0.5} direction="row" alignItems="anchor-center">
+                <Stack gap={2} width="100%">
+                  <Stack
+                    sx={{
+                      border: theme => `1px solid ${theme.palette.divider}`, 
+                      // backgroundColor: theme => lighten(theme.palette.background.paper, 0.05),
+                      borderRadius: 3,
+                    }}
+                    direction="row"
+                    alignItems="anchor-center"
+                  >
                     <Button
                       onClick={async () => {
                         const sets = movement.sets.concat({
@@ -719,138 +728,145 @@ export const EditorInternals: FC<{
                       }}
                       disabled={isMutating}
                       sx={{
-                        color: theme => theme.palette.text.primary,
-                        backgroundColor: theme => alpha(theme.palette.primary.main, 0.3),
+                        // color: theme => theme.palette.text.primary,
+                        // backgroundColor: theme => alpha(theme.palette.primary.main, 0.3),
                         whiteSpace: 'nowrap',
                         // fontWeight: 600,
                       }}
                       color="primary"
                       aria-label="add"
+                      variant="text"
                     >
                       {isMutating ? <CircularProgress size={24} /> : <PlusOneRounded />}
                       Add Set
                     </Button>
 
-                    <Box display="flex">
-                      <MovementUnitSelect
-                        value={movement.weightUnit}
-                        onChange={async event => {
-                          try {
-                            const newWeightUnit = event.target.value as MovementWeightUnit;
-                            // Update field on the movement
-                            const updated: Movement = await MovementsMutationAPI.update({
-                              id: movement.id,
-                              weightUnit: newWeightUnit,
-                            });
-                            addSetMenu.setData(updated);
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                      >
-                        <MenuItem value={MovementWeightUnit.Pounds}>
-                          {MovementWeightUnit.Pounds}
-                        </MenuItem>
-                        <MenuItem value={MovementWeightUnit.Kilograms}>
-                          {MovementWeightUnit.Kilograms}
-                        </MenuItem>
-                      </MovementUnitSelect>
-                      <TextField
-                        variant="standard"
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetWeight}
-                        onChange={event => {
-                          setNewSetWeight(+event.target.value);
-                        }}
-                        onFocus={event => event.currentTarget.select()}
-                        InputProps={{
-                          sx: {
-                            fontSize: '1.5rem',
-                            width: '60px',
-                            marginTop: '0.70rem',
-                          },
-                        }}
-                        // idk
-                        InputLabelProps={{
-                          sx: {
-                            marginTop: '0.70rem',
-                          },
-                        }}
-                      />
-                    </Box>
+                    <Divider orientation="vertical" flexItem sx={{ m: 0 }} />
 
-                    <Box display="flex">
-                      <MovementUnitSelect
-                        value={movement.repCountUnit}
-                        onChange={async event => {
-                          try {
-                            const updated: Movement = await MovementsMutationAPI.update({
-                              id: movement.id,
-                              repCountUnit: event.target.value as MovementRepCountUnit,
-                            });
+                    <MovementUnitSelect
+                      value={movement.weightUnit}
+                      onChange={async event => {
+                        try {
+                          const newWeightUnit = event.target.value as MovementWeightUnit;
+                          // Update field on the movement
+                          const updated: Movement = await MovementsMutationAPI.update({
+                            id: movement.id,
+                            weightUnit: newWeightUnit,
+                          });
+                          addSetMenu.setData(updated);
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    >
+                      <MenuItem value={MovementWeightUnit.Pounds}>
+                        {MovementWeightUnit.Pounds}
+                      </MenuItem>
+                      <MenuItem value={MovementWeightUnit.Kilograms}>
+                        {MovementWeightUnit.Kilograms}
+                      </MenuItem>
+                    </MovementUnitSelect>
 
-                            addSetMenu.setData(updated);
-                          } catch (error) {
-                            toast.error(error.message);
-                          }
-                        }}
-                      >
-                        <MenuItem value={MovementRepCountUnit.Reps}>
-                          {MovementRepCountUnit.Reps}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.Seconds}>
-                          {MovementRepCountUnit.Seconds}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.Minutes}>
-                          {MovementRepCountUnit.Minutes}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.Meters}>
-                          {MovementRepCountUnit.Meters}
-                        </MenuItem>
-                        <MenuItem value={MovementRepCountUnit.RepsInReserve}>
-                          {MovementRepCountUnit.RepsInReserve}
-                        </MenuItem>
-                      </MovementUnitSelect>
+                    <Divider orientation="vertical" flexItem sx={{ m: 0 }} />
 
-                      <TextField
-                        variant="standard"
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetRepCountMin}
-                        label="Minimum"
-                        onChange={event => {
-                          const val = +event.target.value;
-                          // auto-set max to min if min > max
-                          if (val > newSetRepCountMax) {
-                            setNewSetRepCountMax(val);
-                          }
-                          setNewSetRepCountMin(val);
-                        }}
-                        onFocus={event => event.currentTarget.select()}
-                        InputProps={{
-                          sx: { fontSize: '1.5rem', width: '75px' },
-                        }}
-                      />
-                      <TextField
-                        variant="standard"
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                        value={newSetRepCountMax}
-                        label="Maximum"
-                        error={newSetRepCountMax < newSetRepCountMin}
-                        onChange={event => {
-                          const val = +event.target.value;
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', style: { textAlign: 'center' } }}
+                      value={newSetWeight}
+                      onChange={event => {
+                        setNewSetWeight(+event.target.value);
+                      }}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        sx: {
+                          fontSize: '1.5rem',
+                          width: '60px',
+                          // marginTop: '0.70rem',
+                        },
+                        disableUnderline: true,
+                      }}
+                      InputLabelProps={{
+                        sx: { marginTop: '0.70rem', },
+                      }}
+                    />
+
+                    <Divider orientation="vertical" flexItem sx={{ m: 0 }} />
+
+                    <MovementUnitSelect
+                      value={movement.repCountUnit}
+                      onChange={async event => {
+                        try {
+                          const updated: Movement = await MovementsMutationAPI.update({
+                            id: movement.id,
+                            repCountUnit: event.target.value as MovementRepCountUnit,
+                          });
+
+                          addSetMenu.setData(updated);
+                        } catch (error) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    >
+                      <MenuItem value={MovementRepCountUnit.Reps}>
+                        {MovementRepCountUnit.Reps}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.Seconds}>
+                        {MovementRepCountUnit.Seconds}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.Minutes}>
+                        {MovementRepCountUnit.Minutes}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.Meters}>
+                        {MovementRepCountUnit.Meters}
+                      </MenuItem>
+                      <MenuItem value={MovementRepCountUnit.RepsInReserve}>
+                        {MovementRepCountUnit.RepsInReserve}
+                      </MenuItem>
+                    </MovementUnitSelect>
+
+                    <Divider orientation="vertical" flexItem sx={{ m: 0 }} />
+
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', style: { textAlign: 'center' } }}
+                      InputLabelProps={{ style: { textAlign: 'center', marginLeft: '0.75rem' } }}
+                      value={newSetRepCountMin}
+                      label="Minimum"
+                      onChange={event => {
+                        const val = +event.target.value;
+                        // auto-set max to min if min > max
+                        if (val > newSetRepCountMax) {
                           setNewSetRepCountMax(val);
-                        }}
-                        onFocus={event => event.currentTarget.select()}
-                        InputProps={{
-                          sx: { fontSize: '1.5rem', width: '75px' },
-                          startAdornment: (
-                            <Typography variant="body2" color="textSecondary" ml={-3} mr={3}>
-                              {DIFF_CHAR}
-                            </Typography>
-                          ),
-                        }}
-                      />
-                    </Box>
+                        }
+                        setNewSetRepCountMin(val);
+                      }}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        sx: { fontSize: '1.5rem', width: '75px' },
+                        disableUnderline: true,
+                      }}
+                    />
+
+                    <Divider orientation="vertical" flexItem sx={{ m: 0 }} />
+
+                    <TextField
+                      variant="standard"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', style: { textAlign: 'center' } }}
+                      InputLabelProps={{ style: { textAlign: 'center', marginLeft: '0.75rem' } }}
+                      value={newSetRepCountMax}
+                      label="Maximum"
+                      error={newSetRepCountMax < newSetRepCountMin}
+                      onChange={event => {
+                        const val = +event.target.value;
+                        setNewSetRepCountMax(val);
+                      }}
+                      onFocus={event => event.currentTarget.select()}
+                      InputProps={{
+                        sx: { fontSize: '1.5rem', width: '75px' },
+                        disableUnderline: true,
+                      }}
+                    />
+
                   </Stack>
 
                   <Stack gap={1} direction="row" alignItems="anchor-center" flexWrap="wrap">
