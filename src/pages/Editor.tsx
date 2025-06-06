@@ -902,8 +902,6 @@ export const EditorInternals: FC<{
                       disabled={isMutating || movement.sets.length === 0}
                       sx={{ color: theme => theme.palette.error.main }}
                       onClick={async function deleteAllMovementSets() {
-                        if (!window.confirm('Delete all sets?')) return;
-
                         try {
                           const updated = await MovementsMutationAPI.update({
                             id: movement.id,
@@ -913,7 +911,6 @@ export const EditorInternals: FC<{
                             throw Error('Failed to delete all sets');
                           }
                           addSetMenu.setData(updated);
-                          addSetMenu.onClose();
                         } catch (error) {
                           toast.error(error.message);
                         }
@@ -1924,6 +1921,7 @@ const MovementUnitSelect: FC<{ children: ReactNode } & Pick<SelectProps, 'value'
       style: { padding: '8px 11px' },
     }}
     sx={{
+      minWidth: '40px',
       textTransform: 'capitalize',
       fontSize: '0.9rem',
       fontWeight: 600,
